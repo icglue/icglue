@@ -1,7 +1,7 @@
 #!/usr/bin/tclsh
 
 # copied from: http://wiki.tcl.tk/18175
-proc parse {txt} {
+proc parse_template {txt} {
     set code "set _res {}\n"
     while {[set i [string first <% $txt]] != -1} {
         incr i -1
@@ -22,21 +22,46 @@ proc parse {txt} {
     return $code
 }
 
-proc gen_module {author_data mod_data} {
+proc parse_pragmas {txt} {
+    set result [list]
+    while {[set i [string first "/* pragma icglue keep begin " $txt]] >= 0} {
+        incr i 28
+        if {[set j [string first " */" $txt $i]] < 0} {
+            error "No end of pragma comment"
+        }
+        set type [string range $txt $i [expr {$j - 1}]]
+        set txt [string range $txt [expr {$j + 3}] end]
+
+        if {[set i [string first "/* pragma icglue keep end */" $txt]] < 0} {
+            error "No end pragma after begin pragma"
+        }
+        set value [string range $txt 0 [expr {$i-1}]]
+        set txt [string range $txt [expr {$i + 28}] end]
+
+        lappend result [list "keep" $type $value]
+    }
+    return $result
+}
+
+proc gen_module {mod_name} {
     set _tt_name "module.template.v"
 
-    set _outf_name "module.v"
+    set _outf_name "${mod_name}.v"
+
+    set pragma_data [list]
+    if {[file exists $_outf_name]} {
+        set _outf [open ${_outf_name} "r"]
+        set _old [read ${_outf}]
+        close ${_outf}
+        set pragma_data [parse_pragmas ${_old}]
+    }
+    set pragma_data [add_pragma_default_header $pragma_data $mod_name]
 
     set _tt_f [open ${_tt_name} "r"]
     set _tt [read ${_tt_f}]
     close ${_tt_f}
 
-    set _tt_code [parse ${_tt}]
-
-    set mod_name [lindex $mod_data 0]
-    set mod_description [lindex $mod_data 1]
-    set author_name [lindex $author_data 0]
-    set author_email [lindex $author_data 1]
+    set _tt_code [parse_template ${_tt}]
 
     # dummy result - will be overwritten by eval
     set _res {}
@@ -47,14 +72,6 @@ proc gen_module {author_data mod_data} {
     close ${_outf}
 }
 
-set mod_data [list \
-    "testmodule" \
-    "a simple module" \
-]
-set author_data [list \
-    "Andreas Dixius" \
-    "Andreas.Dixius@tu-dresden.de" \
-]
 set port_data [list \
     [list "clk_i"          i  1]  \
     [list "reset_n_i"      i  1]  \
@@ -135,4 +152,32 @@ proc get_params args {
     return $param_data
 }
 
-gen_module $author_data $mod_data
+proc get_pragma_content {pragma_data pragma_entry pragma_subentry} {
+    set result {}
+    append result "/* pragma icglue ${pragma_entry} begin ${pragma_subentry} */"
+    foreach i_entry [lsearch -inline -all -index 1 [lsearch -inline -all -index 0 $pragma_data $pragma_entry] $pragma_subentry] {
+        append result [lindex $i_entry 2]
+    }
+    append result "/* pragma icglue ${pragma_entry} end */"
+}
+
+proc add_pragma_default_header {pragma_data mod_name} {
+    if {[lsearch -inline -all -index 1 [lsearch -inline -all -index 0 $pragma_data "keep"] "head"] < 0} {
+        lappend pragma_data [list "keep" "head" [gen_default_header -module $mod_name]]
+    }
+    return $pragma_data
+}
+
+proc gen_default_header args {
+    set result {
+/*
+ * Module: a simple module
+ * Author: Andreas Dixius
+ * E-Mail: Andreas.Dixius@tu-dresden.de
+ */
+}
+
+    return $result
+}
+
+gen_module "test_module"

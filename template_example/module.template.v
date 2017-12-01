@@ -1,8 +1,3 @@
-/*
- * Module: <%= $mod_description %>
- * Author: <%= $author_name %>
- * E-Mail: <%= $author_email %>
- */
 <%
     # tcl header
     set port_data  [get_ports  -module $mod_name]
@@ -22,6 +17,8 @@
         }
     }
 %>
+<%= [get_pragma_content $pragma_data "keep" "head"] %>
+
 module <%= $mod_name %> (
     <%
     foreach i_port $port_data {
@@ -45,5 +42,6 @@ module <%= $mod_name %> (
 <% } %>
 
 endmodule
-
+<% if {0} { %>
 // vim: filetype=verilog_template
+<% } %>
