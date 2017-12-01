@@ -85,8 +85,35 @@ set param_data [list \
     [list "RES_SEL_W" l "\$clog2(RES_SIZE)"] \
 ]
 set decl_data [list \
-    [list "temp_s" w 8]        \
-    [list "reg_a"  r RES_SIZE] \
+    [list "temp_s"  w 8]        \
+    [list "reg_a"   r RES_SIZE] \
+    [list "temp2_s" w 1]        \
+]
+set inst_data [list \
+    [list \
+        "i_common_sync_res" \
+        "common_sync" \
+        [list \
+            [list "SIZE" "RES_SIZE"] \
+            [list "STAGES" "3"] \
+        ] [list \
+            [list "clk_i" "clk_i"] \
+            [list "reset_n_i" "reset_n_i"] \
+            [list "data_i" "reg_a"] \
+            [list "data_o" "result_o"] \
+        ] \
+    ] \
+    [list \
+        "i_common_sync_valid" \
+        "common_sync" \
+        [list \
+        ] [list \
+            [list "clk_i" "clk_i"] \
+            [list "reset_n_i" "reset_n_i"] \
+            [list "data_i" "valid_i"] \
+            [list "data_o" "temp2_s"] \
+        ] \
+    ] \
 ]
 
 proc get_max_entry_len {data_list transform_proc} {
@@ -170,6 +197,31 @@ proc get_declaration_type_vlog {decl} {
     return ""
 }
 
+proc get_instance_name {inst} {
+    return [lindex $inst 0]
+}
+proc get_instance_module {inst} {
+    return [lindex $inst 1]
+}
+proc get_instance_parameter_list {inst} {
+    return [lindex $inst 2]
+}
+proc get_instance_pin_list {inst} {
+    return [lindex $inst 3]
+}
+proc get_instance_pin_name {pin} {
+    return [lindex $pin 0]
+}
+proc get_instance_pin_net {pin} {
+    return [lindex $pin 1]
+}
+proc get_instance_parameter_name {param} {
+    return [lindex $param 0]
+}
+proc get_instance_parameter_value {param} {
+    return [lindex $param 1]
+}
+
 proc get_ports args {
     variable port_data
     return $port_data
@@ -181,6 +233,10 @@ proc get_parameters args {
 proc get_declarations args {
     variable decl_data
     return $decl_data
+}
+proc get_instrances args {
+    variable inst_data
+    return $inst_data
 }
 
 proc get_pragma_content {pragma_data pragma_entry pragma_subentry} {

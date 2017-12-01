@@ -3,6 +3,7 @@
     set port_data  [get_ports        -module $mod_name]
     set param_data [get_parameters   -module $mod_name]
     set decl_data  [get_declarations -module $mod_name]
+    set inst_data  [get_instrances   -module $mod_name]
 
     set port_data_maxlen_dir   [get_max_entry_len $port_data get_port_dir_vlog]
     set port_data_maxlen_range [get_max_entry_len $port_data get_port_bitrange]
@@ -53,6 +54,25 @@ module <%= $mod_name %> (
     [format "%${decl_data_maxlen_range}s " [get_declaration_bitrange $i_decl]] \
 %><%= [get_declaration_name $i_decl] %>;
 <% } %><%= [get_pragma_content $pragma_data "keep" "declarations"] %>
+
+<%
+    foreach i_inst $inst_data {
+        set i_params [get_instance_parameter_list $i_inst]
+        set i_has_params [llength $i_params]
+        set i_params_maxlen_name [get_max_entry_len $i_params get_instance_parameter_name]
+
+        set i_pins [get_instance_pin_list $i_inst]
+        set i_pins_maxlen_name [get_max_entry_len $i_pins get_instance_pin_name]
+%>
+    <%= [get_instance_module $i_inst] %><% if {$i_has_params} { %> #(<%
+    foreach j_param $i_params { %>
+        .<%= [format "%-${i_params_maxlen_name}s" [get_instance_parameter_name $j_param]] %> (<%= [get_instance_parameter_value $j_param] %>)<% if {![is_last $i_params $j_param]} { %>,<% }} %>
+    )<% } %> <%= [get_instance_name $i_inst] %> (<%
+    foreach j_pin $i_pins { %>
+        .<%= [format "%-${i_pins_maxlen_name}s" [get_instance_pin_name $j_pin]] %> (<%= [get_instance_pin_net $j_pin] %>)<% if {![is_last $i_pins $j_pin]} { %>,<% }} %>
+    );
+<% } %>
+<%= [get_pragma_content $pragma_data "keep" "instances"] %>
 
 endmodule
 <% if {0} { %>
