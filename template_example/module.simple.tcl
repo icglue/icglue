@@ -44,9 +44,9 @@ proc parse_pragmas {txt} {
 }
 
 proc gen_module {mod_name} {
-    set _tt_name "module.template.v"
+    set _tt_name [get_template_file $mod_name]
 
-    set _outf_name "${mod_name}.v"
+    set _outf_name [get_module_file $mod_name]
 
     set pragma_data [list]
     if {[file exists $_outf_name]} {
@@ -84,6 +84,10 @@ set param_data [list \
     [list "RES_SIZE"  g 8]                   \
     [list "RES_SEL_W" l "\$clog2(RES_SIZE)"] \
 ]
+set decl_data [list \
+    [list "temp_s" w 8]        \
+    [list "reg_a"  r RES_SIZE] \
+]
 
 proc get_max_entry_len {data_list transform_proc} {
     set len 0
@@ -104,8 +108,7 @@ proc get_port_dir {port} {
     return [lindex $port 1]
 }
 
-proc get_port_bitrange {port} {
-    set size [get_port_size $port]
+proc size_to_bitrange {size} {
     if {[string is integer $size]} {
         if {$size == 1} {
             return ""
@@ -116,6 +119,11 @@ proc get_port_bitrange {port} {
         return "\[$size-1:0\]"
     }
 }
+
+proc get_port_bitrange {port} {
+    set size [get_port_size $port]
+    return [size_to_bitrange $size]
+}
 proc get_port_dir_vlog {port} {
     set dir [get_port_dir $port]
     if {$dir == "i"} {return "input"}
@@ -124,32 +132,55 @@ proc get_port_dir_vlog {port} {
     return ""
 }
 
-proc get_param_name {param} {
+proc get_parameter_name {param} {
     return [lindex $param 0]
 }
-proc get_param_type {param} {
+proc get_parameter_type {param} {
     return [lindex $param 1]
 }
-proc get_param_value {param} {
+proc get_parameter_value {param} {
     return [lindex $param 2]
 }
 
-proc get_param_type_vlog {param} {
-    set type [get_param_type $param]
+proc get_parameter_type_vlog {param} {
+    set type [get_parameter_type $param]
     if {$type == "l"} {return "localparam"}
     if {$type == "g"} {return "parameter"}
     return ""
 }
 
+proc get_declaration_name {decl} {
+    return [lindex $decl 0]
+}
+proc get_declaration_type {decl} {
+    return [lindex $decl 1]
+}
+proc get_declaration_size {decl} {
+    return [lindex $decl 2]
+}
+
+proc get_declaration_bitrange {decl} {
+    set size [get_declaration_size $decl]
+    return [size_to_bitrange $size]
+}
+proc get_declaration_type_vlog {decl} {
+    set type [get_declaration_type $decl]
+    if {$type == "w"} {return "wire"}
+    if {$type == "r"} {return "reg"}
+    return ""
+}
+
 proc get_ports args {
     variable port_data
-
     return $port_data
 }
-proc get_params args {
+proc get_parameters args {
     variable param_data
-
     return $param_data
+}
+proc get_declarations args {
+    variable decl_data
+    return $decl_data
 }
 
 proc get_pragma_content {pragma_data pragma_entry pragma_subentry} {
@@ -166,6 +197,14 @@ proc add_pragma_default_header {pragma_data mod_name} {
         lappend pragma_data [list "keep" "head" [gen_default_header -module $mod_name]]
     }
     return $pragma_data
+}
+
+proc get_module_file {module} {
+    return "./${module}.v"
+}
+
+proc get_template_file {module} {
+    return "./module.template.v"
 }
 
 proc gen_default_header args {
