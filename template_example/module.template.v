@@ -26,12 +26,14 @@
 
 module <%= $mod_name %> (
     <%
+    # module port list
     foreach i_port $port_data {
     %><%= [get_port_name $i_port] %><% if {![is_last $port_data $i_port]} { %>,
     <% }} %>
 );
 
 <%
+    # module parameters
     foreach i_param $param_data { %><%= \
     [format "    %-${param_data_maxlen_type}s " [get_parameter_type_vlog $i_param]] \
 %><%= \
@@ -40,6 +42,7 @@ module <%= $mod_name %> (
 <% } %><%= [get_pragma_content $pragma_data "keep" "parameters"] %>
 
 <%
+    # module port details
     foreach i_port $port_data { %><%= \
     [format "    %-${port_data_maxlen_dir}s " [get_port_dir_vlog $i_port]] \
 %><%= \
@@ -48,6 +51,7 @@ module <%= $mod_name %> (
 <% } %>
 
 <%
+    # module declarations
     foreach i_decl $decl_data { %><%= \
     [format "    %-${decl_data_maxlen_type}s " [get_declaration_type_vlog $i_decl]] \
 %><%= \
@@ -56,6 +60,7 @@ module <%= $mod_name %> (
 <% } %><%= [get_pragma_content $pragma_data "keep" "declarations"] %>
 
 <%
+    # submodule instanciations
     foreach i_inst $inst_data {
         set i_params [get_instance_parameter_list $i_inst]
         set i_has_params [llength $i_params]
