@@ -46,3 +46,4 @@ module <%= $mod_name %> (
 
 endmodule
 
+// vim: filetype=verilog_template
