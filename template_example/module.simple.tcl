@@ -110,10 +110,23 @@ set inst_data [list \
         ] [list \
             [list "clk_i" "clk_i"] \
             [list "reset_n_i" "reset_n_i"] \
-            [list "data_i" "valid_i"] \
+            [list "data_i" "data_valid_i"] \
             [list "data_o" "temp2_s"] \
         ] \
     ] \
+]
+set code_data [list \
+{
+    always @(posedge clk_i or negedge reset_n_i) begin
+        if (reset_n_i == 1'b0) begin
+            reg_a <= 0;
+        end else begin
+            if (temp2_s == 1'b1) begin
+                reg_a <= data_i[RES_SIZE-1:0];
+            end
+        end
+    end
+}
 ]
 
 proc get_max_entry_len {data_list transform_proc} {
@@ -222,6 +235,10 @@ proc get_instance_parameter_value {param} {
     return [lindex $param 1]
 }
 
+proc get_codesection_code {section} {
+    return $section
+}
+
 proc get_ports args {
     variable port_data
     return $port_data
@@ -234,9 +251,13 @@ proc get_declarations args {
     variable decl_data
     return $decl_data
 }
-proc get_instrances args {
+proc get_instances args {
     variable inst_data
     return $inst_data
+}
+proc get_codesections args {
+    variable code_data
+    return $code_data
 }
 
 proc get_pragma_content {pragma_data pragma_entry pragma_subentry} {

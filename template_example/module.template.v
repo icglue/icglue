@@ -3,7 +3,8 @@
     set port_data  [get_ports        -module $mod_name]
     set param_data [get_parameters   -module $mod_name]
     set decl_data  [get_declarations -module $mod_name]
-    set inst_data  [get_instrances   -module $mod_name]
+    set inst_data  [get_instances    -module $mod_name]
+    set code_data  [get_codesections -module $mod_name]
 
     set port_data_maxlen_dir   [get_max_entry_len $port_data get_port_dir_vlog]
     set port_data_maxlen_range [get_max_entry_len $port_data get_port_bitrange]
@@ -78,6 +79,13 @@ module <%= $mod_name %> (
     );
 <% } %>
 <%= [get_pragma_content $pragma_data "keep" "instances"] %>
+<%
+    # code sections
+    foreach i_cs $code_data {
+%>
+<%= [get_codesection_code $i_cs] %>
+<% } %>
+<%= [get_pragma_content $pragma_data "keep" "code"] %>
 
 endmodule
 <% if {0} { %>
