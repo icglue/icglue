@@ -73,6 +73,9 @@ struct ig_decl {
     const char *name;
     /* is of default signal type? */
     bool default_type;
+
+    /* NULL or value this is assigned to */
+    const char *default_assignment;
 };
 
 struct ig_module {
