@@ -9,6 +9,12 @@
 
 #include "ig_data.h"
 
+static struct ig_attribute * ig_attribtue_new (const char *value, bool constant);
+static inline void ig_attribute_free (struct ig_attribute *attr);
+static void ig_attribute_free_gpointer (gpointer attr);
+static const char *ig_obj_type_name (enum ig_object_type type);
+static const char *ig_port_dir_name (enum ig_port_dir dir);
+
 /*******************************************************
  * object data
  *******************************************************/
@@ -116,5 +122,60 @@ const char *ig_obj_attr_get (struct ig_object *obj, const char *name)
 
     if (value == NULL) return NULL;
     return value->value;
+}
+
+static const char *ig_port_dir_name (enum ig_port_dir dir)
+{
+    switch (dir) {
+        case IG_PD_IN:    return "input";
+        case IG_PD_OUT:   return "output";
+        case IG_PD_BIDIR: return "bidirectional";
+    };
+
+    return "UNKNOWN";
+}
+
+
+/*******************************************************
+ * port data
+ *******************************************************/
+
+struct ig_port *ig_port_new (const char *name, enum ig_port_dir dir, struct ig_module *parent, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+    if (parent == NULL) return NULL;
+
+    GString *s_id = g_string_new (NULL);
+    s_id = g_string_append (s_id, ig_obj_type_name (IG_OBJ_PORT));
+    s_id = g_string_append (s_id, "::");
+    s_id = g_string_append (s_id, parent->name);
+    s_id = g_string_append (s_id, ".");
+    s_id = g_string_append (s_id, name);
+
+    struct ig_port  *port = g_slice_new (struct ig_port);
+    struct ig_object *obj = ig_obj_new (IG_OBJ_PORT, s_id->str, port, storage);
+
+    g_string_free (s_id, true);
+
+    port->object = obj;
+    port->name   = g_string_chunk_insert_const (obj->string_storage, name);
+    port->dir    = dir;
+    port->parent = parent;
+
+    ig_obj_attr_set (port->object, "direction", ig_port_dir_name (dir), true);
+    ig_obj_attr_set (port->object, "name",      name, true);
+    ig_obj_attr_set (port->object, "parent",    parent->object->id, true);
+
+    g_queue_push_tail (parent->ports, port);
+
+    return port;
+}
+
+void ig_port_free (struct ig_port *port)
+{
+    if (port == NULL) return;
+
+    ig_obj_free (port->object);
+    g_slice_free (struct ig_port, port);
 }
 

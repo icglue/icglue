@@ -57,6 +57,8 @@ struct ig_port {
 
     const char       *name;
     enum ig_port_dir  dir;
+
+    struct ig_module *parent;
 };
 
 struct ig_param {
@@ -86,14 +88,14 @@ struct ig_module {
     bool             resource;
 
     /* module content */
-    GList *params; /* data: (struct ig_param *)    */
-    GList *ports;  /* data: (struct ig_port *)     */
-    GList *decls;  /* data: (struct ig_decl *)     */
-    GList *code;   /* data: (const char *)         */
+    GQueue *params; /* data: (struct ig_param *)    */
+    GQueue *ports;  /* data: (struct ig_port *)     */
+    GQueue *decls;  /* data: (struct ig_decl *)     */
+    GQueue *code;   /* data: (const char *)         */
     /* child instances inside module */
-    GList *child_instances; /* data: (struct ig_instance *) */
+    GQueue *child_instances; /* data: (struct ig_instance *) */
     /* instances of this module elsewhere */
-    GList *mod_instances;   /* data: (struct ig_instance *) */
+    GQueue *mod_instances;   /* data: (struct ig_instance *) */
     /* default instance of this module */
     struct ig_instance *default_instance;
 };
@@ -112,8 +114,8 @@ struct ig_instance {
     struct ig_module *module;
 
     /* instance values */
-    GList *params; /* data: (struct ig_param *)    */
-    GList *ports;  /* data: (struct ig_port *)     */
+    GQueue *params; /* data: (struct ig_param *)    */
+    GQueue *ports;  /* data: (struct ig_port *)     */
 };
 
 /*******************************************************
@@ -125,6 +127,10 @@ void              ig_obj_free (struct ig_object *obj);
 
 bool              ig_obj_attr_set (struct ig_object *obj, const char *name, const char *value, bool constant);
 const char       *ig_obj_attr_get (struct ig_object *obj, const char *name);
+
+struct ig_port *ig_port_new  (const char *name, enum ig_port_dir dir, struct ig_module *parent, GStringChunk *storage);
+void            ig_port_free (struct ig_port *port);
+
 
 /* TODO: remaining */
 
