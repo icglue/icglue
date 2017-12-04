@@ -13,6 +13,26 @@
  * object data
  *******************************************************/
 
+static struct ig_attribute * ig_attribtue_new (const char *value, bool constant)
+{
+    struct ig_attribute *result = g_slice_new (struct ig_attribute);
+
+    result->constant = constant;
+    result->value    = value;
+
+    return result;
+}
+
+static inline void ig_attribute_free (struct ig_attribute *attr)
+{
+    g_slice_free (struct ig_attribute, attr);
+}
+
+static void ig_attribute_free_gpointer (gpointer attr)
+{
+    ig_attribute_free ((struct ig_attribute *) attr);
+}
+
 static const char *ig_obj_type_name (enum ig_object_type type)
 {
     switch (type) {
@@ -45,10 +65,10 @@ struct ig_object *ig_obj_new (enum ig_object_type type, const char *id, gpointer
         result->string_storage_free = false;
     }
 
-    result->attributes = g_hash_table_new (g_str_hash, g_str_equal);
+    result->attributes = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, ig_attribute_free_gpointer);
 
-    ig_obj_attr_set (result, "type", ig_obj_type_name (type));
-    ig_obj_attr_set (result, "id",   id);
+    ig_obj_attr_set (result, "type", ig_obj_type_name (type), true);
+    ig_obj_attr_set (result, "id",   id, true);
 
     result->id = ig_obj_attr_get (obj, "id");
 
@@ -68,16 +88,23 @@ void ig_obj_free (struct ig_object *obj)
     g_slice_free (struct ig_object, obj);
 }
 
-void ig_obj_attr_set (struct ig_object *obj, const char *name, const char *value)
+bool ig_obj_attr_set (struct ig_object *obj, const char *name, const char *value, bool constant)
 {
-    if (obj == NULL) return;
-    if (name == NULL) return;
-    if (value == NULL) return;
+    if (obj == NULL) return false;
+    if (name == NULL) return false;
+    if (value == NULL) return false;
 
-    char *local_name  = g_string_chunk_insert_const (obj->string_storage, name);
-    char *local_value = g_string_chunk_insert_const (obj->string_storage, value);
+    struct ig_attribute *old_val = (struct ig_attribute *) g_hash_table_lookup (obj->attributes, name);
 
-    g_hash_table_insert (obj->attributes, local_name, local_value);
+    if ((old_val != NULL) && (old_val->constant)) return false;
+
+    char *local_name                 = g_string_chunk_insert_const (obj->string_storage, name);
+    char *local_value_string         = g_string_chunk_insert_const (obj->string_storage, value);
+    struct ig_attribute *value_entry = ig_attribtue_new (local_value_string, constant);
+
+    g_hash_table_insert (obj->attributes, local_name, value_entry);
+
+    return true;
 }
 
 const char *ig_obj_attr_get (struct ig_object *obj, const char *name)
@@ -85,6 +112,9 @@ const char *ig_obj_attr_get (struct ig_object *obj, const char *name)
     if (obj == NULL) return NULL;
     if (name == NULL) return NULL;
 
-    return g_hash_table_lookup (obj->attributes, name);
+    struct ig_attribute *value = (struct ig_attribute *) g_hash_table_lookup (obj->attributes, name);
+
+    if (value == NULL) return NULL;
+    return value->value;
 }
 
