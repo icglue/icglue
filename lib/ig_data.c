@@ -334,3 +334,93 @@ void ig_module_free (struct ig_module *module)
     g_slice_free (struct ig_module, module);
 }
 
+
+/*******************************************************
+ * pin data
+ *******************************************************/
+
+struct ig_pin *ig_pin_new (const char *name, const char *connection, struct ig_instance *parent, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+    if (connection == NULL) return NULL;
+    if (parent == NULL) return NULL;
+
+    GString *s_id = g_string_new (NULL);
+    s_id = g_string_append (s_id, ig_obj_type_name (IG_OBJ_PIN));
+    s_id = g_string_append (s_id, "::");
+    s_id = g_string_append (s_id, parent->name);
+    s_id = g_string_append (s_id, ".");
+    s_id = g_string_append (s_id, name);
+
+    struct ig_pin  *pin = g_slice_new (struct ig_pin);
+    struct ig_object *obj = ig_obj_new (IG_OBJ_PIN, s_id->str, pin, storage);
+    pin->object = obj;
+
+    g_string_free (s_id, true);
+
+    ig_obj_attr_set (pin->object, "name",       name, true);
+    ig_obj_attr_set (pin->object, "connection", connection, true);
+    ig_obj_attr_set (pin->object, "parent",     parent->object->id, true);
+
+    pin->name   = ig_obj_attr_get (pin->object, "name");
+    pin->connection   = ig_obj_attr_get (pin->object, "connection");
+    pin->parent = parent;
+
+    g_queue_push_tail (parent->pins, pin);
+
+    return pin;
+}
+
+void ig_pin_free (struct ig_pin *pin)
+{
+    if (pin == NULL) return;
+
+    ig_obj_free (pin->object);
+    g_slice_free (struct ig_pin, pin);
+}
+
+
+/*******************************************************
+ * adjustment data
+ *******************************************************/
+
+struct ig_adjustment *ig_adjustment_new (const char *name, const char *value, struct ig_instance *parent, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+    if (parent == NULL) return NULL;
+    if (value == NULL) return NULL;
+
+    GString *s_id = g_string_new (NULL);
+    s_id = g_string_append (s_id, ig_obj_type_name (IG_OBJ_ADJUSTMENT));
+    s_id = g_string_append (s_id, "::");
+    s_id = g_string_append (s_id, parent->name);
+    s_id = g_string_append (s_id, ".");
+    s_id = g_string_append (s_id, name);
+
+    struct ig_adjustment  *adjustment = g_slice_new (struct ig_adjustment);
+    struct ig_object *obj = ig_obj_new (IG_OBJ_ADJUSTMENT, s_id->str, adjustment, storage);
+    adjustment->object = obj;
+
+    g_string_free (s_id, true);
+
+    ig_obj_attr_set (adjustment->object, "name",   name, true);
+    ig_obj_attr_set (adjustment->object, "value",  value, true);
+    ig_obj_attr_set (adjustment->object, "parent", parent->object->id, true);
+
+    adjustment->name   = ig_obj_attr_get (adjustment->object, "name");
+    adjustment->value  = ig_obj_attr_get (adjustment->object, "value");
+    adjustment->parent = parent;
+
+    g_queue_push_tail (parent->adjustments, adjustment);
+
+    return adjustment;
+}
+
+void ig_adjustment_free (struct ig_adjustment *adjustment)
+{
+    if (adjustment == NULL) return;
+
+    ig_obj_free (adjustment->object);
+    g_slice_free (struct ig_adjustment, adjustment);
+}
+
