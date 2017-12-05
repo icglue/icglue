@@ -144,15 +144,17 @@ void              ig_obj_free (struct ig_object *obj);
 bool              ig_obj_attr_set (struct ig_object *obj, const char *name, const char *value, bool constant);
 const char       *ig_obj_attr_get (struct ig_object *obj, const char *name);
 
-struct ig_port *ig_port_new  (const char *name, enum ig_port_dir dir, struct ig_module *parent, GStringChunk *storage);
-void            ig_port_free (struct ig_port *port);
+struct ig_port   *ig_port_new  (const char *name, enum ig_port_dir dir, struct ig_module *parent, GStringChunk *storage);
+void              ig_port_free (struct ig_port *port);
 
-struct ig_param *ig_param_new  (const char *name, const char *value, bool local, struct ig_module *parent, GStringChunk *storage);
-void             ig_param_free (struct ig_param *param);
+struct ig_param  *ig_param_new  (const char *name, const char *value, bool local, struct ig_module *parent, GStringChunk *storage);
+void              ig_param_free (struct ig_param *param);
 
-struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_type, struct ig_module *parent, GStringChunk *storage);
-void            ig_decl_free (struct ig_decl *decl);
+struct ig_decl   *ig_decl_new (const char *name, const char *assign, bool default_type, struct ig_module *parent, GStringChunk *storage);
+void              ig_decl_free (struct ig_decl *decl);
 
+struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStringChunk *storage);
+void              ig_module_free (struct ig_module *module);
 /* TODO: remaining */
 
 #ifdef __cplusplus

@@ -272,3 +272,65 @@ void ig_decl_free (struct ig_decl *decl)
     g_slice_free (struct ig_decl, decl);
 }
 
+/*******************************************************
+ * module data
+ *******************************************************/
+
+struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+
+    GString *s_id = g_string_new (NULL);
+    s_id = g_string_append (s_id, ig_obj_type_name (IG_OBJ_MODULE));
+    s_id = g_string_append (s_id, "::");
+    s_id = g_string_append (s_id, name);
+
+    struct ig_module *module = g_slice_new (struct ig_module);
+    struct ig_object *obj    = ig_obj_new (IG_OBJ_MODULE, s_id->str, module, storage);
+    module->object = obj;
+
+    g_string_free (s_id, true);
+
+    ig_obj_attr_set (module->object, "name", name, true);
+    ig_obj_attr_set (module->object, "ilm",      (ilm      ? "true" : "false"), true);
+    ig_obj_attr_set (module->object, "resource", (resource ? "true" : "false"), true);
+
+    module->name     = ig_obj_attr_get (module->object, "name");
+    module->ilm      = ilm;
+    module->resource = resource;
+
+    module->params        = g_queue_new ();
+    module->ports         = g_queue_new ();
+    module->mod_instances = g_queue_new ();
+
+    if (resource) {
+        module->decls            = NULL;
+        module->code             = NULL;
+        module->child_instances  = NULL;
+        module->default_instance = NULL;
+    } else {
+        module->decls            = g_queue_new ();
+        module->code             = g_queue_new ();
+        module->child_instances  = g_queue_new ();
+        module->default_instance = NULL; /* TODO */
+    }
+
+    return module;
+}
+
+void ig_module_free (struct ig_module *module)
+{
+    if (module == NULL) return;
+
+    ig_obj_free (module->object);
+
+    if (module->params          != NULL) g_queue_free (module->params);
+    if (module->ports           != NULL) g_queue_free (module->ports);
+    if (module->mod_instances   != NULL) g_queue_free (module->mod_instances);
+    if (module->decls           != NULL) g_queue_free (module->decls);
+    if (module->code            != NULL) g_queue_free (module->code);
+    if (module->child_instances != NULL) g_queue_free (module->child_instances);
+
+    g_slice_free (struct ig_module, module);
+}
+
