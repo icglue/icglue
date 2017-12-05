@@ -129,10 +129,14 @@ struct ig_instance {
     const char       *name;
     struct ig_module *module;
 
+    struct ig_module *parent;
+
     /* instance values */
     GQueue *adjustments; /* data: (struct ig_adjustment *)    */
     GQueue *pins;        /* data: (struct ig_pin *)     */
 };
+
+/* TODO: net */
 
 /*******************************************************
  * Functions
@@ -162,6 +166,8 @@ void                  ig_pin_free (struct ig_pin *pin);
 struct ig_adjustment *ig_adjustment_new (const char *name, const char *value, struct ig_instance *parent, GStringChunk *storage);
 void                  ig_adjustment_free (struct ig_adjustment *adjustment);
 
+struct ig_instance   *ig_instance_new (const char *name, struct ig_module *module, struct ig_module *parent, GStringChunk *storage);
+void                  ig_instance_free (struct ig_instance *instance);
 /* TODO: remaining */
 
 #ifdef __cplusplus

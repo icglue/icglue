@@ -312,7 +312,7 @@ struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStr
         module->decls            = g_queue_new ();
         module->code             = g_queue_new ();
         module->child_instances  = g_queue_new ();
-        module->default_instance = NULL; /* TODO */
+        module->default_instance = ig_instance_new (name, module, NULL, storage);
     }
 
     return module;
@@ -423,4 +423,61 @@ void ig_adjustment_free (struct ig_adjustment *adjustment)
     ig_obj_free (adjustment->object);
     g_slice_free (struct ig_adjustment, adjustment);
 }
+
+
+/*******************************************************
+ * instance data
+ *******************************************************/
+
+struct ig_instance *ig_instance_new (const char *name, struct ig_module *module, struct ig_module *parent, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+    if (module == NULL) return NULL;
+
+    GString *s_id = g_string_new (NULL);
+    s_id = g_string_append (s_id, ig_obj_type_name (IG_OBJ_INSTANCE));
+    s_id = g_string_append (s_id, "::");
+    if (parent != NULL) {
+        s_id = g_string_append (s_id, parent->name);
+        s_id = g_string_append (s_id, ".");
+    }
+    s_id = g_string_append (s_id, name);
+
+    struct ig_instance *instance = g_slice_new (struct ig_instance);
+    struct ig_object   *obj      = ig_obj_new (IG_OBJ_INSTANCE, s_id->str, instance, storage);
+    instance->object = obj;
+
+    g_string_free (s_id, true);
+
+    ig_obj_attr_set (instance->object, "name", name, true);
+    ig_obj_attr_set (instance->object, "module", module->object->id, true);
+    if (parent != NULL) {
+        ig_obj_attr_set (instance->object, "parent", parent->object->id, true);
+
+        g_queue_push_tail (parent->child_instances, instance);
+    }
+    g_queue_push_tail (module->mod_instances, instance);
+
+    instance->name   = ig_obj_attr_get (instance->object, "name");
+    instance->module = module;
+    instance->parent = parent;
+
+    instance->adjustments = g_queue_new ();
+    instance->pins        = g_queue_new ();
+
+    return instance;
+}
+
+void ig_instance_free (struct ig_instance *instance)
+{
+    if (instance == NULL) return;
+
+    ig_obj_free (instance->object);
+
+    if (instance->adjustments != NULL) g_queue_free (instance->adjustments);
+    if (instance->pins        != NULL) g_queue_free (instance->pins);
+
+    g_slice_free (struct ig_instance, instance);
+}
+
 
