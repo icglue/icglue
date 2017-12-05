@@ -150,6 +150,8 @@ void            ig_port_free (struct ig_port *port);
 struct ig_param *ig_param_new  (const char *name, const char *value, bool local, struct ig_module *parent, GStringChunk *storage);
 void             ig_param_free (struct ig_param *param);
 
+struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_type, struct ig_module *parent, GStringChunk *storage);
+void            ig_decl_free (struct ig_decl *decl);
 
 /* TODO: remaining */
 

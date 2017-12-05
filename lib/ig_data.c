@@ -205,6 +205,7 @@ struct ig_param *ig_param_new (const char *name, const char *value, bool local, 
 
     ig_obj_attr_set (param->object, "value",  value, true);
     ig_obj_attr_set (param->object, "name",   name, true);
+    ig_obj_attr_set (param->object, "local",  (local ? "true" : "false"), true);
     ig_obj_attr_set (param->object, "parent", parent->object->id, true);
 
     param->name   = ig_obj_attr_get (param->object, "name");
@@ -223,5 +224,51 @@ void ig_param_free (struct ig_param *param)
 
     ig_obj_free (param->object);
     g_slice_free (struct ig_param, param);
+}
+
+
+/*******************************************************
+ * declaration data
+ *******************************************************/
+
+struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_type, struct ig_module *parent, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+    if (parent == NULL) return NULL;
+
+    GString *s_id = g_string_new (NULL);
+    s_id = g_string_append (s_id, ig_obj_type_name (IG_OBJ_DECLARATION));
+    s_id = g_string_append (s_id, "::");
+    s_id = g_string_append (s_id, parent->name);
+    s_id = g_string_append (s_id, ".");
+    s_id = g_string_append (s_id, name);
+
+    struct ig_decl  *decl = g_slice_new (struct ig_decl);
+    struct ig_object *obj = ig_obj_new (IG_OBJ_DECLARATION, s_id->str, decl, storage);
+    decl->object = obj;
+
+    g_string_free (s_id, true);
+
+    ig_obj_attr_set (decl->object, "name",   name, true);
+    ig_obj_attr_set (decl->object, "parent", parent->object->id, true);
+    ig_obj_attr_set (decl->object, "default_type", (default_type ? "true" : "false"), true);
+    if (assign != NULL) ig_obj_attr_set (decl->object, "assign", assign, true);
+
+    decl->name               = ig_obj_attr_get (decl->object, "name");
+    decl->default_assignment = ig_obj_attr_get (decl->object, "assign");
+    decl->default_type       = default_type;
+    decl->parent             = parent;
+
+    g_queue_push_tail (parent->decls, decl);
+
+    return decl;
+}
+
+void ig_decl_free (struct ig_decl *decl)
+{
+    if (decl == NULL) return;
+
+    ig_obj_free (decl->object);
+    g_slice_free (struct ig_decl, decl);
 }
 
