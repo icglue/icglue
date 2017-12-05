@@ -44,7 +44,8 @@ static const char *ig_obj_type_name (enum ig_object_type type)
     switch (type) {
         case IG_OBJ_PORT:        return "port";
         case IG_OBJ_PIN:         return "pin";
-        case IG_OBJ_PARAM:       return "parameter";
+        case IG_OBJ_PARAMETER:   return "parameter";
+        case IG_OBJ_ADJUSTMENT:  return "adjustment";
         case IG_OBJ_DECLARATION: return "declaration";
         case IG_OBJ_MODULE:      return "module";
         case IG_OBJ_INSTANCE:    return "instance";
@@ -154,17 +155,17 @@ struct ig_port *ig_port_new (const char *name, enum ig_port_dir dir, struct ig_m
 
     struct ig_port  *port = g_slice_new (struct ig_port);
     struct ig_object *obj = ig_obj_new (IG_OBJ_PORT, s_id->str, port, storage);
+    port->object = obj;
 
     g_string_free (s_id, true);
-
-    port->object = obj;
-    port->name   = g_string_chunk_insert_const (obj->string_storage, name);
-    port->dir    = dir;
-    port->parent = parent;
 
     ig_obj_attr_set (port->object, "direction", ig_port_dir_name (dir), true);
     ig_obj_attr_set (port->object, "name",      name, true);
     ig_obj_attr_set (port->object, "parent",    parent->object->id, true);
+
+    port->name   = ig_obj_attr_get (port->object, "name");
+    port->dir    = dir;
+    port->parent = parent;
 
     g_queue_push_tail (parent->ports, port);
 
@@ -177,5 +178,50 @@ void ig_port_free (struct ig_port *port)
 
     ig_obj_free (port->object);
     g_slice_free (struct ig_port, port);
+}
+
+/*******************************************************
+ * parameter data
+ *******************************************************/
+
+struct ig_param *ig_param_new (const char *name, const char *value, bool local, struct ig_module *parent, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+    if (parent == NULL) return NULL;
+    if (value == NULL) return NULL;
+
+    GString *s_id = g_string_new (NULL);
+    s_id = g_string_append (s_id, ig_obj_type_name (IG_OBJ_PARAMETER));
+    s_id = g_string_append (s_id, "::");
+    s_id = g_string_append (s_id, parent->name);
+    s_id = g_string_append (s_id, ".");
+    s_id = g_string_append (s_id, name);
+
+    struct ig_param  *param = g_slice_new (struct ig_param);
+    struct ig_object *obj = ig_obj_new (IG_OBJ_PARAMETER, s_id->str, param, storage);
+    param->object = obj;
+
+    g_string_free (s_id, true);
+
+    ig_obj_attr_set (param->object, "value",  value, true);
+    ig_obj_attr_set (param->object, "name",   name, true);
+    ig_obj_attr_set (param->object, "parent", parent->object->id, true);
+
+    param->name   = ig_obj_attr_get (param->object, "name");
+    param->value  = ig_obj_attr_get (param->object, "value");
+    param->local  = local;
+    param->parent = parent;
+
+    g_queue_push_tail (parent->params, param);
+
+    return param;
+}
+
+void ig_param_free (struct ig_param *param)
+{
+    if (param == NULL) return;
+
+    ig_obj_free (param->object);
+    g_slice_free (struct ig_param, param);
 }
 

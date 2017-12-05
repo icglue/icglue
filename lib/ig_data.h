@@ -24,7 +24,8 @@ extern "C" {
 enum ig_object_type {
     IG_OBJ_PORT,
     IG_OBJ_PIN,
-    IG_OBJ_PARAM,
+    IG_OBJ_PARAMETER,
+    IG_OBJ_ADJUSTMENT,
     IG_OBJ_DECLARATION,
     IG_OBJ_MODULE,
     IG_OBJ_INSTANCE,
@@ -67,6 +68,8 @@ struct ig_param {
     const char *name;
     const char *value;
     bool        local;
+
+    struct ig_module *parent;
 };
 
 struct ig_decl {
@@ -78,6 +81,8 @@ struct ig_decl {
 
     /* NULL or value this is assigned to */
     const char *default_assignment;
+
+    struct ig_module *parent;
 };
 
 struct ig_module {
@@ -105,6 +110,17 @@ struct ig_pin {
 
     const char *name;
     const char *net;
+
+    struct ig_instance *parent;
+};
+
+struct ig_adjustment {
+    struct ig_object *object;
+
+    const char *name;
+    const char *value;
+
+    struct ig_instance *parent;
 };
 
 struct ig_instance {
@@ -115,7 +131,7 @@ struct ig_instance {
 
     /* instance values */
     GQueue *params; /* data: (struct ig_param *)    */
-    GQueue *ports;  /* data: (struct ig_port *)     */
+    GQueue *ports;  /* data: (struct ig_pin *)     */
 };
 
 /*******************************************************
@@ -130,6 +146,9 @@ const char       *ig_obj_attr_get (struct ig_object *obj, const char *name);
 
 struct ig_port *ig_port_new  (const char *name, enum ig_port_dir dir, struct ig_module *parent, GStringChunk *storage);
 void            ig_port_free (struct ig_port *port);
+
+struct ig_param *ig_param_new  (const char *name, const char *value, bool local, struct ig_module *parent, GStringChunk *storage);
+void             ig_param_free (struct ig_param *param);
 
 
 /* TODO: remaining */
