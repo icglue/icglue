@@ -9,6 +9,7 @@ LIBRARY=icglue.so
 SOURCES= \
 	icglue.c \
 	ig_data.c \
+	ig_data_helpers.c \
 	ig_lib.c \
 	ig_tcl.c \
 
