@@ -24,6 +24,9 @@ struct ig_lib_db {
     GHashTable *modules_by_name; /* key: (const char *) -> value: (struct ig_module *) */
     GHashTable *modules_by_id;   /* key: (const char *) -> value: (struct ig_module *) */
 
+    GHashTable *instances_by_name; /* key: (const char *) -> value: (struct ig_module *) */
+    GHashTable *instances_by_id;   /* key: (const char *) -> value: (struct ig_module *) */
+
     /* TODO: remaining */
 
     GStringChunk *str_chunks;
@@ -32,7 +35,8 @@ struct ig_lib_db {
 struct ig_lib_db *ig_lib_db_new  ();
 void              ig_lib_db_free (struct ig_lib_db *db);
 
-struct ig_module *ig_lib_add_module (struct ig_lib_db *db, const char *name, bool ilm, bool resource);
+struct ig_module   *ig_lib_add_module   (struct ig_lib_db *db, const char *name, bool ilm, bool resource);
+struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name, struct ig_module *type, struct ig_module *parent);
 
 
 #ifdef __cplusplus
