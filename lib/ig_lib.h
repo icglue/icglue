@@ -19,9 +19,10 @@ extern "C" {
 #endif
 
 struct ig_lib_db {
-    GHashTable *objects; /* key: (const char *) -> value: (struct ig_object *) */
+    GHashTable *objects_by_id;   /* key: (const char *) -> value: (struct ig_object *) */
 
-    GHashTable *modules; /* key: (const char *) -> value: (struct ig_module *) */
+    GHashTable *modules_by_name; /* key: (const char *) -> value: (struct ig_module *) */
+    GHashTable *modules_by_id;   /* key: (const char *) -> value: (struct ig_module *) */
 
     /* TODO: remaining */
 

@@ -10,6 +10,7 @@ static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, 
 static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_modules   (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 
 void ig_add_tcl_commands (Tcl_Interp *interp)
@@ -21,6 +22,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, "create_module", ig_tclc_create_module, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "set_attribute", ig_tclc_set_attribute, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "get_attribute", ig_tclc_get_attribute, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "get_modules",   ig_tclc_get_modules,   lib_db, NULL);
 
 }
 
@@ -164,7 +166,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
         return TCL_ERROR;
     }
 
-    struct ig_object *obj = (struct ig_object *) g_hash_table_lookup (db->objects, obj_name);
+    struct ig_object *obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, obj_name);
     if (obj == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: unknown object", -1));
         g_slist_free (attr_list);
@@ -234,7 +236,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
         return TCL_ERROR;
     }
 
-    struct ig_object *obj = (struct ig_object *) g_hash_table_lookup (db->objects, obj_name);
+    struct ig_object *obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, obj_name);
     if (obj == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: unknown object", -1));
         g_slist_free (attr_list);
@@ -277,3 +279,79 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     return TCL_OK;
 }
+
+static int ig_tclc_get_modules (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    int int_true  = true;
+    int int_false = false;
+
+    int     all        = int_false;
+    int     check      = int_false;
+    char   *mod_name   = NULL;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_CONSTANT, "-all",          GINT_TO_POINTER (int_true), (void *) &all,      "return all modules", NULL},
+        {TCL_ARGV_CONSTANT, "-check-exists", GINT_TO_POINTER (int_true), (void *) &check,    "check for module, return true if module exists", NULL},
+        {TCL_ARGV_STRING,   "-name",         NULL,                       (void *) &mod_name, "module name", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) return result;
+
+    if (all && (mod_name != NULL)) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to specify name and -all", -1));
+        return TCL_ERROR;
+    }
+
+    if ((mod_name == NULL) && check) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: -check-exists requires -name", -1));
+        return TCL_ERROR;
+    }
+
+    if (mod_name != NULL) {
+        struct ig_module *mod = (struct ig_module *) g_hash_table_lookup (db->modules_by_name, mod_name);
+
+        if (check) {
+            if (mod == NULL) {
+                Tcl_SetObjResult (interp, Tcl_NewBooleanObj (false));
+            } else {
+                Tcl_SetObjResult (interp, Tcl_NewBooleanObj (true));
+            }
+            return TCL_OK;
+        }
+
+        if (mod == NULL) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no module found", -1));
+            return TCL_ERROR;
+        }
+
+        Tcl_SetObjResult (interp, Tcl_NewStringObj (mod->object->id, -1));
+        return TCL_OK;
+    }
+
+    /* list */
+    GList *mod_list = g_hash_table_get_values (db->modules_by_id);
+    Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
+    for (GList *li = mod_list; li != NULL; li = li->next) {
+        struct ig_module *i_mod = (struct ig_module *) li->data;
+
+        Tcl_Obj *mod_obj = Tcl_NewStringObj (i_mod->object->id, -1);
+        Tcl_ListObjAppendElement (interp, retval, mod_obj);
+    }
+
+    Tcl_SetObjResult (interp, retval);
+    g_list_free (mod_list);
+
+    return TCL_OK;
+}
+
