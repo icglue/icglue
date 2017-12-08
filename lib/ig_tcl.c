@@ -9,6 +9,7 @@ static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, 
 /* tcl proc declarations */
 static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 
 void ig_add_tcl_commands (Tcl_Interp *interp)
@@ -19,6 +20,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
 
     Tcl_CreateObjCommand (interp, "create_module", ig_tclc_create_module, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "set_attribute", ig_tclc_set_attribute, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "get_attribute", ig_tclc_get_attribute, lib_db, NULL);
 
 }
 
@@ -187,5 +189,91 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     Tcl_SetObjResult (interp, Tcl_NewStringObj ("", -1));
     g_slist_free (attr_list);
+    return TCL_OK;
+}
+
+static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
+    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    char   *obj_name   = NULL;
+    char   *attr_name  = NULL;
+    GSList *attr_list  = NULL;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_STRING,   "-object",      NULL, (void *) &obj_name,   "object id", NULL},
+        {TCL_ARGV_STRING,   "-attribute",   NULL, (void *) &attr_name,  "attribute name", NULL},
+
+        {TCL_ARGV_FUNC,     "-attributes",  (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void*) &attr_list, "attributes as list of form <name> <value> <name2> <value2> ...", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) return result;
+
+    if (obj_name == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no object specified", -1));
+        g_slist_free (attr_list);
+        return TCL_ERROR;
+    }
+
+    if ((attr_list == NULL) && (attr_name == NULL)) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no attribute specified", -1));
+        return TCL_ERROR;
+    }
+
+    if ((attr_list != NULL) && (attr_name != NULL)) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to specify single attribute and attribute list", -1));
+        g_slist_free (attr_list);
+        return TCL_ERROR;
+    }
+
+    struct ig_object *obj = (struct ig_object *) g_hash_table_lookup (db->objects, obj_name);
+    if (obj == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: unknown object", -1));
+        g_slist_free (attr_list);
+        return TCL_ERROR;
+    }
+
+    if (attr_name != NULL) {
+        const char *val = ig_obj_attr_get (obj, attr_name);
+        if (val == NULL) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not get attribute", -1));
+            return TCL_ERROR;
+        }
+
+        Tcl_SetObjResult (interp, Tcl_NewStringObj (val, -1));
+        return TCL_OK;
+    }
+
+    /* check */
+    for (GSList *li = attr_list; li != NULL; li = li->next) {
+        char *attr = (char *) li->data;
+        if (ig_obj_attr_get (obj, attr) == NULL) {
+            g_slist_free (attr_list);
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not get attribute", -1));
+            return TCL_ERROR;
+        }
+    }
+
+    /* result list */
+    Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
+    for (GSList *li = attr_list; li != NULL; li = li->next) {
+        char *attr = (char *) li->data;
+        const char *val = ig_obj_attr_get (obj, attr);
+
+        Tcl_Obj *val_obj = Tcl_NewStringObj (val, -1);
+        Tcl_ListObjAppendElement (interp, retval, val_obj);
+    }
+
+    Tcl_SetObjResult (interp, retval);
+    g_slist_free (attr_list);
+
     return TCL_OK;
 }
