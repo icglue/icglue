@@ -1,9 +1,14 @@
 #include <tcl.h>
 #include <stdio.h>
 
+#include "ig_tcl.h"
+
 /* for normal interpreters */
 int Icglue_Init (Tcl_Interp *interp) {
-    printf ("Hello World!\n");
+    printf ("ICGlue v0.0.1\n");
+
+    ig_add_tcl_commands (interp);
+
     return TCL_OK;
 }
 

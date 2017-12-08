@@ -8,6 +8,7 @@
  +---------------------------*/
 
 #include "ig_data.h"
+#include <stdio.h>
 
 static struct ig_attribute * ig_attribtue_new (const char *value, bool constant);
 static inline void ig_attribute_free (struct ig_attribute *attr);
@@ -77,7 +78,7 @@ struct ig_object *ig_obj_new (enum ig_object_type type, const char *id, gpointer
     ig_obj_attr_set (result, "type", ig_obj_type_name (type), true);
     ig_obj_attr_set (result, "id",   id, true);
 
-    result->id = ig_obj_attr_get (obj, "id");
+    result->id = ig_obj_attr_get (result, "id");
 
     return result;
 }

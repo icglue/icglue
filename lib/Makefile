@@ -9,6 +9,8 @@ LIBRARY=icglue.so
 SOURCES= \
 	icglue.c \
 	ig_data.c \
+	ig_lib.c \
+	ig_tcl.c \
 
 ############################################################################
 # libs to include, executable, linker
