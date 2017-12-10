@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <string.h>
 
+/* static functions */
+static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connection_info *cinfo);
+
+/* header functions */
 struct ig_lib_db *ig_lib_db_new ()
 {
     struct ig_lib_db *result = g_slice_new (struct ig_lib_db);
@@ -102,3 +106,110 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
     return inst;
 }
 
+
+bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets)
+{
+    GList *hier_start_list = NULL;
+
+    bool error = false;
+    source->dir = IG_LCDIR_UP;
+    GList *source_hier = ig_lib_gen_hierarchy (db, source);
+    if (source_hier == NULL) {
+        error = true;
+    } else {
+        hier_start_list = g_list_prepend (hier_start_list, source_hier);
+    }
+    for (GList *li = targets; li != NULL; li = li->next) {
+        struct ig_lib_connection_info *start = (struct ig_lib_connection_info *) li->data;
+
+        GList *target_hier = ig_lib_gen_hierarchy (db, start);
+        if (target_hier == NULL) {
+            error = true;
+        } else {
+            hier_start_list = g_list_prepend (hier_start_list, target_hier);
+        }
+    }
+
+    g_list_free (targets);
+
+    bool result = true;
+
+    if (error) {
+        result = false;
+        goto l_ig_lib_connection_unidir_final;
+    }
+
+    /* TODO:
+     * - merge starts -> build tree
+     * - create ports/pins
+     */
+
+l_ig_lib_connection_unidir_final:
+    for (GList *li = hier_start_list; li != NULL; li = li->next) {
+        GList *hier = (GList *) li->data;
+        for (GList *lj = hier; lj != NULL; lj = lj->next) {
+            struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) lj->data;
+            ig_lib_connection_info_free (cinfo);
+        }
+        g_list_free (hier);
+    }
+    g_list_free (hier_start_list);
+
+    return result;
+}
+
+
+static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connection_info *cinfo)
+{
+    GList *result = NULL;
+
+    while (true) {
+        if (cinfo == NULL) return result;
+
+        if (cinfo->obj->type == IG_OBJ_INSTANCE) {
+            result = g_list_prepend (result, cinfo);
+            struct ig_instance *inst = (struct ig_instance *) cinfo->obj->obj;
+            if (inst->parent == NULL) return result;
+            cinfo = ig_lib_connection_info_new (db->str_chunks, cinfo->obj, NULL, cinfo->dir);
+            continue;
+        } else if (cinfo->obj->type == IG_OBJ_MODULE) {
+            result = g_list_prepend (result, cinfo);
+            struct ig_module *mod = (struct ig_module *) cinfo->obj->obj;
+            if (mod->default_instance == NULL) return result;
+            cinfo = ig_lib_connection_info_new (db->str_chunks, cinfo->obj, NULL, cinfo->dir);
+            continue;
+        } else {
+            fprintf (stderr, "Internal Error: object of invalid type in module/instance hierarchy\n");
+            ig_lib_connection_info_free (cinfo);
+            for (GList *li = result; li != NULL; li = li->next) {
+                ig_lib_connection_info_free ((struct ig_lib_connection_info *) li->data);
+            }
+            g_list_free (result);
+            return NULL;
+        }
+    }
+}
+
+struct ig_lib_connection_info *ig_lib_connection_info_new (GStringChunk *str_chunks, struct ig_object *obj, const char *local_name, enum ig_lib_connection_dir dir)
+{
+    if (obj == NULL) return NULL;
+    if ((str_chunks == NULL) && (local_name != NULL)) return NULL;
+
+    struct ig_lib_connection_info *result = g_slice_new (struct ig_lib_connection_info);
+
+    result->obj = obj;
+    result->dir = dir;
+    if (local_name == NULL) {
+        result->local_name = NULL;
+    } else {
+        result->local_name = g_string_chunk_insert_const (str_chunks, local_name);
+    }
+
+    return result;
+}
+
+void ig_lib_connection_info_free (struct ig_lib_connection_info *cinfo)
+{
+    if (cinfo == NULL) return;
+    g_slice_free (struct ig_lib_connection_info, cinfo);
+}

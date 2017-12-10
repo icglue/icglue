@@ -32,11 +32,29 @@ struct ig_lib_db {
     GStringChunk *str_chunks;
 };
 
+enum ig_lib_connection_dir {
+    IG_LCDIR_UP,
+    IG_LCDIR_DOWn,
+    IG_LCDIR_BIDIR,
+    IG_LCDIR_DEFAULT
+};
+
+struct ig_lib_connection_info {
+    struct ig_object *obj;
+    const char *local_name;
+    enum ig_lib_connection_dir dir;
+};
+
 struct ig_lib_db *ig_lib_db_new  ();
 void              ig_lib_db_free (struct ig_lib_db *db);
 
 struct ig_module   *ig_lib_add_module   (struct ig_lib_db *db, const char *name, bool ilm, bool resource);
 struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name, struct ig_module *type, struct ig_module *parent);
+
+struct ig_lib_connection_info *ig_lib_connection_info_new (GStringChunk *str_chunks, struct ig_object *obj, const char *local_name, enum ig_lib_connection_dir dir);
+void                           ig_lib_connection_info_free (struct ig_lib_connection_info *cinfo);
+
+bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets);
 
 
 #ifdef __cplusplus
