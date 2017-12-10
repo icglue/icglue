@@ -5,6 +5,7 @@
 
 /* static functions */
 static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connection_info *cinfo);
+static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_list, const char *signame);
 
 /* header functions */
 struct ig_lib_db *ig_lib_db_new ()
@@ -136,15 +137,18 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
 
     if (error) {
         result = false;
-        goto l_ig_lib_connection_unidir_final;
+        goto l_ig_lib_connection_unidir_final_free_hierlist;
     }
 
+    /* create hierarchy tree */
+    GNode *hier_tree = ig_lib_merge_hierarchy_list (db, hier_start_list, signame);
+
     /* TODO:
-     * - merge starts -> build tree
      * - create ports/pins
+     * - free tree
      */
 
-l_ig_lib_connection_unidir_final:
+l_ig_lib_connection_unidir_final_free_hierlist:
     for (GList *li = hier_start_list; li != NULL; li = li->next) {
         GList *hier = (GList *) li->data;
         for (GList *lj = hier; lj != NULL; lj = lj->next) {
@@ -154,6 +158,88 @@ l_ig_lib_connection_unidir_final:
         g_list_free (hier);
     }
     g_list_free (hier_start_list);
+
+    return result;
+}
+
+static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_list, const char *signame)
+{
+    if (db == NULL) return NULL;
+    if (hier_list == NULL) return NULL;
+
+    GNode *result = NULL;
+
+    /* check for equality */
+    struct ig_lib_connection_info *cinfo_first = (struct ig_lib_connection_info *) hier_list->data;
+
+    struct ig_lib_connection_info *cinfo_node = ig_lib_connection_info_new (db->str_chunks, cinfo_first->obj, cinfo_first->local_name, cinfo_first->dir);
+    if (cinfo_node == NULL) return NULL;
+
+    GList *successor_list = NULL;
+
+    for (GList *li = hier_list->next; li != NULL; li = li->next) {
+        GList *lhier = (GList *) li->data;
+        if (lhier == NULL) continue;
+        struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) lhier->data;
+
+        /* object equality */
+        if (i_cinfo->obj != cinfo_node->obj) {
+            ig_lib_connection_info_free (cinfo_node);
+            fprintf (stderr, "Error: hierarchy has no common start\n");
+            g_list_free (successor_list);
+            return NULL;
+        }
+
+        /* local name? */
+        if (i_cinfo->local_name != NULL) cinfo_node->local_name = i_cinfo->local_name;
+
+        /* dir merge */
+        if (cinfo_node->dir == IG_LCDIR_DEFAULT) {
+            cinfo_node->dir = i_cinfo->dir;
+        } else if ((i_cinfo->dir != IG_LCDIR_DEFAULT) && (i_cinfo->dir != cinfo_node->dir)) {
+            fprintf (stderr, "Warning: merging ports to bidirectional\n");
+            cinfo_node->dir = IG_LCDIR_BIDIR;
+        }
+
+        if (lhier->next != NULL) {
+            successor_list = g_list_prepend (successor_list, lhier->next);
+        }
+    }
+
+    if (cinfo_node->local_name == NULL) cinfo_node->local_name = signame;
+    result = g_node_new (cinfo_node);
+
+    /* generate children */
+    while (successor_list != NULL) {
+        /* pick one */
+        GList *equal_list = successor_list;
+        GList *ref_hier_list = (GList *) equal_list->data;
+        struct ig_lib_connection_info *ref_cinfo = (struct ig_lib_connection_info *) ref_hier_list->data;
+
+        successor_list = g_list_remove_link (successor_list, equal_list);
+
+        GList *li = successor_list;
+        while (li != NULL) {
+            GList *i_hier_list = (GList *) equal_list->data;
+            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) i_hier_list->data;
+
+            if (i_cinfo->obj == ref_cinfo->obj) {
+                /* part of equal list */
+                GList *li_next = li->next;
+                successor_list = g_list_remove_link (successor_list, li);
+                equal_list = g_list_concat (equal_list, li);
+                li = li_next;
+            } else {
+                li = li->next;
+            }
+        }
+
+        GNode *child_node = ig_lib_merge_hierarchy_list (db, equal_list, cinfo_node->local_name);
+
+        child_node = g_node_insert (result, -1, child_node);
+
+        g_list_free (equal_list);
+    }
 
     return result;
 }
