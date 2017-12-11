@@ -185,7 +185,7 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
             printf ("-?- ");
         }
 
-        printf ("%s:%s\n", i_info->obj->id, i_info->local_name);
+        printf ("%s.%s\n", i_info->obj->id, i_info->local_name);
 
         /* modify stack and continue */
         if (g_node_first_child (i_node) != NULL) {
