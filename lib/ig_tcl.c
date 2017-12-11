@@ -13,6 +13,7 @@ static int ig_tclc_set_attribute   (ClientData clientdata, Tcl_Interp *interp, i
 static int ig_tclc_get_attribute   (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_get_modules     (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_get_instances   (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_connect         (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 
 void ig_add_tcl_commands (Tcl_Interp *interp)
@@ -27,6 +28,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, "get_attribute",   ig_tclc_get_attribute,   lib_db, NULL);
     Tcl_CreateObjCommand (interp, "get_modules",     ig_tclc_get_modules,     lib_db, NULL);
     Tcl_CreateObjCommand (interp, "get_instances",   ig_tclc_get_instances,   lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "connect",         ig_tclc_connect,         lib_db, NULL);
 
 }
 
@@ -497,3 +499,79 @@ static int ig_tclc_get_instances (ClientData clientdata, Tcl_Interp *interp, int
 
     return TCL_OK;
 }
+
+static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    char   *from    = NULL;
+    char   *name    = NULL;
+    GSList *to_list = NULL;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_STRING,   "-signal-name", NULL,                                                      (void *) &name,    "signal (prefix) name", NULL},
+        {TCL_ARGV_STRING,   "-from",        NULL,                                                      (void *) &from,    "start of signal (unidirectional)", NULL},
+        {TCL_ARGV_FUNC,     "-to",          (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void *) &to_list, "list of signal endpoints", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) goto ig_tclc_connect_exit;
+
+    if (name == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: signal name is required", -1));
+        result = TCL_ERROR;
+    }
+    if (from == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: signal start (-from) is required", -1));
+        result = TCL_ERROR;
+    }
+
+    if (result != TCL_OK) goto ig_tclc_connect_exit;
+
+    /* check */
+    if (!g_hash_table_contains (db->objects_by_id, from)) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid object specified", -1));
+        result = TCL_ERROR;
+    }
+    for (GSList *li = to_list; li != NULL; li = li->next) {
+        if (!g_hash_table_contains (db->objects_by_id, li->data)) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid object specified", -1));
+            result = TCL_ERROR;
+            break;
+        }
+    }
+
+    /* TODO: local individual port names... */
+
+    if (result != TCL_OK) goto ig_tclc_connect_exit;
+
+    struct ig_object *src_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, from);
+    struct ig_lib_connection_info *src = ig_lib_connection_info_new (db->str_chunks, src_obj, NULL, IG_LCDIR_UP);
+    GList *trg_list = NULL;
+    for (GSList *li = to_list; li != NULL; li = li->next) {
+        struct ig_object *trg_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, li->data);
+        struct ig_lib_connection_info *trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, NULL, IG_LCDIR_DEFAULT);
+        trg_list = g_list_prepend (trg_list, trg);
+    }
+    trg_list = g_list_reverse (trg_list);
+
+    //fprintf (stderr, "DEBUG: starting connection...\n");
+    if (!ig_lib_connection_unidir (db, name, src, trg_list)) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not generate connection...", -1));
+        result = TCL_ERROR;
+    }
+
+ig_tclc_connect_exit:
+    g_slist_free (to_list);
+
+    return result;
+}
+

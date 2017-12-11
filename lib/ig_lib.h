@@ -34,7 +34,7 @@ struct ig_lib_db {
 
 enum ig_lib_connection_dir {
     IG_LCDIR_UP,
-    IG_LCDIR_DOWn,
+    IG_LCDIR_DOWN,
     IG_LCDIR_BIDIR,
     IG_LCDIR_DEFAULT
 };

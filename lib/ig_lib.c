@@ -112,23 +112,28 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
 {
     GList *hier_start_list = NULL;
 
+    //fprintf (stderr, "DEBUG: creating individual hierarchies...\n");
     bool error = false;
     source->dir = IG_LCDIR_UP;
+    //fprintf (stderr, "DEBUG: creating startpoint hierarchy...\n");
     GList *source_hier = ig_lib_gen_hierarchy (db, source);
     if (source_hier == NULL) {
         error = true;
     } else {
         hier_start_list = g_list_prepend (hier_start_list, source_hier);
     }
+    //fprintf (stderr, "DEBUG: startpoint hierarchy depth: %d\n", g_list_length (source_hier));
     for (GList *li = targets; li != NULL; li = li->next) {
         struct ig_lib_connection_info *start = (struct ig_lib_connection_info *) li->data;
 
+        //fprintf (stderr, "DEBUG: creating targetpoint hierarchy...\n");
         GList *target_hier = ig_lib_gen_hierarchy (db, start);
         if (target_hier == NULL) {
             error = true;
         } else {
             hier_start_list = g_list_prepend (hier_start_list, target_hier);
         }
+        //fprintf (stderr, "DEBUG: targetpoint hierarchy depth: %d\n", g_list_length (target_hier));
     }
 
     g_list_free (targets);
@@ -140,8 +145,71 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
         goto l_ig_lib_connection_unidir_final_free_hierlist;
     }
 
+    //fprintf (stderr, "DEBUG: merging to hierarchy tree...\n");
     /* create hierarchy tree */
     GNode *hier_tree = ig_lib_merge_hierarchy_list (db, hier_start_list, signame);
+
+    if (hier_tree == NULL) {
+        result = false;
+        goto l_ig_lib_connection_unidir_final_free_hierlist;
+    }
+
+    //fprintf (stderr, "DEBUG: printing hierarchy tree...\n");
+    /* debug: printout */
+    GSList *pr_stack = NULL;
+    int pr_indent = 0;
+    pr_stack = g_slist_prepend (pr_stack, hier_tree);
+
+    while (pr_stack != NULL) {
+        GNode *i_node = (GNode *) pr_stack->data;
+        //fprintf (stderr, "DEBUG: current node: depth=%d, n_children=%d\n", g_node_depth (i_node), g_node_n_children (i_node));
+        struct ig_lib_connection_info *i_info = (struct ig_lib_connection_info *) i_node->data;
+
+        /* print node */
+        printf ("DEBUG: ");
+        for (int i = 0; i < pr_indent-1; i++) {
+            printf (" | ");
+        }
+        if (pr_indent > 0) {
+            printf (" +-");
+        }
+        printf ("-*-");
+
+        if (i_info->dir == IG_LCDIR_UP) {
+            printf ("<-- ");
+        } else if (i_info->dir == IG_LCDIR_BIDIR) {
+            printf ("<-> ");
+        } else if (i_info->dir == IG_LCDIR_DOWN) {
+            printf ("--> ");
+        } else {
+            printf ("-?- ");
+        }
+
+        printf ("%s:%s\n", i_info->obj->id, i_info->local_name);
+
+        /* modify stack and continue */
+        if (g_node_first_child (i_node) != NULL) {
+            //fprintf (stderr, "DEBUG: node has child...\n");
+            pr_indent++;
+            pr_stack = g_slist_prepend (pr_stack, g_node_first_child (i_node));
+            continue;
+        }
+
+        while (pr_stack != NULL) {
+            i_node = (GNode *) pr_stack->data;
+            if (g_node_next_sibling (i_node) != NULL) {
+                //fprintf (stderr, "DEBUG: node has sibling...\n");
+                pr_stack->data = g_node_next_sibling (i_node);
+                break;
+            }
+            //fprintf (stderr, "DEBUG: node is last one in subhierarchy...\n");
+            pr_indent--;
+            GSList *temp = pr_stack;
+            pr_stack = g_slist_remove_link (pr_stack, temp);
+            g_slist_free (temp);
+        }
+    }
+
 
     /* TODO:
      * - create ports/pins
@@ -167,25 +235,33 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
     if (db == NULL) return NULL;
     if (hier_list == NULL) return NULL;
 
+    //fprintf (stderr, "DEBUG: merging a hierarchy level...\n");
+
     GNode *result = NULL;
 
     /* check for equality */
-    struct ig_lib_connection_info *cinfo_first = (struct ig_lib_connection_info *) hier_list->data;
+    GList *lhier_first = (GList *) hier_list->data;
+    struct ig_lib_connection_info *cinfo_first = (struct ig_lib_connection_info *) lhier_first->data;
 
     struct ig_lib_connection_info *cinfo_node = ig_lib_connection_info_new (db->str_chunks, cinfo_first->obj, cinfo_first->local_name, cinfo_first->dir);
     if (cinfo_node == NULL) return NULL;
+    //fprintf (stderr, "DEBUG: reference node: %s\n", cinfo_first->obj->id);
 
     GList *successor_list = NULL;
+    if (lhier_first->next != NULL) {
+        successor_list = g_list_prepend (successor_list, lhier_first->next);
+    }
 
     for (GList *li = hier_list->next; li != NULL; li = li->next) {
         GList *lhier = (GList *) li->data;
         if (lhier == NULL) continue;
         struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) lhier->data;
+        //fprintf (stderr, "DEBUG: current node: %s\n", i_cinfo->obj->id);
 
         /* object equality */
         if (i_cinfo->obj != cinfo_node->obj) {
             ig_lib_connection_info_free (cinfo_node);
-            fprintf (stderr, "Error: hierarchy has no common start\n");
+            fprintf (stderr, "Error: hierarchy has no common start (%s and %s)\n", i_cinfo->obj->id, cinfo_node->obj->id);
             g_list_free (successor_list);
             return NULL;
         }
@@ -209,18 +285,20 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
     if (cinfo_node->local_name == NULL) cinfo_node->local_name = signame;
     result = g_node_new (cinfo_node);
 
+    //fprintf (stderr, "DEBUG: generating subhierarchies (successor_list size is %d)...\n", g_list_length (successor_list));
     /* generate children */
     while (successor_list != NULL) {
         /* pick one */
         GList *equal_list = successor_list;
         GList *ref_hier_list = (GList *) equal_list->data;
         struct ig_lib_connection_info *ref_cinfo = (struct ig_lib_connection_info *) ref_hier_list->data;
+        //fprintf (stderr, "DEBUG: current node: %s\n", ref_cinfo->obj->id);
 
         successor_list = g_list_remove_link (successor_list, equal_list);
 
         GList *li = successor_list;
         while (li != NULL) {
-            GList *i_hier_list = (GList *) equal_list->data;
+            GList *i_hier_list = (GList *) li->data;
             struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) i_hier_list->data;
 
             if (i_cinfo->obj == ref_cinfo->obj) {
@@ -236,7 +314,7 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
 
         GNode *child_node = ig_lib_merge_hierarchy_list (db, equal_list, cinfo_node->local_name);
 
-        child_node = g_node_insert (result, -1, child_node);
+        child_node = g_node_insert (result, 0, child_node);
 
         g_list_free (equal_list);
     }
@@ -249,20 +327,23 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
 {
     GList *result = NULL;
 
+    //fprintf (stderr, "DEBUG: creating hierarchy list...\n");
     while (true) {
         if (cinfo == NULL) return result;
+
+        //fprintf (stderr, "DEBUG: hierarchy element: %s\n", cinfo->obj->id);
 
         if (cinfo->obj->type == IG_OBJ_INSTANCE) {
             result = g_list_prepend (result, cinfo);
             struct ig_instance *inst = (struct ig_instance *) cinfo->obj->obj;
             if (inst->parent == NULL) return result;
-            cinfo = ig_lib_connection_info_new (db->str_chunks, cinfo->obj, NULL, cinfo->dir);
+            cinfo = ig_lib_connection_info_new (db->str_chunks, inst->parent->object, NULL, cinfo->dir);
             continue;
         } else if (cinfo->obj->type == IG_OBJ_MODULE) {
             result = g_list_prepend (result, cinfo);
             struct ig_module *mod = (struct ig_module *) cinfo->obj->obj;
             if (mod->default_instance == NULL) return result;
-            cinfo = ig_lib_connection_info_new (db->str_chunks, cinfo->obj, NULL, cinfo->dir);
+            cinfo = ig_lib_connection_info_new (db->str_chunks, mod->default_instance->object, NULL, cinfo->dir);
             continue;
         } else {
             fprintf (stderr, "Internal Error: object of invalid type in module/instance hierarchy\n");
