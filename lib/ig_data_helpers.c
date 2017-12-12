@@ -1,4 +1,5 @@
 #include "ig_data_helpers.h"
+#include "logger.h"
 
 #include <stdio.h>
 
@@ -9,7 +10,7 @@ bool ig_obj_attr_set_from_gslist (struct ig_object *obj, GSList *list)
     bool result = true;
 
     if (g_slist_length (list) % 2 == 1) {
-        fprintf (stderr, "Error: need a value for every attribute in attribute list\n");
+        log_error ("OStAt", "need a value for every attribute in attribute list");
         return false;
     }
 
@@ -19,7 +20,7 @@ bool ig_obj_attr_set_from_gslist (struct ig_object *obj, GSList *list)
         char *val  = (char *) li->data;
 
         if (!ig_obj_attr_set (obj, name, val, false)) {
-            fprintf (stderr, "Error: could not set attribute %s\n", name);
+            log_error ("OStAt", "could not set attribute %s", name);
             result = false;
         }
     }

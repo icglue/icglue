@@ -2,6 +2,7 @@
 #include "ig_data_helpers.h"
 #include "ig_lib.h"
 #include "ig_tcl.h"
+#include "logger.h"
 
 /* Tcl helper function for parsing lists in GSLists */
 static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, void *dest_ptr);
@@ -563,7 +564,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     }
     trg_list = g_list_reverse (trg_list);
 
-    //fprintf (stderr, "DEBUG: starting connection...\n");
+    log_debug ("TCCon", "starting connection...\n");
     if (!ig_lib_connection_unidir (db, name, src, trg_list)) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not generate connection...", -1));
         result = TCL_ERROR;

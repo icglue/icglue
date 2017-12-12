@@ -2,10 +2,11 @@
 #include <stdio.h>
 
 #include "ig_tcl.h"
+#include "logger.h"
 
 /* for normal interpreters */
 int Icglue_Init (Tcl_Interp *interp) {
-    printf ("ICGlue v0.0.1\n");
+    log_info ("PLoad", "ICGlue v0.0.1");
 
     ig_add_tcl_commands (interp);
 
@@ -14,7 +15,8 @@ int Icglue_Init (Tcl_Interp *interp) {
 
 /* for safe interpreters */
 int Icglue_SafeInit (Tcl_Interp *interp) {
-    fprintf (stderr, "Error: safe interpreters not supported!\n");
+    log_error ("PLoad", "safe interpreters not supported!");
+
     return TCL_ERROR;
 }
 
