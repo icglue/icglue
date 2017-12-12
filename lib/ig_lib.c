@@ -5,8 +5,12 @@
 #include <string.h>
 
 /* static functions */
-static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connection_info *cinfo);
-static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_list, const char *signame);
+static GList   *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connection_info *cinfo);
+static GNode   *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_list, const char *signame);
+static void     ig_lib_htree_print (GNode *hier_tree);
+static GNode   *ig_lib_htree_reduce (GNode *hier_tree);
+static void     ig_lib_htree_free (GNode *hier_tree);
+static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data);
 
 /* header functions */
 struct ig_lib_db *ig_lib_db_new ()
@@ -159,73 +163,20 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
 
     log_debug ("LCnUd", "printing hierarchy tree...");
     /* debug: printout */
-    GSList *pr_stack = NULL;
-    int pr_indent = 0;
-    pr_stack = g_slist_prepend (pr_stack, hier_tree);
+    ig_lib_htree_print (hier_tree);
 
-    while (pr_stack != NULL) {
-        GNode *i_node = (GNode *) pr_stack->data;
-        log_debug ("LCnUd", "current node: depth=%d, n_children=%d", g_node_depth (i_node), g_node_n_children (i_node));
-        struct ig_lib_connection_info *i_info = (struct ig_lib_connection_info *) i_node->data;
+    log_debug ("LCnUd", "reducing hierarchy tree...");
+    hier_tree = ig_lib_htree_reduce (hier_tree);
 
-        /* print node */
-        GString *str_t = g_string_new (NULL);
-        for (int i = 0; i < pr_indent-1; i++) {
-            str_t = g_string_append (str_t, " | ");
-        }
-        if (pr_indent > 0) {
-            str_t = g_string_append (str_t, " +-");
-        }
-        str_t = g_string_append (str_t, "-*-");
-
-        if (i_info->dir == IG_LCDIR_UP) {
-            str_t = g_string_append (str_t, "<-- ");
-        } else if (i_info->dir == IG_LCDIR_BIDIR) {
-            str_t = g_string_append (str_t, "<-> ");
-        } else if (i_info->dir == IG_LCDIR_DOWN) {
-            str_t = g_string_append (str_t, "--> ");
-        } else {
-            str_t = g_string_append (str_t, "-?- ");
-        }
-
-        str_t = g_string_append (str_t, i_info->obj->id);
-        str_t = g_string_append (str_t, ".");
-        str_t = g_string_append (str_t, i_info->local_name);
-        if (i_info->is_explicit) {
-            str_t = g_string_append (str_t, "(explicit)");
-        }
-
-        log_debug ("CTree", "%s", str_t->str);
-        g_string_free (str_t, true);
-
-        /* modify stack and continue */
-        if (g_node_first_child (i_node) != NULL) {
-            log_debug ("LCnUd", "node has child...");
-            pr_indent++;
-            pr_stack = g_slist_prepend (pr_stack, g_node_first_child (i_node));
-            continue;
-        }
-
-        while (pr_stack != NULL) {
-            i_node = (GNode *) pr_stack->data;
-            if (g_node_next_sibling (i_node) != NULL) {
-                log_debug ("LCnUd", "node has sibling...");
-                pr_stack->data = g_node_next_sibling (i_node);
-                break;
-            }
-            log_debug ("LCnUd", "node is last one in subhierarchy...");
-            pr_indent--;
-            GSList *temp = pr_stack;
-            pr_stack = g_slist_remove_link (pr_stack, temp);
-            g_slist_free (temp);
-        }
-    }
-
+    ig_lib_htree_print (hier_tree);
 
     /* TODO:
      * - create ports/pins
      * - free tree
      */
+
+    log_debug ("LCnUd", "deleting hierarchy tree...");
+    ig_lib_htree_free (hier_tree);
 
 l_ig_lib_connection_unidir_final_free_hierlist:
     for (GList *li = hier_start_list; li != NULL; li = li->next) {
@@ -415,4 +366,107 @@ void ig_lib_connection_info_free (struct ig_lib_connection_info *cinfo)
 {
     if (cinfo == NULL) return;
     g_slice_free (struct ig_lib_connection_info, cinfo);
+}
+
+static void ig_lib_htree_print (GNode *hier_tree)
+{
+    GSList *pr_stack = NULL;
+    int pr_indent = 0;
+    pr_stack = g_slist_prepend (pr_stack, hier_tree);
+
+    while (pr_stack != NULL) {
+        GNode *i_node = (GNode *) pr_stack->data;
+        log_debug ("LPHTr", "current node: depth=%d, n_children=%d", g_node_depth (i_node), g_node_n_children (i_node));
+        struct ig_lib_connection_info *i_info = (struct ig_lib_connection_info *) i_node->data;
+
+        /* print node */
+        GString *str_t = g_string_new (NULL);
+        for (int i = 0; i < pr_indent-1; i++) {
+            str_t = g_string_append (str_t, " | ");
+        }
+        if (pr_indent > 0) {
+            str_t = g_string_append (str_t, " +-");
+        }
+        str_t = g_string_append (str_t, "-*-");
+
+        if (i_info->dir == IG_LCDIR_UP) {
+            str_t = g_string_append (str_t, "<-- ");
+        } else if (i_info->dir == IG_LCDIR_BIDIR) {
+            str_t = g_string_append (str_t, "<-> ");
+        } else if (i_info->dir == IG_LCDIR_DOWN) {
+            str_t = g_string_append (str_t, "--> ");
+        } else {
+            str_t = g_string_append (str_t, "-?- ");
+        }
+
+        str_t = g_string_append (str_t, i_info->obj->id);
+        str_t = g_string_append (str_t, ".");
+        str_t = g_string_append (str_t, i_info->local_name);
+        if (i_info->is_explicit) {
+            str_t = g_string_append (str_t, "(explicit)");
+        }
+
+        log_debug ("HTree", "%s", str_t->str);
+        g_string_free (str_t, true);
+
+        /* modify stack and continue */
+        if (g_node_first_child (i_node) != NULL) {
+            log_debug ("LPHTr", "node has child...");
+            pr_indent++;
+            pr_stack = g_slist_prepend (pr_stack, g_node_first_child (i_node));
+            continue;
+        }
+
+        while (pr_stack != NULL) {
+            i_node = (GNode *) pr_stack->data;
+            if (g_node_next_sibling (i_node) != NULL) {
+                log_debug ("LPHTr", "node has sibling...");
+                pr_stack->data = g_node_next_sibling (i_node);
+                break;
+            }
+            log_debug ("LPHTr", "node is last one in subhierarchy...");
+            pr_indent--;
+            GSList *temp = pr_stack;
+            pr_stack = g_slist_remove_link (pr_stack, temp);
+            g_slist_free (temp);
+        }
+    }
+}
+
+static GNode *ig_lib_htree_reduce (GNode *hier_tree)
+{
+    /* TODO */
+    GNode *temp = hier_tree;
+
+    while (temp != NULL) {
+        if (g_node_n_children (temp) > 1) break;
+        struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) temp->data;
+        if (cinfo->is_explicit) break;
+        temp = g_node_first_child (temp);
+    }
+
+    if (temp == NULL) {
+        if (hier_tree != NULL) ig_lib_htree_free (hier_tree);
+        return NULL;
+    }
+
+    g_node_unlink (temp);
+    ig_lib_htree_free (hier_tree);
+
+    return temp;
+}
+
+static void ig_lib_htree_free (GNode *hier_tree)
+{
+    g_node_traverse (hier_tree, G_IN_ORDER, G_TRAVERSE_ALL, -1, ig_lib_htree_free_tfunc, NULL);
+    g_node_destroy (hier_tree);
+}
+
+static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data)
+{
+    struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) node->data;
+    ig_lib_connection_info_free (cinfo);
+    node->data = NULL;
+
+    return false;
 }
