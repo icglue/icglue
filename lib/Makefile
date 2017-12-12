@@ -8,6 +8,7 @@ LIBRARY=icglue.so
 # source files
 SOURCES= \
 	icglue.c \
+	logger.c \
 	ig_data.c \
 	ig_data_helpers.c \
 	ig_lib.c \

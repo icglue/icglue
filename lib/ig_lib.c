@@ -1,4 +1,5 @@
 #include "ig_lib.h"
+#include "logger.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -168,26 +169,34 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
         struct ig_lib_connection_info *i_info = (struct ig_lib_connection_info *) i_node->data;
 
         /* print node */
-        printf ("DEBUG: ");
+        GString *str_t = g_string_new (NULL);
         for (int i = 0; i < pr_indent-1; i++) {
-            printf (" | ");
+            str_t = g_string_append (str_t, " | ");
         }
         if (pr_indent > 0) {
-            printf (" +-");
+            str_t = g_string_append (str_t, " +-");
         }
-        printf ("-*-");
+        str_t = g_string_append (str_t, "-*-");
 
         if (i_info->dir == IG_LCDIR_UP) {
-            printf ("<-- ");
+            str_t = g_string_append (str_t, "<-- ");
         } else if (i_info->dir == IG_LCDIR_BIDIR) {
-            printf ("<-> ");
+            str_t = g_string_append (str_t, "<-> ");
         } else if (i_info->dir == IG_LCDIR_DOWN) {
-            printf ("--> ");
+            str_t = g_string_append (str_t, "--> ");
         } else {
-            printf ("-?- ");
+            str_t = g_string_append (str_t, "-?- ");
         }
 
-        printf ("%s.%s%s\n", i_info->obj->id, i_info->local_name, (i_info->is_explicit ? " (explicit)" : ""));
+        str_t = g_string_append (str_t, i_info->obj->id);
+        str_t = g_string_append (str_t, ".");
+        str_t = g_string_append (str_t, i_info->local_name);
+        if (i_info->is_explicit) {
+            str_t = g_string_append (str_t, "(explicit)");
+        }
+
+        log_debug ("con-udir", "%s", str_t->str);
+        g_string_free (str_t, true);
 
         /* modify stack and continue */
         if (g_node_first_child (i_node) != NULL) {
