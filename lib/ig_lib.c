@@ -115,6 +115,7 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
     //fprintf (stderr, "DEBUG: creating individual hierarchies...\n");
     bool error = false;
     source->dir = IG_LCDIR_UP;
+    source->is_explicit = true;
     //fprintf (stderr, "DEBUG: creating startpoint hierarchy...\n");
     GList *source_hier = ig_lib_gen_hierarchy (db, source);
     if (source_hier == NULL) {
@@ -125,6 +126,7 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
     //fprintf (stderr, "DEBUG: startpoint hierarchy depth: %d\n", g_list_length (source_hier));
     for (GList *li = targets; li != NULL; li = li->next) {
         struct ig_lib_connection_info *start = (struct ig_lib_connection_info *) li->data;
+        start->is_explicit = true;
 
         //fprintf (stderr, "DEBUG: creating targetpoint hierarchy...\n");
         GList *target_hier = ig_lib_gen_hierarchy (db, start);
@@ -185,7 +187,7 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
             printf ("-?- ");
         }
 
-        printf ("%s.%s\n", i_info->obj->id, i_info->local_name);
+        printf ("%s.%s%s\n", i_info->obj->id, i_info->local_name, (i_info->is_explicit ? " (explicit)" : ""));
 
         /* modify stack and continue */
         if (g_node_first_child (i_node) != NULL) {
@@ -243,7 +245,7 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
     GList *lhier_first = (GList *) hier_list->data;
     struct ig_lib_connection_info *cinfo_first = (struct ig_lib_connection_info *) lhier_first->data;
 
-    struct ig_lib_connection_info *cinfo_node = ig_lib_connection_info_new (db->str_chunks, cinfo_first->obj, cinfo_first->local_name, cinfo_first->dir);
+    struct ig_lib_connection_info *cinfo_node = ig_lib_connection_info_copy (db->str_chunks, cinfo_first);
     if (cinfo_node == NULL) return NULL;
     //fprintf (stderr, "DEBUG: reference node: %s\n", cinfo_first->obj->id);
 
@@ -276,6 +278,9 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
             fprintf (stderr, "Warning: merging ports to bidirectional\n");
             cinfo_node->dir = IG_LCDIR_BIDIR;
         }
+
+        /* explicit */
+        if (i_cinfo->is_explicit) cinfo_node->is_explicit = true;
 
         if (lhier->next != NULL) {
             successor_list = g_list_prepend (successor_list, lhier->next);
@@ -366,10 +371,32 @@ struct ig_lib_connection_info *ig_lib_connection_info_new (GStringChunk *str_chu
 
     result->obj = obj;
     result->dir = dir;
+    result->is_explicit = false;
+
     if (local_name == NULL) {
         result->local_name = NULL;
     } else {
         result->local_name = g_string_chunk_insert_const (str_chunks, local_name);
+    }
+
+    return result;
+}
+
+struct ig_lib_connection_info *ig_lib_connection_info_copy (GStringChunk *str_chunks, struct ig_lib_connection_info *original)
+{
+    if (original == NULL) return NULL;
+    if ((str_chunks == NULL) && (original->local_name != NULL)) return NULL;
+
+    struct ig_lib_connection_info *result = g_slice_new (struct ig_lib_connection_info);
+
+    result->obj = original->obj;
+    result->dir = original->dir;
+    result->is_explicit = original->is_explicit;
+
+    if (original->local_name != NULL) {
+        result->local_name = g_string_chunk_insert_const (str_chunks, original->local_name);
+    } else {
+        result->local_name = NULL;
     }
 
     return result;
