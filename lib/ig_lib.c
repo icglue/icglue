@@ -9,6 +9,8 @@ static GList   *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connec
 static GNode   *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_list, const char *signame);
 static void     ig_lib_htree_print (GNode *hier_tree);
 static GNode   *ig_lib_htree_reduce (GNode *hier_tree);
+static bool     ig_lib_htree_process (struct ig_lib_db *db, GNode *hier_tree);
+static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data);
 static void     ig_lib_htree_free (GNode *hier_tree);
 static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data);
 
@@ -170,10 +172,12 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
 
     ig_lib_htree_print (hier_tree);
 
-    /* TODO:
-     * - create ports/pins
-     * - free tree
-     */
+    log_debug ("LCnUd", "processing hierarchy tree...");
+    if (ig_lib_htree_process (db, hier_tree)) {
+        log_info ("LCnUd", "successfully created signal %s", signame);
+    } else {
+        log_error ("LCnUd", "failed to created signal %s", signame);
+    }
 
     log_debug ("LCnUd", "deleting hierarchy tree...");
     ig_lib_htree_free (hier_tree);
@@ -435,7 +439,6 @@ static void ig_lib_htree_print (GNode *hier_tree)
 
 static GNode *ig_lib_htree_reduce (GNode *hier_tree)
 {
-    /* TODO */
     GNode *temp = hier_tree;
 
     while (temp != NULL) {
@@ -454,6 +457,42 @@ static GNode *ig_lib_htree_reduce (GNode *hier_tree)
     ig_lib_htree_free (hier_tree);
 
     return temp;
+}
+
+static bool ig_lib_htree_process (struct ig_lib_db *db, GNode *hier_tree)
+{
+    g_node_traverse (hier_tree, G_PRE_ORDER, G_TRAVERSE_ALL, -1, ig_lib_htree_process_tfunc, db);
+
+    return true;
+}
+
+static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
+{
+    struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) node->data;
+    struct ig_lib_db *db = (struct ig_lib_db *) data;
+
+    struct ig_object *obj = cinfo->obj;
+
+    if (obj->type == IG_OBJ_INSTANCE) {
+        struct ig_instance *inst = (struct ig_instance *) obj->obj;
+
+        /* create a pin */
+        /* TODO */
+    } else if (obj->type == IG_OBJ_MODULE) {
+        struct ig_module *mod = (struct ig_module *) obj->obj;
+
+        if (G_NODE_IS_ROOT (node)) {
+            /* create a declaration */
+            /* TODO */
+        } else {
+            /* create a port */
+            /* TODO */
+        }
+    } else {
+        log_errorint ("HTrPr", "invalid object in hierarchy tree");
+    }
+
+    return false;
 }
 
 static void ig_lib_htree_free (GNode *hier_tree)
