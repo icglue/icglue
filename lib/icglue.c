@@ -3,12 +3,16 @@
 
 #include "ig_tcl.h"
 #include "logger.h"
+#include "color.h"
 
 /* for normal interpreters */
 int Icglue_Init (Tcl_Interp *interp) {
+
+    colors_on ();
     log_info ("PLoad", "ICGlue v0.0.1");
 
     ig_add_tcl_commands (interp);
+
 
     return TCL_OK;
 }

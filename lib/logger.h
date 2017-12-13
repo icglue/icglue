@@ -11,31 +11,48 @@
 #define __LOGGER_H__
 
 #include <stdarg.h>
+#include <glib.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    enum log_level {
-        LOGLEVEL_INVALID  = -1,
+    typedef enum log_level {
+        // virtual, reset log_particular_level
+        LOGLEVEL_DEFAULT  =  -1,
+
+        // loglevels
         LOGLEVEL_DEBUG    =  0,
-        LOGLEVEL_INFO     =  1,
-        LOGLEVEL_WARNING  =  2,
-        LOGLEVEL_ERROR    =  3,
-        LOGLEVEL_ERRORINT =  4,
-    };
+        LOGLEVEL_INFO,
+        LOGLEVEL_WARNING,
+        LOGLEVEL_ERROR,
+        LOGLEVEL_ERRORINT,
 
-    /* TODO: file/line */
-    #define log_debug(id, format...) log_base (LOGLEVEL_DEBUG,    id, NULL, 0, format)
-    #define log_info(id, format...) log_base (LOGLEVEL_INFO,     id, NULL, 0, format)
-    #define log_warn(id, format...) log_base (LOGLEVEL_WARNING,  id, NULL, 0, format)
-    #define log_error(id, format...) log_base (LOGLEVEL_ERROR,    id, NULL, 0, format)
-    /* TODO: file/line */
-    #define log_errorint(id, format...) log_base (LOGLEVEL_ERRORINT, id, NULL, 0, format)
+        // #loglevels
+        LOGLEVEL_COUNT
+    } log_level_t;
 
-    void log_base  (enum log_level level, const char *id, const char *sfile, int sline, const char *format, ...) __attribute__((format(printf, 5, 6)));
-    void log_basev (enum log_level level, const char *id, const char *sfile, int sline, const char *format, va_list arg_list) __attribute__((format(printf, 5, 0)));
 
+    #define log_debug(id, format...)    log_base (LOGLEVEL_DEBUG,    id, __FILE__, __LINE__, format)
+    #define log_info(id, format...)     log_base (LOGLEVEL_INFO,     id, __FILE__, __LINE__, format)
+    #define log_warn(id, format...)     log_base (LOGLEVEL_WARNING,  id, __FILE__, __LINE__, format)
+    #define log_error(id, format...)    log_base (LOGLEVEL_ERROR,    id, __FILE__, __LINE__, format)
+    #define log_errorint(id, format...) log_base (LOGLEVEL_ERRORINT, id, __FILE__, __LINE__, format)
+
+    void log_base  (const log_level_t level, const gchar *id, const gchar *sfile, gint sline, const gchar *format, ...) __attribute__((format(printf, 5, 6)));
+    void log_basev (const log_level_t level, const gchar *id, const gchar *sfile, gint sline, const gchar *format, va_list arg_list) __attribute__((format(printf, 5, 0)));
+
+    void set_default_log_level(log_level_t);
+
+
+    void log_particular_level (const gchar *id, const log_level_t level);
+    gboolean log_suppress (const log_level_t level, const gchar *id);
+
+
+    void log_colors_on ();
+    void log_colors_off ();
+
+    extern gboolean log_linenumbers;
 #ifdef __cplusplus
 }
 #endif

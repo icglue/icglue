@@ -24,8 +24,8 @@ struct ig_lib_db {
     GHashTable *modules_by_name; /* key: (const char *) -> value: (struct ig_module *) */
     GHashTable *modules_by_id;   /* key: (const char *) -> value: (struct ig_module *) */
 
-    GHashTable *instances_by_name; /* key: (const char *) -> value: (struct ig_module *) */
-    GHashTable *instances_by_id;   /* key: (const char *) -> value: (struct ig_module *) */
+    GHashTable *instances_by_name; /* key: (const char *) -> value: (struct ig_instance *) */
+    GHashTable *instances_by_id;   /* key: (const char *) -> value: (struct ig_instance *) */
 
     /* TODO: remaining */
 
