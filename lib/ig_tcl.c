@@ -565,10 +565,23 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     trg_list = g_list_reverse (trg_list);
 
     log_debug ("TCCon", "starting connection...\n");
-    if (!ig_lib_connection_unidir (db, name, src, trg_list)) {
+    GList *gen_objs = NULL;
+    if (!ig_lib_connection_unidir (db, name, src, trg_list, &gen_objs)) {
+        g_list_free (gen_objs);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not generate connection...", -1));
         result = TCL_ERROR;
     }
+
+    Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
+    for (GList *li = gen_objs; li != NULL; li = li->next) {
+        struct ig_object *i_obj = (struct ig_object *) li->data;
+
+        Tcl_Obj *t_obj = Tcl_NewStringObj (i_obj->id, -1);
+        Tcl_ListObjAppendElement (interp, retval, t_obj);
+    }
+
+    Tcl_SetObjResult (interp, retval);
+    g_list_free (gen_objs);
 
 ig_tclc_connect_exit:
     g_slist_free (to_list);

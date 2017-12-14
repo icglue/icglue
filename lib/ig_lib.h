@@ -57,7 +57,7 @@ struct ig_lib_connection_info *ig_lib_connection_info_new  (GStringChunk *str_ch
 struct ig_lib_connection_info *ig_lib_connection_info_copy (GStringChunk *str_chunks, struct ig_lib_connection_info *original);
 void                           ig_lib_connection_info_free (struct ig_lib_connection_info *cinfo);
 
-bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets);
+bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets, GList **gen_objs);
 
 
 #ifdef __cplusplus

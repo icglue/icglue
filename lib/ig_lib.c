@@ -9,7 +9,7 @@ static GList   *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connec
 static GNode   *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_list, const char *signame);
 static void     ig_lib_htree_print (GNode *hier_tree);
 static GNode   *ig_lib_htree_reduce (GNode *hier_tree);
-static bool     ig_lib_htree_process (struct ig_lib_db *db, GNode *hier_tree);
+static GList   *ig_lib_htree_process (struct ig_lib_db *db, GNode *hier_tree);
 static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data);
 static void     ig_lib_htree_free (GNode *hier_tree);
 static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data);
@@ -115,7 +115,7 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
 }
 
 
-bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets)
+bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets, GList **gen_objs)
 {
     GList *hier_start_list = NULL;
 
@@ -173,11 +173,13 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
     ig_lib_htree_print (hier_tree);
 
     log_debug ("LCnUd", "processing hierarchy tree...");
-    if (ig_lib_htree_process (db, hier_tree)) {
+    GList *gen_objs_res = ig_lib_htree_process (db, hier_tree);
+    if (gen_objs_res != NULL) {
         log_info ("LCnUd", "successfully created signal %s", signame);
     } else {
-        log_error ("LCnUd", "failed to created signal %s", signame);
+        log_warn ("LCnUd", "nothing created for signal %s", signame);
     }
+    if (gen_objs != NULL) *gen_objs = gen_objs_res;
 
     log_debug ("LCnUd", "deleting hierarchy tree...");
     ig_lib_htree_free (hier_tree);
@@ -479,17 +481,26 @@ static GNode *ig_lib_htree_reduce (GNode *hier_tree)
     return temp;
 }
 
-static bool ig_lib_htree_process (struct ig_lib_db *db, GNode *hier_tree)
-{
-    g_node_traverse (hier_tree, G_PRE_ORDER, G_TRAVERSE_ALL, -1, ig_lib_htree_process_tfunc, db);
+struct ig_lib_htree_process_data {
+    struct ig_lib_db *db;
+    GList            *gen_objs;
+};
 
-    return true;
+static GList *ig_lib_htree_process (struct ig_lib_db *db, GNode *hier_tree)
+{
+    struct ig_lib_htree_process_data data = {db, NULL};
+
+    g_node_traverse (hier_tree, G_PRE_ORDER, G_TRAVERSE_ALL, -1, ig_lib_htree_process_tfunc, &data);
+
+    return data.gen_objs;
 }
 
 static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
 {
+    struct ig_lib_htree_process_data *pdata = (struct ig_lib_htree_process_data *) data;
+
     struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) node->data;
-    struct ig_lib_db *db = (struct ig_lib_db *) data;
+    struct ig_lib_db *db = (struct ig_lib_db *) pdata->db;
 
     struct ig_object *obj = cinfo->obj;
 
@@ -516,6 +527,7 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
             log_error ("HTrPr", "Already declared pin %s", inst_pin->object->id);
         }
         g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, inst_pin->object->id), inst_pin->object);
+        pdata->gen_objs = g_list_prepend (pdata->gen_objs, inst_pin->object);
 
         log_debug ("HTrPr", "Created pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, inst->object->id, conn_name);
         for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
@@ -537,6 +549,7 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
                 log_error ("HTrPr", "Already declared declaration %s", mod_decl->object->id);
             }
             g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_decl->object->id), mod_decl->object);
+            pdata->gen_objs = g_list_prepend (pdata->gen_objs, mod_decl->object);
 
             log_debug ("HTrPr", "Created declaration \"%s\" in module \"%s\"", signal_name, mod->object->id);
         } else {
@@ -558,6 +571,7 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
                 log_error ("HTrPr", "Already declared port %s", mod_port->object->id);
             }
             g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_port->object->id), mod_port->object);
+            pdata->gen_objs = g_list_prepend (pdata->gen_objs, mod_port->object);
 
             log_debug ("HTrPr", "Created port \"%s\" in module \"%s\"", signal_name, mod->object->id);
         }
