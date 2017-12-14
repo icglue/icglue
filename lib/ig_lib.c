@@ -118,6 +118,20 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
     return inst;
 }
 
+struct ig_code *ig_lib_add_codesection (struct ig_lib_db *db, const char *name, const char *code, struct ig_module *parent)
+{
+    if (db == NULL) return NULL;
+    if (code == NULL) return NULL;
+    if (parent == NULL) return NULL;
+
+    struct ig_code *cs = ig_code_new (name, code, parent, db->str_chunks);
+
+    char *l_id = g_string_chunk_insert_const (db->str_chunks, cs->object->id);
+
+    g_hash_table_insert (db->objects_by_id, l_id, cs->object);
+
+    return cs;
+}
 
 bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets, GList **gen_objs)
 {

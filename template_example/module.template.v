@@ -74,7 +74,7 @@ module <%= [get_attribute -object $mod_id -attribute "name"] %> (<%
     # code sections
     foreach i_cs $code_data {
 %>
-<%= $i_cs %>
+<%= [get_attribute -object $i_cs -attribute "code"] %>
 <% } %>
 <%= [get_pragma_content $pragma_data "keep" "code"] %>
 

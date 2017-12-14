@@ -12,6 +12,7 @@ static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, 
 /* tcl proc declarations */
 static int ig_tclc_create_module    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_create_instance  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_add_codesection  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_set_attribute    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_get_attribute    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_get_objs_of_obj  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
@@ -25,6 +26,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
 
     Tcl_CreateObjCommand (interp, "create_module",    ig_tclc_create_module,   lib_db, NULL);
     Tcl_CreateObjCommand (interp, "create_instance",  ig_tclc_create_instance, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "add_codesection",  ig_tclc_add_codesection, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "set_attribute",    ig_tclc_set_attribute,   lib_db, NULL);
     Tcl_CreateObjCommand (interp, "get_attribute",    ig_tclc_get_attribute,   lib_db, NULL);
     Tcl_CreateObjCommand (interp, "get_modules",      ig_tclc_get_objs_of_obj, lib_db, NULL);
@@ -187,6 +189,59 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
     }
 
     Tcl_SetObjResult (interp, Tcl_NewStringObj (inst->object->id, -1));
+
+    return TCL_OK;
+}
+
+static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    char *name          = NULL;
+    char *code          = NULL;
+    char *parent_module = NULL;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_STRING, "-name",          NULL, (void *) &name,          "the name of the codesection to be created", NULL},
+        {TCL_ARGV_STRING, "-code",          NULL, (void *) &code,          "code to add", NULL},
+        {TCL_ARGV_STRING, "-parent-module", NULL, (void *) &parent_module, "parent module containing this codesection", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) return result;
+
+    if (code == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no code specified", -1));
+        return TCL_ERROR;
+    }
+    if (parent_module == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no parent module specified", -1));
+        return TCL_ERROR;
+    }
+
+    struct ig_module *pa_mod   = (struct ig_module *) g_hash_table_lookup (db->modules_by_id,   parent_module);
+    if (pa_mod == NULL) pa_mod = (struct ig_module *) g_hash_table_lookup (db->modules_by_name, parent_module);
+
+    if (parent_module == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid parent module", -1));
+        return TCL_ERROR;
+    }
+    struct ig_code *cs = ig_lib_add_codesection (db, name, code, pa_mod);
+
+    if (cs == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create codesection", -1));
+        return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult (interp, Tcl_NewStringObj (cs->object->id, -1));
 
     return TCL_OK;
 }
@@ -513,7 +568,6 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     for (GList *li = child_list; li != NULL; li = li->next) {
         struct ig_object *i_obj = NULL;
         const char *i_name = NULL;
-        const char *i_code = NULL;
 
         if (version == IG_TOOOV_PINS) {
             struct ig_pin *pin = (struct ig_pin *) li->data;
@@ -536,7 +590,9 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             i_name = decl->name;
             i_obj  = decl->object;
         } else if (version == IG_TOOOV_CODE) {
-            i_code = (const char *) li->data;
+            struct ig_code *code = (struct ig_code *) li->data;
+            i_name = code->name;
+            i_obj  = code->object;
         } else if (version == IG_TOOOV_MODULES) {
             struct ig_module *module = (struct ig_module *) li->data;
             i_name = module->name;
@@ -547,10 +603,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             i_obj  = instance->object;
         }
 
-        if (version == IG_TOOOV_CODE) {
-            Tcl_Obj *t_obj = Tcl_NewStringObj (i_code, -1);
-            Tcl_ListObjAppendElement (interp, retval, t_obj);
-        } else if (all) {
+        if (all) {
             Tcl_Obj *t_obj = Tcl_NewStringObj (i_obj->id, -1);
             Tcl_ListObjAppendElement (interp, retval, t_obj);
         } else {

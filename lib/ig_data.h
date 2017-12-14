@@ -27,6 +27,7 @@ enum ig_object_type {
     IG_OBJ_PARAMETER,
     IG_OBJ_ADJUSTMENT,
     IG_OBJ_DECLARATION,
+    IG_OBJ_CODESECTION,
     IG_OBJ_MODULE,
     IG_OBJ_INSTANCE,
 };
@@ -85,6 +86,15 @@ struct ig_decl {
     struct ig_module *parent;
 };
 
+struct ig_code {
+    struct ig_object *object;
+
+    const char *name;
+    const char *code;
+
+    struct ig_module *parent;
+};
+
 struct ig_module {
     struct ig_object *object;
 
@@ -93,10 +103,10 @@ struct ig_module {
     bool             resource;
 
     /* module content */
-    GQueue *params; /* data: (struct ig_param *)    */
-    GQueue *ports;  /* data: (struct ig_port *)     */
-    GQueue *decls;  /* data: (struct ig_decl *)     */
-    GQueue *code;   /* data: (const char *)         */
+    GQueue *params; /* data: (struct ig_param *) */
+    GQueue *ports;  /* data: (struct ig_port *)  */
+    GQueue *decls;  /* data: (struct ig_decl *)  */
+    GQueue *code;   /* data: (struct ig_code *)  */
     /* child instances inside module */
     GQueue *child_instances; /* data: (struct ig_instance *) */
     /* instances of this module elsewhere */
@@ -156,6 +166,9 @@ void                  ig_param_free (struct ig_param *param);
 
 struct ig_decl       *ig_decl_new (const char *name, const char *assign, bool default_type, struct ig_module *parent, GStringChunk *storage);
 void                  ig_decl_free (struct ig_decl *decl);
+
+struct ig_code       *ig_code_new  (const char *name, const char *codesection, struct ig_module *parent, GStringChunk *storage);
+void                  ig_code_free (struct ig_code *code);
 
 struct ig_module     *ig_module_new (const char *name, bool ilm, bool resource, GStringChunk *storage);
 void                  ig_module_free (struct ig_module *module);

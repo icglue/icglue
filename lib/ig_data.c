@@ -48,6 +48,7 @@ static const char *ig_obj_type_name (enum ig_object_type type)
         case IG_OBJ_PARAMETER:   return "parameter";
         case IG_OBJ_ADJUSTMENT:  return "adjustment";
         case IG_OBJ_DECLARATION: return "declaration";
+        case IG_OBJ_CODESECTION: return "codesection";
         case IG_OBJ_MODULE:      return "module";
         case IG_OBJ_INSTANCE:    return "instance";
     };
@@ -271,6 +272,57 @@ void ig_decl_free (struct ig_decl *decl)
 
     ig_obj_free (decl->object);
     g_slice_free (struct ig_decl, decl);
+}
+
+/*******************************************************
+ * codesection data
+ *******************************************************/
+
+struct ig_code *ig_code_new (const char *name, const char *codesection, struct ig_module *parent, GStringChunk *storage)
+{
+    if (codesection == NULL) return NULL;
+    if (parent == NULL) return NULL;
+
+    GString *s_id   = g_string_new (NULL);
+    GString *s_name = g_string_new (NULL);
+    if (name == NULL) {
+        g_string_printf (s_name, "_cs_%d", g_queue_get_length(parent->code));
+    } else {
+        s_name = g_string_append (s_name, name);
+    }
+    s_id = g_string_append (s_id, ig_obj_type_name (IG_OBJ_CODESECTION));
+    s_id = g_string_append (s_id, "::");
+    s_id = g_string_append (s_id, parent->name);
+    s_id = g_string_append (s_id, ".");
+    s_id = g_string_append (s_id, s_name->str);
+
+    struct ig_code  *code = g_slice_new (struct ig_code);
+    struct ig_object *obj = ig_obj_new (IG_OBJ_CODESECTION, s_id->str, code, storage);
+    code->object = obj;
+
+    g_string_free (s_id, true);
+
+    ig_obj_attr_set (code->object, "name",   s_name->str,        true);
+    ig_obj_attr_set (code->object, "parent", parent->object->id, true);
+    ig_obj_attr_set (code->object, "code",   codesection,        true);
+
+    code->name               = ig_obj_attr_get (code->object, "name");
+    code->code               = ig_obj_attr_get (code->object, "code");
+    code->parent             = parent;
+
+    g_string_free (s_name, true);
+
+    g_queue_push_tail (parent->code, code);
+
+    return code;
+}
+
+void ig_code_free (struct ig_code *code)
+{
+    if (code == NULL) return;
+
+    ig_obj_free (code->object);
+    g_slice_free (struct ig_code, code);
 }
 
 /*******************************************************
