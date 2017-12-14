@@ -499,7 +499,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         } else if (version == IG_TOOOV_ADJ) {
             child_list = inst->adjustments->head;
         } else if (version == IG_TOOOV_MODULES) {
-            child_list = g_list_prepend (child_list, inst->parent);
+            child_list = g_list_prepend (child_list, inst->module);
             child_list_free = true;
         }
     }
