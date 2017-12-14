@@ -14,6 +14,9 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data);
 static void     ig_lib_htree_free (GNode *hier_tree);
 static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data);
 
+static char    *ig_lib_gen_name_signal  (struct ig_lib_db *db, const char *basename);
+static char    *ig_lib_gen_name_pinport (struct ig_lib_db *db, const char *basename, enum ig_port_dir dir);
+
 /* header functions */
 struct ig_lib_db *ig_lib_db_new ()
 {
@@ -480,8 +483,6 @@ static GNode *ig_lib_htree_reduce (GNode *hier_tree)
     g_node_unlink (temp);
     ig_lib_htree_free (hier_tree);
 
-    /* TODO: make root node default type? */
-
     return temp;
 }
 
@@ -522,8 +523,13 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
             conn_name = "";
         }
 
-        /* TODO: naming */
-        const char *pin_name = local_name;
+        enum ig_port_dir pdir = IG_PD_IN;
+        if (cinfo->dir == IG_LCDIR_UP) {
+            pdir = IG_PD_OUT;
+        } else if (cinfo->dir == IG_LCDIR_BIDIR) {
+            pdir = IG_PD_BIDIR;
+        }
+        const char *pin_name = ig_lib_gen_name_pinport (db, local_name, pdir);
 
         /* create a pin */
         struct ig_pin *inst_pin = ig_pin_new (pin_name, conn_name, inst, db->str_chunks);
@@ -544,8 +550,7 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
         const char *signal_name = NULL;
 
         if (G_NODE_IS_ROOT (node)) {
-            /* TODO: naming */
-            signal_name = local_name;
+            signal_name = ig_lib_gen_name_signal (db, local_name);
 
             /* create a declaration */
             struct ig_decl *mod_decl = ig_decl_new (signal_name, NULL, true, mod, db->str_chunks);
@@ -604,4 +609,36 @@ static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data)
     node->data = NULL;
 
     return false;
+}
+
+static char *ig_lib_gen_name_signal (struct ig_lib_db *db, const char *basename)
+{
+    GString *tstr = g_string_new (basename);
+
+    /* TODO: case sensitivity */
+    tstr = g_string_append (tstr, "_s");
+
+    char *result = g_string_chunk_insert_const (db->str_chunks, tstr->str);
+    g_string_free (tstr, true);
+
+    return result;
+}
+
+static char *ig_lib_gen_name_pinport (struct ig_lib_db *db, const char *basename, enum ig_port_dir dir)
+{
+    GString *tstr = g_string_new (basename);
+
+    /* TODO: case sensitivity */
+    if (dir == IG_PD_IN) {
+        tstr = g_string_append (tstr, "_i");
+    } else if (dir == IG_PD_OUT) {
+        tstr = g_string_append (tstr, "_o");
+    } else if (dir == IG_PD_BIDIR) {
+        tstr = g_string_append (tstr, "_b");
+    }
+
+    char *result = g_string_chunk_insert_const (db->str_chunks, tstr->str);
+    g_string_free (tstr, true);
+
+    return result;
 }
