@@ -32,7 +32,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, "get_ports",        ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "get_parameters",   ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "get_declarations", ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_code",         ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "get_codesections", ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "get_pins",         ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "get_adjustments",  ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "connect",          ig_tclc_connect,         lib_db, NULL);
@@ -384,7 +384,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         version = IG_TOOOV_DECLS;
     } else if (strcmp (cmdname, "get_parameters") == 0) {
         version = IG_TOOOV_PARAMS;
-    } else if (strcmp (cmdname, "get_code") == 0) {
+    } else if (strcmp (cmdname, "get_codesections") == 0) {
         version = IG_TOOOV_CODE;
     } else if (strcmp (cmdname, "get_pins") == 0) {
         version = IG_TOOOV_PINS;
