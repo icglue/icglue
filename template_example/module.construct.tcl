@@ -11,4 +11,5 @@ connect -from [get_instances -name proc_mgmt] -to [list [get_modules -name tb_pr
 connect -from [get_instances -name proc_mgmt] -to [list [get_instances -name proc_core]] -signal-name config -signal-size 32
 connect -from [get_instances -name proc_mgmt] -to [list [get_instances -name proc_core]] -signal-name data -signal-size "DATA_W"
 connect -from [get_instances -name proc_core] -to [list [get_instances -name proc_mgmt]] -signal-name status -signal-size 16
+connect -bidir [list [get_instances -name proc_mgmt] [get_instances -name proc_core] [get_modules -name tb_proc_top]] -signal-name bddata -signal-size 16
 

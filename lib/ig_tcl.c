@@ -592,12 +592,14 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     char   *name    = NULL;
     char   *size    = NULL;
     GSList *to_list = NULL;
+    GSList *bd_list = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-signal-name", NULL,                                                      (void *) &name,    "signal (prefix) name", NULL},
         {TCL_ARGV_STRING,   "-signal-size", NULL,                                                      (void *) &size,    "signal (bus) size", NULL},
         {TCL_ARGV_STRING,   "-from",        NULL,                                                      (void *) &from,    "start of signal (unidirectional)", NULL},
         {TCL_ARGV_FUNC,     "-to",          (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void *) &to_list, "list of signal endpoints", NULL},
+        {TCL_ARGV_FUNC,     "-bidir",       (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void *) &bd_list, "list of endpoints connected bidirectional", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -610,8 +612,12 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: signal name is required", -1));
         result = TCL_ERROR;
     }
-    if (from == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: signal start (-from) is required", -1));
+    if ((from == NULL) && (bd_list == NULL)) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: signal start (-from) is required for unidirectional signals", -1));
+        result = TCL_ERROR;
+    }
+    if ((bd_list != NULL) && ((from != NULL) || (to_list != NULL))) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to mix bidirectional and unidirectional signal", -1));
         result = TCL_ERROR;
     }
     if (size == NULL) {
@@ -621,9 +627,12 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     if (result != TCL_OK) goto ig_tclc_connect_exit;
 
     /* check */
-    if (!g_hash_table_contains (db->objects_by_id, from)) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid object specified", -1));
-        result = TCL_ERROR;
+    log_debug ("TCCon", "checking connection info");
+    if (from != NULL) {
+        if (!g_hash_table_contains (db->objects_by_id, from)) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid object specified", -1));
+            result = TCL_ERROR;
+        }
     }
     for (GSList *li = to_list; li != NULL; li = li->next) {
         if (!g_hash_table_contains (db->objects_by_id, li->data)) {
@@ -635,21 +644,36 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
     /* TODO: local individual port names... */
 
+    log_debug ("TCCon", "generating connection info");
     if (result != TCL_OK) goto ig_tclc_connect_exit;
 
-    struct ig_object *src_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, from);
-    struct ig_lib_connection_info *src = ig_lib_connection_info_new (db->str_chunks, src_obj, NULL, IG_LCDIR_UP);
+    struct ig_lib_connection_info *src = NULL;
     GList *trg_list = NULL;
-    for (GSList *li = to_list; li != NULL; li = li->next) {
+
+    if (from != NULL) {
+        struct ig_object *src_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, from);
+        if (src_obj == NULL) goto ig_tclc_connect_nfexit;
+        src = ig_lib_connection_info_new (db->str_chunks, src_obj, NULL, IG_LCDIR_UP);
+    }
+
+    GSList *trg_orig_list = to_list;
+    enum ig_lib_connection_dir trg_dir = IG_LCDIR_DEFAULT;
+    if (trg_orig_list == NULL) {
+        trg_orig_list = bd_list;
+        trg_dir = IG_LCDIR_BIDIR;
+    }
+    for (GSList *li = trg_orig_list; li != NULL; li = li->next) {
         struct ig_object *trg_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, li->data);
-        struct ig_lib_connection_info *trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, NULL, IG_LCDIR_DEFAULT);
+        if (trg_obj == NULL) goto ig_tclc_connect_nfexit;
+        struct ig_lib_connection_info *trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, NULL, trg_dir);
         trg_list = g_list_prepend (trg_list, trg);
     }
     trg_list = g_list_reverse (trg_list);
 
-    log_debug ("TCCon", "starting connection...\n");
+    log_debug ("TCCon", "starting connection...");
     GList *gen_objs = NULL;
-    if (!ig_lib_connection_unidir (db, name, src, trg_list, &gen_objs)) {
+
+    if (!ig_lib_connection (db, name, src, trg_list, &gen_objs)) {
         g_list_free (gen_objs);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not generate connection...", -1));
         result = TCL_ERROR;
@@ -670,7 +694,20 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
 ig_tclc_connect_exit:
     g_slist_free (to_list);
+    g_slist_free (bd_list);
 
     return result;
+
+ig_tclc_connect_nfexit:
+    if (src != NULL) {
+        ig_lib_connection_info_free (src);
+    }
+    for (GList *li = trg_list; li != NULL; li = li->next) {
+        struct ig_lib_connection_info *trg = (struct ig_lib_connection_info *) li->data;
+        ig_lib_connection_info_free (trg);
+    }
+    result = TCL_ERROR;
+    Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not find object", -1));
+    goto ig_tclc_connect_exit;
 }
 

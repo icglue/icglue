@@ -119,22 +119,26 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
 }
 
 
-bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets, GList **gen_objs)
+bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets, GList **gen_objs)
 {
     GList *hier_start_list = NULL;
 
     log_debug ("LCnUD", "creating individual hierarchies...");
     bool error = false;
-    source->dir = IG_LCDIR_UP;
-    source->is_explicit = true;
-    log_debug ("LCnUd", "creating startpoint hierarchy...");
-    GList *source_hier = ig_lib_gen_hierarchy (db, source);
-    if (source_hier == NULL) {
-        error = true;
-    } else {
-        hier_start_list = g_list_prepend (hier_start_list, source_hier);
+
+    if (source != NULL) {
+        source->dir = IG_LCDIR_UP;
+        source->is_explicit = true;
+        log_debug ("LCnUd", "creating startpoint hierarchy...");
+        GList *source_hier = ig_lib_gen_hierarchy (db, source);
+        if (source_hier == NULL) {
+            error = true;
+        } else {
+            hier_start_list = g_list_prepend (hier_start_list, source_hier);
+        }
+        log_debug ("LCnUd", "startpoint hierarchy depth: %d", g_list_length (source_hier));
     }
-    log_debug ("LCnUd", "startpoint hierarchy depth: %d", g_list_length (source_hier));
+
     for (GList *li = targets; li != NULL; li = li->next) {
         struct ig_lib_connection_info *start = (struct ig_lib_connection_info *) li->data;
         start->is_explicit = true;
