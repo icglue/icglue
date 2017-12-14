@@ -296,6 +296,16 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
 {
     GList *result = NULL;
 
+    /* startpoint is instance of generated module? */
+    if (cinfo->obj->type == IG_OBJ_INSTANCE) {
+        struct ig_instance *inst = (struct ig_instance *) cinfo->obj->obj;
+        struct ig_module   *mod  = inst->module;
+
+        if (!mod->resource) {
+            cinfo->obj = mod->object;
+        }
+    }
+
     log_debug ("LGnHi", "creating hierarchy list...");
     while (true) {
         if (cinfo == NULL) return result;
