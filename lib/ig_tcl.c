@@ -4,17 +4,22 @@
 #include "ig_tcl.h"
 #include "logger.h"
 
+#include <string.h>
+
 /* Tcl helper function for parsing lists in GSLists */
 static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, void *dest_ptr);
 
 /* tcl proc declarations */
-static int ig_tclc_create_module   (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_set_attribute   (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_get_attribute   (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_get_modules     (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_get_instances   (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_connect         (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_create_module    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_create_instance  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_set_attribute    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_attribute    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_modules      (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_instances    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_ports        (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_pins         (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_declarations (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_connect          (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 
 void ig_add_tcl_commands (Tcl_Interp *interp)
@@ -23,13 +28,16 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
 
     struct ig_lib_db *lib_db = ig_lib_db_new ();
 
-    Tcl_CreateObjCommand (interp, "create_module",   ig_tclc_create_module,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "create_instance", ig_tclc_create_instance, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "set_attribute",   ig_tclc_set_attribute,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_attribute",   ig_tclc_get_attribute,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_modules",     ig_tclc_get_modules,     lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_instances",   ig_tclc_get_instances,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "connect",         ig_tclc_connect,         lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "create_module",    ig_tclc_create_module,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "create_instance",  ig_tclc_create_instance,  lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "set_attribute",    ig_tclc_set_attribute,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "get_attribute",    ig_tclc_get_attribute,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "get_modules",      ig_tclc_get_modules,      lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "get_instances",    ig_tclc_get_instances,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "get_ports",        ig_tclc_get_ports,        lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "get_pins",         ig_tclc_get_pins,         lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "get_declarations", ig_tclc_get_declarations, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "connect",          ig_tclc_connect,          lib_db, NULL);
 
 }
 
@@ -497,6 +505,219 @@ static int ig_tclc_get_instances (ClientData clientdata, Tcl_Interp *interp, int
 
     Tcl_SetObjResult (interp, retval);
     g_list_free (inst_list);
+
+    return TCL_OK;
+}
+
+static int ig_tclc_get_ports (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    int int_true  = true;
+    int int_false = false;
+
+    int   all       = int_false;
+    char *mod_name  = NULL;
+    char *port_name = NULL;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_CONSTANT, "-all",    GINT_TO_POINTER (int_true), (void *) &all,       "return all instances", NULL},
+        {TCL_ARGV_STRING,   "-name",   NULL,                       (void *) &port_name, "port name", NULL},
+        {TCL_ARGV_STRING,   "-module", NULL,                       (void *) &mod_name,  "module name", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) return result;
+
+    if (mod_name == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: module needs to be specified", -1));
+        return TCL_ERROR;
+    }
+
+    if (all && (port_name != NULL)) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to specify name and -all", -1));
+        return TCL_ERROR;
+    }
+
+    struct ig_module *mod = (struct ig_module *) g_hash_table_lookup (db->modules_by_id, mod_name);
+    if (mod == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid module", -1));
+        return TCL_ERROR;
+    }
+
+    if (!all) {
+        for (GList *li = mod->ports->head; li != NULL; li = li->next) {
+            struct ig_port *port = (struct ig_port *) li->data;
+            if (strcmp (port->name, port_name) == 0) {
+                Tcl_SetObjResult (interp, Tcl_NewStringObj (port->object->id, -1));
+                return TCL_OK;
+            }
+        }
+
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: port not found", -1));
+        return TCL_ERROR;
+    } else {
+        Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
+
+        for (GList *li = mod->ports->head; li != NULL; li = li->next) {
+            struct ig_port *port = (struct ig_port *) li->data;
+
+            Tcl_Obj *t_obj = Tcl_NewStringObj (port->object->id, -1);
+            Tcl_ListObjAppendElement (interp, retval, t_obj);
+        }
+
+        Tcl_SetObjResult (interp, retval);
+    }
+
+    return TCL_OK;
+}
+
+static int ig_tclc_get_declarations (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    int int_true  = true;
+    int int_false = false;
+
+    int   all       = int_false;
+    char *mod_name  = NULL;
+    char *decl_name = NULL;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_CONSTANT, "-all",    GINT_TO_POINTER (int_true), (void *) &all,       "return all instances", NULL},
+        {TCL_ARGV_STRING,   "-name",   NULL,                       (void *) &decl_name, "declaration name", NULL},
+        {TCL_ARGV_STRING,   "-module", NULL,                       (void *) &mod_name,  "module name", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) return result;
+
+    if (mod_name == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: module needs to be specified", -1));
+        return TCL_ERROR;
+    }
+
+    if (all && (decl_name != NULL)) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to specify name and -all", -1));
+        return TCL_ERROR;
+    }
+
+    struct ig_module *mod = (struct ig_module *) g_hash_table_lookup (db->modules_by_id, mod_name);
+    if (mod == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid module", -1));
+        return TCL_ERROR;
+    }
+
+    if (!all) {
+        for (GList *li = mod->decls->head; li != NULL; li = li->next) {
+            struct ig_decl *decl = (struct ig_decl *) li->data;
+            if (strcmp (decl->name, decl_name) == 0) {
+                Tcl_SetObjResult (interp, Tcl_NewStringObj (decl->object->id, -1));
+                return TCL_OK;
+            }
+        }
+
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: declaration not found", -1));
+        return TCL_ERROR;
+    } else {
+        Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
+
+        for (GList *li = mod->decls->head; li != NULL; li = li->next) {
+            struct ig_decl *decl = (struct ig_decl *) li->data;
+
+            Tcl_Obj *t_obj = Tcl_NewStringObj (decl->object->id, -1);
+            Tcl_ListObjAppendElement (interp, retval, t_obj);
+        }
+
+        Tcl_SetObjResult (interp, retval);
+    }
+
+    return TCL_OK;
+}
+
+static int ig_tclc_get_pins (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    int int_true  = true;
+    int int_false = false;
+
+    int   all       = int_false;
+    char *inst_name = NULL;
+    char *pin_name  = NULL;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_CONSTANT, "-all",      GINT_TO_POINTER (int_true), (void *) &all,       "return all instances", NULL},
+        {TCL_ARGV_STRING,   "-name",     NULL,                       (void *) &pin_name,  "pin name", NULL},
+        {TCL_ARGV_STRING,   "-instance", NULL,                       (void *) &inst_name, "instance name", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) return result;
+
+    if (inst_name == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: instance needs to be specified", -1));
+        return TCL_ERROR;
+    }
+
+    if (all && (pin_name != NULL)) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to specify name and -all", -1));
+        return TCL_ERROR;
+    }
+
+    struct ig_instance *inst = (struct ig_instance *) g_hash_table_lookup (db->instances_by_id, inst_name);
+    if (inst == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid instance", -1));
+        return TCL_ERROR;
+    }
+
+    if (!all) {
+        for (GList *li = inst->pins->head; li != NULL; li = li->next) {
+            struct ig_pin *pin = (struct ig_pin *) li->data;
+            if (strcmp (pin->name, pin_name) == 0) {
+                Tcl_SetObjResult (interp, Tcl_NewStringObj (pin->object->id, -1));
+                return TCL_OK;
+            }
+        }
+
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: pin not found", -1));
+        return TCL_ERROR;
+    } else {
+        Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
+
+        for (GList *li = inst->pins->head; li != NULL; li = li->next) {
+            struct ig_pin *pin = (struct ig_pin *) li->data;
+
+            Tcl_Obj *t_obj = Tcl_NewStringObj (pin->object->id, -1);
+            Tcl_ListObjAppendElement (interp, retval, t_obj);
+        }
+
+        Tcl_SetObjResult (interp, retval);
+    }
 
     return TCL_OK;
 }
