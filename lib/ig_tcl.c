@@ -590,10 +590,12 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
     char   *from    = NULL;
     char   *name    = NULL;
+    char   *size    = NULL;
     GSList *to_list = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-signal-name", NULL,                                                      (void *) &name,    "signal (prefix) name", NULL},
+        {TCL_ARGV_STRING,   "-signal-size", NULL,                                                      (void *) &size,    "signal (bus) size", NULL},
         {TCL_ARGV_STRING,   "-from",        NULL,                                                      (void *) &from,    "start of signal (unidirectional)", NULL},
         {TCL_ARGV_FUNC,     "-to",          (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void *) &to_list, "list of signal endpoints", NULL},
 
@@ -611,6 +613,9 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     if (from == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: signal start (-from) is required", -1));
         result = TCL_ERROR;
+    }
+    if (size == NULL) {
+        size = "1";
     }
 
     if (result != TCL_OK) goto ig_tclc_connect_exit;
@@ -653,6 +658,8 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
     for (GList *li = gen_objs; li != NULL; li = li->next) {
         struct ig_object *i_obj = (struct ig_object *) li->data;
+
+        ig_obj_attr_set (i_obj, "size", size, true);
 
         Tcl_Obj *t_obj = Tcl_NewStringObj (i_obj->id, -1);
         Tcl_ListObjAppendElement (interp, retval, t_obj);
