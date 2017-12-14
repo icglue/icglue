@@ -180,6 +180,10 @@ bool ig_lib_connection_unidir (struct ig_lib_db *db, const char *signame, struct
         log_warn ("LCnUd", "nothing created for signal %s", signame);
     }
     if (gen_objs != NULL) *gen_objs = gen_objs_res;
+    for (GList *li = gen_objs_res; li != NULL; li = li->next) {
+        struct ig_object *io = (struct ig_object *) li->data;
+        ig_obj_attr_set (io, "signal", signame, true);
+    }
 
     log_debug ("LCnUd", "deleting hierarchy tree...");
     ig_lib_htree_free (hier_tree);
