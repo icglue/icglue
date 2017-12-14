@@ -41,6 +41,7 @@ enum ig_lib_connection_dir {
 
 struct ig_lib_connection_info {
     struct ig_object *obj;
+    const char *parent_name;
     const char *local_name;
     bool is_explicit;
     enum ig_lib_connection_dir dir;

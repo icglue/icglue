@@ -343,13 +343,15 @@ struct ig_lib_connection_info *ig_lib_connection_info_new (GStringChunk *str_chu
         result->local_name = g_string_chunk_insert_const (str_chunks, local_name);
     }
 
+    result->parent_name = NULL;
+
     return result;
 }
 
 struct ig_lib_connection_info *ig_lib_connection_info_copy (GStringChunk *str_chunks, struct ig_lib_connection_info *original)
 {
     if (original == NULL) return NULL;
-    if ((str_chunks == NULL) && (original->local_name != NULL)) return NULL;
+    if ((str_chunks == NULL) && ((original->local_name != NULL) || (original->parent_name != NULL))) return NULL;
 
     struct ig_lib_connection_info *result = g_slice_new (struct ig_lib_connection_info);
 
@@ -361,6 +363,12 @@ struct ig_lib_connection_info *ig_lib_connection_info_copy (GStringChunk *str_ch
         result->local_name = g_string_chunk_insert_const (str_chunks, original->local_name);
     } else {
         result->local_name = NULL;
+    }
+
+    if (original->parent_name != NULL) {
+        result->parent_name = g_string_chunk_insert_const (str_chunks, original->parent_name);
+    } else {
+        result->parent_name = NULL;
     }
 
     return result;
@@ -456,6 +464,8 @@ static GNode *ig_lib_htree_reduce (GNode *hier_tree)
     g_node_unlink (temp);
     ig_lib_htree_free (hier_tree);
 
+    /* TODO: make root node default type? */
+
     return temp;
 }
 
@@ -473,20 +483,78 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
 
     struct ig_object *obj = cinfo->obj;
 
+    const char *local_name  = cinfo->local_name;
+    const char *parent_name = cinfo->parent_name;
+
+    log_debug ("HTrPr", "processing node %s", obj->id);
+
     if (obj->type == IG_OBJ_INSTANCE) {
         struct ig_instance *inst = (struct ig_instance *) obj->obj;
 
+        const char *conn_name = parent_name;
+        if (conn_name == NULL) {
+            log_error ("HTrPr", "No connection for signal %s in instance %s", local_name, obj->id);
+            conn_name = "";
+        }
+
+        /* TODO: naming */
+        const char *pin_name = local_name;
+
         /* create a pin */
-        /* TODO */
+        struct ig_pin *inst_pin = ig_pin_new (pin_name, conn_name, inst, db->str_chunks);
+        if (g_hash_table_contains (db->objects_by_id, inst_pin->object->id)) {
+            log_error ("HTrPr", "Already declared pin %s", inst_pin->object->id);
+        }
+        g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, inst_pin->object->id), inst_pin->object);
+
+        log_debug ("HTrPr", "Created pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, inst->object->id, conn_name);
+        for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
+            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) in->data;
+            i_cinfo->parent_name = pin_name;
+        }
     } else if (obj->type == IG_OBJ_MODULE) {
         struct ig_module *mod = (struct ig_module *) obj->obj;
 
+        const char *signal_name = NULL;
+
         if (G_NODE_IS_ROOT (node)) {
+            /* TODO: naming */
+            signal_name = local_name;
+
             /* create a declaration */
-            /* TODO */
+            struct ig_decl *mod_decl = ig_decl_new (signal_name, NULL, true, mod, db->str_chunks);
+            if (g_hash_table_contains (db->objects_by_id, mod_decl->object->id)) {
+                log_error ("HTrPr", "Already declared declaration %s", mod_decl->object->id);
+            }
+            g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_decl->object->id), mod_decl->object);
+
+            log_debug ("HTrPr", "Created declaration \"%s\" in module \"%s\"", signal_name, mod->object->id);
         } else {
+            signal_name = parent_name;
+            if (signal_name == NULL) {
+                log_error ("HTrPr", "No pin for signal %s in instance of module %s", local_name, obj->id);
+                signal_name = "";
+            }
+
+            enum ig_port_dir pdir = IG_PD_IN;
+            if (cinfo->dir == IG_LCDIR_UP) {
+                pdir = IG_PD_OUT;
+            } else if (cinfo->dir == IG_LCDIR_BIDIR) {
+                pdir = IG_PD_BIDIR;
+            }
             /* create a port */
-            /* TODO */
+            struct ig_port *mod_port = ig_port_new (signal_name, pdir, mod, db->str_chunks);
+            if (g_hash_table_contains (db->objects_by_id, mod_port->object->id)) {
+                log_error ("HTrPr", "Already declared port %s", mod_port->object->id);
+            }
+            g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_port->object->id), mod_port->object);
+
+            log_debug ("HTrPr", "Created port \"%s\" in module \"%s\"", signal_name, mod->object->id);
+        }
+
+        for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
+            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) in->data;
+            i_cinfo->parent_name = signal_name;
         }
     } else {
         log_errorint ("HTrPr", "invalid object in hierarchy tree");
@@ -497,7 +565,7 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
 
 static void ig_lib_htree_free (GNode *hier_tree)
 {
-    g_node_traverse (hier_tree, G_IN_ORDER, G_TRAVERSE_ALL, -1, ig_lib_htree_free_tfunc, NULL);
+    g_node_traverse (hier_tree, G_LEVEL_ORDER, G_TRAVERSE_ALL, -1, ig_lib_htree_free_tfunc, NULL);
     g_node_destroy (hier_tree);
 }
 
