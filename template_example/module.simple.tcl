@@ -1,5 +1,7 @@
 #!/usr/bin/tclsh
 
+load ../lib/icglue.so
+
 # copied from: http://wiki.tcl.tk/18175
 proc parse_template {txt} {
     set code "set _res {}\n"
@@ -43,10 +45,10 @@ proc parse_pragmas {txt} {
     return $result
 }
 
-proc gen_module {mod_name} {
-    set _tt_name [get_template_file $mod_name]
+proc gen_module {mod_id} {
+    set _tt_name [get_template_file $mod_id]
 
-    set _outf_name [get_module_file $mod_name]
+    set _outf_name [get_module_file $mod_id]
 
     set pragma_data [list]
     if {[file exists $_outf_name]} {
@@ -55,7 +57,7 @@ proc gen_module {mod_name} {
         close ${_outf}
         set pragma_data [parse_pragmas ${_old}]
     }
-    set pragma_data [add_pragma_default_header $pragma_data $mod_name]
+    set pragma_data [add_pragma_default_header $pragma_data $mod_id]
 
     set _tt_f [open ${_tt_name} "r"]
     set _tt [read ${_tt_f}]
@@ -72,63 +74,7 @@ proc gen_module {mod_name} {
     close ${_outf}
 }
 
-set port_data [list \
-    [list "clk_i"          i  1]  \
-    [list "reset_n_i"      i  1]  \
-    [list "data_i"         i  32] \
-    [list "data_valid_i"   i  1]  \
-    [list "result_o"       o  "RES_SIZE"] \
-    [list "result_valid_o" o  1]  \
-]
-set param_data [list \
-    [list "RES_SIZE"  g 8]                   \
-    [list "RES_SEL_W" l "\$clog2(RES_SIZE)"] \
-]
-set decl_data [list \
-    [list "temp_s"  w 8]        \
-    [list "reg_a"   r RES_SIZE] \
-    [list "temp2_s" w 1]        \
-]
-set inst_data [list \
-    [list \
-        "i_common_sync_res" \
-        "common_sync" \
-        [list \
-            [list "SIZE" "RES_SIZE"] \
-            [list "STAGES" "3"] \
-        ] [list \
-            [list "clk_i" "clk_i"] \
-            [list "reset_n_i" "reset_n_i"] \
-            [list "data_i" "reg_a"] \
-            [list "data_o" "result_o"] \
-        ] \
-    ] \
-    [list \
-        "i_common_sync_valid" \
-        "common_sync" \
-        [list \
-        ] [list \
-            [list "clk_i" "clk_i"] \
-            [list "reset_n_i" "reset_n_i"] \
-            [list "data_i" "data_valid_i"] \
-            [list "data_o" "temp2_s"] \
-        ] \
-    ] \
-]
-set code_data [list \
-{
-    always @(posedge clk_i or negedge reset_n_i) begin
-        if (reset_n_i == 1'b0) begin
-            reg_a <= 0;
-        end else begin
-            if (temp2_s == 1'b1) begin
-                reg_a <= data_i[RES_SIZE-1:0];
-            end
-        end
-    end
-}
-]
-
+# helpers
 proc get_max_entry_len {data_list transform_proc} {
     set len 0
     foreach i_entry $data_list {
@@ -136,16 +82,6 @@ proc get_max_entry_len {data_list transform_proc} {
         set len [expr {max ($len, $i_len)}]
     }
     return $len
-}
-
-proc get_port_size {port} {
-    return [lindex $port 2]
-}
-proc get_port_name {port} {
-    return [lindex $port 0]
-}
-proc get_port_dir {port} {
-    return [lindex $port 1]
 }
 
 proc size_to_bitrange {size} {
@@ -160,104 +96,37 @@ proc size_to_bitrange {size} {
     }
 }
 
-proc get_port_bitrange {port} {
-    set size [get_port_size $port]
+proc get_object_bitrange {obj} {
+    set size [get_attribute -object $obj -attribute "size"]
     return [size_to_bitrange $size]
 }
+
 proc get_port_dir_vlog {port} {
-    set dir [get_port_dir $port]
-    if {$dir == "i"} {return "input"}
-    if {$dir == "o"} {return "output"}
-    if {$dir == "b"} {return "inout"}
+    set dir [get_attribute -object $port -attribute "direction"]
+    if {$dir == "input"} {return "input"}
+    if {$dir == "output"} {return "output"}
+    if {$dir == "bidirectional"} {return "inout"}
     return ""
 }
 
-proc get_parameter_name {param} {
-    return [lindex $param 0]
-}
-proc get_parameter_type {param} {
-    return [lindex $param 1]
-}
-proc get_parameter_value {param} {
-    return [lindex $param 2]
+proc get_object_name {obj} {
+    return [get_attribute -object $obj -attribute "name"]
 }
 
 proc get_parameter_type_vlog {param} {
-    set type [get_parameter_type $param]
-    if {$type == "l"} {return "localparam"}
-    if {$type == "g"} {return "parameter"}
-    return ""
+    if {[get_attribute -object $param -attribute "local"]} {
+        return "localparam"
+    } else {
+        return "parameter"
+    }
 }
 
-proc get_declaration_name {decl} {
-    return [lindex $decl 0]
-}
-proc get_declaration_type {decl} {
-    return [lindex $decl 1]
-}
-proc get_declaration_size {decl} {
-    return [lindex $decl 2]
-}
-
-proc get_declaration_bitrange {decl} {
-    set size [get_declaration_size $decl]
-    return [size_to_bitrange $size]
-}
 proc get_declaration_type_vlog {decl} {
-    set type [get_declaration_type $decl]
-    if {$type == "w"} {return "wire"}
-    if {$type == "r"} {return "reg"}
-    return ""
-}
-
-proc get_instance_name {inst} {
-    return [lindex $inst 0]
-}
-proc get_instance_module {inst} {
-    return [lindex $inst 1]
-}
-proc get_instance_parameter_list {inst} {
-    return [lindex $inst 2]
-}
-proc get_instance_pin_list {inst} {
-    return [lindex $inst 3]
-}
-proc get_instance_pin_name {pin} {
-    return [lindex $pin 0]
-}
-proc get_instance_pin_net {pin} {
-    return [lindex $pin 1]
-}
-proc get_instance_parameter_name {param} {
-    return [lindex $param 0]
-}
-proc get_instance_parameter_value {param} {
-    return [lindex $param 1]
-}
-
-proc get_codesection_code {section} {
-    return $section
-}
-
-proc get_ports args {
-    variable port_data
-    return $port_data
-}
-proc get_parameters args {
-    variable param_data
-    return $param_data
-}
-proc get_declarations args {
-    variable decl_data
-    return $decl_data
-}
-proc get_instances args {
-    variable inst_data
-    return $inst_data
-}
-proc get_codesections args {
-    variable code_data
-    return $code_data
+    if {[get_attribute -object $decl -attribute "default_type"]} {
+        return "wire"
+    } else {
+        return "reg"
+    }
 }
 
 proc get_pragma_content {pragma_data pragma_entry pragma_subentry} {
@@ -269,15 +138,16 @@ proc get_pragma_content {pragma_data pragma_entry pragma_subentry} {
     append result "/* pragma icglue ${pragma_entry} end */"
 }
 
-proc add_pragma_default_header {pragma_data mod_name} {
+proc add_pragma_default_header {pragma_data mod_id} {
     if {[lsearch -inline -all -index 1 [lsearch -inline -all -index 0 $pragma_data "keep"] "head"] < 0} {
-        lappend pragma_data [list "keep" "head" [gen_default_header -module $mod_name]]
+        lappend pragma_data [list "keep" "head" [gen_default_header -module $mod_id]]
     }
     return $pragma_data
 }
 
-proc get_module_file {module} {
-    return "./${module}.v"
+proc get_module_file {mod_id} {
+    set module_name [get_attribute -object $mod_id -attribute "name"]
+    return "./${module_name}.v"
 }
 
 proc get_template_file {module} {
@@ -296,4 +166,19 @@ proc gen_default_header args {
     return $result
 }
 
-gen_module "test_module"
+proc is_last {lst entry} {
+    if {[lindex $lst end] == $entry} {
+        return "true"
+    } else {
+        return "false"
+    }
+}
+
+# source construction script
+source module.construct.tcl
+
+# generate modules
+foreach i_module [get_modules -all] {
+    puts "generating module $i_module"
+    gen_module $i_module
+}

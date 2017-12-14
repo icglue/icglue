@@ -2,3 +2,5 @@
 *.o
 *.so
 .*.sw*
+*.v
+!*.template.v
