@@ -16,6 +16,7 @@ static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data);
 
 static char    *ig_lib_gen_name_signal  (struct ig_lib_db *db, const char *basename);
 static char    *ig_lib_gen_name_pinport (struct ig_lib_db *db, const char *basename, enum ig_port_dir dir);
+static bool     ig_lib_gen_name_iscaps (const char *name);
 
 /* header functions */
 struct ig_lib_db *ig_lib_db_new ()
@@ -611,12 +612,28 @@ static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data)
     return false;
 }
 
+static bool ig_lib_gen_name_iscaps (const char *name) {
+    if (name == NULL) return false;
+
+    bool hasupper = false;
+
+    for (const char *ic = name; *ic != '\0'; ic++) {
+        if (g_ascii_islower (*ic)) return false;
+        if (g_ascii_isupper (*ic)) hasupper = true;
+    }
+
+    return hasupper;
+}
+
 static char *ig_lib_gen_name_signal (struct ig_lib_db *db, const char *basename)
 {
     GString *tstr = g_string_new (basename);
 
-    /* TODO: case sensitivity */
-    tstr = g_string_append (tstr, "_s");
+    if (ig_lib_gen_name_iscaps (basename)) {
+        tstr = g_string_append (tstr, "_S");
+    } else {
+        tstr = g_string_append (tstr, "_s");
+    }
 
     char *result = g_string_chunk_insert_const (db->str_chunks, tstr->str);
     g_string_free (tstr, true);
@@ -628,13 +645,24 @@ static char *ig_lib_gen_name_pinport (struct ig_lib_db *db, const char *basename
 {
     GString *tstr = g_string_new (basename);
 
-    /* TODO: case sensitivity */
     if (dir == IG_PD_IN) {
-        tstr = g_string_append (tstr, "_i");
+        if (ig_lib_gen_name_iscaps (basename)) {
+            tstr = g_string_append (tstr, "_I");
+        } else {
+            tstr = g_string_append (tstr, "_i");
+        }
     } else if (dir == IG_PD_OUT) {
-        tstr = g_string_append (tstr, "_o");
+        if (ig_lib_gen_name_iscaps (basename)) {
+            tstr = g_string_append (tstr, "_O");
+        } else {
+            tstr = g_string_append (tstr, "_o");
+        }
     } else if (dir == IG_PD_BIDIR) {
-        tstr = g_string_append (tstr, "_b");
+        if (ig_lib_gen_name_iscaps (basename)) {
+            tstr = g_string_append (tstr, "_B");
+        } else {
+            tstr = g_string_append (tstr, "_b");
+        }
     }
 
     char *result = g_string_chunk_insert_const (db->str_chunks, tstr->str);
