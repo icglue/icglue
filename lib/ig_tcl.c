@@ -333,11 +333,13 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     char   *obj_name   = NULL;
     char   *attr_name  = NULL;
+    char   *defaultval = NULL;
     GSList *attr_list  = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-object",      NULL, (void *) &obj_name,   "object id", NULL},
         {TCL_ARGV_STRING,   "-attribute",   NULL, (void *) &attr_name,  "attribute name", NULL},
+        {TCL_ARGV_STRING,   "-default",     NULL, (void *) &defaultval, "default value for single attribute if attribute does not exist", NULL},
 
         {TCL_ARGV_FUNC,     "-attributes",  (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void*) &attr_list, "attributes as list of form <name> <value> <name2> <value2> ...", NULL},
 
@@ -375,8 +377,12 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
     if (attr_name != NULL) {
         const char *val = ig_obj_attr_get (obj, attr_name);
         if (val == NULL) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not get attribute", -1));
-            return TCL_ERROR;
+            if (defaultval != NULL) {
+                val = defaultval;
+            } else {
+                Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not get attribute", -1));
+                return TCL_ERROR;
+            }
         }
 
         Tcl_SetObjResult (interp, Tcl_NewStringObj (val, -1));

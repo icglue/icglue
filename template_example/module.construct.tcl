@@ -17,3 +17,4 @@ connect -bidir [list [get_instances -name proc_mgmt] [get_instances -name proc_c
 set cs [add_codesection -parent-module [get_modules -name proc_mgmt] -code {
     assign clk = clk_ref;
 }]
+set_attribute -object $cs -attribute "adapt" -value "true"
