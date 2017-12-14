@@ -17,12 +17,11 @@
 %>
 <%= [get_pragma_content $pragma_data "keep" "head"] %>
 
-module <%= [get_attribute -object $mod_id -attribute "name"] %> (
-    <%
+module <%= [get_attribute -object $mod_id -attribute "name"] %> (<%
     # module port list
     foreach i_port $port_data {
-    %><%= [get_attribute -object $i_port -attribute "name"] %><% if {![is_last $port_data $i_port]} { %>,
-    <% }} %>
+    %>
+    <%= [get_attribute -object $i_port -attribute "name"] %><% if {![is_last $port_data $i_port]} { %>,<% }} %>
 );
 
 <%

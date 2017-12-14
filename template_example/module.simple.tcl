@@ -179,6 +179,8 @@ source module.construct.tcl
 
 # generate modules
 foreach i_module [get_modules -all] {
-    puts "generating module $i_module"
-    gen_module $i_module
+    if {![get_attribute -object $i_module -attribute "resource"]} {
+        puts "generating module $i_module"
+        gen_module $i_module
+    }
 }
