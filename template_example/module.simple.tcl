@@ -174,6 +174,40 @@ proc is_last {lst entry} {
     }
 }
 
+proc output_codesection {codesection} {
+    set do_adapt [get_attribute -object $codesection -attribute "adapt" -default "false"]
+    set code [get_attribute -object $codesection -attribute "code"]
+    if {!$do_adapt} {
+        return $code
+    }
+
+    set parent_mod [get_attribute -object $codesection -attribute "parent"]
+    set signal_replace [list]
+    foreach i_port [get_ports -of $parent_mod -all] {
+        set i_rep [list \
+            [get_attribute -object $i_port -attribute "signal"] \
+            [get_attribute -object $i_port -attribute "name"] \
+        ]
+        lappend signal_replace $i_rep
+    }
+    foreach i_decl [get_declarations -of $parent_mod -all] {
+        set i_rep [list \
+            [get_attribute -object $i_decl -attribute "signal"] \
+            [get_attribute -object $i_decl -attribute "name"] \
+        ]
+        lappend signal_replace $i_rep
+    }
+
+    foreach i_rep $signal_replace {
+        set i_orig  "\\m[lindex $i_rep 0]\\M"
+        set i_subst [lindex $i_rep 1]
+
+        regsub -all $i_orig $code $i_subst code
+    }
+
+    return $code
+}
+
 # source construction script
 source module.construct.tcl
 

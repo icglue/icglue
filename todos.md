@@ -4,8 +4,8 @@
 # lib
 - parameters
 - create declarations (e.g. reg)
-- adapt code sections
 - add "nice" tcl wrappers
+- add sng-parser/wrapper?
 
 # logging
 - log control
@@ -13,3 +13,4 @@
 
 # package
 - create package
+- add namespace?
