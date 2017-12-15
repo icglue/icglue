@@ -6,8 +6,10 @@
 
 #include <string.h>
 
-/* Tcl helper function for parsing lists in GSLists */
+/* Tcl helper function for parsing lists in GSLists of char * */
 static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, void *dest_ptr);
+
+static void ig_tclc_connection_parse (const char *input, GString *id, GString *net, bool *adapt);
 
 /* tcl proc declarations */
 static int ig_tclc_create_module    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
@@ -641,7 +643,41 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     return TCL_OK;
 }
 
+static void ig_tclc_connection_parse (const char *input, GString *id, GString *net, bool *adapt)
+{
+    if (input == NULL) return;
+    if (id == NULL) return;
+    if (net == NULL) return;
+    if (adapt == NULL) return;
 
+    log_debug ("TCnPr", "parsing connection info: %s", input);
+    const char *split_net = strstr (input, "->");
+    g_string_assign (id, input);
+    if (split_net == NULL) {
+        g_string_assign (net, "");
+        *adapt = true;
+        log_debug ("TCnPr", "got only object: %s", input);
+        return;
+    }
+
+    g_string_truncate (id, (split_net - input));
+    g_string_assign (net, split_net + 2);
+
+    if (net->len == 0) {
+        *adapt = true;
+        log_debug ("TCnPr", "got only object: %s", input);
+        return;
+    }
+
+    if (net->str[net->len - 1] == '!') {
+        *adapt = true;
+        g_string_truncate (net, net->len - 1);
+        log_debug ("TCnPr", "got object + net + adapt: %s -> %s", id->str, net->str);
+    } else {
+        *adapt = false;
+        log_debug ("TCnPr", "got object + net + force: %s -> %s", id->str, net->str);
+    }
+}
 
 static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
@@ -690,22 +726,6 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
     if (result != TCL_OK) goto ig_tclc_connect_exit;
 
-    /* check */
-    log_debug ("TCCon", "checking connection info");
-    if (from != NULL) {
-        if (!g_hash_table_contains (db->objects_by_id, from)) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid object specified", -1));
-            result = TCL_ERROR;
-        }
-    }
-    for (GSList *li = to_list; li != NULL; li = li->next) {
-        if (!g_hash_table_contains (db->objects_by_id, li->data)) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid object specified", -1));
-            result = TCL_ERROR;
-            break;
-        }
-    }
-
     /* TODO: local individual port names... */
 
     log_debug ("TCCon", "generating connection info");
@@ -713,11 +733,21 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
     struct ig_lib_connection_info *src = NULL;
     GList *trg_list = NULL;
+    GString *tstr_id  = g_string_new (NULL);
+    GString *tstr_net = g_string_new (NULL);
+    bool     t_adapt  = false;
 
     if (from != NULL) {
-        struct ig_object *src_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, from);
+        ig_tclc_connection_parse (from, tstr_id, tstr_net, &t_adapt);
+        struct ig_object *src_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, tstr_id->str);
         if (src_obj == NULL) goto ig_tclc_connect_nfexit;
-        src = ig_lib_connection_info_new (db->str_chunks, src_obj, NULL, IG_LCDIR_UP);
+
+        if (tstr_net->len > 0) {
+            src = ig_lib_connection_info_new (db->str_chunks, src_obj, tstr_net->str, IG_LCDIR_UP);
+            src->force_name = !t_adapt;
+        } else {
+            src = ig_lib_connection_info_new (db->str_chunks, src_obj, NULL, IG_LCDIR_UP);
+        }
     }
 
     GSList *trg_orig_list = to_list;
@@ -726,10 +756,19 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         trg_orig_list = bd_list;
         trg_dir = IG_LCDIR_BIDIR;
     }
+
     for (GSList *li = trg_orig_list; li != NULL; li = li->next) {
-        struct ig_object *trg_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, li->data);
+        ig_tclc_connection_parse ((const char *) li->data, tstr_id, tstr_net, &t_adapt);
+        struct ig_object *trg_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, tstr_id->str);
         if (trg_obj == NULL) goto ig_tclc_connect_nfexit;
-        struct ig_lib_connection_info *trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, NULL, trg_dir);
+
+        struct ig_lib_connection_info *trg = NULL;
+        if (tstr_net->len > 0) {
+            trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, tstr_net->str, trg_dir);
+            trg->force_name = !t_adapt;
+        } else {
+            trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, NULL, trg_dir);
+        }
         trg_list = g_list_prepend (trg_list, trg);
     }
     trg_list = g_list_reverse (trg_list);
@@ -756,6 +795,10 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     Tcl_SetObjResult (interp, retval);
     g_list_free (gen_objs);
 
+ig_tclc_connect_exit_pre:
+    g_string_free (tstr_id, true);
+    g_string_free (tstr_net, true);
+
 ig_tclc_connect_exit:
     g_slist_free (to_list);
     g_slist_free (bd_list);
@@ -772,6 +815,6 @@ ig_tclc_connect_nfexit:
     }
     result = TCL_ERROR;
     Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not find object", -1));
-    goto ig_tclc_connect_exit;
+    goto ig_tclc_connect_exit_pre;
 }
 

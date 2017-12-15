@@ -261,7 +261,10 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
         }
 
         /* local name? */
-        if (i_cinfo->local_name != NULL) cinfo_node->local_name = i_cinfo->local_name;
+        if (i_cinfo->local_name != NULL) {
+            cinfo_node->local_name = i_cinfo->local_name;
+            cinfo_node->force_name = i_cinfo->force_name;
+        }
 
         /* dir merge */
         if (cinfo_node->dir == IG_LCDIR_DEFAULT) {
@@ -324,6 +327,8 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
 {
     GList *result = NULL;
 
+    bool copy_first = false;
+
     /* startpoint is instance of generated module? */
     if (cinfo->obj->type == IG_OBJ_INSTANCE) {
         struct ig_instance *inst = (struct ig_instance *) cinfo->obj->obj;
@@ -331,6 +336,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
 
         if (!mod->resource) {
             cinfo->obj = mod->object;
+            copy_first = true;
         }
     }
 
@@ -350,7 +356,13 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
             result = g_list_prepend (result, cinfo);
             struct ig_module *mod = (struct ig_module *) cinfo->obj->obj;
             if (mod->default_instance == NULL) return result;
-            cinfo = ig_lib_connection_info_new (db->str_chunks, mod->default_instance->object, NULL, cinfo->dir);
+            if (copy_first) {
+                bool force_name = cinfo->force_name;
+                cinfo = ig_lib_connection_info_new (db->str_chunks, mod->default_instance->object, cinfo->local_name, cinfo->dir);
+                cinfo->force_name = force_name;
+            } else {
+                cinfo = ig_lib_connection_info_new (db->str_chunks, mod->default_instance->object, NULL, cinfo->dir);
+            }
             continue;
         } else {
             log_errorint ("LGnHi", "object of invalid type in module/instance hierarchy");
@@ -374,6 +386,7 @@ struct ig_lib_connection_info *ig_lib_connection_info_new (GStringChunk *str_chu
     result->obj = obj;
     result->dir = dir;
     result->is_explicit = false;
+    result->force_name  = false;
 
     if (local_name == NULL) {
         result->local_name = NULL;
@@ -396,6 +409,7 @@ struct ig_lib_connection_info *ig_lib_connection_info_copy (GStringChunk *str_ch
     result->obj = original->obj;
     result->dir = original->dir;
     result->is_explicit = original->is_explicit;
+    result->force_name  = original->force_name;
 
     if (original->local_name != NULL) {
         result->local_name = g_string_chunk_insert_const (str_chunks, original->local_name);
@@ -542,13 +556,19 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
             conn_name = "";
         }
 
-        enum ig_port_dir pdir = IG_PD_IN;
-        if (cinfo->dir == IG_LCDIR_UP) {
-            pdir = IG_PD_OUT;
-        } else if (cinfo->dir == IG_LCDIR_BIDIR) {
-            pdir = IG_PD_BIDIR;
+        const char *pin_name;
+
+        if (cinfo->force_name) {
+            pin_name = local_name;
+        } else {
+            enum ig_port_dir pdir = IG_PD_IN;
+            if (cinfo->dir == IG_LCDIR_UP) {
+                pdir = IG_PD_OUT;
+            } else if (cinfo->dir == IG_LCDIR_BIDIR) {
+                pdir = IG_PD_BIDIR;
+            }
+            pin_name = ig_lib_gen_name_pinport (db, local_name, pdir);
         }
-        const char *pin_name = ig_lib_gen_name_pinport (db, local_name, pdir);
 
         /* create a pin */
         struct ig_pin *inst_pin = ig_pin_new (pin_name, conn_name, inst, db->str_chunks);
@@ -569,7 +589,11 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
         const char *signal_name = NULL;
 
         if (G_NODE_IS_ROOT (node)) {
-            signal_name = ig_lib_gen_name_signal (db, local_name);
+            if (cinfo->force_name) {
+                signal_name = local_name;
+            } else {
+                signal_name = ig_lib_gen_name_signal (db, local_name);
+            }
 
             /* create a declaration */
             struct ig_decl *mod_decl = ig_decl_new (signal_name, NULL, true, mod, db->str_chunks);

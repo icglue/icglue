@@ -44,6 +44,7 @@ struct ig_lib_connection_info {
     const char *parent_name;
     const char *local_name;
     bool is_explicit;
+    bool force_name;
     enum ig_lib_connection_dir dir;
 };
 
