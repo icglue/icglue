@@ -438,6 +438,11 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
 
     /* command version */
     const char *cmdname = Tcl_GetString (objv[0]);
+    while (true) {
+        const char *cmdchomp = strstr (cmdname, "::");
+        if (cmdchomp == NULL) break;
+        cmdname = cmdchomp + 2;
+    }
     enum ig_tclc_get_objs_of_obj_version version = IG_TOOOV_INVALID;
     if (strcmp (cmdname, "get_ports") == 0) {
         version = IG_TOOOV_PORTS;
