@@ -338,6 +338,11 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
             cinfo->obj = mod->object;
             copy_first = true;
         }
+    } else if (cinfo->obj->type == IG_OBJ_MODULE) {
+        struct ig_module *mod = (struct ig_module *) cinfo->obj->obj;
+        if (!mod->resource) {
+            copy_first = true;
+        }
     }
 
     log_debug ("LGnHi", "creating hierarchy list...");
@@ -360,6 +365,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
                 bool force_name = cinfo->force_name;
                 cinfo = ig_lib_connection_info_new (db->str_chunks, mod->default_instance->object, cinfo->local_name, cinfo->dir);
                 cinfo->force_name = force_name;
+                copy_first = false;
             } else {
                 cinfo = ig_lib_connection_info_new (db->str_chunks, mod->default_instance->object, NULL, cinfo->dir);
             }
