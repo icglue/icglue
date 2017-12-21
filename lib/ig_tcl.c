@@ -19,6 +19,7 @@ static int ig_tclc_set_attribute    (ClientData clientdata, Tcl_Interp *interp, 
 static int ig_tclc_get_attribute    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_get_objs_of_obj  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_connect          (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_parameter        (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 void ig_add_tcl_commands (Tcl_Interp *interp)
 {
@@ -40,6 +41,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, "get_pins",         ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "get_adjustments",  ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "connect",          ig_tclc_connect,         lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "parameter",        ig_tclc_parameter,       lib_db, NULL);
 }
 
 /* Tcl helper function for parsing lists in GSLists */
@@ -706,7 +708,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
-    if (result != TCL_OK) goto ig_tclc_connect_exit;
+    if (result != TCL_OK) goto l_ig_tclc_connect_exit;
 
     if (name == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: signal name is required", -1));
@@ -724,10 +726,9 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         size = "1";
     }
 
-    if (result != TCL_OK) goto ig_tclc_connect_exit;
+    if (result != TCL_OK) goto l_ig_tclc_connect_exit;
 
     log_debug ("TCCon", "generating connection info");
-    if (result != TCL_OK) goto ig_tclc_connect_exit;
 
     struct ig_lib_connection_info *src = NULL;
     GList *trg_list = NULL;
@@ -738,7 +739,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     if (from != NULL) {
         ig_tclc_connection_parse (from, tstr_id, tstr_net, &t_adapt);
         struct ig_object *src_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, tstr_id->str);
-        if (src_obj == NULL) goto ig_tclc_connect_nfexit;
+        if (src_obj == NULL) goto l_ig_tclc_connect_nfexit;
 
         if (tstr_net->len > 0) {
             src = ig_lib_connection_info_new (db->str_chunks, src_obj, tstr_net->str, IG_LCDIR_UP);
@@ -758,7 +759,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     for (GSList *li = trg_orig_list; li != NULL; li = li->next) {
         ig_tclc_connection_parse ((const char *) li->data, tstr_id, tstr_net, &t_adapt);
         struct ig_object *trg_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, tstr_id->str);
-        if (trg_obj == NULL) goto ig_tclc_connect_nfexit;
+        if (trg_obj == NULL) goto l_ig_tclc_connect_nfexit;
 
         struct ig_lib_connection_info *trg = NULL;
         if (tstr_net->len > 0) {
@@ -793,17 +794,17 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     Tcl_SetObjResult (interp, retval);
     g_list_free (gen_objs);
 
-ig_tclc_connect_exit_pre:
+l_ig_tclc_connect_exit_pre:
     g_string_free (tstr_id, true);
     g_string_free (tstr_net, true);
 
-ig_tclc_connect_exit:
+l_ig_tclc_connect_exit:
     g_slist_free (to_list);
     g_slist_free (bd_list);
 
     return result;
 
-ig_tclc_connect_nfexit:
+l_ig_tclc_connect_nfexit:
     if (src != NULL) {
         ig_lib_connection_info_free (src);
     }
@@ -813,6 +814,110 @@ ig_tclc_connect_nfexit:
     }
     result = TCL_ERROR;
     Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not find object", -1));
-    goto ig_tclc_connect_exit_pre;
+    goto l_ig_tclc_connect_exit_pre;
+}
+
+static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    char   *name     = NULL;
+    char   *value    = NULL;
+    GSList *ept_list = NULL;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_STRING,   "-name",        NULL,                                                      (void *) &name,     "parameter name", NULL},
+        {TCL_ARGV_STRING,   "-value",       NULL,                                                      (void *) &value,    "default value", NULL},
+        {TCL_ARGV_FUNC,     "-targets",     (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void *) &ept_list, "list of endpoints for parameter", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) goto l_ig_tclc_parameter_exit;
+
+    if (name == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter name is required", -1));
+        result = TCL_ERROR;
+    }
+    if (value == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter value is required", -1));
+        result = TCL_ERROR;
+    }
+    if (ept_list == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: endpoint list is required for parameters", -1));
+        result = TCL_ERROR;
+    }
+
+    if (result != TCL_OK) goto l_ig_tclc_parameter_exit;
+
+    log_debug ("TCPar", "generating connection info");
+
+    GList *trg_list = NULL;
+    GString *tstr_id  = g_string_new (NULL);
+    GString *tstr_par = g_string_new (NULL);
+    bool     t_adapt  = false;
+
+    enum ig_lib_connection_dir trg_dir = IG_LCDIR_DEFAULT;
+
+    for (GSList *li = ept_list; li != NULL; li = li->next) {
+        ig_tclc_connection_parse ((const char *) li->data, tstr_id, tstr_par, &t_adapt);
+        struct ig_object *trg_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, tstr_id->str);
+        if (trg_obj == NULL) goto l_ig_tclc_parameter_nfexit;
+
+        struct ig_lib_connection_info *trg = NULL;
+        if (tstr_par->len > 0) {
+            trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, tstr_par->str, trg_dir);
+            trg->force_name = !t_adapt;
+        } else {
+            trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, NULL, trg_dir);
+        }
+        trg_list = g_list_prepend (trg_list, trg);
+    }
+    trg_list = g_list_reverse (trg_list);
+
+    log_debug ("TCPar", "starting parametrization...");
+    GList *gen_objs = NULL;
+
+    if (!ig_lib_parameter (db, name, value, trg_list, &gen_objs)) {
+        g_list_free (gen_objs);
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not generate parameter...", -1));
+        result = TCL_ERROR;
+    }
+
+    Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
+    for (GList *li = gen_objs; li != NULL; li = li->next) {
+        struct ig_object *i_obj = (struct ig_object *) li->data;
+
+        Tcl_Obj *t_obj = Tcl_NewStringObj (i_obj->id, -1);
+        Tcl_ListObjAppendElement (interp, retval, t_obj);
+    }
+
+    Tcl_SetObjResult (interp, retval);
+    g_list_free (gen_objs);
+
+l_ig_tclc_parameter_exit_pre:
+    g_string_free (tstr_id, true);
+    g_string_free (tstr_par, true);
+
+l_ig_tclc_parameter_exit:
+    g_slist_free (ept_list);
+
+    return result;
+
+l_ig_tclc_parameter_nfexit:
+    for (GList *li = trg_list; li != NULL; li = li->next) {
+        struct ig_lib_connection_info *trg = (struct ig_lib_connection_info *) li->data;
+        ig_lib_connection_info_free (trg);
+    }
+    result = TCL_ERROR;
+    Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not find object", -1));
+    goto l_ig_tclc_parameter_exit_pre;
 }
 
