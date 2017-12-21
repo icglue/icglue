@@ -9,8 +9,10 @@ static GList   *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connec
 static GNode   *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_list, const char *signame);
 static void     ig_lib_htree_print (GNode *hier_tree);
 static GNode   *ig_lib_htree_reduce (GNode *hier_tree);
-static GList   *ig_lib_htree_process (struct ig_lib_db *db, GNode *hier_tree);
-static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data);
+static GList   *ig_lib_htree_process_signal (struct ig_lib_db *db, GNode *hier_tree);
+static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data);
+static GList   *ig_lib_htree_process_parameter (struct ig_lib_db *db, GNode *hier_tree, const char *defvalue);
+static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data);
 static void     ig_lib_htree_free (GNode *hier_tree);
 static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data);
 
@@ -173,7 +175,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
 
     if (error) {
         result = false;
-        goto l_ig_lib_connection_unidir_final_free_hierlist;
+        goto l_ig_lib_connection_final_free_hierlist;
     }
 
     log_debug ("LCnUd", "merging to hierarchy tree...");
@@ -182,7 +184,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
 
     if (hier_tree == NULL) {
         result = false;
-        goto l_ig_lib_connection_unidir_final_free_hierlist;
+        goto l_ig_lib_connection_final_free_hierlist;
     }
 
     log_debug ("LCnUd", "printing hierarchy tree...");
@@ -195,7 +197,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
     ig_lib_htree_print (hier_tree);
 
     log_debug ("LCnUd", "processing hierarchy tree...");
-    GList *gen_objs_res = ig_lib_htree_process (db, hier_tree);
+    GList *gen_objs_res = ig_lib_htree_process_signal (db, hier_tree);
     if (gen_objs_res != NULL) {
         log_info ("LCnUd", "successfully created signal %s", signame);
     } else {
@@ -210,7 +212,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
     log_debug ("LCnUd", "deleting hierarchy tree...");
     ig_lib_htree_free (hier_tree);
 
-l_ig_lib_connection_unidir_final_free_hierlist:
+l_ig_lib_connection_final_free_hierlist:
     for (GList *li = hier_start_list; li != NULL; li = li->next) {
         GList *hier = (GList *) li->data;
         for (GList *lj = hier; lj != NULL; lj = lj->next) {
@@ -223,6 +225,86 @@ l_ig_lib_connection_unidir_final_free_hierlist:
 
     return result;
 }
+
+bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *defvalue, GList *targets, GList **gen_objs)
+{
+    GList *hier_start_list = NULL;
+
+    log_debug ("LParm", "creating individual hierarchies...");
+    bool error = false;
+
+    for (GList *li = targets; li != NULL; li = li->next) {
+        struct ig_lib_connection_info *start = (struct ig_lib_connection_info *) li->data;
+        start->is_explicit = true;
+
+        log_debug ("LParm", "creating targetpoint hierarchy...");
+        GList *target_hier = ig_lib_gen_hierarchy (db, start);
+        if (target_hier == NULL) {
+            error = true;
+        } else {
+            hier_start_list = g_list_prepend (hier_start_list, target_hier);
+        }
+        log_debug ("LParm", "targetpoint hierarchy depth: %d", g_list_length (target_hier));
+    }
+
+    g_list_free (targets);
+
+    bool result = true;
+
+    if (error) {
+        result = false;
+        goto l_ig_lib_parameter_final_free_hierlist;
+    }
+
+    log_debug ("LParm", "merging to hierarchy tree...");
+    /* create hierarchy tree */
+    GNode *hier_tree = ig_lib_merge_hierarchy_list (db, hier_start_list, parname);
+
+    if (hier_tree == NULL) {
+        result = false;
+        goto l_ig_lib_parameter_final_free_hierlist;
+    }
+
+    log_debug ("LParm", "printing hierarchy tree...");
+    /* debug: printout */
+    ig_lib_htree_print (hier_tree);
+
+    log_debug ("LParm", "reducing hierarchy tree...");
+    hier_tree = ig_lib_htree_reduce (hier_tree);
+
+    ig_lib_htree_print (hier_tree);
+
+    log_debug ("LParm", "processing hierarchy tree...");
+    GList *gen_objs_res = ig_lib_htree_process_parameter (db, hier_tree, defvalue);
+    if (gen_objs_res != NULL) {
+        log_info ("LParm", "successfully created parameter %s", parname);
+    } else {
+        log_warn ("LParm", "nothing created for parameter %s", parname);
+    }
+    if (gen_objs != NULL) *gen_objs = gen_objs_res;
+    for (GList *li = gen_objs_res; li != NULL; li = li->next) {
+        struct ig_object *io = (struct ig_object *) li->data;
+        ig_obj_attr_set (io, "parameter", parname, true);
+    }
+
+    log_debug ("LParm", "deleting hierarchy tree...");
+    ig_lib_htree_free (hier_tree);
+
+
+l_ig_lib_parameter_final_free_hierlist:
+    for (GList *li = hier_start_list; li != NULL; li = li->next) {
+        GList *hier = (GList *) li->data;
+        for (GList *lj = hier; lj != NULL; lj = lj->next) {
+            struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) lj->data;
+            ig_lib_connection_info_free (cinfo);
+        }
+        g_list_free (hier);
+    }
+    g_list_free (hier_start_list);
+
+    return result;
+}
+
 
 static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_list, const char *signame)
 {
@@ -525,23 +607,23 @@ static GNode *ig_lib_htree_reduce (GNode *hier_tree)
     return temp;
 }
 
-struct ig_lib_htree_process_data {
+struct ig_lib_htree_process_signal_data {
     struct ig_lib_db *db;
     GList            *gen_objs;
 };
 
-static GList *ig_lib_htree_process (struct ig_lib_db *db, GNode *hier_tree)
+static GList *ig_lib_htree_process_signal (struct ig_lib_db *db, GNode *hier_tree)
 {
-    struct ig_lib_htree_process_data data = {db, NULL};
+    struct ig_lib_htree_process_signal_data data = {db, NULL};
 
-    g_node_traverse (hier_tree, G_PRE_ORDER, G_TRAVERSE_ALL, -1, ig_lib_htree_process_tfunc, &data);
+    g_node_traverse (hier_tree, G_PRE_ORDER, G_TRAVERSE_ALL, -1, ig_lib_htree_process_signal_tfunc, &data);
 
     return data.gen_objs;
 }
 
-static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
+static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
 {
-    struct ig_lib_htree_process_data *pdata = (struct ig_lib_htree_process_data *) data;
+    struct ig_lib_htree_process_signal_data *pdata = (struct ig_lib_htree_process_signal_data *) data;
 
     struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) node->data;
     struct ig_lib_db *db = (struct ig_lib_db *) pdata->db;
@@ -551,14 +633,14 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
     const char *local_name  = cinfo->local_name;
     const char *parent_name = cinfo->parent_name;
 
-    log_debug ("HTrPr", "processing node %s", obj->id);
+    log_debug ("HTrPS", "processing node %s", obj->id);
 
     if (obj->type == IG_OBJ_INSTANCE) {
         struct ig_instance *inst = (struct ig_instance *) obj->obj;
 
         const char *conn_name = parent_name;
         if (conn_name == NULL) {
-            log_error ("HTrPr", "No connection for signal %s in instance %s", local_name, obj->id);
+            log_error ("HTrPS", "No connection for signal %s in instance %s", local_name, obj->id);
             conn_name = "";
         }
 
@@ -579,12 +661,12 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
         /* create a pin */
         struct ig_pin *inst_pin = ig_pin_new (pin_name, conn_name, inst, db->str_chunks);
         if (g_hash_table_contains (db->objects_by_id, inst_pin->object->id)) {
-            log_error ("HTrPr", "Already declared pin %s", inst_pin->object->id);
+            log_error ("HTrPS", "Already declared pin %s", inst_pin->object->id);
         }
         g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, inst_pin->object->id), inst_pin->object);
         pdata->gen_objs = g_list_prepend (pdata->gen_objs, inst_pin->object);
 
-        log_debug ("HTrPr", "Created pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, inst->object->id, conn_name);
+        log_debug ("HTrPS", "Created pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, inst->object->id, conn_name);
         for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
             struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) in->data;
             i_cinfo->parent_name = pin_name;
@@ -604,16 +686,16 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
             /* create a declaration */
             struct ig_decl *mod_decl = ig_decl_new (signal_name, NULL, true, mod, db->str_chunks);
             if (g_hash_table_contains (db->objects_by_id, mod_decl->object->id)) {
-                log_error ("HTrPr", "Already declared declaration %s", mod_decl->object->id);
+                log_error ("HTrPS", "Already declared declaration %s", mod_decl->object->id);
             }
             g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_decl->object->id), mod_decl->object);
             pdata->gen_objs = g_list_prepend (pdata->gen_objs, mod_decl->object);
 
-            log_debug ("HTrPr", "Created declaration \"%s\" in module \"%s\"", signal_name, mod->object->id);
+            log_debug ("HTrPS", "Created declaration \"%s\" in module \"%s\"", signal_name, mod->object->id);
         } else {
             signal_name = parent_name;
             if (signal_name == NULL) {
-                log_error ("HTrPr", "No pin for signal %s in instance of module %s", local_name, obj->id);
+                log_error ("HTrPS", "No pin for signal %s in instance of module %s", local_name, obj->id);
                 signal_name = "";
             }
 
@@ -626,12 +708,12 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
             /* create a port */
             struct ig_port *mod_port = ig_port_new (signal_name, pdir, mod, db->str_chunks);
             if (g_hash_table_contains (db->objects_by_id, mod_port->object->id)) {
-                log_error ("HTrPr", "Already declared port %s", mod_port->object->id);
+                log_error ("HTrPS", "Already declared port %s", mod_port->object->id);
             }
             g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_port->object->id), mod_port->object);
             pdata->gen_objs = g_list_prepend (pdata->gen_objs, mod_port->object);
 
-            log_debug ("HTrPr", "Created port \"%s\" in module \"%s\"", signal_name, mod->object->id);
+            log_debug ("HTrPS", "Created port \"%s\" in module \"%s\"", signal_name, mod->object->id);
         }
 
         for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
@@ -639,7 +721,108 @@ static gboolean ig_lib_htree_process_tfunc (GNode *node, gpointer data)
             i_cinfo->parent_name = signal_name;
         }
     } else {
-        log_errorint ("HTrPr", "invalid object in hierarchy tree");
+        log_errorint ("HTrPS", "invalid object in hierarchy tree");
+    }
+
+    return false;
+}
+
+struct ig_lib_htree_process_parameter_data {
+    struct ig_lib_db *db;
+    GList            *gen_objs;
+    const char       *defvalue;
+    bool              root_local;
+};
+
+static GList *ig_lib_htree_process_parameter (struct ig_lib_db *db, GNode *hier_tree, const char *defvalue)
+{
+    struct ig_lib_htree_process_parameter_data data = {db, NULL, defvalue, false};
+
+    g_node_traverse (hier_tree, G_PRE_ORDER, G_TRAVERSE_ALL, -1, ig_lib_htree_process_parameter_tfunc, &data);
+
+    return data.gen_objs;
+}
+
+static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data)
+{
+    struct ig_lib_htree_process_parameter_data *pdata = (struct ig_lib_htree_process_parameter_data *) data;
+
+    struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) node->data;
+    struct ig_lib_db *db = pdata->db;
+    const char *defvalue = pdata->defvalue;
+
+    struct ig_object *obj = cinfo->obj;
+
+    const char *local_name  = cinfo->local_name;
+    const char *parent_name = cinfo->parent_name;
+
+    log_debug ("HTrPP", "processing node %s", obj->id);
+
+    if (obj->type == IG_OBJ_INSTANCE) {
+        struct ig_instance *inst = (struct ig_instance *) obj->obj;
+
+        const char *adj_name = parent_name;
+        if (adj_name == NULL) {
+            log_error ("HTrPP", "No value for parameter adjustment %s in instance %s", local_name, obj->id);
+            adj_name = "";
+        }
+
+        const char *par_name = local_name;
+
+        /* create an adjustment */
+        struct ig_adjustment *inst_adj = ig_adjustment_new (par_name, adj_name, inst, db->str_chunks);
+        if (g_hash_table_contains (db->objects_by_id, inst_adj->object->id)) {
+            log_error ("HTrPP", "Already declared parameter adjustment %s", inst_adj->object->id);
+        }
+        g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, inst_adj->object->id), inst_adj->object);
+        pdata->gen_objs = g_list_prepend (pdata->gen_objs, inst_adj->object);
+
+        log_debug ("HTrPP", "Created adjustment of parameter \"%s\" in instance \"%s\" to value \"%s\"", par_name, inst->object->id, adj_name);
+        for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
+            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) in->data;
+            i_cinfo->parent_name = par_name;
+        }
+    } else if (obj->type == IG_OBJ_MODULE) {
+        struct ig_module *mod = (struct ig_module *) obj->obj;
+
+        const char *par_name = NULL;
+
+        if (pdata->root_local && G_NODE_IS_ROOT (node)) {
+            par_name = local_name;
+
+            /* create a local parameter */
+            struct ig_param *mod_param = ig_param_new (par_name, defvalue, true, mod, db->str_chunks);
+            if (g_hash_table_contains (db->objects_by_id, mod_param->object->id)) {
+                log_error ("HTrPP", "Already declared parameter %s", mod_param->object->id);
+            }
+            g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_param->object->id), mod_param->object);
+            pdata->gen_objs = g_list_prepend (pdata->gen_objs, mod_param->object);
+
+            log_debug ("HTrPP", "Created local parameter \"%s\" in module \"%s\"", par_name, mod->object->id);
+        } else {
+            par_name = parent_name;
+            if (par_name == NULL) {
+                log_error ("HTrPP", "No module-parameter for parameter %s in module %s", local_name, obj->id);
+                par_name = "";
+            }
+
+            /* create a parameter */
+            struct ig_param *mod_param = ig_param_new (par_name, defvalue, false, mod, db->str_chunks);
+            if (g_hash_table_contains (db->objects_by_id, mod_param->object->id)) {
+                log_error ("HTrPP", "Already declared parameter %s", mod_param->object->id);
+            }
+            g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_param->object->id), mod_param->object);
+            pdata->gen_objs = g_list_prepend (pdata->gen_objs, mod_param->object);
+
+            log_debug ("HTrPP", "Created parameter \"%s\" in module \"%s\"", par_name, mod->object->id);
+        }
+
+        for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
+            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) in->data;
+            i_cinfo->parent_name = par_name;
+        }
+    } else {
+        log_errorint ("HTrPP", "invalid object in hierarchy tree");
     }
 
     return false;

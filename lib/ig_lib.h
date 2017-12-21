@@ -60,7 +60,7 @@ struct ig_lib_connection_info *ig_lib_connection_info_copy (GStringChunk *str_ch
 void                           ig_lib_connection_info_free (struct ig_lib_connection_info *cinfo);
 
 bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets, GList **gen_objs);
-
+bool ig_lib_parameter  (struct ig_lib_db *db, const char *parname, const char *defvalue, GList *targets, GList **gen_objs);
 
 #ifdef __cplusplus
 }
