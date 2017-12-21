@@ -139,34 +139,34 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
 {
     GList *hier_start_list = NULL;
 
-    log_debug ("LCnUD", "creating individual hierarchies...");
+    log_debug ("LConn", "creating individual hierarchies...");
     bool error = false;
 
     if (source != NULL) {
         source->dir = IG_LCDIR_UP;
         source->is_explicit = true;
-        log_debug ("LCnUd", "creating startpoint hierarchy...");
+        log_debug ("LConn", "creating startpoint hierarchy...");
         GList *source_hier = ig_lib_gen_hierarchy (db, source);
         if (source_hier == NULL) {
             error = true;
         } else {
             hier_start_list = g_list_prepend (hier_start_list, source_hier);
         }
-        log_debug ("LCnUd", "startpoint hierarchy depth: %d", g_list_length (source_hier));
+        log_debug ("LConn", "startpoint hierarchy depth: %d", g_list_length (source_hier));
     }
 
     for (GList *li = targets; li != NULL; li = li->next) {
         struct ig_lib_connection_info *start = (struct ig_lib_connection_info *) li->data;
         start->is_explicit = true;
 
-        log_debug ("LCnUd", "creating targetpoint hierarchy...");
+        log_debug ("LConn", "creating targetpoint hierarchy...");
         GList *target_hier = ig_lib_gen_hierarchy (db, start);
         if (target_hier == NULL) {
             error = true;
         } else {
             hier_start_list = g_list_prepend (hier_start_list, target_hier);
         }
-        log_debug ("LCnUd", "targetpoint hierarchy depth: %d", g_list_length (target_hier));
+        log_debug ("LConn", "targetpoint hierarchy depth: %d", g_list_length (target_hier));
     }
 
     g_list_free (targets);
@@ -178,7 +178,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
         goto l_ig_lib_connection_final_free_hierlist;
     }
 
-    log_debug ("LCnUd", "merging to hierarchy tree...");
+    log_debug ("LConn", "merging to hierarchy tree...");
     /* create hierarchy tree */
     GNode *hier_tree = ig_lib_merge_hierarchy_list (db, hier_start_list, signame);
 
@@ -187,21 +187,21 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
         goto l_ig_lib_connection_final_free_hierlist;
     }
 
-    log_debug ("LCnUd", "printing hierarchy tree...");
+    log_debug ("LConn", "printing hierarchy tree...");
     /* debug: printout */
     ig_lib_htree_print (hier_tree);
 
-    log_debug ("LCnUd", "reducing hierarchy tree...");
+    log_debug ("LConn", "reducing hierarchy tree...");
     hier_tree = ig_lib_htree_reduce (hier_tree);
 
     ig_lib_htree_print (hier_tree);
 
-    log_debug ("LCnUd", "processing hierarchy tree...");
+    log_debug ("LConn", "processing hierarchy tree...");
     GList *gen_objs_res = ig_lib_htree_process_signal (db, hier_tree);
     if (gen_objs_res != NULL) {
-        log_info ("LCnUd", "successfully created signal %s", signame);
+        log_info ("LConn", "successfully created signal %s", signame);
     } else {
-        log_warn ("LCnUd", "nothing created for signal %s", signame);
+        log_warn ("LConn", "nothing created for signal %s", signame);
     }
     if (gen_objs != NULL) *gen_objs = gen_objs_res;
     for (GList *li = gen_objs_res; li != NULL; li = li->next) {
@@ -209,7 +209,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
         ig_obj_attr_set (io, "signal", signame, true);
     }
 
-    log_debug ("LCnUd", "deleting hierarchy tree...");
+    log_debug ("LConn", "deleting hierarchy tree...");
     ig_lib_htree_free (hier_tree);
 
 l_ig_lib_connection_final_free_hierlist:
