@@ -800,7 +800,11 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
 
             log_debug ("HTrPP", "Created local parameter \"%s\" in module \"%s\"", par_name, mod->object->id);
         } else {
-            par_name = parent_name;
+            if (G_NODE_IS_ROOT (node)) {
+                par_name = local_name;
+            } else {
+                par_name = parent_name;
+            }
             if (par_name == NULL) {
                 log_error ("HTrPP", "No module-parameter for parameter %s in module %s", local_name, obj->id);
                 par_name = "";
