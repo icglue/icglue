@@ -726,8 +726,6 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
     if (result != TCL_OK) goto ig_tclc_connect_exit;
 
-    /* TODO: local individual port names... */
-
     log_debug ("TCCon", "generating connection info");
     if (result != TCL_OK) goto ig_tclc_connect_exit;
 
