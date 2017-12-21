@@ -2,7 +2,6 @@
 - documentation
 
 # lib
-- parameters
 - create declarations (e.g. reg)
 - add "nice" tcl wrappers
 - add sng-parser/wrapper?
