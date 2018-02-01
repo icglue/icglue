@@ -31,6 +31,7 @@ extern "C" {
         // #loglevels
         LOGLEVEL_COUNT
     } log_level_t;
+    extern gchar* loglevel_label[LOGLEVEL_COUNT];
 
 
     #define log_debug(id, format...)    log_base (LOGLEVEL_DEBUG,    id, __FILE__, __LINE__, format)
@@ -51,6 +52,8 @@ extern "C" {
 
     void log_colors_on ();
     void log_colors_off ();
+
+    void log_dump_settings ();
 
     extern gboolean log_linenumbers;
 #ifdef __cplusplus

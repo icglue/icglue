@@ -20,6 +20,7 @@ static int ig_tclc_get_attribute    (ClientData clientdata, Tcl_Interp *interp, 
 static int ig_tclc_get_objs_of_obj  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_connect          (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_parameter        (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_logger           (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 void ig_add_tcl_commands (Tcl_Interp *interp)
 {
@@ -42,6 +43,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, "get_adjustments",  ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, "connect",          ig_tclc_connect,         lib_db, NULL);
     Tcl_CreateObjCommand (interp, "parameter",        ig_tclc_parameter,       lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "logger",           ig_tclc_logger,          lib_db, NULL);
 }
 
 /* Tcl helper function for parsing lists in GSLists */
@@ -921,3 +923,73 @@ l_ig_tclc_parameter_nfexit:
     goto l_ig_tclc_parameter_exit_pre;
 }
 
+static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    gchar *loglevel = NULL;
+    gchar *log_id = NULL;
+    gint int_true = true;
+    gboolean list = false;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_STRING,   "-level", NULL,                        (void *) &loglevel,  "log level",                   NULL},
+        {TCL_ARGV_STRING,   "-id",    NULL,                        (void *) &log_id,    "log id",                      NULL},
+        {TCL_ARGV_CONSTANT, "-list",  GINT_TO_POINTER (int_true),  (void *) &list,      "list available loglevels",    NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) {
+        return result;
+    }
+
+    if (list) {
+        gchar* msg = g_strdup_printf ("The following loglevels are available:\n");
+        for (int i=0; i<LOGLEVEL_COUNT; i++) {
+            gchar *tmp = g_strdup_printf ("%s\t- %s\n", msg, loglevel_label[i]);
+            g_free (msg);
+            msg = tmp;
+        }
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ((char *)msg, -1));
+        g_free (msg);
+        return TCL_OK;
+    }
+    if (loglevel == NULL && log_id == NULL) {
+        // print current settings
+        log_dump_settings ();
+        return TCL_OK;
+    } else if (loglevel != NULL) {
+        gboolean found_level = false;
+        int i = 0;
+        for (i=0; i<LOGLEVEL_COUNT; i++) {
+            if (g_strcmp0 (loglevel, loglevel_label[i]) == 0) {
+                found_level = true;
+                break;
+            }
+        }
+        if (found_level) {
+            if (log_id != NULL) {
+                // set particular log level:
+                log_particular_level (log_id, i);
+                gchar *msg = g_strdup_printf ("Set logID %s loglevel to %s", log_id, loglevel);
+                Tcl_SetObjResult (interp, Tcl_NewStringObj ((char *)msg, -1));
+                g_free (msg);
+            } else {
+                // set default log level:
+                gchar *msg = g_strdup_printf ("Set default loglevel to %s", loglevel);
+                Tcl_SetObjResult (interp, Tcl_NewStringObj ((char *)msg, -1));
+                set_default_log_level (i);
+                g_free (msg);
+            }
+        } else {
+            // level does not exists:
+            gchar *msg = g_strdup_printf ("Error: loglevel %s does not exist - try `-help` for a list of available loglevels", loglevel);
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ((char *)msg, -1));
+            g_free (msg);
+            return TCL_ERROR;
+        }
+    }
+
+    return TCL_OK;
+}

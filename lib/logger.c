@@ -9,7 +9,6 @@ gboolean log_linenumbers = FALSE;
 static log_level_t default_log_level = LOGLEVEL_DEBUG;
 static GHashTable *log_property = NULL;
 
-
 gchar*  loglevel_label[LOGLEVEL_COUNT] = {
     "D",
     "I",
@@ -17,6 +16,11 @@ gchar*  loglevel_label[LOGLEVEL_COUNT] = {
     "E",
     "INTERNAL ERROR",
 };
+
+void set_default_log_level(log_level_t log_level)
+{
+    default_log_level = log_level;
+}
 
 void log_particular_level (const gchar *id, const log_level_t level)
 {
@@ -92,3 +96,15 @@ void log_basev (const log_level_t level, const gchar *id, const gchar *sfile, gi
     g_string_free (log_formated, TRUE);
 }
 
+void log_dump_settings ()
+{
+
+    GHashTableIter iter;
+    gpointer id_local, level;
+
+    g_fprintf (stderr, "Default loglevel is %s\n", loglevel_label[GPOINTER_TO_INT (level)];
+    g_hash_table_iter_init (&iter, log_property);
+    while (g_hash_table_iter_next (&iter, &id_local, &level)) {
+        g_fprintf (stderr, "LogID: %s is set to level %s\n", (gchar *)id_local ,loglevel_label[GPOINTER_TO_INT(level)]);
+    }
+}
