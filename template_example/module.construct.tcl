@@ -1,3 +1,4 @@
+namespace eval ig::db {
 
 create_module -name tb_proc_top
 create_module -name proc_top
@@ -17,6 +18,9 @@ connect -bidir [list [get_instances -name proc_mgmt] [get_instances -name proc_c
 set cs [add_codesection -parent-module [get_modules -name proc_mgmt] -code {
     assign clk = clk_ref;
 }]
+
 set_attribute -object $cs -attribute "adapt" -value "true"
 
 parameter -targets [list [get_instances -name proc_mgmt] [get_instances -name proc_core] [get_modules -name tb_proc_top]] -name DATA_W -value 32
+
+}

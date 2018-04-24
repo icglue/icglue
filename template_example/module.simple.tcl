@@ -1,6 +1,6 @@
 #!/usr/bin/tclsh
 
-load ../lib/icglue.so
+package require ICGlue 0.0.1
 
 # copied from: http://wiki.tcl.tk/18175
 proc parse_template {txt} {
@@ -74,61 +74,6 @@ proc gen_module {mod_id} {
     close ${_outf}
 }
 
-# helpers
-proc get_max_entry_len {data_list transform_proc} {
-    set len 0
-    foreach i_entry $data_list {
-        set i_len [string length [$transform_proc $i_entry]]
-        set len [expr {max ($len, $i_len)}]
-    }
-    return $len
-}
-
-proc size_to_bitrange {size} {
-    if {[string is integer $size]} {
-        if {$size == 1} {
-            return ""
-        } else {
-            return "\[[expr {$size-1}]:0\]"
-        }
-    } else {
-        return "\[$size-1:0\]"
-    }
-}
-
-proc get_object_bitrange {obj} {
-    set size [get_attribute -object $obj -attribute "size"]
-    return [size_to_bitrange $size]
-}
-
-proc get_port_dir_vlog {port} {
-    set dir [get_attribute -object $port -attribute "direction"]
-    if {$dir eq "input"} {return "input"}
-    if {$dir eq "output"} {return "output"}
-    if {$dir eq "bidirectional"} {return "inout"}
-    return ""
-}
-
-proc get_object_name {obj} {
-    return [get_attribute -object $obj -attribute "name"]
-}
-
-proc get_parameter_type_vlog {param} {
-    if {[get_attribute -object $param -attribute "local"]} {
-        return "localparam"
-    } else {
-        return "parameter"
-    }
-}
-
-proc get_declaration_type_vlog {decl} {
-    if {[get_attribute -object $decl -attribute "default_type"]} {
-        return "wire"
-    } else {
-        return "reg"
-    }
-}
-
 proc get_pragma_content {pragma_data pragma_entry pragma_subentry} {
     set result {}
     append result "/* pragma icglue ${pragma_entry} begin ${pragma_subentry} */"
@@ -146,7 +91,7 @@ proc add_pragma_default_header {pragma_data mod_id} {
 }
 
 proc get_module_file {mod_id} {
-    set module_name [get_attribute -object $mod_id -attribute "name"]
+    set module_name [ig::db::get_attribute -object $mod_id -attribute "name"]
     return "./${module_name}.v"
 }
 
@@ -166,57 +111,15 @@ proc gen_default_header args {
     return $result
 }
 
-proc is_last {lst entry} {
-    if {[lindex $lst end] eq $entry} {
-        return "true"
-    } else {
-        return "false"
-    }
-}
-
-proc output_codesection {codesection} {
-    set do_adapt [get_attribute -object $codesection -attribute "adapt" -default "false"]
-    set code [get_attribute -object $codesection -attribute "code"]
-    if {!$do_adapt} {
-        return $code
-    }
-
-    set parent_mod [get_attribute -object $codesection -attribute "parent"]
-    set signal_replace [list]
-    foreach i_port [get_ports -of $parent_mod -all] {
-        set i_rep [list \
-            [get_attribute -object $i_port -attribute "signal"] \
-            [get_attribute -object $i_port -attribute "name"] \
-        ]
-        lappend signal_replace $i_rep
-    }
-    foreach i_decl [get_declarations -of $parent_mod -all] {
-        set i_rep [list \
-            [get_attribute -object $i_decl -attribute "signal"] \
-            [get_attribute -object $i_decl -attribute "name"] \
-        ]
-        lappend signal_replace $i_rep
-    }
-
-    foreach i_rep $signal_replace {
-        set i_orig  "\\m[lindex $i_rep 0]\\M"
-        set i_subst [lindex $i_rep 1]
-
-        regsub -all $i_orig $code $i_subst code
-    }
-
-    return $code
-}
-
 # source construction script
 #source module.construct.tcl
 source module.sng.tcl
 parse_sng_file test.sng
 
 # generate modules
-foreach i_module [get_modules -all] {
-    if {![get_attribute -object $i_module -attribute "resource"]} {
-        puts "generating module $i_module"
+foreach i_module [ig::db::get_modules -all] {
+    if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
+        ig::log -info "generating module $i_module"
         gen_module $i_module
     }
 }

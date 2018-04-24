@@ -1,7 +1,5 @@
 #!/usr/bin/tclsh
 
-load ../lib/icglue.so
-
 proc sng_split_instances {instances} {
     set result {}
     foreach i_e $instances {
@@ -39,7 +37,7 @@ proc sng_name_to_icglue {name} {
 
     set nsp1 [lindex $nsp 0]
 
-    if {[catch {set insp1 [get_instances -name $nsp1]}] && [catch {set insp1 [get_modules -name $nsp1]}]} {
+    if {[catch {set insp1 [ig::db::get_instances -name $nsp1]}] && [catch {set insp1 [ig::db::get_modules -name $nsp1]}]} {
         error "could not find module/instance for ${nsp1}"
     }
 
@@ -145,14 +143,14 @@ proc evaluate_sng_lines {parsed_lines} {
             }
         }
         if {$resource} {
-            set modid [create_module -resource -name $modname]
+            set modid [ig::db::create_module -resource -name $modname]
         } elseif {$ilm} {
-            set modid [create_module -ilm -name $modname]
+            set modid [ig::db::create_module -ilm -name $modname]
         } else {
-            set modid [create_module -name $modname]
+            set modid [ig::db::create_module -name $modname]
         }
-        set_attribute -object $modid -attribute "language" -value $lang
-        set_attribute -object $modid -attribute "mode"     -value $mode
+        ig::db::set_attribute -object $modid -attribute "language" -value $lang
+        ig::db::set_attribute -object $modid -attribute "mode"     -value $mode
     }
 
     # instances
@@ -165,10 +163,10 @@ proc evaluate_sng_lines {parsed_lines} {
             set inst_name [lindex $i_inst 1]
 
             if {[catch {\
-                    create_instance \
+                    ig::db::create_instance \
                         -name $inst_name \
-                        -of-module [get_modules -name $mod] \
-                        -parent-module [get_modules -name $parentmod] \
+                        -of-module [ig::db::get_modules -name $mod] \
+                        -parent-module [ig::db::get_modules -name $parentmod] \
                 }]} {
                 error "line ${linenumber}: could not create instance for ${mod}"
             }
@@ -189,7 +187,7 @@ proc evaluate_sng_lines {parsed_lines} {
             }
         }
 
-        parameter -targets $targets -name $name -value $value
+        ig::db::parameter -targets $targets -name $name -value $value
     }
 
     # signals
@@ -223,7 +221,7 @@ proc evaluate_sng_lines {parsed_lines} {
             }
         }
         if {$arrow eq "<->"} {
-            connect -bidir $targets -signal-name $name -signal-size $size
+            ig::db::connect -bidir $targets -signal-name $name -signal-size $size
         } else {
             if {[llength $src_raw] != 1} {
                 error "line ${linenumber}: expected exactly 1 source of signal ${name}"
@@ -233,7 +231,7 @@ proc evaluate_sng_lines {parsed_lines} {
             if {[catch {set src [sng_name_to_icglue $src_raw]}]} {
                 error "line ${linenumber}: could not find module/instance for ${src_raw}"
             }
-            connect -from $src -to $targets -signal-name $name -signal-size $size
+            ig::db::connect -from $src -to $targets -signal-name $name -signal-size $size
         }
     }
 
@@ -243,11 +241,11 @@ proc evaluate_sng_lines {parsed_lines} {
         set mod        [lindex $i_cs 2]
         set code       [lindex $i_cs 3]
 
-        if {[catch {set mod [get_modules -name $mod]}]} {
+        if {[catch {set mod [ig::db::get_modules -name $mod]}]} {
             error "line ${linenumber}: could not find module for ${mod}"
         }
 
-        add_codesection -parent-module $mod -code "\n${code}\n"
+        ig::db::add_codesection -parent-module $mod -code "\n${code}\n"
     }
 }
 
