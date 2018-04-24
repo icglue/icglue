@@ -18,6 +18,7 @@ static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data);
 
 static char    *ig_lib_gen_name_signal  (struct ig_lib_db *db, const char *basename);
 static char    *ig_lib_gen_name_pinport (struct ig_lib_db *db, const char *basename, enum ig_port_dir dir);
+static char    *ig_lib_rm_suffix_pinport (struct ig_lib_db *db, const char *pinportname);
 static bool     ig_lib_gen_name_iscaps (const char *name);
 
 /* header functions */
@@ -368,6 +369,12 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
     result = g_node_new (cinfo_node);
 
     log_debug ("LMrHi", "generating subhierarchies (successor_list size is %d)...", g_list_length (successor_list));
+
+    const char *local_default_name = cinfo_node->local_name;
+    if (cinfo_node->force_name) {
+        local_default_name = ig_lib_rm_suffix_pinport (db, local_default_name);
+    }
+
     /* generate children */
     while (successor_list != NULL) {
         /* pick one */
@@ -394,7 +401,7 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
             }
         }
 
-        GNode *child_node = ig_lib_merge_hierarchy_list (db, equal_list, cinfo_node->local_name);
+        GNode *child_node = ig_lib_merge_hierarchy_list (db, equal_list, local_default_name);
 
         child_node = g_node_insert (result, 0, child_node);
 
@@ -555,7 +562,11 @@ static void ig_lib_htree_print (GNode *hier_tree)
         str_t = g_string_append (str_t, ".");
         str_t = g_string_append (str_t, i_info->local_name);
         if (i_info->is_explicit) {
-            str_t = g_string_append (str_t, "(explicit)");
+            if (i_info->force_name) {
+                str_t = g_string_append (str_t, "(explicit, force)");
+            } else {
+                str_t = g_string_append (str_t, "(explicit)");
+            }
         }
 
         log_debug ("HTree", "%s", str_t->str);
@@ -900,6 +911,39 @@ static char *ig_lib_gen_name_pinport (struct ig_lib_db *db, const char *basename
         }
     }
 
+    char *result = g_string_chunk_insert_const (db->str_chunks, tstr->str);
+    g_string_free (tstr, true);
+
+    return result;
+}
+
+static char *ig_lib_rm_suffix_pinport (struct ig_lib_db *db, const char *pinportname)
+{
+    int len = strlen (pinportname);
+
+    if (len < 3) {
+        return g_string_chunk_insert_const (db->str_chunks, pinportname);
+    }
+
+    if (pinportname[len-2] != '_') {
+        return g_string_chunk_insert_const (db->str_chunks, pinportname);
+    }
+
+    if (ig_lib_gen_name_iscaps (pinportname)) {
+        if ((pinportname[len-1] == 'I') &&
+            (pinportname[len-1] == 'O') &&
+            (pinportname[len-1] == 'B')) {
+            return g_string_chunk_insert_const (db->str_chunks, pinportname);
+        }
+    } else {
+        if ((pinportname[len-1] == 'i') &&
+            (pinportname[len-1] == 'o') &&
+            (pinportname[len-1] == 'b')) {
+            return g_string_chunk_insert_const (db->str_chunks, pinportname);
+        }
+    }
+
+    GString *tstr = g_string_new_len (pinportname, len-2);
     char *result = g_string_chunk_insert_const (db->str_chunks, tstr->str);
     g_string_free (tstr, true);
 
