@@ -5,6 +5,13 @@ M: proc_mgmt(rtl,verilog)  :=
 M: proc_core(rtl,verilog)  :=
 
 # connections
+S: clk              := proc_mgmt    -> tb_proc_top proc_top:clk_test_o proc_core:clk_i
+S: clk_ref          := tb_proc_top  -> proc_mgmt:clk_src_i
+S: config[31:0]     := proc_mgmt    -> proc_core
+S: data[DATA_W-1:0] := proc_mgmt    -> proc_core
+S: status[15:0]     := proc_mgmt   <-  proc_core
+
+S: bddata[15:0]     := tb_proc_top <-> proc_mgmt proc_core
 
 # parameters
 G: DATA_W(32) := tb_proc_top -> proc_core proc_mgmt

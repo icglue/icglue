@@ -103,9 +103,9 @@ proc get_object_bitrange {obj} {
 
 proc get_port_dir_vlog {port} {
     set dir [get_attribute -object $port -attribute "direction"]
-    if {$dir == "input"} {return "input"}
-    if {$dir == "output"} {return "output"}
-    if {$dir == "bidirectional"} {return "inout"}
+    if {$dir eq "input"} {return "input"}
+    if {$dir eq "output"} {return "output"}
+    if {$dir eq "bidirectional"} {return "inout"}
     return ""
 }
 
@@ -167,7 +167,7 @@ proc gen_default_header args {
 }
 
 proc is_last {lst entry} {
-    if {[lindex $lst end] == $entry} {
+    if {[lindex $lst end] eq $entry} {
         return "true"
     } else {
         return "false"

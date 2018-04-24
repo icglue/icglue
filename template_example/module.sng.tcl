@@ -34,6 +34,22 @@ proc sng_split_instances {instances} {
     return $result
 }
 
+proc sng_name_to_icglue {name} {
+    set nsp [split $name ":"]
+
+    set nsp1 [lindex $nsp 0]
+
+    if {[catch {set insp1 [get_instances -name $nsp1]}] && [catch {set insp1 [get_modules -name $nsp1]}]} {
+        error "could find module/instance for ${nsp1}"
+    }
+
+    if {[llength $nsp] > 1} {
+        return "${insp1}->[lindex $nsp 1]"
+    }
+
+    return $insp1
+}
+
 set parse_sng_line_codemod  ""
 set parse_sng_line_codelist {}
 
@@ -41,7 +57,7 @@ proc parse_sng_line {number line} {
     variable parse_sng_line_codemod
     variable parse_sng_line_codelist
 
-    if {$parse_sng_line_codemod == ""} {
+    if {$parse_sng_line_codemod eq ""} {
         if {[regexp {^[\s]*#(.*)$} $line mline mcomment]} {
             return [list $number "comment" $mcomment]
         } elseif {[regexp {^[\s]*//(.*)$} $line mline mcomment]} {
@@ -53,14 +69,29 @@ proc parse_sng_line {number line} {
             set insts [split $minstances " \t"]
             set insts [lsearch -inline -all -not $insts {}]
             return [list $number "module" $mmodule $args [sng_split_instances $insts]]
-        } elseif {[regexp {^[\s]*S:[\s]*([[:alnum:]_]+)[\s]*(\((.*)\))?[\s]*:=[\s]*([^ \t]+)[\s]*(<-|<->|->)(.*)} $line mline msig m_assign massign mstart marrow mtargets]} {
+        } elseif {[regexp {^[\s]*S:[\s]*([[:alnum:]_]+)(\[(.*):(.*)\])?[\s]*(\((.*)\))?[\s]*:=[\s]*([^ \t]+)[\s]*(<-|<->|->)(.*)} $line mline msig m_range m_rng_start m_rng_stop m_assign massign mstart marrow mtargets]} {
             set sig $msig
             set assign $massign
             set arrow $marrow
             set start $mstart
             set targets [split $mtargets " \t"]
             set targets [lsearch -inline -all -not $targets {}]
-            return [list $number "signal" $sig $assign $arrow [sng_split_instances $start] [sng_split_instances $targets]]
+            if {$m_range eq ""} {
+                set size 1
+            } else {
+                if {[string is integer $m_rng_start] && [string is integer $m_rng_stop]} {
+                    set size [expr {$m_rng_start - $m_rng_stop + 1}]
+                } elseif {[string is integer $m_rng_stop] && ($m_rng_stop == 0)} {
+                    if {[string match "*-1" $m_rng_start]} {
+                        set size [string range $m_rng_start 0 end-2]
+                    } else {
+                        set size "${m_rng_start}+1"
+                    }
+                } else {
+                    error "could not parse range of signal $msig in line $number"
+                }
+            }
+            return [list $number "signal" $sig $size $assign $arrow [sng_split_instances $start] [sng_split_instances $targets]]
         } elseif {[regexp {^[\s]*G:[\s]*([[:alnum:]_]+)[\s]*(\((.*)\))?[\s]*:=[\s]*([^ \t]+)[\s]*(<-|<->|->)(.*)} $line mline mpar m_assign massign mstart marrow mtargets]} {
             set par $mpar
             set assign $massign
@@ -153,11 +184,7 @@ proc evaluate_sng_lines {parsed_lines} {
         set targets_raw [concat [lindex $i_param 5] [lindex $i_param 6]]
         foreach i_tr $targets_raw {
             set i_tr [lindex $i_tr 1]
-            if {![catch {set i_t [get_instances -name $i_tr]}]} {
-                lappend targets ${i_t}
-            } elseif {![catch {set i_t [get_modules -name $i_tr]}]} {
-                lappend targets ${i_t}
-            } else {
+            if {[catch {lappend targets [sng_name_to_icglue $i_tr]}]} {
                 error "line ${linenumber}: could find module/instance for ${i_tr}"
             }
         }
@@ -165,7 +192,55 @@ proc evaluate_sng_lines {parsed_lines} {
         parameter -targets $targets -name $name -value $value
     }
 
-    # TODO: code, signals
+    # signals
+    foreach i_sig [lsearch -all -inline -index 1 $parsed_lines "signal"] {
+        set linenumber [lindex $i_sig 0]
+        set name       [lindex $i_sig 2]
+        set size       [lindex $i_sig 3]
+        set assign     [lindex $i_sig 4]
+        set arrow      [lindex $i_sig 5]
+        set targets_raw_left  [lindex $i_sig 6]
+        set targets_raw_right [lindex $i_sig 7]
+
+        if {$arrow eq "->"} {
+            set src_raw  $targets_raw_left
+            set targets_raw $targets_raw_right
+        } elseif {$arrow eq "<-"} {
+            set src_raw  $targets_raw_right
+            set targets_raw $targets_raw_left
+        } elseif {$arrow eq "<->"} {
+            set src_raw  {}
+            set targets_raw [concat $targets_raw_left $targets_raw_right]
+        } else {
+            error "line ${linenumber}: invalid arrow: ${arrow}"
+        }
+
+        set targets [list]
+        foreach i_tr $targets_raw {
+            set i_tr [lindex $i_tr 1]
+            if {[catch {lappend targets [sng_name_to_icglue $i_tr]}]} {
+                error "line ${linenumber}: could find module/instance for ${i_tr}"
+            }
+        }
+        if {$arrow eq "<->"} {
+            connect -bidir $targets -signal-name $name -signal-size $size
+        } else {
+            if {[llength $src_raw] != 1} {
+                error "line ${linenumber}: expected exactly 1 source of signal ${name}"
+            } else {
+                set src_raw [lindex $src_raw 0 1]
+            }
+            if {[catch {set src [sng_name_to_icglue $src_raw]}]} {
+                error "line ${linenumber}: could find module/instance for ${src_raw}"
+            }
+            puts "... $src ... $targets "
+            connect -from $src -to $targets -signal-name $name -signal-size $size
+        }
+
+        #TODO
+    }
+
+    # TODO: code
 }
 
 proc parse_sng_file {filename} {
@@ -178,7 +253,7 @@ proc parse_sng_file {filename} {
     set parsed [list]
 
     foreach i_l $lines {
-        if {[string index $i_l end] == "\\"} {
+        if {[string index $i_l end] eq "\\"} {
             set current "${current}[string range $i_l 0 end-1]"
         } else {
             set current "${current}${i_l}"
