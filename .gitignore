@@ -4,3 +4,4 @@
 .*.sw*
 *.v
 !*.template.v
+ICGlue
