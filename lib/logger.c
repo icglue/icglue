@@ -98,11 +98,11 @@ void log_basev (const log_level_t level, const gchar *id, const gchar *sfile, gi
 
 void log_dump_settings ()
 {
-
     GHashTableIter iter;
     gpointer id_local, level;
+    level = 0;
 
-    g_fprintf (stderr, "Default loglevel is %s\n", loglevel_label[GPOINTER_TO_INT (level)];
+    g_fprintf (stderr, "Default loglevel is %s\n", loglevel_label[GPOINTER_TO_INT (level)]);
     g_hash_table_iter_init (&iter, log_property);
     while (g_hash_table_iter_next (&iter, &id_local, &level)) {
         g_fprintf (stderr, "LogID: %s is set to level %s\n", (gchar *)id_local ,loglevel_label[GPOINTER_TO_INT(level)]);
