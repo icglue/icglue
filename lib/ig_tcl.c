@@ -21,6 +21,7 @@ static int ig_tclc_get_objs_of_obj  (ClientData clientdata, Tcl_Interp *interp, 
 static int ig_tclc_connect          (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_parameter        (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_logger           (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_log              (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 void ig_add_tcl_commands (Tcl_Interp *interp)
 {
@@ -44,6 +45,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, "connect",          ig_tclc_connect,         lib_db, NULL);
     Tcl_CreateObjCommand (interp, "parameter",        ig_tclc_parameter,       lib_db, NULL);
     Tcl_CreateObjCommand (interp, "logger",           ig_tclc_logger,          lib_db, NULL);
+    Tcl_CreateObjCommand (interp, "log",              ig_tclc_log,             lib_db, NULL);
 }
 
 /* Tcl helper function for parsing lists in GSLists */
@@ -990,6 +992,42 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
             return TCL_ERROR;
         }
     }
+
+    return TCL_OK;
+}
+
+static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    gchar *log_id = "Tcl";
+    gint loglevel = LOGLEVEL_INFO;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_STRING,   "-id",      NULL,                               (void *) &log_id,       "log id",        NULL},
+        {TCL_ARGV_CONSTANT, "-info",    GINT_TO_POINTER (LOGLEVEL_INFO),    (void *) &loglevel,     "loglevel info", NULL},
+        {TCL_ARGV_CONSTANT, "-warning", GINT_TO_POINTER (LOGLEVEL_WARNING), (void *) &loglevel,     "loglevel info", NULL},
+        {TCL_ARGV_CONSTANT, "-error",   GINT_TO_POINTER (LOGLEVEL_ERROR),   (void *) &loglevel,     "loglevel info", NULL},
+        {TCL_ARGV_CONSTANT, "-debug",   GINT_TO_POINTER (LOGLEVEL_DEBUG),   (void *) &loglevel,     "loglevel info", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    Tcl_Obj **remObjv = NULL;
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, &remObjv);
+
+    if (result != TCL_OK) {
+        if (objc != 0) ckfree (remObjv);
+        return result;
+    }
+
+    if (objc > 0) {
+        for (int i = 1; i < objc; i++) {
+            char *msg = Tcl_GetString (remObjv[i]);
+            log_base (loglevel, log_id, "TCL", 0, "%s", msg);
+        }
+    }
+
+    if (objc != 0) ckfree (remObjv);
 
     return TCL_OK;
 }
