@@ -6,6 +6,13 @@
 
 #include <string.h>
 
+#ifndef ICGLUE_LIB_NAMESPACE
+#define ICGLUE_LIB_NAMESPACE "ig::db::"
+#endif
+#ifndef ICGLUE_LOG_NAMESPACE
+#define ICGLUE_LOG_NAMESPACE "ig::"
+#endif
+
 /* Tcl helper function for parsing lists in GSLists of char * */
 static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, void *dest_ptr);
 
@@ -29,23 +36,24 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
 
     struct ig_lib_db *lib_db = ig_lib_db_new ();
 
-    Tcl_CreateObjCommand (interp, "create_module",    ig_tclc_create_module,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "create_instance",  ig_tclc_create_instance, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "add_codesection",  ig_tclc_add_codesection, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "set_attribute",    ig_tclc_set_attribute,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_attribute",    ig_tclc_get_attribute,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_modules",      ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_instances",    ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_ports",        ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_parameters",   ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_declarations", ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_codesections", ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_pins",         ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "get_adjustments",  ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "connect",          ig_tclc_connect,         lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "parameter",        ig_tclc_parameter,       lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "logger",           ig_tclc_logger,          lib_db, NULL);
-    Tcl_CreateObjCommand (interp, "log",              ig_tclc_log,             lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_module",    ig_tclc_create_module,   lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_instance",  ig_tclc_create_instance, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "add_codesection",  ig_tclc_add_codesection, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "set_attribute",    ig_tclc_set_attribute,   lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_attribute",    ig_tclc_get_attribute,   lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_modules",      ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_instances",    ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_ports",        ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_parameters",   ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_declarations", ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_codesections", ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_pins",         ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_adjustments",  ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "connect",          ig_tclc_connect,         lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "parameter",        ig_tclc_parameter,       lib_db, NULL);
+
+    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "logger",           ig_tclc_logger,          lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log",              ig_tclc_log,             lib_db, NULL);
 }
 
 /* Tcl helper function for parsing lists in GSLists */

@@ -13,6 +13,7 @@ int Icglue_Init (Tcl_Interp *interp) {
 
     ig_add_tcl_commands (interp);
 
+    Tcl_PkgProvide (interp, "ICGlue", "0.0.1");
 
     return TCL_OK;
 }
