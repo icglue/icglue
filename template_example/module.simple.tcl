@@ -209,7 +209,9 @@ proc output_codesection {codesection} {
 }
 
 # source construction script
-source module.construct.tcl
+#source module.construct.tcl
+source module.sng.tcl
+parse_sng_file test.sng
 
 # generate modules
 foreach i_module [get_modules -all] {

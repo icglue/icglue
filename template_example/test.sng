@@ -1,0 +1,10 @@
+# modules
+M: tb_proc_top(tb,verilog) := proc_top
+M: proc_top(rtl,verilog)   := proc_core proc_mgmt
+M: proc_mgmt(rtl,verilog)  :=
+M: proc_core(rtl,verilog)  :=
+
+# connections
+
+# parameters
+G: DATA_W(32) := tb_proc_top -> proc_core proc_mgmt

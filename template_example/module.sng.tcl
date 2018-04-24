@@ -139,14 +139,30 @@ proc evaluate_sng_lines {parsed_lines} {
                         -of-module [get_modules -name $mod] \
                         -parent-module [get_modules -name $parentmod] \
                 }]} {
-                error "line ${linenumber}: could not create instance"
+                error "line ${linenumber}: could not create instance for ${mod}"
             }
         }
     }
 
     # parameter
     foreach i_param [lsearch -all -inline -index 1 $parsed_lines "parameter"] {
-        # TODO
+        set linenumber [lindex $i_param 0]
+        set name       [lindex $i_param 2]
+        set value      [lindex $i_param 3]
+        set targets    [list]
+        set targets_raw [concat [lindex $i_param 5] [lindex $i_param 6]]
+        foreach i_tr $targets_raw {
+            set i_tr [lindex $i_tr 1]
+            if {![catch {set i_t [get_instances -name $i_tr]}]} {
+                lappend targets ${i_t}
+            } elseif {![catch {set i_t [get_modules -name $i_tr]}]} {
+                lappend targets ${i_t}
+            } else {
+                error "line ${linenumber}: could find module/instance for ${i_tr}"
+            }
+        }
+
+        parameter -targets $targets -name $name -value $value
     }
 
     # TODO: code, signals
