@@ -13,5 +13,10 @@ S: status[15:0]     := proc_mgmt   <-  proc_core
 
 S: bddata[15:0]     := tb_proc_top <-> proc_mgmt proc_core
 
+# code
+C: proc_mgmt := begin
+    assign clk_test_o = clk_src_i;
+C: proc_mgmt := end
+
 # parameters
 G: DATA_W(32) := tb_proc_top -> proc_core proc_mgmt

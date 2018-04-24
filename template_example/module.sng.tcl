@@ -40,7 +40,7 @@ proc sng_name_to_icglue {name} {
     set nsp1 [lindex $nsp 0]
 
     if {[catch {set insp1 [get_instances -name $nsp1]}] && [catch {set insp1 [get_modules -name $nsp1]}]} {
-        error "could find module/instance for ${nsp1}"
+        error "could not find module/instance for ${nsp1}"
     }
 
     if {[llength $nsp] > 1} {
@@ -185,7 +185,7 @@ proc evaluate_sng_lines {parsed_lines} {
         foreach i_tr $targets_raw {
             set i_tr [lindex $i_tr 1]
             if {[catch {lappend targets [sng_name_to_icglue $i_tr]}]} {
-                error "line ${linenumber}: could find module/instance for ${i_tr}"
+                error "line ${linenumber}: could not find module/instance for ${i_tr}"
             }
         }
 
@@ -219,7 +219,7 @@ proc evaluate_sng_lines {parsed_lines} {
         foreach i_tr $targets_raw {
             set i_tr [lindex $i_tr 1]
             if {[catch {lappend targets [sng_name_to_icglue $i_tr]}]} {
-                error "line ${linenumber}: could find module/instance for ${i_tr}"
+                error "line ${linenumber}: could not find module/instance for ${i_tr}"
             }
         }
         if {$arrow eq "<->"} {
@@ -231,16 +231,24 @@ proc evaluate_sng_lines {parsed_lines} {
                 set src_raw [lindex $src_raw 0 1]
             }
             if {[catch {set src [sng_name_to_icglue $src_raw]}]} {
-                error "line ${linenumber}: could find module/instance for ${src_raw}"
+                error "line ${linenumber}: could not find module/instance for ${src_raw}"
             }
-            puts "... $src ... $targets "
             connect -from $src -to $targets -signal-name $name -signal-size $size
         }
-
-        #TODO
     }
 
-    # TODO: code
+    # code
+    foreach i_cs [lsearch -all -inline -index 1 $parsed_lines "code"] {
+        set linenumber [lindex $i_cs 0]
+        set mod        [lindex $i_cs 2]
+        set code       [lindex $i_cs 3]
+
+        if {[catch {set mod [get_modules -name $mod]}]} {
+            error "line ${linenumber}: could not find module for ${mod}"
+        }
+
+        add_codesection -parent-module $mod -code "\n${code}\n"
+    }
 }
 
 proc parse_sng_file {filename} {
