@@ -117,9 +117,20 @@ proc gen_default_header args {
     return $result
 }
 
-# source construction script
-#source module.construct.tcl
-ig::sng::parse_file test.sng
+if {$::argc != 1} {
+    ig::log -error "Expected one input file"
+    exit 1
+}
+set gen_source [lindex $::argv 0]
+
+if {[string match "*.sng" $gen_source] || [string match "*.icsng" $gen_source]} {
+    ig::sng::parse_file $gen_source
+} elseif {[string match "*.tcl" $gen_source]} {
+    source $gen_source
+} else {
+    ig::log -error "Unknown input file suffix for $gen_source"
+    exit 1
+}
 
 # generate modules
 foreach i_module [ig::db::get_modules -all] {
