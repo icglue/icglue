@@ -71,6 +71,7 @@ proc gen_module {mod_id} {
     set _res {}
     eval ${_tt_code}
 
+    file mkdir [file dirname ${_outf_name}]
     set _outf [open ${_outf_name} "w"]
     puts -nonewline ${_outf} ${_res}
     close ${_outf}
@@ -94,11 +95,14 @@ proc add_pragma_default_header {pragma_data mod_id} {
 
 proc get_module_file {mod_id} {
     set module_name [ig::db::get_attribute -object $mod_id -attribute "name"]
-    return "./${module_name}.v"
+    set parent_unit [ig::db::get_attribute -object $mod_id -attribute "parentunit"]
+    set mode        [ig::db::get_attribute -object $mod_id -attribute "mode"]
+    set lang        [ig::db::get_attribute -object $mod_id -attribute "language"]
+    return "./test/units/${parent_unit}/source/${mode}/${lang}/${module_name}.v"
 }
 
 proc get_template_file {module} {
-    return "./module.template.v"
+    return "./templates/module.template.v"
 }
 
 proc gen_default_header args {
