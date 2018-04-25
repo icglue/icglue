@@ -1,19 +1,17 @@
 
 LIBDIR     := lib
-LIBSOURCES := $(LIBDIR)/icglue.so
+LIBSOURCES := $(LIBDIR)/binaries/icglue.so
 TCLSOURCES := $(wildcard tcllib/*.tcl)
 PKGDIR     := ICGlue
 
 PKGIDX     := $(PKGDIR)/pkgIndex.tcl
 PKGGENSCR  := pkggen/gen.tcl
 
-.PHONY: all
-all: $(PKGIDX)
+all: prebuild
+	@$(MAKE) $(PKGIDX)
 
-prebuild:
+prebuild $(LIBSOURCES):
 	@$(MAKE) -C $(LIBDIR)
-
-$(LIBSOURCES): prebuild
 
 $(PKGIDX): $(TCLSOURCES) $(LIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 	rm -f $(PKGIDX)
@@ -29,3 +27,5 @@ clean:
 
 cleanall: clean
 	@$(MAKE) -C $(LIBDIR) clean
+
+.PHONY: all prebuild clean cleanall
