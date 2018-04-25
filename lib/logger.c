@@ -6,7 +6,7 @@
 #include "color.h"
 
 gboolean log_linenumbers = FALSE;
-static log_level_t default_log_level = LOGLEVEL_DEBUG;
+static log_level_t default_log_level = LOGLEVEL_INFO;
 static GHashTable *log_property = NULL;
 
 gchar*  loglevel_label[LOGLEVEL_COUNT] = {
@@ -84,7 +84,7 @@ void log_basev (const log_level_t level, const gchar *id, const gchar *sfile, gi
     GString *log_formated = g_string_new (NULL);
 
     g_string_vprintf (log_string, format, arg_list);
-    g_string_printf (log_formated, "%s%s,%s%s    %s", log_header_color, loglevel_label[level], id, color_reset, log_string->str);
+    g_string_printf (log_formated, "%s%s,%-5s%s    %s", log_header_color, loglevel_label[level], id, color_reset, log_string->str);
     g_string_free (log_string, TRUE);
     g_free (log_header_color);
 

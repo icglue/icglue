@@ -2,6 +2,8 @@
 
 package require ICGlue 0.0.1
 
+#ig::logger -level D
+
 # copied from: http://wiki.tcl.tk/18175
 proc parse_template {txt} {
     set code "set _res {}\n"
