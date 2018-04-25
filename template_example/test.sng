@@ -1,8 +1,8 @@
 # modules
-M: tb_proc_top(tb,verilog) := proc_top
-M: proc_top(rtl,verilog)   := proc_core proc_mgmt
-M: proc_mgmt(rtl,verilog)  :=
-M: proc_core(rtl,verilog)  :=
+M: proc:tb_proc_top(tb,verilog) := proc_top
+M: proc:proc_top(rtl,verilog)   := proc_core proc_mgmt
+M: proc:proc_mgmt(rtl,verilog)  :=
+M: proc:proc_core(rtl,verilog)  :=
 
 # connections
 S: clk              := proc_mgmt    -> tb_proc_top proc_top:clk_test_o proc_core:clk_i
