@@ -227,12 +227,19 @@ namespace eval ig::sng {
                 if {[llength $src_raw] != 1} {
                     error "line ${linenumber}: expected exactly 1 source of signal ${name}"
                 } else {
+                    set src_mod [lindex $src_raw 0 0]
                     set src_raw [lindex $src_raw 0 1]
                 }
                 if {[catch {set src [sng_name_to_icglue $src_raw]}]} {
                     error "line ${linenumber}: could not find module/instance for ${src_raw}"
                 }
                 ig::db::connect -from $src -to $targets -signal-name $name -signal-size $size
+
+                if {$assign ne ""} {
+                    set mod [ig::db::get_modules -name $src_mod]
+                    set cs [ig::db::add_codesection -parent-module $mod -code "    assign ${name} = ${assign};"]
+                    ig::db::set_attribute -object $cs -attribute "adapt" -value "true"
+                }
             }
         }
 
