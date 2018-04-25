@@ -57,18 +57,55 @@ namespace eval ig::sng {
         variable parse_sng_line_codelist
 
         if {$parse_sng_line_codemod eq ""} {
-            if {[regexp {^[\s]*#(.*)$} $line mline mcomment]} {
+            if {[regexp -expanded {
+                    ^[\s]*
+                    \#(.*)
+                    $
+                } $line mline mcomment]} {
+                # comment
                 return [list $number "comment" $mcomment]
-            } elseif {[regexp {^[\s]*//(.*)$} $line mline mcomment]} {
+            } elseif {[regexp -expanded {
+                    ^[\s]*
+                    //(.*)
+                    $
+                } $line mline mcomment]} {
+                # comment
                 return [list $number "comment" $mcomment]
-            } elseif {[regexp {^[\s]*$} $line mline]} {
+            } elseif {[regexp -expanded {
+                    ^[\s]*
+                    $
+                } $line mline]} {
+                # blank line
                 return [list $number "ignore"]
-            } elseif {[regexp {^[\s]*M:[\s]*([[:alnum:]_]+)[\s]*(\((.*)\))?[\s]*:=([^#/]+)?$} $line mline mmodule m_args mmoduleargs minstances]} {
+            } elseif {[regexp -expanded {
+                    ^[\s]*
+                    M:[\s]*
+                    (([[:alnum:]_]+)[\s]*:[\s]*)?
+                    ([[:alnum:]_]+)[\s]*
+                    (\((.*)\))?[\s]*
+                    :=
+                    ([^#/]+)?
+                    $
+                } $line mline m_parent mparent mmodule m_args mmoduleargs minstances]} {
+                # module/instance definition
+                # TODO: parent
                 set args [split [string map {" " {} "\t" {}} $mmoduleargs] ","]
                 set insts [split $minstances " \t"]
                 set insts [lsearch -inline -all -not $insts {}]
-                return [list $number "module" $mmodule $args [split_instances $insts]]
-            } elseif {[regexp {^[\s]*S:[\s]*([[:alnum:]_]+)(\[(.*):(.*)\])?[\s]*(\((.*)\))?[\s]*:=[\s]*([^ \t]+)[\s]*(<-|<->|->)(.*)} $line mline msig m_range m_rng_start m_rng_stop m_assign massign mstart marrow mtargets]} {
+                set parent [expr {($mparent ne "") ? $mparent : $mmodule}]
+                return [list $number "module" $mmodule $parent $args [split_instances $insts]]
+            } elseif {[regexp -expanded {
+                    ^[\s]*
+                    S:[\s]*
+                    ([[:alnum:]_]+)
+                    (\[(.*):(.*)\])?[\s]*
+                    (\((.*)\))?[\s]*
+                    :=[\s]*
+                    ([^ \t]+)[\s]*
+                    (<-|<->|->)
+                    (.*)
+                } $line mline msig m_range m_rng_start m_rng_stop m_assign massign mstart marrow mtargets]} {
+                # signal definition
                 set sig $msig
                 set assign $massign
                 set arrow $marrow
@@ -91,7 +128,17 @@ namespace eval ig::sng {
                     }
                 }
                 return [list $number "signal" $sig $size $assign $arrow [split_instances $start] [split_instances $targets]]
-            } elseif {[regexp {^[\s]*G:[\s]*([[:alnum:]_]+)[\s]*(\((.*)\))?[\s]*:=[\s]*([^ \t]+)[\s]*(<-|<->|->)(.*)} $line mline mpar m_assign massign mstart marrow mtargets]} {
+            } elseif {[regexp -expanded {
+                    ^[\s]*
+                    G:[\s]*
+                    ([[:alnum:]_]+)[\s]*
+                    (\((.*)\))?[\s]*
+                    :=[\s]*
+                    ([^ \t]+)[\s]*
+                    (<-|<->|->)
+                    (.*)
+                } $line mline mpar m_assign massign mstart marrow mtargets]} {
+                # parameter definition
                 set par $mpar
                 set assign $massign
                 set arrow $marrow
@@ -100,6 +147,7 @@ namespace eval ig::sng {
                 set targets [lsearch -inline -all -not $targets {}]
                 return [list $number "parameter" $par $assign $arrow [split_instances $start] [split_instances $targets]]
             } elseif {[regexp {^[\s]*C:[\s]*([[:alnum:]_]+)[\s]*:=[\s]*begin} $line mline mmod]} {
+                # code definition
                 set parse_sng_line_codemod $mmod
                 set parse_sng_line_codelist [list]
                 return [list $number "ignore"]
@@ -107,7 +155,13 @@ namespace eval ig::sng {
                 error "could not parse line $number"
             }
         } else {
-            if {[regexp {^[\s]*C:[\s]*([[:alnum:]_]+)[\s]*:=[\s]*end} $line mline mmod]} {
+            if {[regexp -expanded {
+                    ^[\s]*
+                    C:[\s]*
+                    ([[:alnum:]_]+)[\s]*
+                    :=[\s]*
+                    end
+                } $line mline mmod]} {
                 set mod $parse_sng_line_codemod
                 set parse_sng_line_codemod ""
                 return [list $number "code" $mod [join $parse_sng_line_codelist "\n"]]
@@ -123,7 +177,8 @@ namespace eval ig::sng {
         foreach i_mod [lsearch -all -inline -index 1 $parsed_lines "module"] {
             set linenumber [lindex $i_mod 0]
             set modname    [lindex $i_mod 2]
-            set modargs    [lindex $i_mod 3]
+            set parent     [lindex $i_mod 3]
+            set modargs    [lindex $i_mod 4]
 
             set lang "verilog"
             set mode "rtl"
@@ -133,8 +188,10 @@ namespace eval ig::sng {
             foreach i_arg $modargs {
                 switch $i_arg {
                     "verilog"       {set lang $i_arg}
+                    "v"             {set lang "verilog"}
                     "vhdl"          {set lang $i_arg}
                     "systemverilog" {set lang $i_arg}
+                    "sv"            {set lang "systemverilog"}
                     "rtl"           {set mode $i_arg}
                     "tb"            {set mode $i_arg}
                     "behavioral"    {set mode $i_arg}
@@ -150,15 +207,16 @@ namespace eval ig::sng {
             } else {
                 set modid [ig::db::create_module -name $modname]
             }
-            ig::db::set_attribute -object $modid -attribute "language" -value $lang
-            ig::db::set_attribute -object $modid -attribute "mode"     -value $mode
+            ig::db::set_attribute -object $modid -attribute "language"   -value $lang
+            ig::db::set_attribute -object $modid -attribute "mode"       -value $mode
+            ig::db::set_attribute -object $modid -attribute "parentunit" -value $parent
         }
 
         # instances
         foreach i_mod [lsearch -all -inline -index 1 $parsed_lines "module"] {
             set linenumber [lindex $i_mod 0]
             set parentmod  [lindex $i_mod 2]
-            set insts      [lindex $i_mod 4]
+            set insts      [lindex $i_mod 5]
             foreach i_inst $insts {
                 set mod       [lindex $i_inst 0]
                 set inst_name [lindex $i_inst 1]
