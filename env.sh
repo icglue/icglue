@@ -1,6 +1,6 @@
 
 src=${BASH_SOURCE:-$_}
-pkgsrcpath=$(readlink -e $(dirname $(readlink -e "${src}"))/..)
+pkgsrcpath=$(dirname $(readlink -e "${src}"))
 
 if [[ "x${TCLLIBPATH}" == "x" ]] ; then
     export TCLLIBPATH="${pkgsrcpath}"
