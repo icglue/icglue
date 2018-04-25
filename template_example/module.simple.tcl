@@ -113,8 +113,7 @@ proc gen_default_header args {
 
 # source construction script
 #source module.construct.tcl
-source module.sng.tcl
-parse_sng_file test.sng
+ig::sng::parse_file test.sng
 
 # generate modules
 foreach i_module [ig::db::get_modules -all] {
