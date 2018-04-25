@@ -6,3 +6,4 @@
 *.v
 !*.template.v
 ICGlue
+template_example/test
