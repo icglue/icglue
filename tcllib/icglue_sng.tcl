@@ -85,10 +85,10 @@ namespace eval ig::sng {
                     (\((.*)\))?[\s]*
                     :=
                     ([^#/]+)?
+                    ([#/]+.*)?
                     $
-                } $line mline m_parent mparent mmodule m_args mmoduleargs minstances]} {
+                } $line mline m_parent mparent mmodule m_args mmoduleargs minstances mcomment]} {
                 # module/instance definition
-                # TODO: parent
                 set args [split [string map {" " {} "\t" {}} $mmoduleargs] ","]
                 set insts [split $minstances " \t"]
                 set insts [lsearch -inline -all -not $insts {}]
@@ -103,8 +103,10 @@ namespace eval ig::sng {
                     :=[\s]*
                     ([^ \t]+)[\s]*
                     (<-|<->|->)
-                    (.*)
-                } $line mline msig m_range m_rng_start m_rng_stop m_assign massign mstart marrow mtargets]} {
+                    ([^#/]*)
+                    ([#/]+.*)?
+                    $
+                } $line mline msig m_range m_rng_start m_rng_stop m_assign massign mstart marrow mtargets mcomment]} {
                 # signal definition
                 set sig $msig
                 set assign $massign
@@ -136,8 +138,10 @@ namespace eval ig::sng {
                     :=[\s]*
                     ([^ \t]+)[\s]*
                     (<-|<->|->)
-                    (.*)
-                } $line mline mpar m_assign massign mstart marrow mtargets]} {
+                    ([^#/]*)
+                    ([#/]+.*)?
+                    $
+                } $line mline mpar m_assign massign mstart marrow mtargets mcomment]} {
                 # parameter definition
                 set par $mpar
                 set assign $massign
