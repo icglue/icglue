@@ -95,9 +95,13 @@ proc add_pragma_default_header {pragma_data mod_id} {
 
 proc get_module_file {mod_id} {
     set module_name [ig::db::get_attribute -object $mod_id -attribute "name"]
-    set parent_unit [ig::db::get_attribute -object $mod_id -attribute "parentunit"]
-    set mode        [ig::db::get_attribute -object $mod_id -attribute "mode"]
-    set lang        [ig::db::get_attribute -object $mod_id -attribute "language"]
+    set parent_unit [ig::db::get_attribute -object $mod_id -attribute "parentunit" -default "proc"]
+    if {[string match "tb_*" $module_name]} {
+        set mode        [ig::db::get_attribute -object $mod_id -attribute "mode" -default "tb"]
+    } else {
+        set mode        [ig::db::get_attribute -object $mod_id -attribute "mode" -default "rtl"]
+    }
+    set lang        [ig::db::get_attribute -object $mod_id -attribute "language" -default "verilog"]
     return "./test/units/${parent_unit}/source/${mode}/${lang}/${module_name}.v"
 }
 
