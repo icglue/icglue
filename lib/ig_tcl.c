@@ -246,7 +246,7 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
     struct ig_module *pa_mod   = (struct ig_module *) g_hash_table_lookup (db->modules_by_id,   parent_module);
     if (pa_mod == NULL) pa_mod = (struct ig_module *) g_hash_table_lookup (db->modules_by_name, parent_module);
 
-    if (parent_module == NULL) {
+    if (pa_mod == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid parent module", -1));
         return TCL_ERROR;
     }
@@ -792,6 +792,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not generate connection...", -1));
         result = TCL_ERROR;
     }
+    log_debug ("TCCon", "... finished connection");
 
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
     for (GList *li = gen_objs; li != NULL; li = li->next) {
@@ -803,6 +804,8 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         Tcl_ListObjAppendElement (interp, retval, t_obj);
     }
 
+    log_debug ("TCCon", "freeing results...");
+
     Tcl_SetObjResult (interp, retval);
     g_list_free (gen_objs);
 
@@ -813,6 +816,8 @@ l_ig_tclc_connect_exit_pre:
 l_ig_tclc_connect_exit:
     g_slist_free (to_list);
     g_slist_free (bd_list);
+
+    log_debug ("TCCon", "... freed results");
 
     return result;
 

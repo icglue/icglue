@@ -8,6 +8,7 @@
  +---------------------------*/
 
 #include "ig_data.h"
+#include "logger.h"
 #include <stdio.h>
 
 static struct ig_attribute * ig_attribtue_new (const char *value, bool constant);
@@ -282,6 +283,10 @@ struct ig_code *ig_code_new (const char *name, const char *codesection, struct i
 {
     if (codesection == NULL) return NULL;
     if (parent == NULL) return NULL;
+    if (parent->resource) {
+        log_error ("DCSNw", "Cannot add codesection to resource module");
+        return NULL;
+    }
 
     GString *s_id   = g_string_new (NULL);
     GString *s_name = g_string_new (NULL);

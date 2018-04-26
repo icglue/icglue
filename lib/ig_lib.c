@@ -127,11 +127,18 @@ struct ig_code *ig_lib_add_codesection (struct ig_lib_db *db, const char *name, 
     if (code == NULL) return NULL;
     if (parent == NULL) return NULL;
 
+    log_debug ("LACSc", "new codesection for module %s...", parent->name);
     struct ig_code *cs = ig_code_new (name, code, parent, db->str_chunks);
+
+    if (cs == NULL) {
+        log_error ("LACSc", "error while creating new codesection for module %s", parent->name);
+        return NULL;
+    }
 
     char *l_id = g_string_chunk_insert_const (db->str_chunks, cs->object->id);
 
     g_hash_table_insert (db->objects_by_id, l_id, cs->object);
+    log_debug ("LACSc", "...added codesection for module %s", parent->name);
 
     return cs;
 }
@@ -224,6 +231,7 @@ l_ig_lib_connection_final_free_hierlist:
     }
     g_list_free (hier_start_list);
 
+    log_debug ("LConn", "finished...");
     return result;
 }
 

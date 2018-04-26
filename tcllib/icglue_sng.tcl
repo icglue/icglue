@@ -294,9 +294,13 @@ namespace eval ig::sng {
                 ig::db::connect -from $src -to $targets -signal-name $name -signal-size $size
 
                 if {$assign ne ""} {
+                    ig::log -debug "sng signal assignment: get module..."
                     set mod [ig::db::get_modules -name $src_mod]
+                    ig::log -debug "sng signal assignment: add codesection..."
                     set cs [ig::db::add_codesection -parent-module $mod -code "    assign ${name} = ${assign};"]
+                    ig::log -debug "sng signal assignment: add codesection attributes..."
                     ig::db::set_attribute -object $cs -attribute "adapt" -value "true"
+                    ig::log -debug "sng signal assignment: ...done"
                 }
             }
         }
