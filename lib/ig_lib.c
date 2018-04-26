@@ -425,6 +425,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
     GList *result = NULL;
 
     bool copy_first = false;
+    bool explicit_next = false;
 
     /* startpoint is instance of generated module? */
     if (cinfo->obj->type == IG_OBJ_INSTANCE) {
@@ -434,6 +435,8 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
         if (!mod->resource) {
             cinfo->obj = mod->object;
             copy_first = true;
+        } else {
+            explicit_next = true;
         }
     } else if (cinfo->obj->type == IG_OBJ_MODULE) {
         struct ig_module *mod = (struct ig_module *) cinfo->obj->obj;
@@ -453,6 +456,10 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
             struct ig_instance *inst = (struct ig_instance *) cinfo->obj->obj;
             if (inst->parent == NULL) return result;
             cinfo = ig_lib_connection_info_new (db->str_chunks, inst->parent->object, NULL, cinfo->dir);
+            if (explicit_next) {
+                cinfo->is_explicit = true;
+                explicit_next      = false;
+            }
             continue;
         } else if (cinfo->obj->type == IG_OBJ_MODULE) {
             result = g_list_prepend (result, cinfo);
