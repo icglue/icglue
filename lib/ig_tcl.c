@@ -1013,13 +1013,15 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
 {
     gchar *log_id = "Tcl";
     gint loglevel = LOGLEVEL_INFO;
+    gint abort    = 0;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING,   "-id",      NULL,                               (void *) &log_id,       "log id",        NULL},
-        {TCL_ARGV_CONSTANT, "-info",    GINT_TO_POINTER (LOGLEVEL_INFO),    (void *) &loglevel,     "loglevel info", NULL},
-        {TCL_ARGV_CONSTANT, "-warning", GINT_TO_POINTER (LOGLEVEL_WARNING), (void *) &loglevel,     "loglevel info", NULL},
-        {TCL_ARGV_CONSTANT, "-error",   GINT_TO_POINTER (LOGLEVEL_ERROR),   (void *) &loglevel,     "loglevel info", NULL},
-        {TCL_ARGV_CONSTANT, "-debug",   GINT_TO_POINTER (LOGLEVEL_DEBUG),   (void *) &loglevel,     "loglevel info", NULL},
+        {TCL_ARGV_STRING,   "-id",      NULL,                               (void *) &log_id,       "log id",                              NULL},
+        {TCL_ARGV_CONSTANT, "-info",    GINT_TO_POINTER (LOGLEVEL_INFO),    (void *) &loglevel,     "loglevel info",                       NULL},
+        {TCL_ARGV_CONSTANT, "-warning", GINT_TO_POINTER (LOGLEVEL_WARNING), (void *) &loglevel,     "loglevel warning",                    NULL},
+        {TCL_ARGV_CONSTANT, "-error",   GINT_TO_POINTER (LOGLEVEL_ERROR),   (void *) &loglevel,     "loglevel error",                      NULL},
+        {TCL_ARGV_CONSTANT, "-debug",   GINT_TO_POINTER (LOGLEVEL_DEBUG),   (void *) &loglevel,     "loglevel debig",                      NULL},
+        {TCL_ARGV_CONSTANT, "-abort",   GINT_TO_POINTER (1),                (void *) &abort,        "return the log message as tcl error", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -1037,10 +1039,14 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
         for (int i = 1; i < objc; i++) {
             char *msg = Tcl_GetString (remObjv[i]);
             log_base (loglevel, log_id, "TCL", 0, "%s", msg);
+            if (abort) {
+                Tcl_SetObjResult (interp, Tcl_NewStringObj (msg, -1));
+            }
         }
     }
 
     if (objc != 0) ckfree (remObjv);
 
+    if (abort) return TCL_ERROR;
     return TCL_OK;
 }
