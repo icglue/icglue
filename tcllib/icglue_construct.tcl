@@ -3,13 +3,35 @@ package provide ICGlue 0.0.1
 namespace eval ig {
     namespace eval construct {
         # expand instance-list to list of entries:
-        #  {<inst-name> <module-name> }
+        #  {<inst-name> <module-name> <remainder>}
         proc expand_instances {inst_list} {
             set result [list]
-            #TODO...
 
             foreach i_entry $inst_list {
-                lappend result [list $i_entry $i_entry]
+                if {[regexp -expanded {
+                    ^
+                    ([^<>]+)
+                    (<(.*)>)?
+                    (->[^\s]+)?
+                    $
+                } $i_entry m_entry m_module m_instwrap m_insts m_rem]} {
+                    if {$m_instwrap eq ""} {
+                        lappend result [list $m_module $m_module $m_rem]
+                    } else {
+                        foreach i_sfx [split $m_insts ","] {
+                            if {[regexp {(.*)\.\.(.*)} $i_sfx m_sfx m_start m_stop]} {
+                                for {set i $m_start} {$i <= $m_stop} {incr i} {
+                                    lappend result [list "${m_module}_${i}" $m_module $m_rem]
+                                }
+                            } else {
+                                lappend result [list "${m_module}_${i_sfx}" $m_module $m_rem]
+                            }
+                        }
+                    }
+
+                } else {
+                    error "could not parse $i_entry"
+                }
             }
 
             return $result
@@ -97,6 +119,8 @@ namespace eval ig {
             foreach i_inst [construct::expand_instances $instances] {
                 set i_name [lindex $i_inst 0]
                 set i_mod  [lindex $i_inst 1]
+
+                log -debug "M (module = $name): creating instance $i_name of module $i_mod"
 
                 ig::db::create_instance \
                     -name $i_name \
