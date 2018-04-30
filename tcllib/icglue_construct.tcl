@@ -85,19 +85,19 @@ namespace eval ig {
                 }
                 default {
                     switch -regexp -- $i_arg {
-                        ^-u(nit)?$                 {set lastarg -u}
-                        ^-i(nst(ances|anciate)?)?$ {set lastarg -i}
+                        {^-u(nit)?$}                 {set lastarg -u}
+                        {^-i(nst(ances|anciate)?)?$} {set lastarg -i}
 
-                        ^-v(erilog)?$              {set lang "verilog"}
-                        ^(-sv|-s(ystemverilog)?)$  {set lang "systemverilog"}
-                        ^-vhd(l)?$                 {set lang "vhdl"}
+                        {^-v(erilog)?$}              {set lang "verilog"}
+                        {^(-sv|-s(ystemverilog)?)$}  {set lang "systemverilog"}
+                        {^-vhd(l)?$}                 {set lang "vhdl"}
 
-                        ^-rtl$                     {set mode "rtl"}
-                        ^-beh(av(ioral|ioural)?)?$ {set mode "behavioral"}
-                        ^-(tb|testbench)$          {set mode "tb"}
+                        {^-rtl$}                     {set mode "rtl"}
+                        {^-beh(av(ioral|ioural)?)?$} {set mode "behavioral"}
+                        {^-(tb|testbench)$}          {set mode "tb"}
 
-                        ^-(ilm|macro)$             {set ilm      "true"}
-                        ^-res(ource)?$             {set resource "true"}
+                        {^-(ilm|macro)$}             {set ilm      "true"}
+                        {^-res(ource)?$}             {set resource "true"}
 
                         default {
                             if {$name ne ""} {
@@ -176,12 +176,12 @@ namespace eval ig {
                 }
                 default {
                     switch -regexp -- $i_arg {
-                        ^-w(idth)?$                {set lastarg -w}
-                        ^-b(idir(ectional)?)?$     {incr con_list; set bidir "true"}
+                        {^-w(idth)?$}                {set lastarg -w}
+                        {^-b(idir(ectional)?)?$}     {incr con_list; set bidir "true"}
 
-                        ^->$                       {incr con_list}
-                        ^<-$                       {incr con_list; set invert "true"}
-                        ^<->$                      {incr con_list; set bidir  "true"}
+                        {^->$}                       {incr con_list}
+                        {^<-$}                       {incr con_list; set invert "true"}
+                        {^<->$}                      {incr con_list; set bidir  "true"}
 
                         default {
                             if {$con_list == 0} {
