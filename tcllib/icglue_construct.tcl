@@ -302,4 +302,59 @@ namespace eval ig {
         return $paramid
     }
 
+    proc C args {
+        # defaults
+        set modname   ""
+        set adapt     "true"
+        set code      {}
+
+        # args
+        set lastarg {}
+
+        foreach i_arg $args {
+            switch -- $lastarg {
+                -m {
+                    set modname $i_arg
+                    set lastarg {}
+                }
+                default {
+                    switch -regexp -- $i_arg {
+                        {^-m(od(ule)?)?$}           {set lastarg -m}
+                        {^-a(dapt)?$}               {set adapt "true"}
+                        {^(-v(erbatim)?|-noadapt)$} {set adapt "false"}
+
+                        default {
+                            lappend code $i_arg
+                        }
+                    }
+                }
+            }
+        }
+
+        # argument checks
+        if {[lsearch {-m} $lastarg] >= 0} {
+            log -error -abort "C: need an argument after ${lastarg}"
+        }
+
+        if {$modname eq ""} {
+            log -error -abort "C: no module name specified"
+        }
+
+        set code [join $code "\n"]
+        if {$code eq ""} {
+            log -error -abort "C (module ${modname}): no code section specified"
+        }
+
+        # actual code creation
+        if {[catch {
+            set cid [ig::db::add_codesection -parent-module [ig::db::get_modules -name $modname] -code $code]
+
+            ig::db::set_attribute -object $cid -attribute "adapt" -value $adapt
+        } emsg]} {
+            log -error -abort "C (module ${modname}): error while creating codesection:\n${emsg}"
+        }
+
+        return $cid
+    }
+
 }
