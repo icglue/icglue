@@ -1,13 +1,14 @@
 # general
 - documentation
-- license (gpl? lgpl?)
 
 # lib
 - add regfile support
   - module can be/contain regfile (with parameters/attributes clock/reset/address/wdata/... signals)
   - signals can be mapped to registers (somehow?)
+- logger: lin-of-code-switch
 
 # tcllib
+- "-help"-switches for main commands
 - add regfile support in signal declaration
 - include template-stuff in some wrapper
   - templates (for modules/regfiles/...)
