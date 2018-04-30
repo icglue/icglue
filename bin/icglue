@@ -1,6 +1,4 @@
-#!/bin/sh
-# Tcl ignores the next line -*- tcl -*- \
-exec tclsh "$0" "$@"
+#!/usr/bin/env tclsh
 
 #
 #   ICGlue is a Tcl-Library for scripted HDL generation
