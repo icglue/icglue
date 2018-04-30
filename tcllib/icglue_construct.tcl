@@ -4,7 +4,7 @@ namespace eval ig {
     namespace eval construct {
         # expand instance-list to list of entries:
         #  {<inst-name> <module-name> <remainder>}
-        proc expand_instances {inst_list} {
+        proc expand_instances {inst_list {ids false} {merge false}} {
             set result [list]
 
             foreach i_entry $inst_list {
@@ -28,10 +28,31 @@ namespace eval ig {
                             }
                         }
                     }
-
                 } else {
                     error "could not parse $i_entry"
                 }
+            }
+
+            if {$ids} {
+                set result_ids [list]
+
+                foreach i_r $result {
+                    set inst [lindex $i_r 0]
+                    if {[catch {set inst_id [ig::db::get_instances -name $inst]}]} {
+                        set inst_id [ig::db::get_modules -name $inst]
+                    }
+                    if {$merge} {
+                        lappend result_ids "${inst_id}[lindex $i_r 2]"
+                    } else {
+                        lappend result_ids [list \
+                            $inst_id \
+                            [ig::db::get_modules   -name [lindex $i_r 1]] \
+                            [lindex $i_r 2]
+                        ]
+                    }
+                }
+
+                set result $result_ids
             }
 
             return $result
@@ -64,19 +85,19 @@ namespace eval ig {
                 }
                 default {
                     switch -regexp -- $i_arg {
-                        -u(nit)?                 {set lastarg -u}
-                        -i(nst(ances|anciate)?)? {set lastarg -i}
+                        ^-u(nit)?$                 {set lastarg -u}
+                        ^-i(nst(ances|anciate)?)?$ {set lastarg -i}
 
-                        -v(erilog)?              {set lang "verilog"}
-                        (-sv|-s(ystemverilog)?)  {set lang "systemverilog"}
-                        -vhd(l)?                 {set lang "vhdl"}
+                        ^-v(erilog)?$              {set lang "verilog"}
+                        ^(-sv|-s(ystemverilog)?)$  {set lang "systemverilog"}
+                        ^-vhd(l)?$                 {set lang "vhdl"}
 
-                        -rtl                     {set mode "rtl"}
-                        -beh(av(ioral|ioural)?)? {set mode "behavioral"}
-                        -(tb|testbench)          {set mode "tb"}
+                        ^-rtl$                     {set mode "rtl"}
+                        ^-beh(av(ioral|ioural)?)?$ {set mode "behavioral"}
+                        ^-(tb|testbench)$          {set mode "tb"}
 
-                        -(ilm|macro)             {set ilm      "true"}
-                        -res(ource)?             {set resource "true"}
+                        ^-(ilm|macro)$             {set ilm      "true"}
+                        ^-res(ource)?$             {set resource "true"}
 
                         default {
                             if {$name ne ""} {
@@ -132,6 +153,94 @@ namespace eval ig {
         }
 
         return $modid
+    }
+
+    proc S args {
+        # defaults
+        set name      ""
+        set width     1
+        set bidir     "false"
+        set invert    "false"
+        set con_left  {}
+        set con_right {}
+        set con_list  0
+
+        # args
+        set lastarg {}
+
+        foreach i_arg $args {
+            switch -- $lastarg {
+                -w {
+                    set width $i_arg
+                    set lastarg {}
+                }
+                default {
+                    switch -regexp -- $i_arg {
+                        ^-w(idth)?$                {set lastarg -w}
+                        ^-b(idir(ectional)?)?$     {incr con_list; set bidir "true"}
+
+                        ^->$                       {incr con_list}
+                        ^<-$                       {incr con_list; set invert "true"}
+                        ^<->$                      {incr con_list; set bidir  "true"}
+
+                        default {
+                            if {$con_list == 0} {
+                                incr con_list
+                                set name $i_arg
+                            } else {
+                                foreach i_elem $i_arg {
+                                    if {$con_list == 1} {
+                                        lappend con_left $i_elem
+                                    } elseif {$con_list == 2} {
+                                        lappend con_right $i_elem
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        # argument checks
+        if {[lsearch {-w} $lastarg] >= 0} {
+            log -error -abort "S (signal ${name}): need an argument after ${lastarg}"
+        }
+
+        if {$con_list > 2} {
+            log -error -abort "S (signal ${name}): too many direction arguments"
+        }
+
+        if {$name eq ""} {
+            log -error -abort "S: no signal name specified"
+        }
+
+        # adaption
+        if {$invert} {
+            set temp      $con_left
+            set con_left  $con_right
+            set con_right $temp
+        }
+        if {$bidir} {
+            set con_left  [concat $con_left $con_right]
+            set con_right {}
+        }
+
+        # actual module creation
+        if {[catch {
+            set con_left  [construct::expand_instances $con_left  "true" "true"]
+            set con_right [construct::expand_instances $con_right "true" "true"]
+
+            if {$bidir} {
+                set sigid [ig::db::connect -bidir $con_left -signal-name $name -signal-size $width]
+            } else {
+                set sigid [ig::db::connect -from {*}$con_left -to $con_right -signal-name $name -signal-size $width]
+            }
+        } emsg]} {
+            log -error -abort "S (signal ${name}): error while creating signal:\n${emsg}"
+        }
+
+        return $sigid
     }
 
 }

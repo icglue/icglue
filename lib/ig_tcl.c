@@ -648,6 +648,13 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     }
 
     if (!all) {
+        if (child_name != NULL) {
+            log_debug ("LTGet", "%s: nothing found for %s", cmdname, child_name);
+        } else if (parent_name != NULL) {
+            log_debug ("LTGet", "%s: nothing found for %s", cmdname, parent_name);
+        } else {
+            log_debug ("LTGet", "%s: nothing found", cmdname);
+        }
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: nothing found", -1));
         return TCL_ERROR;
     } else {
