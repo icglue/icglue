@@ -18,7 +18,7 @@ S bddata -w 16 -b  {proc_mgmt proc_core tb_proc_top}
 #C -m proc_mgmt -a {
 #    assign clk = clk_ref;
 #}
-#
-## parameters
-#P DATA_W -v 32 {proc_mgmt proc_core tb_proc_top}
+
+# parameters
+P DATA_W -v 32 {proc_mgmt proc_core tb_proc_top}
 }

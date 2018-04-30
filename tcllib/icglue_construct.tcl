@@ -243,4 +243,63 @@ namespace eval ig {
         return $sigid
     }
 
+    proc P args {
+        # defaults
+        set name      ""
+        set value     {}
+        set endpoints {}
+        set ilist     0
+
+        # args
+        set lastarg {}
+
+        foreach i_arg $args {
+            switch -- $lastarg {
+                -v {
+                    set value $i_arg
+                    set lastarg {}
+                }
+                default {
+                    switch -regexp -- $i_arg {
+                        {^-v(alue)?$}                {set lastarg -v}
+
+                        default {
+                            if {$ilist == 0} {
+                                incr ilist
+                                set name $i_arg
+                            } else {
+                                foreach i_elem $i_arg {
+                                    lappend endpoints $i_elem
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        # argument checks
+        if {[lsearch {-v} $lastarg] >= 0} {
+            log -error -abort "P (parameter ${name}): need an argument after ${lastarg}"
+        }
+
+        if {$name eq ""} {
+            log -error -abort "P: no parameter name specified"
+        }
+        if {$value eq ""} {
+            log -error -abort "P (parameter ${name}): no value specified"
+        }
+
+        # actual parameter creation
+        if {[catch {
+            set endpoints [construct::expand_instances $endpoints "true" "true"]
+
+            set paramid [ig::db::parameter -name $name -value $value -targets $endpoints]
+        } emsg]} {
+            log -error -abort "P (parameter ${name}): error while creating parameter:\n${emsg}"
+        }
+
+        return $paramid
+    }
+
 }
