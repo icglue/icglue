@@ -162,7 +162,7 @@ struct ig_instance {
  * Functions
  *******************************************************/
 
-struct ig_object     *ig_obj_new  (enum ig_object_type type, const char *id, gpointer obj, GStringChunk *storage);
+struct ig_object     *ig_obj_new  (enum ig_object_type type, const char *name, struct ig_object *parent, gpointer obj, GStringChunk *storage);
 void                  ig_obj_free (struct ig_object *obj);
 
 bool                  ig_obj_attr_set (struct ig_object *obj, const char *name, const char *value, bool constant);
