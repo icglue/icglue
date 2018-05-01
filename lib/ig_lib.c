@@ -162,6 +162,73 @@ struct ig_code *ig_lib_add_codesection (struct ig_lib_db *db, const char *name, 
     return cs;
 }
 
+struct ig_rf_regfile *ig_lib_add_regfile (struct ig_lib_db *db, const char *name, struct ig_module *parent)
+{
+    if (db == NULL) return NULL;
+    if (name == NULL) return NULL;
+    if (parent == NULL) return NULL;
+
+    log_debug ("LARgf", "new regfile %s for module %s...", name, parent->name);
+    struct ig_rf_regfile *rf = ig_rf_regfile_new (name, parent, db->str_chunks);
+
+    if (rf == NULL) {
+        log_error ("LARgf", "error while creating new regfile %s for module %s", name, parent->name);
+        return NULL;
+    }
+
+    char *l_id = g_string_chunk_insert_const (db->str_chunks, rf->object->id);
+
+    g_hash_table_insert (db->objects_by_id, l_id, rf->object);
+    log_debug ("LARgf", "...added regfile %s for module %s", name, parent->name);
+
+    return rf;
+}
+
+struct ig_rf_entry *ig_lib_add_regfile_entry (struct ig_lib_db *db, const char *name, struct ig_rf_regfile *parent)
+{
+    if (db == NULL) return NULL;
+    if (name == NULL) return NULL;
+    if (parent == NULL) return NULL;
+
+    log_debug ("LARfE", "new entry %s for regfile %s...", name, parent->name);
+    struct ig_rf_entry *entry = ig_rf_entry_new (name, parent, db->str_chunks);
+
+    if (entry == NULL) {
+        log_error ("LARfE", "error while creating new entry %s for regfile %s", name, parent->name);
+        return NULL;
+    }
+
+    char *l_id = g_string_chunk_insert_const (db->str_chunks, entry->object->id);
+
+    g_hash_table_insert (db->objects_by_id, l_id, entry->object);
+    log_debug ("LARfE", "...added entry %s for regfile %s", name, parent->name);
+
+    return entry;
+}
+
+struct ig_rf_reg *ig_lib_add_regfile_reg (struct ig_lib_db *db, const char *name, struct ig_rf_entry *parent)
+{
+    if (db == NULL) return NULL;
+    if (name == NULL) return NULL;
+    if (parent == NULL) return NULL;
+
+    log_debug ("LARfR", "new reg %s for regfile-entrty %s...", name, parent->name);
+    struct ig_rf_reg *reg = ig_rf_reg_new (name, parent, db->str_chunks);
+
+    if (reg == NULL) {
+        log_error ("LARfR", "error while creating new reg %s for regfile-entry %s", name, parent->name);
+        return NULL;
+    }
+
+    char *l_id = g_string_chunk_insert_const (db->str_chunks, reg->object->id);
+
+    g_hash_table_insert (db->objects_by_id, l_id, reg->object);
+    log_debug ("LARfR", "...added reg %s for regfile-entry %s", name, parent->name);
+
+    return reg;
+}
+
+
 bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets, GList **gen_objs)
 {
     GList *hier_start_list = NULL;
