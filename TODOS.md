@@ -6,6 +6,7 @@
   - module can be/contain regfile (with parameters/attributes clock/reset/address/wdata/... signals)
   - signals can be mapped to registers (somehow?)
 - logger: lin-of-code-switch
+- add cleanup function to reset library (with proper freeing of db...)
 
 # tcllib
 - "-help"-switches for main commands
