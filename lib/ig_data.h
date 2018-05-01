@@ -40,6 +40,9 @@ enum ig_object_type {
     IG_OBJ_CODESECTION,
     IG_OBJ_MODULE,
     IG_OBJ_INSTANCE,
+    IG_OBJ_REGFILE_REG,
+    IG_OBJ_REGFILE_ENTRY,
+    IG_OBJ_REGFILE
 };
 
 struct ig_attribute {
@@ -105,6 +108,34 @@ struct ig_code {
     struct ig_module *parent;
 };
 
+struct ig_rf_reg {
+    struct ig_object *object;
+
+    const char *name;
+
+    struct ig_rf_entry *parent;
+};
+
+struct ig_rf_entry {
+    struct ig_object *object;
+
+    const char *name;
+
+    GQueue *regs; /* data: (struct ig_rf_reg *) */
+
+    struct ig_rf_regfile *parent;
+};
+
+struct ig_rf_regfile {
+    struct ig_object *object;
+
+    const char *name;
+
+    GQueue *entries; /* data: (struct ig_rf_entry *) */
+
+    struct ig_module *parent;
+};
+
 struct ig_module {
     struct ig_object *object;
 
@@ -113,10 +144,11 @@ struct ig_module {
     bool             resource;
 
     /* module content */
-    GQueue *params; /* data: (struct ig_param *) */
-    GQueue *ports;  /* data: (struct ig_port *)  */
-    GQueue *decls;  /* data: (struct ig_decl *)  */
-    GQueue *code;   /* data: (struct ig_code *)  */
+    GQueue *params;   /* data: (struct ig_param *)   */
+    GQueue *ports;    /* data: (struct ig_port *)    */
+    GQueue *decls;    /* data: (struct ig_decl *)    */
+    GQueue *code;     /* data: (struct ig_code *)    */
+    GQueue *regfiles; /* data: (struct ig_regfile *) */
     /* child instances inside module */
     GQueue *child_instances; /* data: (struct ig_instance *) */
     /* instances of this module elsewhere */
@@ -156,7 +188,7 @@ struct ig_instance {
     GQueue *pins;        /* data: (struct ig_pin *)     */
 };
 
-/* TODO: net */
+/* TODO: net? */
 
 /*******************************************************
  * Functions
@@ -180,6 +212,15 @@ void                  ig_decl_free (struct ig_decl *decl);
 struct ig_code       *ig_code_new  (const char *name, const char *codesection, struct ig_module *parent, GStringChunk *storage);
 void                  ig_code_free (struct ig_code *code);
 
+struct ig_rf_reg     *ig_rf_reg_new (const char *name, struct ig_rf_entry *parent, GStringChunk *storage);
+void                  ig_rf_reg_free (struct ig_rf_reg *reg);
+
+struct ig_rf_entry   *ig_rf_entry_new (const char *name, struct ig_rf_regfile *parent, GStringChunk *storage);
+void                  ig_rf_entry_free (struct ig_rf_entry *entry);
+
+struct ig_rf_regfile *ig_rf_regfile_new (const char *name, struct ig_module *parent, GStringChunk *storage);
+void                  ig_rf_regfile_free (struct ig_rf_regfile *regfile);
+
 struct ig_module     *ig_module_new (const char *name, bool ilm, bool resource, GStringChunk *storage);
 void                  ig_module_free (struct ig_module *module);
 
@@ -191,7 +232,6 @@ void                  ig_adjustment_free (struct ig_adjustment *adjustment);
 
 struct ig_instance   *ig_instance_new (const char *name, struct ig_module *module, struct ig_module *parent, GStringChunk *storage);
 void                  ig_instance_free (struct ig_instance *instance);
-/* TODO: remaining */
 
 #ifdef __cplusplus
 }

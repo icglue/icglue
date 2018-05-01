@@ -282,7 +282,7 @@ struct ig_code *ig_code_new (const char *name, const char *codesection, struct i
     if (codesection == NULL) return NULL;
     if (parent == NULL) return NULL;
     if (parent->resource) {
-        log_error ("DCSNw", "Cannot add codesection to resource module");
+        log_error ("DCsNw", "Cannot add codesection to resource module");
         return NULL;
     }
 
@@ -319,6 +319,95 @@ void ig_code_free (struct ig_code *code)
 }
 
 /*******************************************************
+ * regfile data
+ *******************************************************/
+
+struct ig_rf_reg *ig_rf_reg_new (const char *name, struct ig_rf_entry *parent, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+    if (parent == NULL) return NULL;
+
+    struct ig_rf_reg *reg = g_slice_new (struct ig_rf_reg);
+    struct ig_object *obj = ig_obj_new (IG_OBJ_REGFILE_REG, name, parent->object, reg, storage);
+    reg->object = obj;
+
+    reg->name   = ig_obj_attr_get (reg->object, "name");
+    reg->parent = parent;
+
+    g_queue_push_tail (parent->regs, reg);
+
+    return reg;
+}
+
+void ig_rf_reg_free (struct ig_rf_reg *reg)
+{
+    if (reg == NULL) return;
+
+    ig_obj_free (reg->object);
+    g_slice_free (struct ig_rf_reg, reg);
+}
+
+struct ig_rf_entry *ig_rf_entry_new (const char *name, struct ig_rf_regfile *parent, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+    if (parent == NULL) return NULL;
+
+    struct ig_rf_entry *entry = g_slice_new (struct ig_rf_entry);
+    struct ig_object *obj = ig_obj_new (IG_OBJ_REGFILE_ENTRY, name, parent->object, entry, storage);
+    entry->object = obj;
+
+    entry->name   = ig_obj_attr_get (entry->object, "name");
+    entry->parent = parent;
+
+    g_queue_push_tail (parent->entries, entry);
+
+    return entry;
+}
+
+void ig_rf_entry_free (struct ig_rf_entry *entry)
+{
+    if (entry == NULL) return;
+
+    ig_obj_free (entry->object);
+
+    if (entry->regs != NULL) g_queue_free (entry->regs);
+
+    g_slice_free (struct ig_rf_entry, entry);
+}
+
+struct ig_rf_regfile *ig_rf_regfile_new (const char *name, struct ig_module *parent, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+    if (parent == NULL) return NULL;
+    if (parent->resource) {
+        log_error ("DRfNw", "Cannot add regfile to resource module");
+        return NULL;
+    }
+
+    struct ig_rf_regfile *regfile = g_slice_new (struct ig_rf_regfile);
+    struct ig_object *obj = ig_obj_new (IG_OBJ_REGFILE, name, NULL, regfile, storage);
+    regfile->object = obj;
+
+    regfile->name   = ig_obj_attr_get (regfile->object, "name");
+    regfile->parent = parent;
+
+    g_queue_push_tail (parent->regfiles, regfile);
+
+    return regfile;
+}
+
+void ig_rf_regfile_free (struct ig_rf_regfile *regfile)
+{
+    if (regfile == NULL) return;
+
+    ig_obj_free (regfile->object);
+
+    if (regfile->entries != NULL) g_queue_free (regfile->entries);
+
+    g_slice_free (struct ig_rf_regfile, regfile);
+}
+
+/*******************************************************
  * module data
  *******************************************************/
 
@@ -346,11 +435,13 @@ struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStr
         module->decls            = NULL;
         module->code             = NULL;
         module->child_instances  = NULL;
+        module->regfiles         = NULL;
         module->default_instance = NULL;
     } else {
         module->decls            = g_queue_new ();
         module->code             = g_queue_new ();
         module->child_instances  = g_queue_new ();
+        module->regfiles         = g_queue_new ();
         module->default_instance = ig_instance_new (name, module, NULL, storage);
     }
 
@@ -369,6 +460,7 @@ void ig_module_free (struct ig_module *module)
     if (module->decls           != NULL) g_queue_free (module->decls);
     if (module->code            != NULL) g_queue_free (module->code);
     if (module->child_instances != NULL) g_queue_free (module->child_instances);
+    if (module->regfiles        != NULL) g_queue_free (module->regfiles);
 
     g_slice_free (struct ig_module, module);
 }
