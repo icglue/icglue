@@ -50,11 +50,11 @@ enum ig_lib_connection_dir {
 };
 
 struct ig_lib_connection_info {
-    struct ig_object *obj;
-    const char *parent_name;
-    const char *local_name;
-    bool is_explicit;
-    bool force_name;
+    struct ig_object          *obj;
+    const char                *parent_name;
+    const char                *local_name;
+    bool                       is_explicit;
+    bool                       force_name;
     enum ig_lib_connection_dir dir;
 };
 
@@ -65,9 +65,9 @@ struct ig_module   *ig_lib_add_module      (struct ig_lib_db *db, const char *na
 struct ig_instance *ig_lib_add_instance    (struct ig_lib_db *db, const char *name, struct ig_module *type, struct ig_module *parent);
 struct ig_code     *ig_lib_add_codesection (struct ig_lib_db *db, const char *name, const char *code, struct ig_module *parent);
 
-struct ig_rf_regfile *ig_lib_add_regfile       (struct ig_lib_db *db, const char *name, struct ig_module     *parent);
+struct ig_rf_regfile *ig_lib_add_regfile       (struct ig_lib_db *db, const char *name, struct ig_module *parent);
 struct ig_rf_entry   *ig_lib_add_regfile_entry (struct ig_lib_db *db, const char *name, struct ig_rf_regfile *parent);
-struct ig_rf_reg     *ig_lib_add_regfile_reg   (struct ig_lib_db *db, const char *name, struct ig_rf_entry   *parent);
+struct ig_rf_reg     *ig_lib_add_regfile_reg   (struct ig_lib_db *db, const char *name, struct ig_rf_entry *parent);
 
 struct ig_lib_connection_info *ig_lib_connection_info_new  (GStringChunk *str_chunks, struct ig_object *obj, const char *local_name, enum ig_lib_connection_dir dir);
 struct ig_lib_connection_info *ig_lib_connection_info_copy (GStringChunk *str_chunks, struct ig_lib_connection_info *original);

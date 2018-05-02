@@ -191,7 +191,13 @@ clean:
 	-@$(RM) -rf $(addprefix ./$(DOXY_DOCPATH)/, html latex rtf man); true
 	-@$(RMDIR) ./$(DOXY_DOCPATH) 2>/dev/null; true
 
+uncrustify:
+	@for f in *.c *.h ; do \
+		uncrustify -c .uncrustify.cfg --replace --no-backup $$f ; \
+	done
+
+
 .SECONDARY: $(DEPS) $(OBJECTS) $(TARGET_DIR)/$(TARGET)
 
-.PHONY: all run release strip-all doc viewdoc clean
+.PHONY: all run release strip-all doc viewdoc clean uncrustify
 

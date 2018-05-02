@@ -32,7 +32,7 @@ typedef enum log_level {
     LOGLEVEL_DEFAULT =  -1,
 
     // loglevels
-    LOGLEVEL_DEBUG   =  0,
+    LOGLEVEL_DEBUG =  0,
     LOGLEVEL_INFO,
     LOGLEVEL_WARNING,
     LOGLEVEL_ERROR,
@@ -57,7 +57,7 @@ void set_default_log_level (log_level_t);
 void set_loglinenumbers (gboolean value);
 
 
-void log_particular_level (const gchar *id, const log_level_t level);
+void     log_particular_level (const gchar *id, const log_level_t level);
 gboolean log_suppress (const log_level_t level, const gchar *id);
 
 
@@ -70,4 +70,5 @@ void log_dump_settings ();
 }
 #endif
 
-#endif // ifndef __LOGGER_H__
+#endif
+

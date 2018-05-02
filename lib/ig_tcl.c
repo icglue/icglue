@@ -78,7 +78,8 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
 /* Tcl helper function for parsing lists in GSLists */
 static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, void *dest_ptr)
 {
-    GSList **list_dest = (GSList **) dest_ptr;
+    GSList **list_dest = (GSList **)dest_ptr;
+
     if (dest_ptr == NULL) {
         return 1;
     }
@@ -91,7 +92,7 @@ static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, 
 
     Tcl_Obj *in_list = obj;
 
-    int len = 0;
+    int len         = 0;
     int temp_result = Tcl_ListObjLength (NULL, in_list, &len);
     if (temp_result != TCL_OK) return -1;
 
@@ -111,13 +112,14 @@ static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, 
         result = g_slist_prepend (result, lit_str);
     }
 
-    *list_dest = g_slist_reverse(result);
+    *list_dest = g_slist_reverse (result);
     return 1;
 }
 
 
-static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
-    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
     if (db == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
@@ -127,18 +129,18 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
     int int_true  = true;
     int int_false = false;
 
-    int     ilm      = int_false;
-    int     resource = int_false;
-    char   *name     = NULL;
+    int   ilm      = int_false;
+    int   resource = int_false;
+    char *name     = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING,   "-name",        NULL,                        (void *) &name,      "the name of the module to be created", NULL},
+        {TCL_ARGV_STRING,   "-name",        NULL,                        (void *)&name,      "the name of the module to be created", NULL},
 
-        {TCL_ARGV_CONSTANT, "-ilm",         GINT_TO_POINTER (int_true),  (void *) &ilm,       "module is ilm",    NULL},
-        {TCL_ARGV_CONSTANT, "-no-ilm",      GINT_TO_POINTER (int_false), (void *) &ilm,       "module is no ilm", NULL},
+        {TCL_ARGV_CONSTANT, "-ilm",         GINT_TO_POINTER (int_true),  (void *)&ilm,       "module is ilm",    NULL},
+        {TCL_ARGV_CONSTANT, "-no-ilm",      GINT_TO_POINTER (int_false), (void *)&ilm,       "module is no ilm", NULL},
 
-        {TCL_ARGV_CONSTANT, "-resource",    GINT_TO_POINTER (int_true),  (void *) &resource,  "module is resource",    NULL},
-        {TCL_ARGV_CONSTANT, "-no-resource", GINT_TO_POINTER (int_false), (void *) &resource,  "module is no resource", NULL},
+        {TCL_ARGV_CONSTANT, "-resource",    GINT_TO_POINTER (int_true),  (void *)&resource,  "module is resource",    NULL},
+        {TCL_ARGV_CONSTANT, "-no-resource", GINT_TO_POINTER (int_false), (void *)&resource,  "module is no resource", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -166,21 +168,21 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
 
 static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
     if (db == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
         return TCL_ERROR;
     }
 
-    char   *name          = NULL;
-    char   *of_module     = NULL;
-    char   *parent_module = NULL;
+    char *name          = NULL;
+    char *of_module     = NULL;
+    char *parent_module = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING, "-name",          NULL, (void *) &name,          "the name of the instance to be created", NULL},
-        {TCL_ARGV_STRING, "-of-module",     NULL, (void *) &of_module,     "module of this instance", NULL},
-        {TCL_ARGV_STRING, "-parent-module", NULL, (void *) &parent_module, "parent module containing this instance", NULL},
+        {TCL_ARGV_STRING, "-name",          NULL, (void *)&name,          "the name of the instance to be created", NULL},
+        {TCL_ARGV_STRING, "-of-module",     NULL, (void *)&of_module,     "module of this instance", NULL},
+        {TCL_ARGV_STRING, "-parent-module", NULL, (void *)&parent_module, "parent module containing this instance", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -202,10 +204,10 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
         return TCL_ERROR;
     }
 
-    struct ig_module *of_mod   = (struct ig_module *) g_hash_table_lookup (db->modules_by_id,   of_module);
-    if (of_mod == NULL) of_mod = (struct ig_module *) g_hash_table_lookup (db->modules_by_name, of_module);
-    struct ig_module *pa_mod   = (struct ig_module *) g_hash_table_lookup (db->modules_by_id,   parent_module);
-    if (pa_mod == NULL) pa_mod = (struct ig_module *) g_hash_table_lookup (db->modules_by_name, parent_module);
+    struct ig_module *of_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id,   of_module);
+    if (of_mod == NULL) of_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_name, of_module);
+    struct ig_module *pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id,   parent_module);
+    if (pa_mod == NULL) pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_name, parent_module);
 
     if (of_module == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid of-module", -1));
@@ -230,7 +232,7 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
 
 static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
     if (db == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
@@ -242,9 +244,9 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
     char *parent_module = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING, "-name",          NULL, (void *) &name,          "the name of the codesection to be created", NULL},
-        {TCL_ARGV_STRING, "-code",          NULL, (void *) &code,          "code to add", NULL},
-        {TCL_ARGV_STRING, "-parent-module", NULL, (void *) &parent_module, "parent module containing this codesection", NULL},
+        {TCL_ARGV_STRING, "-name",          NULL, (void *)&name,          "the name of the codesection to be created", NULL},
+        {TCL_ARGV_STRING, "-code",          NULL, (void *)&code,          "code to add", NULL},
+        {TCL_ARGV_STRING, "-parent-module", NULL, (void *)&parent_module, "parent module containing this codesection", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -262,8 +264,8 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
         return TCL_ERROR;
     }
 
-    struct ig_module *pa_mod   = (struct ig_module *) g_hash_table_lookup (db->modules_by_id,   parent_module);
-    if (pa_mod == NULL) pa_mod = (struct ig_module *) g_hash_table_lookup (db->modules_by_name, parent_module);
+    struct ig_module *pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id,   parent_module);
+    if (pa_mod == NULL) pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_name, parent_module);
 
     if (pa_mod == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid parent module", -1));
@@ -281,8 +283,9 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
     return TCL_OK;
 }
 
-static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
-    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
     if (db == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
@@ -295,11 +298,11 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
     GSList *attr_list  = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING,   "-object",      NULL, (void *) &obj_name,   "object id", NULL},
-        {TCL_ARGV_STRING,   "-attribute",   NULL, (void *) &attr_name,  "attribute name", NULL},
-        {TCL_ARGV_STRING,   "-value",       NULL, (void *) &attr_value, "attribute value", NULL},
+        {TCL_ARGV_STRING,   "-object",      NULL, (void *)&obj_name,   "object id", NULL},
+        {TCL_ARGV_STRING,   "-attribute",   NULL, (void *)&attr_name,  "attribute name", NULL},
+        {TCL_ARGV_STRING,   "-value",       NULL, (void *)&attr_value, "attribute value", NULL},
 
-        {TCL_ARGV_FUNC,     "-attributes",  (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void*) &attr_list, "attributes as list of form <name> <value> <name2> <value2> ...", NULL},
+        {TCL_ARGV_FUNC,     "-attributes",  (void *)(Tcl_ArgvFuncProc *)ig_tclc_tcl_string_list_parse, (void *)&attr_list, "attributes as list of form <name> <value> <name2> <value2> ...", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -330,7 +333,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
         return TCL_ERROR;
     }
 
-    struct ig_object *obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, obj_name);
+    struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, obj_name);
     if (obj == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: unknown object", -1));
         g_slist_free (attr_list);
@@ -358,8 +361,9 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
     return TCL_OK;
 }
 
-static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
-    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
     if (db == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
@@ -372,11 +376,11 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
     GSList *attr_list  = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING,   "-object",      NULL, (void *) &obj_name,   "object id", NULL},
-        {TCL_ARGV_STRING,   "-attribute",   NULL, (void *) &attr_name,  "attribute name", NULL},
-        {TCL_ARGV_STRING,   "-default",     NULL, (void *) &defaultval, "default value for single attribute if attribute does not exist", NULL},
+        {TCL_ARGV_STRING,   "-object",      NULL, (void *)&obj_name,   "object id", NULL},
+        {TCL_ARGV_STRING,   "-attribute",   NULL, (void *)&attr_name,  "attribute name", NULL},
+        {TCL_ARGV_STRING,   "-default",     NULL, (void *)&defaultval, "default value for single attribute if attribute does not exist", NULL},
 
-        {TCL_ARGV_FUNC,     "-attributes",  (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void*) &attr_list, "attributes as list of form <name> <value> <name2> <value2> ...", NULL},
+        {TCL_ARGV_FUNC,     "-attributes",  (void *)(Tcl_ArgvFuncProc *)ig_tclc_tcl_string_list_parse, (void *)&attr_list, "attributes as list of form <name> <value> <name2> <value2> ...", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -402,7 +406,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
         return TCL_ERROR;
     }
 
-    struct ig_object *obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, obj_name);
+    struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, obj_name);
     if (obj == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: unknown object", -1));
         g_slist_free (attr_list);
@@ -426,7 +430,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     /* check */
     for (GSList *li = attr_list; li != NULL; li = li->next) {
-        char *attr = (char *) li->data;
+        char *attr = (char *)li->data;
         if (ig_obj_attr_get (obj, attr) == NULL) {
             g_slist_free (attr_list);
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not get attribute", -1));
@@ -437,8 +441,8 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
     /* result list */
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
     for (GSList *li = attr_list; li != NULL; li = li->next) {
-        char *attr = (char *) li->data;
-        const char *val = ig_obj_attr_get (obj, attr);
+        char       *attr = (char *)li->data;
+        const char *val  = ig_obj_attr_get (obj, attr);
 
         Tcl_Obj *val_obj = Tcl_NewStringObj (val, -1);
         Tcl_ListObjAppendElement (interp, retval, val_obj);
@@ -464,7 +468,7 @@ enum ig_tclc_get_objs_of_obj_version {
 
 static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
     if (db == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
@@ -511,9 +515,9 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     char *child_name  = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_CONSTANT, "-all",    GINT_TO_POINTER (int_true), (void *) &all,         "return all objects", NULL},
-        {TCL_ARGV_STRING,   "-name",   NULL,                       (void *) &child_name,  "object name",        NULL},
-        {TCL_ARGV_STRING,   "-of",     NULL,                       (void *) &parent_name, "parent object",      NULL},
+        {TCL_ARGV_CONSTANT, "-all",    GINT_TO_POINTER (int_true), (void *)&all,         "return all objects", NULL},
+        {TCL_ARGV_STRING,   "-name",   NULL,                       (void *)&child_name,  "object name",        NULL},
+        {TCL_ARGV_STRING,   "-of",     NULL,                       (void *)&parent_name, "parent object",      NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -570,8 +574,8 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         }
         child_list_free = true;
     } else if ((version == IG_TOOOV_DECLS) || (version == IG_TOOOV_PORTS) || (version == IG_TOOOV_PARAMS)
-            || (version == IG_TOOOV_CODE) || (version == IG_TOOOV_INSTANCES)) {
-        struct ig_module *mod = (struct ig_module *) g_hash_table_lookup (db->modules_by_id, parent_name);
+               || (version == IG_TOOOV_CODE) || (version == IG_TOOOV_INSTANCES)) {
+        struct ig_module *mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id, parent_name);
         if (mod == NULL) {
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -of <module>", -1));
             return TCL_ERROR;
@@ -589,7 +593,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             child_list = mod->child_instances->head;
         }
     } else if ((version == IG_TOOOV_PINS) || (version == IG_TOOOV_ADJ) || (version == IG_TOOOV_MODULES)) {
-        struct ig_instance *inst = (struct ig_instance *) g_hash_table_lookup (db->instances_by_id, parent_name);
+        struct ig_instance *inst = (struct ig_instance *)g_hash_table_lookup (db->instances_by_id, parent_name);
         if (inst == NULL) {
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -of <instance>", -1));
             return TCL_ERROR;
@@ -600,7 +604,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         } else if (version == IG_TOOOV_ADJ) {
             child_list = inst->adjustments->head;
         } else if (version == IG_TOOOV_MODULES) {
-            child_list = g_list_prepend (child_list, inst->module);
+            child_list      = g_list_prepend (child_list, inst->module);
             child_list_free = true;
         }
     }
@@ -612,39 +616,39 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     }
 
     for (GList *li = child_list; li != NULL; li = li->next) {
-        struct ig_object *i_obj = NULL;
-        const char *i_name = NULL;
+        struct ig_object *i_obj  = NULL;
+        const char       *i_name = NULL;
 
         if (version == IG_TOOOV_PINS) {
-            struct ig_pin *pin = (struct ig_pin *) li->data;
+            struct ig_pin *pin = (struct ig_pin *)li->data;
             i_name = pin->name;
             i_obj  = pin->object;
         } else if (version == IG_TOOOV_ADJ) {
-            struct ig_adjustment *adjustment = (struct ig_adjustment *) li->data;
+            struct ig_adjustment *adjustment = (struct ig_adjustment *)li->data;
             i_name = adjustment->name;
             i_obj  = adjustment->object;
         } else if (version == IG_TOOOV_PORTS) {
-            struct ig_port *port = (struct ig_port *) li->data;
+            struct ig_port *port = (struct ig_port *)li->data;
             i_name = port->name;
             i_obj  = port->object;
         } else if (version == IG_TOOOV_PARAMS) {
-            struct ig_param *param = (struct ig_param *) li->data;
+            struct ig_param *param = (struct ig_param *)li->data;
             i_name = param->name;
             i_obj  = param->object;
         } else if (version == IG_TOOOV_DECLS) {
-            struct ig_decl *decl = (struct ig_decl *) li->data;
+            struct ig_decl *decl = (struct ig_decl *)li->data;
             i_name = decl->name;
             i_obj  = decl->object;
         } else if (version == IG_TOOOV_CODE) {
-            struct ig_code *code = (struct ig_code *) li->data;
+            struct ig_code *code = (struct ig_code *)li->data;
             i_name = code->name;
             i_obj  = code->object;
         } else if (version == IG_TOOOV_MODULES) {
-            struct ig_module *module = (struct ig_module *) li->data;
+            struct ig_module *module = (struct ig_module *)li->data;
             i_name = module->name;
             i_obj  = module->object;
         } else if (version == IG_TOOOV_INSTANCES) {
-            struct ig_instance *instance = (struct ig_instance *) li->data;
+            struct ig_instance *instance = (struct ig_instance *)li->data;
             i_name = instance->name;
             i_obj  = instance->object;
         }
@@ -721,7 +725,7 @@ static void ig_tclc_connection_parse (const char *input, GString *id, GString *n
 
 static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
     if (db == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
@@ -735,11 +739,11 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     GSList *bd_list = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING,   "-signal-name", NULL,                                                      (void *) &name,    "signal (prefix) name", NULL},
-        {TCL_ARGV_STRING,   "-signal-size", NULL,                                                      (void *) &size,    "signal (bus) size", NULL},
-        {TCL_ARGV_STRING,   "-from",        NULL,                                                      (void *) &from,    "start of signal (unidirectional)", NULL},
-        {TCL_ARGV_FUNC,     "-to",          (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void *) &to_list, "list of signal endpoints", NULL},
-        {TCL_ARGV_FUNC,     "-bidir",       (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void *) &bd_list, "list of endpoints connected bidirectional", NULL},
+        {TCL_ARGV_STRING,   "-signal-name", NULL,                                                      (void *)&name,    "signal (prefix) name", NULL},
+        {TCL_ARGV_STRING,   "-signal-size", NULL,                                                      (void *)&size,    "signal (bus) size", NULL},
+        {TCL_ARGV_STRING,   "-from",        NULL,                                                      (void *)&from,    "start of signal (unidirectional)", NULL},
+        {TCL_ARGV_FUNC,     "-to",          (void *)(Tcl_ArgvFuncProc *)ig_tclc_tcl_string_list_parse, (void *)&to_list, "list of signal endpoints", NULL},
+        {TCL_ARGV_FUNC,     "-bidir",       (void *)(Tcl_ArgvFuncProc *)ig_tclc_tcl_string_list_parse, (void *)&bd_list, "list of endpoints connected bidirectional", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -768,40 +772,40 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
     log_debug ("TCCon", "generating connection info");
 
-    struct ig_lib_connection_info *src = NULL;
-    GList *trg_list = NULL;
-    GString *tstr_id  = g_string_new (NULL);
-    GString *tstr_net = g_string_new (NULL);
-    bool     t_adapt  = false;
+    struct ig_lib_connection_info *src      = NULL;
+    GList                         *trg_list = NULL;
+    GString                       *tstr_id  = g_string_new (NULL);
+    GString                       *tstr_net = g_string_new (NULL);
+    bool                           t_adapt  = false;
 
     if (from != NULL) {
         ig_tclc_connection_parse (from, tstr_id, tstr_net, &t_adapt);
-        struct ig_object *src_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, tstr_id->str);
+        struct ig_object *src_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
         if (src_obj == NULL) goto l_ig_tclc_connect_nfexit;
 
         if (tstr_net->len > 0) {
-            src = ig_lib_connection_info_new (db->str_chunks, src_obj, tstr_net->str, IG_LCDIR_UP);
+            src             = ig_lib_connection_info_new (db->str_chunks, src_obj, tstr_net->str, IG_LCDIR_UP);
             src->force_name = !t_adapt;
         } else {
             src = ig_lib_connection_info_new (db->str_chunks, src_obj, NULL, IG_LCDIR_UP);
         }
     }
 
-    GSList *trg_orig_list = to_list;
-    enum ig_lib_connection_dir trg_dir = IG_LCDIR_DEFAULT;
+    GSList                    *trg_orig_list = to_list;
+    enum ig_lib_connection_dir trg_dir       = IG_LCDIR_DEFAULT;
     if (trg_orig_list == NULL) {
         trg_orig_list = bd_list;
-        trg_dir = IG_LCDIR_BIDIR;
+        trg_dir       = IG_LCDIR_BIDIR;
     }
 
     for (GSList *li = trg_orig_list; li != NULL; li = li->next) {
-        ig_tclc_connection_parse ((const char *) li->data, tstr_id, tstr_net, &t_adapt);
-        struct ig_object *trg_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, tstr_id->str);
+        ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_net, &t_adapt);
+        struct ig_object *trg_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
         if (trg_obj == NULL) goto l_ig_tclc_connect_nfexit;
 
         struct ig_lib_connection_info *trg = NULL;
         if (tstr_net->len > 0) {
-            trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, tstr_net->str, trg_dir);
+            trg             = ig_lib_connection_info_new (db->str_chunks, trg_obj, tstr_net->str, trg_dir);
             trg->force_name = !t_adapt;
         } else {
             trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, NULL, trg_dir);
@@ -822,7 +826,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
     for (GList *li = gen_objs; li != NULL; li = li->next) {
-        struct ig_object *i_obj = (struct ig_object *) li->data;
+        struct ig_object *i_obj = (struct ig_object *)li->data;
 
         ig_obj_attr_set (i_obj, "size", size, true);
 
@@ -852,7 +856,7 @@ l_ig_tclc_connect_nfexit:
         ig_lib_connection_info_free (src);
     }
     for (GList *li = trg_list; li != NULL; li = li->next) {
-        struct ig_lib_connection_info *trg = (struct ig_lib_connection_info *) li->data;
+        struct ig_lib_connection_info *trg = (struct ig_lib_connection_info *)li->data;
         ig_lib_connection_info_free (trg);
     }
     result = TCL_ERROR;
@@ -862,7 +866,7 @@ l_ig_tclc_connect_nfexit:
 
 static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    struct ig_lib_db *db = (struct ig_lib_db *) clientdata;
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
     if (db == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
@@ -874,9 +878,9 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
     GSList *ept_list = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING,   "-name",        NULL,                                                      (void *) &name,     "parameter name", NULL},
-        {TCL_ARGV_STRING,   "-value",       NULL,                                                      (void *) &value,    "default value", NULL},
-        {TCL_ARGV_FUNC,     "-targets",     (void*) (Tcl_ArgvFuncProc*) ig_tclc_tcl_string_list_parse, (void *) &ept_list, "list of endpoints for parameter", NULL},
+        {TCL_ARGV_STRING,   "-name",        NULL,                                                      (void *)&name,     "parameter name", NULL},
+        {TCL_ARGV_STRING,   "-value",       NULL,                                                      (void *)&value,    "default value", NULL},
+        {TCL_ARGV_FUNC,     "-targets",     (void *)(Tcl_ArgvFuncProc *)ig_tclc_tcl_string_list_parse, (void *)&ept_list, "list of endpoints for parameter", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -902,7 +906,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
 
     log_debug ("TCPar", "generating connection info");
 
-    GList *trg_list = NULL;
+    GList   *trg_list = NULL;
     GString *tstr_id  = g_string_new (NULL);
     GString *tstr_par = g_string_new (NULL);
     bool     t_adapt  = false;
@@ -910,13 +914,13 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
     enum ig_lib_connection_dir trg_dir = IG_LCDIR_DEFAULT;
 
     for (GSList *li = ept_list; li != NULL; li = li->next) {
-        ig_tclc_connection_parse ((const char *) li->data, tstr_id, tstr_par, &t_adapt);
-        struct ig_object *trg_obj = (struct ig_object *) g_hash_table_lookup (db->objects_by_id, tstr_id->str);
+        ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_par, &t_adapt);
+        struct ig_object *trg_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
         if (trg_obj == NULL) goto l_ig_tclc_parameter_nfexit;
 
         struct ig_lib_connection_info *trg = NULL;
         if (tstr_par->len > 0) {
-            trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, tstr_par->str, trg_dir);
+            trg             = ig_lib_connection_info_new (db->str_chunks, trg_obj, tstr_par->str, trg_dir);
             trg->force_name = !t_adapt;
         } else {
             trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, NULL, trg_dir);
@@ -936,7 +940,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
 
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
     for (GList *li = gen_objs; li != NULL; li = li->next) {
-        struct ig_object *i_obj = (struct ig_object *) li->data;
+        struct ig_object *i_obj = (struct ig_object *)li->data;
 
         Tcl_Obj *t_obj = Tcl_NewStringObj (i_obj->id, -1);
         Tcl_ListObjAppendElement (interp, retval, t_obj);
@@ -956,7 +960,7 @@ l_ig_tclc_parameter_exit:
 
 l_ig_tclc_parameter_nfexit:
     for (GList *li = trg_list; li != NULL; li = li->next) {
-        struct ig_lib_connection_info *trg = (struct ig_lib_connection_info *) li->data;
+        struct ig_lib_connection_info *trg = (struct ig_lib_connection_info *)li->data;
         ig_lib_connection_info_free (trg);
     }
     result = TCL_ERROR;
@@ -966,30 +970,31 @@ l_ig_tclc_parameter_nfexit:
 
 static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    gchar *loglevel = NULL;
-    gchar *log_id = NULL;
-    gboolean list = false;
-    int linenumber = 0;
+    gchar   *loglevel   = NULL;
+    gchar   *log_id     = NULL;
+    gboolean list       = false;
+    int      linenumber = 0;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING,   "-level", NULL,                        (void *) &loglevel,  "log level",                   NULL},
-        {TCL_ARGV_STRING,   "-id",    NULL,                        (void *) &log_id,    "log id",                      NULL},
-        {TCL_ARGV_CONSTANT, "-list",  GINT_TO_POINTER (true),  (void *) &list,      "list available loglevels",    NULL},
-        {TCL_ARGV_CONSTANT, "-linenumber",  GINT_TO_POINTER (1),  (void *) &linenumber,      "add file/line numbers to log-output",    NULL},
-        {TCL_ARGV_CONSTANT, "-nolinenumber",  GINT_TO_POINTER (-1),  (void *) &linenumber,      "do not print file/line numbers in log-output",    NULL},
+        {TCL_ARGV_STRING,   "-level",        NULL,                   (void *)&loglevel,   "log level",                                    NULL},
+        {TCL_ARGV_STRING,   "-id",           NULL,                   (void *)&log_id,     "log id",                                       NULL},
+        {TCL_ARGV_CONSTANT, "-list",         GINT_TO_POINTER (true), (void *)&list,       "list available loglevels",                     NULL},
+        {TCL_ARGV_CONSTANT, "-linenumber",   GINT_TO_POINTER (1),    (void *)&linenumber, "add file/line numbers to log-output",          NULL},
+        {TCL_ARGV_CONSTANT, "-nolinenumber", GINT_TO_POINTER (-1),   (void *)&linenumber, "do not print file/line numbers in log-output", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) {
         return result;
     }
 
     if (list) {
-        gchar* msg = g_strdup_printf ("The following loglevels are available:\n");
-        for (int i=0; i<LOGLEVEL_COUNT; i++) {
+        gchar *msg = g_strdup_printf ("The following loglevels are available:\n");
+        for (int i = 0; i < LOGLEVEL_COUNT; i++) {
             gchar *tmp = g_strdup_printf ("%s\t- %s\n", msg, loglevel_label[i]);
             g_free (msg);
             msg = tmp;
@@ -1008,8 +1013,8 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
         return TCL_OK;
     } else if (loglevel != NULL) {
         gboolean found_level = false;
-        int i = 0;
-        for (i=0; i<LOGLEVEL_COUNT; i++) {
+        int      i           = 0;
+        for (i = 0; i < LOGLEVEL_COUNT; i++) {
             if (g_strcmp0 (loglevel, loglevel_label[i]) == 0) {
                 found_level = true;
                 break;
@@ -1043,24 +1048,24 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
 
 static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    gchar *log_id = "Tcl";
-    gint loglevel = LOGLEVEL_INFO;
-    gint abort    = 0;
+    gchar *log_id   = "Tcl";
+    gint   loglevel = LOGLEVEL_INFO;
+    gint   abort    = 0;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING,   "-id",      NULL,                               (void *) &log_id,       "log id",                              NULL},
-        {TCL_ARGV_CONSTANT, "-info",    GINT_TO_POINTER (LOGLEVEL_INFO),    (void *) &loglevel,     "loglevel info",                       NULL},
-        {TCL_ARGV_CONSTANT, "-warning", GINT_TO_POINTER (LOGLEVEL_WARNING), (void *) &loglevel,     "loglevel warning",                    NULL},
-        {TCL_ARGV_CONSTANT, "-error",   GINT_TO_POINTER (LOGLEVEL_ERROR),   (void *) &loglevel,     "loglevel error",                      NULL},
-        {TCL_ARGV_CONSTANT, "-debug",   GINT_TO_POINTER (LOGLEVEL_DEBUG),   (void *) &loglevel,     "loglevel debig",                      NULL},
-        {TCL_ARGV_CONSTANT, "-abort",   GINT_TO_POINTER (1),                (void *) &abort,        "return the log message as tcl error", NULL},
+        {TCL_ARGV_STRING,   "-id",      NULL,                               (void *)&log_id,       "log id",                              NULL},
+        {TCL_ARGV_CONSTANT, "-info",    GINT_TO_POINTER (LOGLEVEL_INFO),    (void *)&loglevel,     "loglevel info",                       NULL},
+        {TCL_ARGV_CONSTANT, "-warning", GINT_TO_POINTER (LOGLEVEL_WARNING), (void *)&loglevel,     "loglevel warning",                    NULL},
+        {TCL_ARGV_CONSTANT, "-error",   GINT_TO_POINTER (LOGLEVEL_ERROR),   (void *)&loglevel,     "loglevel error",                      NULL},
+        {TCL_ARGV_CONSTANT, "-debug",   GINT_TO_POINTER (LOGLEVEL_DEBUG),   (void *)&loglevel,     "loglevel debig",                      NULL},
+        {TCL_ARGV_CONSTANT, "-abort",   GINT_TO_POINTER (1),                (void *)&abort,        "return the log message as tcl error", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
     };
 
     Tcl_Obj **remObjv = NULL;
-    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, &remObjv);
+    int       result  = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, &remObjv);
 
     if (result != TCL_OK) {
         if (objc != 0) ckfree (remObjv);

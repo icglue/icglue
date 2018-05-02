@@ -19,7 +19,7 @@
 
 #include "color.h"
 
-#define CHAR_COLOR_SIZE 16
+#define CHAR_COLOR_SIZE    16
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"

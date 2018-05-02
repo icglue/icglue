@@ -35,3 +35,4 @@ bool ig_obj_attr_set_from_gslist (struct ig_object *obj, GSList *list);
 #endif
 
 #endif
+

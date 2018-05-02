@@ -34,9 +34,9 @@ bool ig_obj_attr_set_from_gslist (struct ig_object *obj, GSList *list)
     }
 
     for (GSList *li = list; li != NULL; li = li->next) {
-        char *name = (char *) li->data;
+        char *name = (char *)li->data;
         li = li->next;
-        char *val  = (char *) li->data;
+        char *val = (char *)li->data;
 
         if (!ig_obj_attr_set (obj, name, val, false)) {
             log_error ("OStAt", "could not set attribute %s", name);

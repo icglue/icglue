@@ -35,10 +35,10 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
 static void     ig_lib_htree_free (GNode *hier_tree);
 static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data);
 
-static char    *ig_lib_gen_name_signal  (struct ig_lib_db *db, const char *basename);
-static char    *ig_lib_gen_name_pinport (struct ig_lib_db *db, const char *basename, enum ig_port_dir dir);
-static char    *ig_lib_rm_suffix_pinport (struct ig_lib_db *db, const char *pinportname);
-static bool     ig_lib_gen_name_iscaps (const char *name);
+static char *ig_lib_gen_name_signal  (struct ig_lib_db *db, const char *basename);
+static char *ig_lib_gen_name_pinport (struct ig_lib_db *db, const char *basename, enum ig_port_dir dir);
+static char *ig_lib_rm_suffix_pinport (struct ig_lib_db *db, const char *pinportname);
+static bool  ig_lib_gen_name_iscaps (const char *name);
 
 /* header functions */
 struct ig_lib_db *ig_lib_db_new ()
@@ -237,7 +237,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
     bool error = false;
 
     if (source != NULL) {
-        source->dir = IG_LCDIR_UP;
+        source->dir         = IG_LCDIR_UP;
         source->is_explicit = true;
         log_debug ("LConn", "creating startpoint hierarchy...");
         GList *source_hier = ig_lib_gen_hierarchy (db, source);
@@ -250,7 +250,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
     }
 
     for (GList *li = targets; li != NULL; li = li->next) {
-        struct ig_lib_connection_info *start = (struct ig_lib_connection_info *) li->data;
+        struct ig_lib_connection_info *start = (struct ig_lib_connection_info *)li->data;
         start->is_explicit = true;
 
         log_debug ("LConn", "creating targetpoint hierarchy...");
@@ -299,7 +299,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
     }
     if (gen_objs != NULL) *gen_objs = gen_objs_res;
     for (GList *li = gen_objs_res; li != NULL; li = li->next) {
-        struct ig_object *io = (struct ig_object *) li->data;
+        struct ig_object *io = (struct ig_object *)li->data;
         ig_obj_attr_set (io, "signal", signame, true);
     }
 
@@ -308,9 +308,9 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
 
 l_ig_lib_connection_final_free_hierlist:
     for (GList *li = hier_start_list; li != NULL; li = li->next) {
-        GList *hier = (GList *) li->data;
+        GList *hier = (GList *)li->data;
         for (GList *lj = hier; lj != NULL; lj = lj->next) {
-            struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) lj->data;
+            struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *)lj->data;
             ig_lib_connection_info_free (cinfo);
         }
         g_list_free (hier);
@@ -329,7 +329,7 @@ bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *de
     bool error = false;
 
     for (GList *li = targets; li != NULL; li = li->next) {
-        struct ig_lib_connection_info *start = (struct ig_lib_connection_info *) li->data;
+        struct ig_lib_connection_info *start = (struct ig_lib_connection_info *)li->data;
         start->is_explicit = true;
 
         log_debug ("LParm", "creating targetpoint hierarchy...");
@@ -378,7 +378,7 @@ bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *de
     }
     if (gen_objs != NULL) *gen_objs = gen_objs_res;
     for (GList *li = gen_objs_res; li != NULL; li = li->next) {
-        struct ig_object *io = (struct ig_object *) li->data;
+        struct ig_object *io = (struct ig_object *)li->data;
         ig_obj_attr_set (io, "parameter", parname, true);
     }
 
@@ -388,9 +388,9 @@ bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *de
 
 l_ig_lib_parameter_final_free_hierlist:
     for (GList *li = hier_start_list; li != NULL; li = li->next) {
-        GList *hier = (GList *) li->data;
+        GList *hier = (GList *)li->data;
         for (GList *lj = hier; lj != NULL; lj = lj->next) {
-            struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) lj->data;
+            struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *)lj->data;
             ig_lib_connection_info_free (cinfo);
         }
         g_list_free (hier);
@@ -411,8 +411,8 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
     GNode *result = NULL;
 
     /* check for equality */
-    GList *lhier_first = (GList *) hier_list->data;
-    struct ig_lib_connection_info *cinfo_first = (struct ig_lib_connection_info *) lhier_first->data;
+    GList                         *lhier_first = (GList *)hier_list->data;
+    struct ig_lib_connection_info *cinfo_first = (struct ig_lib_connection_info *)lhier_first->data;
 
     struct ig_lib_connection_info *cinfo_node = ig_lib_connection_info_copy (db->str_chunks, cinfo_first);
     if (cinfo_node == NULL) return NULL;
@@ -424,9 +424,9 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
     }
 
     for (GList *li = hier_list->next; li != NULL; li = li->next) {
-        GList *lhier = (GList *) li->data;
+        GList *lhier = (GList *)li->data;
         if (lhier == NULL) continue;
-        struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) lhier->data;
+        struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *)lhier->data;
         log_debug ("LMrHi", "current node: %s", i_cinfo->obj->id);
 
         /* object equality */
@@ -472,24 +472,24 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
     /* generate children */
     while (successor_list != NULL) {
         /* pick one */
-        GList *equal_list = successor_list;
-        GList *ref_hier_list = (GList *) equal_list->data;
-        struct ig_lib_connection_info *ref_cinfo = (struct ig_lib_connection_info *) ref_hier_list->data;
+        GList                         *equal_list    = successor_list;
+        GList                         *ref_hier_list = (GList *)equal_list->data;
+        struct ig_lib_connection_info *ref_cinfo     = (struct ig_lib_connection_info *)ref_hier_list->data;
         log_debug ("LMrHi", "current node: %s", ref_cinfo->obj->id);
 
         successor_list = g_list_remove_link (successor_list, equal_list);
 
         GList *li = successor_list;
         while (li != NULL) {
-            GList *i_hier_list = (GList *) li->data;
-            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) i_hier_list->data;
+            GList                         *i_hier_list = (GList *)li->data;
+            struct ig_lib_connection_info *i_cinfo     = (struct ig_lib_connection_info *)i_hier_list->data;
 
             if (i_cinfo->obj == ref_cinfo->obj) {
                 /* part of equal list */
                 GList *li_next = li->next;
                 successor_list = g_list_remove_link (successor_list, li);
-                equal_list = g_list_concat (equal_list, li);
-                li = li_next;
+                equal_list     = g_list_concat (equal_list, li);
+                li             = li_next;
             } else {
                 li = li->next;
             }
@@ -510,12 +510,12 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
 {
     GList *result = NULL;
 
-    bool copy_first = false;
+    bool copy_first    = false;
     bool explicit_next = false;
 
     /* startpoint is instance of generated module? */
     if (cinfo->obj->type == IG_OBJ_INSTANCE) {
-        struct ig_instance *inst = (struct ig_instance *) cinfo->obj->obj;
+        struct ig_instance *inst = (struct ig_instance *)cinfo->obj->obj;
         struct ig_module   *mod  = inst->module;
 
         if (!mod->resource) {
@@ -525,7 +525,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
             explicit_next = true;
         }
     } else if (cinfo->obj->type == IG_OBJ_MODULE) {
-        struct ig_module *mod = (struct ig_module *) cinfo->obj->obj;
+        struct ig_module *mod = (struct ig_module *)cinfo->obj->obj;
         if (!mod->resource) {
             copy_first = true;
         }
@@ -539,7 +539,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
 
         if (cinfo->obj->type == IG_OBJ_INSTANCE) {
             result = g_list_prepend (result, cinfo);
-            struct ig_instance *inst = (struct ig_instance *) cinfo->obj->obj;
+            struct ig_instance *inst = (struct ig_instance *)cinfo->obj->obj;
             if (inst->parent == NULL) return result;
             cinfo = ig_lib_connection_info_new (db->str_chunks, inst->parent->object, NULL, cinfo->dir);
             if (explicit_next) {
@@ -549,13 +549,13 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
             continue;
         } else if (cinfo->obj->type == IG_OBJ_MODULE) {
             result = g_list_prepend (result, cinfo);
-            struct ig_module *mod = (struct ig_module *) cinfo->obj->obj;
+            struct ig_module *mod = (struct ig_module *)cinfo->obj->obj;
             if (mod->default_instance == NULL) return result;
             if (copy_first) {
                 bool force_name = cinfo->force_name;
-                cinfo = ig_lib_connection_info_new (db->str_chunks, mod->default_instance->object, cinfo->local_name, cinfo->dir);
+                cinfo             = ig_lib_connection_info_new (db->str_chunks, mod->default_instance->object, cinfo->local_name, cinfo->dir);
                 cinfo->force_name = force_name;
-                copy_first = false;
+                copy_first        = false;
             } else {
                 cinfo = ig_lib_connection_info_new (db->str_chunks, mod->default_instance->object, NULL, cinfo->dir);
             }
@@ -564,7 +564,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
             log_errorint ("LGnHi", "object of invalid type in module/instance hierarchy");
             ig_lib_connection_info_free (cinfo);
             for (GList *li = result; li != NULL; li = li->next) {
-                ig_lib_connection_info_free ((struct ig_lib_connection_info *) li->data);
+                ig_lib_connection_info_free ((struct ig_lib_connection_info *)li->data);
             }
             g_list_free (result);
             return NULL;
@@ -579,8 +579,8 @@ struct ig_lib_connection_info *ig_lib_connection_info_new (GStringChunk *str_chu
 
     struct ig_lib_connection_info *result = g_slice_new (struct ig_lib_connection_info);
 
-    result->obj = obj;
-    result->dir = dir;
+    result->obj         = obj;
+    result->dir         = dir;
     result->is_explicit = false;
     result->force_name  = false;
 
@@ -602,8 +602,8 @@ struct ig_lib_connection_info *ig_lib_connection_info_copy (GStringChunk *str_ch
 
     struct ig_lib_connection_info *result = g_slice_new (struct ig_lib_connection_info);
 
-    result->obj = original->obj;
-    result->dir = original->dir;
+    result->obj         = original->obj;
+    result->dir         = original->dir;
     result->is_explicit = original->is_explicit;
     result->force_name  = original->force_name;
 
@@ -630,18 +630,19 @@ void ig_lib_connection_info_free (struct ig_lib_connection_info *cinfo)
 
 static void ig_lib_htree_print (GNode *hier_tree)
 {
-    GSList *pr_stack = NULL;
-    int pr_indent = 0;
+    GSList *pr_stack  = NULL;
+    int     pr_indent = 0;
+
     pr_stack = g_slist_prepend (pr_stack, hier_tree);
 
     while (pr_stack != NULL) {
-        GNode *i_node = (GNode *) pr_stack->data;
+        GNode *i_node = (GNode *)pr_stack->data;
         log_debug ("LPHTr", "current node: depth=%d, n_children=%d", g_node_depth (i_node), g_node_n_children (i_node));
-        struct ig_lib_connection_info *i_info = (struct ig_lib_connection_info *) i_node->data;
+        struct ig_lib_connection_info *i_info = (struct ig_lib_connection_info *)i_node->data;
 
         /* print node */
         GString *str_t = g_string_new (NULL);
-        for (int i = 0; i < pr_indent-1; i++) {
+        for (int i = 0; i < pr_indent - 1; i++) {
             str_t = g_string_append (str_t, " | ");
         }
         if (pr_indent > 0) {
@@ -682,7 +683,7 @@ static void ig_lib_htree_print (GNode *hier_tree)
         }
 
         while (pr_stack != NULL) {
-            i_node = (GNode *) pr_stack->data;
+            i_node = (GNode *)pr_stack->data;
             if (g_node_next_sibling (i_node) != NULL) {
                 log_debug ("LPHTr", "node has sibling...");
                 pr_stack->data = g_node_next_sibling (i_node);
@@ -703,7 +704,7 @@ static GNode *ig_lib_htree_reduce (GNode *hier_tree)
 
     while (temp != NULL) {
         if (g_node_n_children (temp) > 1) break;
-        struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) temp->data;
+        struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *)temp->data;
         if (cinfo->is_explicit) break;
         temp = g_node_first_child (temp);
     }
@@ -735,10 +736,10 @@ static GList *ig_lib_htree_process_signal (struct ig_lib_db *db, GNode *hier_tre
 
 static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
 {
-    struct ig_lib_htree_process_signal_data *pdata = (struct ig_lib_htree_process_signal_data *) data;
+    struct ig_lib_htree_process_signal_data *pdata = (struct ig_lib_htree_process_signal_data *)data;
 
-    struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) node->data;
-    struct ig_lib_db *db = (struct ig_lib_db *) pdata->db;
+    struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *)node->data;
+    struct ig_lib_db              *db    = (struct ig_lib_db *)pdata->db;
 
     struct ig_object *obj = cinfo->obj;
 
@@ -748,7 +749,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
     log_debug ("HTrPS", "processing node %s", obj->id);
 
     if (obj->type == IG_OBJ_INSTANCE) {
-        struct ig_instance *inst = (struct ig_instance *) obj->obj;
+        struct ig_instance *inst = (struct ig_instance *)obj->obj;
 
         const char *conn_name = parent_name;
         if (conn_name == NULL) {
@@ -780,11 +781,11 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
 
         log_debug ("HTrPS", "Created pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, inst->object->id, conn_name);
         for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
-            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) in->data;
+            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *)in->data;
             i_cinfo->parent_name = pin_name;
         }
     } else if (obj->type == IG_OBJ_MODULE) {
-        struct ig_module *mod = (struct ig_module *) obj->obj;
+        struct ig_module *mod = (struct ig_module *)obj->obj;
 
         const char *signal_name = NULL;
 
@@ -829,7 +830,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
         }
 
         for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
-            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) in->data;
+            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *)in->data;
             i_cinfo->parent_name = signal_name;
         }
     } else {
@@ -857,11 +858,11 @@ static GList *ig_lib_htree_process_parameter (struct ig_lib_db *db, GNode *hier_
 
 static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data)
 {
-    struct ig_lib_htree_process_parameter_data *pdata = (struct ig_lib_htree_process_parameter_data *) data;
+    struct ig_lib_htree_process_parameter_data *pdata = (struct ig_lib_htree_process_parameter_data *)data;
 
-    struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) node->data;
-    struct ig_lib_db *db = pdata->db;
-    const char *defvalue = pdata->defvalue;
+    struct ig_lib_connection_info *cinfo    = (struct ig_lib_connection_info *)node->data;
+    struct ig_lib_db              *db       = pdata->db;
+    const char                    *defvalue = pdata->defvalue;
 
     struct ig_object *obj = cinfo->obj;
 
@@ -871,7 +872,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
     log_debug ("HTrPP", "processing node %s", obj->id);
 
     if (obj->type == IG_OBJ_INSTANCE) {
-        struct ig_instance *inst = (struct ig_instance *) obj->obj;
+        struct ig_instance *inst = (struct ig_instance *)obj->obj;
 
         const char *adj_name = parent_name;
         if (adj_name == NULL) {
@@ -891,11 +892,11 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
 
         log_debug ("HTrPP", "Created adjustment of parameter \"%s\" in instance \"%s\" to value \"%s\"", par_name, inst->object->id, adj_name);
         for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
-            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) in->data;
+            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *)in->data;
             i_cinfo->parent_name = par_name;
         }
     } else if (obj->type == IG_OBJ_MODULE) {
-        struct ig_module *mod = (struct ig_module *) obj->obj;
+        struct ig_module *mod = (struct ig_module *)obj->obj;
 
         const char *par_name = NULL;
 
@@ -934,7 +935,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
         }
 
         for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
-            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *) in->data;
+            struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *)in->data;
             i_cinfo->parent_name = par_name;
         }
     } else {
@@ -952,14 +953,16 @@ static void ig_lib_htree_free (GNode *hier_tree)
 
 static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data)
 {
-    struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *) node->data;
+    struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *)node->data;
+
     ig_lib_connection_info_free (cinfo);
     node->data = NULL;
 
     return false;
 }
 
-static bool ig_lib_gen_name_iscaps (const char *name) {
+static bool ig_lib_gen_name_iscaps (const char *name)
+{
     if (name == NULL) return false;
 
     bool hasupper = false;
@@ -1026,26 +1029,26 @@ static char *ig_lib_rm_suffix_pinport (struct ig_lib_db *db, const char *pinport
         return g_string_chunk_insert_const (db->str_chunks, pinportname);
     }
 
-    if (pinportname[len-2] != '_') {
+    if (pinportname[len - 2] != '_') {
         return g_string_chunk_insert_const (db->str_chunks, pinportname);
     }
 
     if (ig_lib_gen_name_iscaps (pinportname)) {
-        if ((pinportname[len-1] == 'I') &&
-            (pinportname[len-1] == 'O') &&
-            (pinportname[len-1] == 'B')) {
+        if ((pinportname[len - 1] == 'I') &&
+            (pinportname[len - 1] == 'O') &&
+            (pinportname[len - 1] == 'B')) {
             return g_string_chunk_insert_const (db->str_chunks, pinportname);
         }
     } else {
-        if ((pinportname[len-1] == 'i') &&
-            (pinportname[len-1] == 'o') &&
-            (pinportname[len-1] == 'b')) {
+        if ((pinportname[len - 1] == 'i') &&
+            (pinportname[len - 1] == 'o') &&
+            (pinportname[len - 1] == 'b')) {
             return g_string_chunk_insert_const (db->str_chunks, pinportname);
         }
     }
 
-    GString *tstr = g_string_new_len (pinportname, len-2);
-    char *result = g_string_chunk_insert_const (db->str_chunks, tstr->str);
+    GString *tstr   = g_string_new_len (pinportname, len - 2);
+    char    *result = g_string_chunk_insert_const (db->str_chunks, tstr->str);
     g_string_free (tstr, true);
 
     return result;
