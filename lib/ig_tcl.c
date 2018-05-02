@@ -968,13 +968,15 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
 {
     gchar *loglevel = NULL;
     gchar *log_id = NULL;
-    gint int_true = true;
     gboolean list = false;
+    int linenumber = 0;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-level", NULL,                        (void *) &loglevel,  "log level",                   NULL},
         {TCL_ARGV_STRING,   "-id",    NULL,                        (void *) &log_id,    "log id",                      NULL},
-        {TCL_ARGV_CONSTANT, "-list",  GINT_TO_POINTER (int_true),  (void *) &list,      "list available loglevels",    NULL},
+        {TCL_ARGV_CONSTANT, "-list",  GINT_TO_POINTER (true),  (void *) &list,      "list available loglevels",    NULL},
+        {TCL_ARGV_CONSTANT, "-linenumber",  GINT_TO_POINTER (1),  (void *) &linenumber,      "add file/line numbers to log-output",    NULL},
+        {TCL_ARGV_CONSTANT, "-nolinenumber",  GINT_TO_POINTER (-1),  (void *) &linenumber,      "do not print file/line numbers in log-output",    NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -995,6 +997,10 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
         Tcl_SetObjResult (interp, Tcl_NewStringObj ((char *)msg, -1));
         g_free (msg);
         return TCL_OK;
+    }
+
+    if (linenumber) {
+        set_loglinenumbers ((linenumber > 0) ? true : false);
     }
     if (loglevel == NULL && log_id == NULL) {
         // print current settings
