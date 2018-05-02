@@ -5,7 +5,6 @@
 - add regfile support
   - module can be/contain regfile (with parameters/attributes clock/reset/address/wdata/... signals)
   - signals can be mapped to registers (somehow?)
-- logger: line-of-code-switch
 - add cleanup function to reset library (with proper freeing of db...)
 - add net/signal data type to retrieve signals?
 
