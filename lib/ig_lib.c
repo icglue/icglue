@@ -1053,3 +1053,4 @@ static char *ig_lib_rm_suffix_pinport (struct ig_lib_db *db, const char *pinport
 
     return result;
 }
+

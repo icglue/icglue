@@ -132,3 +132,4 @@ void log_dump_settings ()
         g_fprintf (stderr, "LogID: %s is set to level %s\n", (gchar *)id_local, loglevel_label[GPOINTER_TO_INT (level)]);
     }
 }
+

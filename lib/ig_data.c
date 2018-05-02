@@ -576,4 +576,3 @@ void ig_instance_free (struct ig_instance *instance)
     g_slice_free (struct ig_instance, instance);
 }
 
-

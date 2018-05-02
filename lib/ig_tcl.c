@@ -1087,3 +1087,4 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
     if (abort) return TCL_ERROR;
     return TCL_OK;
 }
+
