@@ -41,6 +41,7 @@ static void ig_tclc_connection_parse (const char *input, GString *id, GString *n
 static int ig_tclc_create_module    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_create_instance  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_add_codesection  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_add_regfile      (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_set_attribute    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_get_attribute    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_get_objs_of_obj  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
@@ -55,24 +56,28 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
 
     struct ig_lib_db *lib_db = ig_lib_db_new ();
 
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_module",    ig_tclc_create_module,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_instance",  ig_tclc_create_instance, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "add_codesection",  ig_tclc_add_codesection, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "set_attribute",    ig_tclc_set_attribute,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_attribute",    ig_tclc_get_attribute,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_modules",      ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_instances",    ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_ports",        ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_parameters",   ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_declarations", ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_codesections", ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_pins",         ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_adjustments",  ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "connect",          ig_tclc_connect,         lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "parameter",        ig_tclc_parameter,       lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_module",       ig_tclc_create_module,   lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_instance",     ig_tclc_create_instance, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "add_codesection",     ig_tclc_add_codesection, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "add_regfile",         ig_tclc_add_regfile,     lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "set_attribute",       ig_tclc_set_attribute,   lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_attribute",       ig_tclc_get_attribute,   lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_modules",         ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_instances",       ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_ports",           ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_parameters",      ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_declarations",    ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_codesections",    ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_pins",            ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_adjustments",     ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfiles",        ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_entries", ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_regs",    ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "connect",             ig_tclc_connect,         lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "parameter",           ig_tclc_parameter,       lib_db, NULL);
 
-    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "logger",           ig_tclc_logger,          lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log",              ig_tclc_log,             lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "logger",              ig_tclc_logger,          lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log",                 ig_tclc_log,             lib_db, NULL);
 }
 
 /* Tcl helper function for parsing lists in GSLists */
@@ -283,6 +288,81 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
     return TCL_OK;
 }
 
+static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    char *regfile_name = NULL;
+    char *entry_name   = NULL;
+    char *reg_name     = NULL;
+    char *to_id        = NULL;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_STRING,   "-regfile", NULL, (void *)&regfile_name, "name of new regfile",          NULL},
+        {TCL_ARGV_STRING,   "-entry",   NULL, (void *)&entry_name,   "name of new regfile-entry",    NULL},
+        {TCL_ARGV_STRING,   "-reg",     NULL, (void *)&reg_name,     "name of new regfile-register", NULL},
+        {TCL_ARGV_STRING,   "-to",      NULL, (void *)&to_id,        "object id to add to",          NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) return result;
+
+    if (to_id == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no -to object specified", -1));
+        return TCL_ERROR;
+    }
+
+    if ((regfile_name != NULL ? 1 : 0) + (entry_name != NULL ? 1 : 0) + (reg_name != NULL ? 1 : 0) != 1) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: need exactly one of -regfile, -entry, -reg", -1));
+        return TCL_ERROR;
+    }
+
+    struct ig_object *to_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, to_id);
+    if ((to_obj == NULL)
+        || ((regfile_name != NULL) && ((to_obj->type != IG_OBJ_MODULE) || (((struct ig_module *)to_obj->obj)->resource)))
+        || ((entry_name != NULL) && (to_obj->type != IG_OBJ_REGFILE))
+        || ((reg_name != NULL) && (to_obj->type != IG_OBJ_REGFILE_ENTRY))) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -to object specified", -1));
+        return TCL_ERROR;
+    }
+
+    const char *result_str = "";
+    if (regfile_name != NULL) {
+        struct ig_rf_regfile *regfile = ig_lib_add_regfile (db, regfile_name, (struct ig_module *)to_obj->obj);
+        if (regfile == NULL) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create regfile", -1));
+            return TCL_ERROR;
+        }
+        result_str = regfile->object->id;
+    } else if (entry_name != NULL) {
+        struct ig_rf_entry *entry = ig_lib_add_regfile_entry (db, entry_name, (struct ig_rf_regfile *)to_obj->obj);
+        if (entry == NULL) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create entry", -1));
+            return TCL_ERROR;
+        }
+        result_str = entry->object->id;
+    } else {
+        struct ig_rf_reg *reg = ig_lib_add_regfile_reg (db, reg_name, (struct ig_rf_entry *)to_obj->obj);
+        if (reg == NULL) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create reg", -1));
+            return TCL_ERROR;
+        }
+        result_str = reg->object->id;
+    }
+
+    Tcl_SetObjResult (interp, Tcl_NewStringObj (result_str, -1));
+
+    return TCL_OK;
+}
+
 static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
@@ -464,19 +544,13 @@ enum ig_tclc_get_objs_of_obj_version {
     IG_TOOOV_CODE,
     IG_TOOOV_MODULES,
     IG_TOOOV_INSTANCES,
+    IG_TOOOV_REGFILES,
+    IG_TOOOV_RF_ENTRIES,
+    IG_TOOOV_RF_REGS,
 };
 
-static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+static enum ig_tclc_get_objs_of_obj_version ig_tclc_get_objs_of_obj_version_from_cmd (const char *cmdname)
 {
-    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
-
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
-
-    /* command version */
-    const char *cmdname = Tcl_GetString (objv[0]);
     while (true) {
         const char *cmdchomp = strstr (cmdname, "::");
         if (cmdchomp == NULL) break;
@@ -499,7 +573,29 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         version = IG_TOOOV_MODULES;
     } else if (strcmp (cmdname, "get_instances") == 0) {
         version = IG_TOOOV_INSTANCES;
+    } else if (strcmp (cmdname, "get_regfiles") == 0) {
+        version = IG_TOOOV_REGFILES;
+    } else if (strcmp (cmdname, "get_regfile_entries") == 0) {
+        version = IG_TOOOV_RF_ENTRIES;
+    } else if (strcmp (cmdname, "get_regfile_regs") == 0) {
+        version = IG_TOOOV_RF_REGS;
     }
+
+    return version;
+}
+
+static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    /* command version */
+    const char                          *cmdname = Tcl_GetString (objv[0]);
+    enum ig_tclc_get_objs_of_obj_version version = ig_tclc_get_objs_of_obj_version_from_cmd (cmdname);
 
     if (version == IG_TOOOV_INVALID) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: Invalid command version generated", -1));
@@ -528,11 +624,17 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
 
     /* sanity checks */
     if (parent_name == NULL) {
-        if ((version == IG_TOOOV_DECLS) || (version == IG_TOOOV_PORTS) || (version == IG_TOOOV_PARAMS) || (version == IG_TOOOV_CODE)) {
+        if ((version == IG_TOOOV_DECLS) || (version == IG_TOOOV_PORTS) || (version == IG_TOOOV_PARAMS) || (version == IG_TOOOV_CODE) || (version == IG_TOOOV_REGFILES)) {
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: -of <module> needs to be specified", -1));
             return TCL_ERROR;
         } else if ((version == IG_TOOOV_PINS) || (version == IG_TOOOV_ADJ)) {
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: -of <instance> needs to be specified", -1));
+            return TCL_ERROR;
+        } else if (version == IG_TOOOV_RF_ENTRIES) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: -of <regfile> needs to be specified", -1));
+            return TCL_ERROR;
+        } else if (version == IG_TOOOV_RF_REGS) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: -of <regfile-entry> needs to be specified", -1));
             return TCL_ERROR;
         }
     }
@@ -574,11 +676,21 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         }
         child_list_free = true;
     } else if ((version == IG_TOOOV_DECLS) || (version == IG_TOOOV_PORTS) || (version == IG_TOOOV_PARAMS)
-               || (version == IG_TOOOV_CODE) || (version == IG_TOOOV_INSTANCES)) {
+               || (version == IG_TOOOV_CODE) || (version == IG_TOOOV_INSTANCES) || (version == IG_TOOOV_REGFILES)) {
         struct ig_module *mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id, parent_name);
         if (mod == NULL) {
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -of <module>", -1));
             return TCL_ERROR;
+        }
+
+        if (mod->resource) {
+            if ((version == IG_TOOOV_DECLS) || (version == IG_TOOOV_CODE)
+                || (version == IG_TOOOV_INSTANCES) || (version == IG_TOOOV_REGFILES)) {
+
+                log_debug ("LTGet", "%s: -of <module> is resource", cmdname);
+                Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -of <module>", -1));
+                return TCL_ERROR;
+            }
         }
 
         if (version == IG_TOOOV_DECLS) {
@@ -591,6 +703,8 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             child_list = mod->code->head;
         } else if (version == IG_TOOOV_INSTANCES) {
             child_list = mod->child_instances->head;
+        } else if (version == IG_TOOOV_REGFILES) {
+            child_list = mod->regfiles->head;
         }
     } else if ((version == IG_TOOOV_PINS) || (version == IG_TOOOV_ADJ) || (version == IG_TOOOV_MODULES)) {
         struct ig_instance *inst = (struct ig_instance *)g_hash_table_lookup (db->instances_by_id, parent_name);
@@ -607,6 +721,26 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             child_list      = g_list_prepend (child_list, inst->module);
             child_list_free = true;
         }
+    } else if (version == IG_TOOOV_RF_ENTRIES) {
+        struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, parent_name);
+
+        if ((obj == NULL) || (obj->type != IG_OBJ_REGFILE)) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -of <regfile>", -1));
+            return TCL_ERROR;
+        }
+
+        struct ig_rf_regfile *regfile = (struct ig_rf_regfile *)obj->obj;
+        child_list = regfile->entries->head;
+    } else if (version == IG_TOOOV_RF_REGS) {
+        struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, parent_name);
+
+        if ((obj == NULL) || (obj->type != IG_OBJ_REGFILE_ENTRY)) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -of <regfile-entry>", -1));
+            return TCL_ERROR;
+        }
+
+        struct ig_rf_entry *entry = (struct ig_rf_entry *)obj->obj;
+        child_list = entry->regs->head;
     }
 
     /* generate result */
@@ -651,6 +785,18 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             struct ig_instance *instance = (struct ig_instance *)li->data;
             i_name = instance->name;
             i_obj  = instance->object;
+        } else if (version == IG_TOOOV_REGFILES) {
+            struct ig_rf_regfile *rf_regfile = (struct ig_rf_regfile *)li->data;
+            i_name = rf_regfile->name;
+            i_obj  = rf_regfile->object;
+        } else if (version == IG_TOOOV_RF_ENTRIES) {
+            struct ig_rf_entry *rf_entry = (struct ig_rf_entry *)li->data;
+            i_name = rf_entry->name;
+            i_obj  = rf_entry->object;
+        } else if (version == IG_TOOOV_RF_REGS) {
+            struct ig_rf_reg *rf_reg = (struct ig_rf_reg *)li->data;
+            i_name = rf_reg->name;
+            i_obj  = rf_reg->object;
         }
 
         if (all) {
