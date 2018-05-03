@@ -15,7 +15,7 @@
     set param_data_maxlen_type [ig::aux::max_entry_len $param_data ig::vlog::param_type]
     set param_data_maxlen_name [ig::aux::max_entry_len $param_data ig::aux::object_name]
 %>
-<%= [get_pragma_content $pragma_data "keep" "head"] %>
+<%= [ig::templates::get_pragma_content $pragma_data "keep" "head"] %>
 
 module <%= [ig::db::get_attribute -object $mod_id -attribute "name"] %> (<%
     # module port list
@@ -31,7 +31,7 @@ module <%= [ig::db::get_attribute -object $mod_id -attribute "name"] %> (<%
 %><%= \
     [format "%-${param_data_maxlen_name}s" [ig::db::get_attribute -object $i_param -attribute "name"]] \
 %> = <%= [ig::db::get_attribute -object $i_param -attribute "value"] %>;
-<% } %><%= [get_pragma_content $pragma_data "keep" "parameters"] %>
+<% } %><%= [ig::templates::get_pragma_content $pragma_data "keep" "parameters"] %>
 
 <%
     # module port details
@@ -49,7 +49,7 @@ module <%= [ig::db::get_attribute -object $mod_id -attribute "name"] %> (<%
 %><%= \
     [format "%${decl_data_maxlen_range}s " [ig::vlog::obj_bitrange $i_decl]] \
 %><%= [ig::db::get_attribute -object $i_decl -attribute "name"] %>;
-<% } %><%= [get_pragma_content $pragma_data "keep" "declarations"] %>
+<% } %><%= [ig::templates::get_pragma_content $pragma_data "keep" "declarations"] %>
 
 <%
     # submodule instanciations
@@ -69,14 +69,14 @@ module <%= [ig::db::get_attribute -object $mod_id -attribute "name"] %> (<%
         .<%= [format "%-${i_pins_maxlen_name}s" [ig::db::get_attribute -object $j_pin -attribute "name"]] %> (<%= [ig::db::get_attribute -object $j_pin -attribute "connection"] %>)<% if {![ig::aux::is_last $i_pins $j_pin]} { %>,<% }} %>
     );
 <% } %>
-<%= [get_pragma_content $pragma_data "keep" "instances"] %>
+<%= [ig::templates::get_pragma_content $pragma_data "keep" "instances"] %>
 <%
     # code sections
     foreach i_cs $code_data {
 %>
 <%= [ig::aux::adapt_codesection $i_cs] %>
 <% } %>
-<%= [get_pragma_content $pragma_data "keep" "code"] %>
+<%= [ig::templates::get_pragma_content $pragma_data "keep" "code"] %>
 
 endmodule
 <% if {0} { %>
