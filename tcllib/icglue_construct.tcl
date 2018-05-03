@@ -88,6 +88,7 @@ namespace eval ig {
         set ilm       "false"
         set resource  "false"
         set instances {}
+        set regfiles  {}
 
         # args
         set lastarg {}
@@ -102,10 +103,15 @@ namespace eval ig {
                     set instances $i_arg
                     set lastarg {}
                 }
+                -rf {
+                    set regfiles $i_arg
+                    set lastarg {}
+                }
                 default {
                     switch -regexp -- $i_arg {
                         {^-u(nit)?$}                 {set lastarg -u}
                         {^-i(nst(ances|anciate)?)?$} {set lastarg -i}
+                        {^-(rf|(regf(ile)?))$}       {set lastarg -rf}
 
                         {^-v(erilog)?$}              {set lang "verilog"}
                         {^(-sv|-s(ystemverilog)?)$}  {set lang "systemverilog"}
@@ -130,7 +136,7 @@ namespace eval ig {
         }
 
         # argument checks
-        if {[lsearch {-u -i} $lastarg] >= 0} {
+        if {[lsearch {-u -i -rf} $lastarg] >= 0} {
             log -error -abort "M (module ${name}): need an argument after ${lastarg}"
         }
 
@@ -166,6 +172,11 @@ namespace eval ig {
                     -name $i_name \
                     -of-module [ig::db::get_modules -name $i_mod] \
                     -parent-module $modid \
+            }
+
+            # regfiles
+            foreach i_rf $regfiles {
+                ig::db::add_regfile -regfile $i_rf -to $modid
             }
         } emsg]} {
             log -error -abort "M (module ${name}): error while creating module:\n${emsg}"
