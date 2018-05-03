@@ -55,7 +55,7 @@ module <%= [ig::db::get_attribute -object $mod_id -attribute "name"] %> (<%
     # submodule instanciations
     foreach i_inst $inst_data {
         set i_params [ig::db::get_adjustments -of $i_inst -all]
-        set i_has_params [llength $i_params]
+        set i_has_params [expr {[llength $i_params] && ![ig::db::get_attribute -object [ig::db::get_modules -of $i_inst] -attribute "ilm" -default "false"]}]
         set i_params_maxlen_name [ig::aux::max_entry_len $i_params ig::aux::object_name]
 
         set i_pins [ig::db::get_pins -of $i_inst -all]
