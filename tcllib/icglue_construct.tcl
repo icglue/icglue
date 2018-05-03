@@ -120,7 +120,7 @@ namespace eval ig {
 
                         default {
                             if {$name ne ""} {
-                                log -error -abort "M (module ${name}): too much arguments"
+                                log -error -abort "M (module ${name}): too many arguments"
                             }
                             set name $i_arg
                         }
