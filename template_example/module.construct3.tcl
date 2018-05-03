@@ -22,5 +22,9 @@ C -m mgmt -a {
 P DATA_W -v 32 {mgmt_regfile core tb_top}
 
 # regfile
+R -rf mgmt_regfile "config" @0x4 {
+    {name width entrybits type reset signal signalbits}
+    {cfg  5     4:0       RW   5'h0  config 4:0}
+}
 
 }

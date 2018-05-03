@@ -387,4 +387,112 @@ namespace eval ig {
         return $cid
     }
 
+    proc R args {
+        # defaults
+        set entryname   ""
+        set regfilename ""
+        set address     -1
+        set regdef      {}
+
+        # args
+        set lastarg {}
+
+        foreach i_arg $args {
+            switch -- $lastarg {
+                -rf {
+                    set regfilename $i_arg
+                    set lastarg {}
+                }
+                default {
+                    switch -regexp -matchvar mlist -- $i_arg {
+                        {^-(rf|regf(ile)?)$}        {set lastarg -rf}
+                        {^@(.*)$}                   {set address [lindex $mlist 1]}
+
+                        default {
+                            if {$entryname eq ""} {
+                                set entryname $i_arg
+                            } elseif {[llength $regdef] == 0} {
+                                set regdef $i_arg
+                            } else {
+                                log -error -abort "R (regfile-entry ${entryname}): too many arguments"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        # argument checks
+        if {[lsearch {-rf} $lastarg] >= 0} {
+            log -error -abort "R: need an argument after ${lastarg}"
+        }
+
+        if {$entryname eq ""} {
+            log -error -abort "R: no regfile-entry name specified"
+        } elseif {$regfilename eq ""} {
+            log -error -abort "R (regfile-entry ${entryname}): no regfile name specified"
+        } elseif {(![string is integer $address]) || ($address < 0)} {
+            log -error -abort "R (regfile-entry ${entryname}): no/invalid address"
+        } elseif {[llength $regdef] <= 1} {
+            log -error -abort "R (regfile-entry ${entryname}): no registers specified"
+        }
+
+        # entry map
+        set entry_default_map {name width entrybits type reset signal signalbits}
+        set entry_map {}
+        foreach i_entry [lindex $regdef 0] {
+            set idx_def [lsearch -glob $entry_default_map "${i_entry}*"]
+            if {$idx_def < 0} {
+                log -error -abort "R (regfile-entry ${entryname}): invalid register attribute-name: ${i_entry}"
+            }
+            lappend entry_map [lindex $entry_default_map $idx_def]
+        }
+        foreach i_entry $entry_default_map {
+            if {[lsearch $entry_map $i_entry] < 0} {
+                lappend entry_map $i_entry
+            }
+        }
+        set regdef [lrange $regdef 1 end]
+
+        # actual regfile creation
+        if {[catch {
+            # get regfile
+            set regfile_id ""
+            foreach i_md [ig::db::get_modules -all] {
+                if {![catch {ig::db::get_regfiles -name $regfilename -of $i_md} i_id]} {
+                    set regfile_id $i_id
+                }
+            }
+            if {$regfile_id eq ""} {
+                log -error -abort "R (regfile-entry ${entryname}): invalid regfile name specified: ${regfilename}"
+            }
+
+            # create entry
+            set entry_id [ig::db::add_regfile -entry $entryname -to $regfile_id]
+            ig::db::set_attribute -object $entry_id -attribute "address" -value $address
+
+            # creating registers
+            foreach i_reg $regdef {
+                set i_name [lindex $i_reg [lsearch $entry_map "name"]]
+
+                if {$i_name eq ""} {
+                    log -error -abort "R (regfile-entry ${entryname}): reg defined without name"
+                }
+
+                set reg_id [ig::db::add_regfile -reg $i_name -to $entry_id]
+                foreach i_attr [lrange $entry_default_map 1 end] {
+                    # attributes except name
+                    set i_val [lindex $i_reg [lsearch $entry_map $i_attr]]
+                    if {$i_val ne ""} {
+                        ig::db::set_attribute -object $reg_id -attribute "rf_${i_attr}" -value $i_val
+                    }
+                }
+            }
+        } emsg]} {
+            log -error -abort "R (regfile-entry ${entryname}): error while creating regfile-entry:\n${emsg}"
+        }
+
+        return $entry_id
+    }
+
 }
