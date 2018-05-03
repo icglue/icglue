@@ -358,6 +358,7 @@ struct ig_rf_entry *ig_rf_entry_new (const char *name, struct ig_rf_regfile *par
 
     entry->name   = ig_obj_attr_get (entry->object, "name");
     entry->parent = parent;
+    entry->regs   = g_queue_new ();
 
     g_queue_push_tail (parent->entries, entry);
 
@@ -388,8 +389,9 @@ struct ig_rf_regfile *ig_rf_regfile_new (const char *name, struct ig_module *par
     struct ig_object     *obj     = ig_obj_new (IG_OBJ_REGFILE, name, NULL, regfile, storage);
     regfile->object = obj;
 
-    regfile->name   = ig_obj_attr_get (regfile->object, "name");
-    regfile->parent = parent;
+    regfile->name    = ig_obj_attr_get (regfile->object, "name");
+    regfile->parent  = parent;
+    regfile->entries = g_queue_new ();
 
     g_queue_push_tail (parent->regfiles, regfile);
 
