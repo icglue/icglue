@@ -22,11 +22,38 @@
 lappend auto_path [file normalize [file dirname [file normalize $::argv0]]/..]
 package require ICGlue
 
-# TODO:
-# - parse command line arguments
-#   - which file to read in
-#   - which template to use
-# - read in generator script
-# - write out generated files
+proc main {} {
+    # init templates
+    ig::templates::add_template_dir "[file dirname [file normalize $::argv0]]/../templates"
+    # TODO: template-dir environment variable?
+    ig::templates::load_template "default"
+
+    # arguments
+    if {$::argc != 1} {
+        ig::log -error "Expected one input file"
+        exit 1
+    }
+    set gen_source [lindex $::argv 0]
+    # TODO: advanced arg parsing: input-file, template to choose, ...?
+
+    if {[string match "*.sng" $gen_source] || [string match "*.icsng" $gen_source]} {
+        ig::sng::parse_file $gen_source
+    } elseif {[string match "*.tcl" $gen_source]} {
+        source $gen_source
+    } else {
+        ig::log -error "Unknown input file suffix for $gen_source"
+        exit 1
+    }
+
+    # generate modules
+    foreach i_module [ig::db::get_modules -all] {
+        if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
+            ig::log -info "generating module $i_module"
+            ig::templates::write_module $i_module
+        }
+    }
+}
+
+main
 
 # vim: set filetype=tcl

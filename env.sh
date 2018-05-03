@@ -2,11 +2,7 @@
 src=${BASH_SOURCE:-$_}
 pkgsrcpath=$(dirname $(readlink -e "${src}"))
 
-if [[ "x${TCLLIBPATH}" == "x" ]] ; then
-    export TCLLIBPATH="${pkgsrcpath}"
-else
-    export TCLLIBPATH="${TCLLIBPATH}:${pkgsrcpath}"
-fi
+export PATH="${PATH}:${pkgsrcpath}/bin"
 
 unset src
 unset pkgsrcpath
