@@ -24,6 +24,9 @@ PKGDIR     := ICGlue
 PKGIDX     := $(PKGDIR)/pkgIndex.tcl
 PKGGENSCR  := scripts/tcl_pkggen.tcl
 
+VERSION    := 0.0.1
+VERSIONSCR := scripts/update_version.sh
+
 all: prebuild
 	@$(MAKE) $(PKGIDX)
 
@@ -36,6 +39,9 @@ $(PKGIDX): $(TCLSOURCES) $(LIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 	cp $(TCLSOURCES) $(PKGDIR)
 	$(PKGGENSCR) $(PKGDIR)
 
+updateversion:
+	$(VERSIONSCR) $(VERSION)
+
 $(PKGDIR):
 	mkdir -p $@
 
@@ -45,4 +51,4 @@ clean:
 cleanall: clean
 	@$(MAKE) -C $(LIBDIR) clean
 
-.PHONY: all prebuild clean cleanall
+.PHONY: all prebuild clean cleanall updateversion
