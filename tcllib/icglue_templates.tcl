@@ -74,6 +74,112 @@ namespace eval ig::templates {
         }
     }
 
+    namespace eval preprocess {
+        # template helpers
+        proc regfile_to_arraylist {regfile_id} {
+            # collect all regfile entries, sort by address
+            set entries [ig::db::get_regfile_entries -all -of $regfile_id]
+            set entry_list {}
+            foreach i_entry $entries {
+                set reg_list {}
+                set regs [ig::db::get_regfile_regs -all -of $i_entry]
+
+                #entry_default_map {name width entrybits type reset signal signalbits}
+                foreach i_reg $regs {
+                    set name  [ig::db::get_attribute -object $i_reg -attribute "name"]
+                    set width [ig::db::get_attribute -object $i_reg -attribute "rf_width" -default -1]
+                    set entrybits [ig::db::get_attribute -object $i_reg -attribute "rf_entrybits" -default ""]
+                    set type [ig::db::get_attribute -object $i_reg -attribute "rf_type" -default "RW"]
+                    set reset [ig::db::get_attribute -object $i_reg -attribute "rf_reset" -default "-"]
+                    set signal [ig::db::get_attribute -object $i_reg -attribute "rf_signal" -default "-"]
+                    set signalbits [ig::db::get_attribute -object $i_reg -attribute "rf_signalbits" -default ""]
+
+                    if {$width < 0} {
+                        if {$entrybits eq ""} {
+                            set width 32
+                            set entrybits "31:0"
+                        } else {
+                            set blist [split $entrybits ":"]
+                            set width [expr {[lindex $blist 1] - [lindex $blist 0] + 1}]
+                        }
+                    } elseif {$entrybits eq ""} {
+                        set entrybits "[expr {$width - 1}]:0"
+                    }
+
+                    set blist [split $entrybits ":"]
+                    set bit_high [lindex $blist 0]
+                    set bit_low  [lindex $blist 1]
+
+                    lappend reg_list [list \
+                        $name $bit_high $bit_low $width $entrybits $type $reset $signal $signalbits $i_reg \
+                    ]
+                }
+                set reg_list_raw [lsort -integer -index 2 $reg_list]
+                set reg_list {}
+                set idx_start 0
+
+                foreach i_reg $reg_list_raw {
+                    set i_bit_low [lindex $i_reg 2]
+                    set i_bit_high [lindex $i_reg 1]
+                    if {$i_bit_low - $idx_start > 1} {
+                        set tmp_high [expr {$i_bit_low - 1}]
+                        set tmp_low  [expr {$idx_start + 1}]
+                        lappend reg_list [list \
+                            name       "-" \
+                            bit_high   $tmp_high \
+                            bit_low    $tmp_low \
+                            width      [expr {$tmp_high - $tmp_low + 1}] \
+                            entrybits  "${tmp_high}:${tmp_low}" \
+                            type       "-" \
+                            reset      "-" \
+                            signal     "-" \
+                            signalbits "" \
+                        ]
+                    }
+                    lappend reg_list [list \
+                        name       [lindex $i_reg 0] \
+                        bit_high   [lindex $i_reg 1] \
+                        bit_low    [lindex $i_reg 2] \
+                        width      [lindex $i_reg 3] \
+                        entrybits  [lindex $i_reg 4] \
+                        type       [lindex $i_reg 5] \
+                        reset      [lindex $i_reg 6] \
+                        signal     [lindex $i_reg 7] \
+                        signalbits [lindex $i_reg 8] \
+                        object     [lindex $i_reg 9] \
+                    ]
+
+                    set idx_start $i_bit_high
+                }
+                if {$idx_start < 31} {
+                    set tmp_high 31
+                    set tmp_low  [expr {$idx_start + 1}]
+                    lappend reg_list [list \
+                        name       "-" \
+                        bit_high   $tmp_high \
+                        bit_low    $tmp_low \
+                        width      [expr {$tmp_high - $tmp_low + 1}] \
+                        entrybits  "${tmp_high}:${tmp_low}" \
+                        type       "-" \
+                        reset      "-" \
+                        signal     "-" \
+                        signalbits "" \
+                    ]
+                }
+
+                lappend entry_list [list \
+                    address [ig::db::get_attribute -object $i_entry -attribute "address"] \
+                    name    [ig::db::get_attribute -object $i_entry -attribute "name"] \
+                    object  $i_entry \
+                    regs    $reg_list \
+                ]
+            }
+            set entry_list [lsort -integer -index 1 $entry_list]
+
+            return $entry_list
+        }
+    }
+
     proc add_template_dir {dir} {
         set _tmpl_dirs [glob -directory $dir *]
         foreach _i_dir ${_tmpl_dirs} {

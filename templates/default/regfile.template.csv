@@ -1,103 +1,36 @@
 address;register;bits;size;value;type;signal;reset
 <%
-# collect all regfile entries, sort by address
-set entries [ig::db::get_regfile_entries -all -of $obj_id]
-set entry_list {}
-foreach i_entry $entries {
-    set reg_list {}
-    set regs [ig::db::get_regfile_regs -all -of $i_entry]
-
-    #entry_default_map {name width entrybits type reset signal signalbits}
-    foreach i_reg $regs {
-        set name  [ig::db::get_attribute -object $i_reg -attribute "name"]
-        set width [ig::db::get_attribute -object $i_reg -attribute "rf_width" -default -1]
-        set entrybits [ig::db::get_attribute -object $i_reg -attribute "rf_entrybits" -default ""]
-        set type [ig::db::get_attribute -object $i_reg -attribute "rf_type" -default "RW"]
-        set reset [ig::db::get_attribute -object $i_reg -attribute "rf_reset" -default "-"]
-        set signal [ig::db::get_attribute -object $i_reg -attribute "rf_signal" -default "-"]
-        set signalbits [ig::db::get_attribute -object $i_reg -attribute "rf_signalbits" -default ""]
-
-        if {$width < 0} {
-            if {$entrybits eq ""} {
-                set width 32
-                set entrybits "31:0"
-            } else {
-                set blist [split $entrybits ":"]
-                set width [expr {[lindex $blist 1] - [lindex $blist 0] + 1}]
-            }
-        } elseif {$entrybits eq ""} {
-            set entrybits "[expr {$width - 1}]:0"
-        }
-
-        set blist [split $entrybits ":"]
-        set bit_high [lindex $blist 0]
-        set bit_low  [lindex $blist 1]
-
-        lappend reg_list [list \
-            $name $bit_high $bit_low $width $entrybits $type $reset $signal $signalbits \
-        ]
-    }
-    set reg_list_raw [lsort -integer -index 2 $reg_list]
-    set reg_list {}
-    set idx_start 0
-
-    foreach i_reg $reg_list_raw {
-        set i_bit_low [lindex $i_reg 2]
-        set i_bit_high [lindex $i_reg 1]
-        if {$i_bit_low - $idx_start > 1} {
-            set tmp_high [expr {$i_bit_low - 1}]
-            set tmp_low  [expr {$idx_start + 1}]
-            lappend reg_list [list \
-                "-" $tmp_high $tmp_low [expr {$tmp_high - $tmp_low + 1}] "${tmp_high}:${tmp_low}" "-" "-" "-" "" \
-            ]
-        }
-        lappend reg_list $i_reg
-        set idx_start $i_bit_high
-    }
-    if {$idx_start < 31} {
-        set tmp_high 31
-        set tmp_low  [expr {$idx_start + 1}]
-        lappend reg_list [list \
-            "-" $tmp_high $tmp_low [expr {$tmp_high - $tmp_low + 1}] "${tmp_high}:${tmp_low}" "-" "-" "-" "" \
-        ]
-    }
-
-    lappend entry_list [list \
-        [ig::db::get_attribute -object $i_entry -attribute "address"] \
-        [ig::db::get_attribute -object $i_entry -attribute "name"] \
-        $i_entry \
-        $reg_list \
-    ]
-}
-set entry_list [lsort -integer -index 0 $entry_list]
+set entry_list [preprocess::regfile_to_arraylist $obj_id]
 %><%
 # iterate over entries sorted by address
 foreach i_entry $entry_list {
     set idx 0
-    foreach i_reg [lindex $i_entry 3] {
+    array set entry $i_entry
+    foreach i_reg $entry(regs) {
+        array set reg $i_reg
         if {$idx == 0} {
 %><%= \
-[format "0x%08x" [lindex $i_entry 0]] \
+[format "0x%08x" $entry(address)] \
 %>;<%= \
-[lindex $i_entry 1] \
+$entry(name) \
 %><%
         } else {
 %>;<%
         }
 %>;<%= \
-    [lindex $i_reg 4] \
+    $reg(entrybits) \
 %>;<%= \
-    [lindex $i_reg 3] \
+    $reg(width) \
 %>;<%= \
-    [lindex $i_reg 0] \
+    $reg(name) \
 %>;<%= \
-    [lindex $i_reg 5] \
+    $reg(type) \
 %>;<%= \
-    [lindex $i_reg 7] \
-%><% if {[lindex $i_reg 8] ne ""} { %><%= \
-    "\[[lindex $i_reg 8]\]"
+    $reg(signal) \
+%><% if {$reg(signalbits) ne ""} { %><%= \
+    "\[$reg(signalbits)\]"
 %><% } %>;<%= \
-    [lindex $i_reg 6] \
+    $reg(reset) \
 %>
 <%
     incr idx
