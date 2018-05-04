@@ -22,7 +22,7 @@ TCLSOURCES := $(wildcard tcllib/*.tcl)
 PKGDIR     := ICGlue
 
 PKGIDX     := $(PKGDIR)/pkgIndex.tcl
-PKGGENSCR  := pkggen/gen.tcl
+PKGGENSCR  := scripts/tcl_pkggen.tcl
 
 all: prebuild
 	@$(MAKE) $(PKGIDX)

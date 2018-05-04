@@ -1,4 +1,4 @@
-#!/usr/bin/tclsh
+#!/usr/bin/env tclsh
 
 #
 #   ICGlue is a Tcl-Library for scripted HDL generation
