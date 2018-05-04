@@ -386,7 +386,7 @@ struct ig_rf_regfile *ig_rf_regfile_new (const char *name, struct ig_module *par
     }
 
     struct ig_rf_regfile *regfile = g_slice_new (struct ig_rf_regfile);
-    struct ig_object     *obj     = ig_obj_new (IG_OBJ_REGFILE, name, NULL, regfile, storage);
+    struct ig_object     *obj     = ig_obj_new (IG_OBJ_REGFILE, name, parent->object, regfile, storage);
     regfile->object = obj;
 
     regfile->name    = ig_obj_attr_get (regfile->object, "name");

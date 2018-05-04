@@ -23,7 +23,7 @@ namespace eval ig::templates {
     namespace eval collection {
         variable template_dir       {}
         variable template_path_gen  {}
-        variable module_path_gen    {}
+        variable output_path_gen    {}
         variable default_header_gen {}
     }
 
@@ -40,8 +40,8 @@ namespace eval ig::templates {
             ]
         }
 
-        proc module_file {template body} {
-            lappend ig::templates::collection::module_path_gen [list \
+        proc output_file {template body} {
+            lappend ig::templates::collection::output_path_gen [list \
                 $template $body \
             ]
         }
@@ -56,20 +56,20 @@ namespace eval ig::templates {
     namespace eval current {
         variable template_dir ""
 
-        proc get_template_file_raw {module template_dir} {
+        proc get_template_file_raw {object template_dir} {
             ig::log -error -abort "no template loaded"
         }
 
-        proc get_template_file {module} {
+        proc get_template_file {object} {
             variable template_dir
-            return [get_template_file_raw $module $template_dir]
+            return [get_template_file_raw $object $template_dir]
         }
 
-        proc get_module_file {module} {
+        proc get_output_file {object} {
             ig::log -error -abort "no template loaded"
         }
 
-        proc get_default_header {module} {
+        proc get_default_header {object} {
             ig::log -error -abort "no template loaded"
         }
     }
@@ -100,17 +100,17 @@ namespace eval ig::templates {
         # load vars/procs for current template
         set dir_idx  [lsearch -index 0 $collection::template_dir       $template]
         set tmpl_idx [lsearch -index 0 $collection::template_path_gen  $template]
-        set mod_idx  [lsearch -index 0 $collection::module_path_gen    $template]
+        set out_idx  [lsearch -index 0 $collection::output_path_gen    $template]
         set hdr_idx  [lsearch -index 0 $collection::default_header_gen $template]
 
-        if {($dir_idx < 0) || ($tmpl_idx < 0) || ($mod_idx < 0) || ($hdr_idx < 0)} {
+        if {($dir_idx < 0) || ($tmpl_idx < 0) || ($out_idx < 0) || ($hdr_idx < 0)} {
             ig::log -error -abort "template $template not (fully) defined"
         }
 
         set current::template_dir [lindex $collection::template_dir $dir_idx 1]
-        proc current::get_template_file_raw {module template_dir} [lindex $collection::template_path_gen $tmpl_idx 1]
-        proc current::get_module_file {module} [lindex $collection::module_path_gen $mod_idx 1]
-        proc current::get_default_header {module} [lindex $collection::default_header_gen $hdr_idx 1]
+        proc current::get_template_file_raw {object template_dir} [lindex $collection::template_path_gen $tmpl_idx 1]
+        proc current::get_output_file {object} [lindex $collection::output_path_gen $out_idx 1]
+        proc current::get_default_header {object} [lindex $collection::default_header_gen $hdr_idx 1]
     }
 
     # parse_template method:
@@ -158,9 +158,9 @@ namespace eval ig::templates {
         return $result
     }
 
-    proc add_pragma_default_header {pragma_data mod_id} {
+    proc add_pragma_default_header {pragma_data obj_id} {
         if {[lsearch -inline -all -index 1 [lsearch -inline -all -index 0 $pragma_data "keep"] "head"] < 0} {
-            lappend pragma_data [list "keep" "head" [current::get_default_header $mod_id]]
+            lappend pragma_data [list "keep" "head" [current::get_default_header $obj_id]]
         }
         return $pragma_data
     }
@@ -175,10 +175,10 @@ namespace eval ig::templates {
     }
 
 
-    proc write_module {mod_id} {
-        set _tt_name [current::get_template_file $mod_id]
+    proc write_object {obj_id} {
+        set _tt_name [current::get_template_file $obj_id]
 
-        set _outf_name [current::get_module_file $mod_id]
+        set _outf_name [current::get_output_file $obj_id]
 
         set pragma_data [list]
         if {[file exists $_outf_name]} {
@@ -187,7 +187,7 @@ namespace eval ig::templates {
             close ${_outf}
             set pragma_data [parse_pragmas ${_old}]
         }
-        set pragma_data [add_pragma_default_header $pragma_data $mod_id]
+        set pragma_data [add_pragma_default_header $pragma_data $obj_id]
 
         set _tt_f [open ${_tt_name} "r"]
         set _tt [read ${_tt_f}]

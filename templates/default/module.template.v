@@ -1,10 +1,10 @@
 <%
     # tcl header
-    set port_data  [ig::db::get_ports        -of $mod_id]
-    set param_data [ig::db::get_parameters   -of $mod_id]
-    set decl_data  [ig::db::get_declarations -of $mod_id]
-    set inst_data  [ig::db::get_instances    -of $mod_id]
-    set code_data  [ig::db::get_codesections -of $mod_id]
+    set port_data  [ig::db::get_ports        -of $obj_id]
+    set param_data [ig::db::get_parameters   -of $obj_id]
+    set decl_data  [ig::db::get_declarations -of $obj_id]
+    set inst_data  [ig::db::get_instances    -of $obj_id]
+    set code_data  [ig::db::get_codesections -of $obj_id]
 
     set port_data_maxlen_dir   [ig::aux::max_entry_len $port_data ig::vlog::port_dir]
     set port_data_maxlen_range [ig::aux::max_entry_len $port_data ig::vlog::obj_bitrange]
@@ -17,7 +17,7 @@
 %>
 <%= [ig::templates::get_pragma_content $pragma_data "keep" "head"] %>
 
-module <%= [ig::db::get_attribute -object $mod_id -attribute "name"] %> (<%
+module <%= [ig::db::get_attribute -object $obj_id -attribute "name"] %> (<%
     # module port list
     foreach i_port $port_data {
     %>

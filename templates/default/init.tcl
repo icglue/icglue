@@ -1,29 +1,48 @@
 # template init script
-# predefined variable: template (template name)
+# predefined variable in this script: template (template name)
 
-# return path to template file: arguments: {module template_dir} (module identifier, path to this template's directory)
+# return path to template file: arguments: {object template_dir} (object identifier, path to this template's directory)
 init::template_file $template {
-    return "${template_dir}/module.template.v"
-}
-
-# generate module output filename: arguments: {module} (module identifier)
-init::module_file $template {
-    set module_name [ig::db::get_attribute -object $module -attribute "name"]
-    set parent_unit [ig::db::get_attribute -object $module -attribute "parentunit" -default $module_name]
-    if {[string match "tb_*" $module_name]} {
-        set mode [ig::db::get_attribute -object $module -attribute "mode" -default "tb"]
+    set type [ig::db::get_attribute -object $object -attribute "type"]
+    if {$type eq "module"} {
+        return "${template_dir}/module.template.v"
+    } elseif {$type eq "regfile"} {
+        return "${template_dir}/regfile.template.csv"
     } else {
-        set mode [ig::db::get_attribute -object $module -attribute "mode" -default "rtl"]
+        ig::log -error -abort "no template available for objects of type ${type}"
     }
-    set lang [ig::db::get_attribute -object $module -attribute "language" -default "verilog"]
-    return "./units/${parent_unit}/source/${mode}/${lang}/${module_name}.v"
 }
 
-# generate module default header: arguments: {module} (module identifier)
+# generate object output filename: arguments: {object} (object identifier)
+init::output_file $template {
+    set type [ig::db::get_attribute -object $object -attribute "type"]
+    if {$type eq "module"} {
+        set object_name [ig::db::get_attribute -object $object -attribute "name"]
+        set parent_unit [ig::db::get_attribute -object $object -attribute "parentunit" -default $object_name]
+        if {[string match "tb_*" $object_name]} {
+            set mode [ig::db::get_attribute -object $object -attribute "mode" -default "tb"]
+        } else {
+            set mode [ig::db::get_attribute -object $object -attribute "mode" -default "rtl"]
+        }
+        set lang [ig::db::get_attribute -object $object -attribute "language" -default "verilog"]
+        return "./units/${parent_unit}/source/${mode}/${lang}/${object_name}.v"
+    } elseif {$type eq "regfile"} {
+        set object_name     [ig::db::get_attribute -object $object -attribute "name"]
+        set parent_mod      [ig::db::get_attribute -object $object -attribute "parent"]
+        set parent_mod_name [ig::db::get_attribute -object $parent_mod -attribute "name"]
+        set module_unit     [ig::db::get_attribute -object $parent_mod -attribute "parentunit" -default $parent_mod_name]
+        return "./units/${module_unit}/doc/regfile/${object_name}.csv"
+    } else {
+        ig::log -warning "no output file pattern specified for objects of type ${type}"
+        return "/dev/null"
+    }
+}
+
+# generate object default header: arguments: {object} (object identifier)
 init::default_header $template {
     set result "
 /*
- * Module: [ig::db::get_attribute -object $module -attribute "name"]
+ * Module: [ig::db::get_attribute -object $object -attribute "name"]
  * Author: 
  * E-Mail: 
  */
