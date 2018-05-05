@@ -19,7 +19,7 @@
 
 #include "ig_logo.h"
 
-const static char *ig_logo_lines[] = {
+static const char *const ig_logo_lines[] = {
     "                        ,'.",
     "                       /-. `.",
     "                     ,'+##`. \\",
