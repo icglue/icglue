@@ -17,35 +17,20 @@
  *
  */
 
-#include <tcl.h>
+#ifndef __IG_LOGO_H__
+#define __IG_LOGO_H__
+
 #include <stdio.h>
 
-#include "ig_tcl.h"
-#include "ig_logo.h"
-#include "logger.h"
-#include "color.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* for normal interpreters */
-int Icglue_Init (Tcl_Interp *interp)
-{
+void ig_print_logo (FILE *file);
 
-    colors_on ();
-
-    ig_print_logo (stderr);
-
-    ig_add_tcl_commands (interp);
-
-    Tcl_PkgProvide (interp, "ICGlue", "0.0.1");
-    log_info ("PLoad", "ICGlue v0.0.1 loaded");
-
-    return TCL_OK;
+#ifdef __cplusplus
 }
+#endif
 
-/* for safe interpreters */
-int Icglue_SafeInit (Tcl_Interp *interp)
-{
-    log_error ("PLoad", "safe interpreters not supported!");
-
-    return TCL_ERROR;
-}
+#endif
 
