@@ -148,13 +148,12 @@ proc gen_dummy_tcl {cmdfunclist funcdoclist} {
 }
 
 proc main {} {
-    if {$::argc != 2} {
-        puts "ERROR: need 2 arguments: <srcfile> <targetfile>"
+    if {($::argc != 2) && ($::argc != 1)} {
+        puts "ERROR: need 1 or 2 arguments: <srcfile> \[<targetfile>\]"
         exit 1
     }
 
     set src_filename [lindex $::argv 0]
-    set trg_filename [lindex $::argv 1]
 
     set src_file [open $src_filename "r"]
     set src_lines [split [read $src_file] "\n"]
@@ -165,9 +164,14 @@ proc main {} {
     set funcdoclist [get_tcldoc $src_lines]
     set tclout [gen_dummy_tcl $cmdfunclist $funcdoclist]
 
-    set trg_file [open $trg_filename "w"]
-    puts $trg_file $tclout
-    close $trg_file
+    if {$::argc == 2} {
+        set trg_filename [lindex $::argv 1]
+        set trg_file [open $trg_filename "w"]
+        puts $trg_file $tclout
+        close $trg_file
+    } else {
+        puts $tclout
+    }
 }
 
 main
