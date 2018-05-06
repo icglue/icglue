@@ -16,17 +16,25 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-LIBDIR     := lib
-LIBSOURCES := $(LIBDIR)/binaries/icglue.so
-TCLSOURCES := $(wildcard tcllib/*.tcl)
-PKGDIR     := ICGlue
+LIBDIR      := lib
+LIBSOURCES  := $(LIBDIR)/binaries/icglue.so
+TCLSOURCES  := $(wildcard tcllib/*.tcl)
+PKGDIR      := ICGlue
 
-PKGIDX     := $(PKGDIR)/pkgIndex.tcl
-PKGGENSCR  := scripts/tcl_pkggen.tcl
+PKGIDX      := $(PKGDIR)/pkgIndex.tcl
+PKGGENSCR   := scripts/tcl_pkggen.tcl
 
-VERSION    := 0.0.1
-VERSIONSCR := scripts/update_version.sh
+VERSION     := 0.0.1
+VERSIONSCR  := scripts/update_version.sh
 
+DOCDIR      := doc
+DOCDIRTCL   := $(DOCDIR)/ICGlue
+DOCDIRLIB   := $(DOCDIR)/ICGlue-Lib
+DOXYFILETCL := doxy/tcl.doxyfile
+DOXYFILELIB := doxy/lib.doxyfile
+
+#-------------------------------------------------------
+# Tcl Package
 all: prebuild
 	@$(MAKE) $(PKGIDX)
 
@@ -39,16 +47,41 @@ $(PKGIDX): $(TCLSOURCES) $(LIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 	cp $(TCLSOURCES) $(PKGDIR)
 	$(PKGGENSCR) $(PKGDIR)
 
+.PHONY: all prebuild
+
+#-------------------------------------------------------
+# version number/header update
 updateversion:
 	$(VERSIONSCR) $(VERSION)
 
-$(PKGDIR):
+.PHONY: updateversion
+
+#-------------------------------------------------------
+# documentation
+doctcl: $(DOXYFILETCL) | $(DOCDIRTCL)
+	doxygen $(DOXYFILETCL)
+
+doclib: $(DOXYFILELIB) | $(DOCDIRLIB)
+	doxygen $(DOXYFILELIB)
+
+docs: doctcl doclib
+
+.PHONY: doctcl doclib docs
+
+#-------------------------------------------------------
+# directories
+$(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB):
 	mkdir -p $@
 
+#-------------------------------------------------------
+# cleanup targets
 clean:
 	rm -rf $(PKGDIR)
 
-cleanall: clean
+cleandoc:
+	rm -rf $(DOCDIR)
+
+cleanall: clean cleandoc
 	@$(MAKE) -C $(LIBDIR) clean
 
-.PHONY: all prebuild clean cleanall updateversion
+.PHONY: clean cleanall cleandoc
