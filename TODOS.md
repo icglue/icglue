@@ -2,6 +2,8 @@
 - add documentation
   - doxygen for lib?
   - man-pages for tcl-commands?
+- makefile
+  - add install target?
 
 # lib
 - regfile support
