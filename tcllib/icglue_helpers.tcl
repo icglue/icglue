@@ -20,6 +20,12 @@
 package provide ICGlue 1.0a1
 
 namespace eval ig::aux {
+    proc foreach_array {iter array_list body} {
+        foreach __iter $array_list {
+            uplevel 1 array set $iter [list ${__iter}]
+            uplevel 1 $body
+        }
+    }
     proc max_entry_len {data_list transform_proc} {
         set len 0
         foreach i_entry $data_list {
