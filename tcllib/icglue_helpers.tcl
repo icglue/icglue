@@ -29,6 +29,15 @@ namespace eval ig::aux {
         return $len
     }
 
+    proc max_array_entry_len {array_list array_entry} {
+        set len 0
+        foreach i_entry $array_list {
+            array set i_a $i_entry
+            set i_len [string length $i_a($array_entry)]
+            set len [expr {max ($len, $i_len)}]
+        }
+        return $len
+    }
 
     proc is_last {lst entry} {
         if {[lindex $lst end] eq $entry} {
