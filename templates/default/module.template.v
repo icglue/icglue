@@ -11,48 +11,60 @@
     set param_data_maxlen_type [ig::aux::max_array_entry_len $mod_data(parameters) vlog.type]
     set param_data_maxlen_name [ig::aux::max_array_entry_len $mod_data(parameters) name]
 %>
+
 <%= [ig::templates::get_pragma_content $pragma_data "keep" "head"] %>
 
-module <%= [ig::db::get_attribute -object $obj_id -attribute "name"] %> (<%
+
+module <%= $mod_data(name) %> (
+<%
     # module port list
     foreach i_port $mod_data(ports) {
         array set port $i_port
-    %>
-    <%= $port(name) %><% if {![ig::aux::is_last $mod_data(ports) $i_port]} { %>,<% }} %>
+%>
+    <%= $port(name) %>
+<%      if {![ig::aux::is_last $mod_data(ports) $i_port]} { %>,<%
+        } %>
+
+<%  } %>
 );
 
 <%
     # module parameters
     foreach i_param $mod_data(parameters) {
         array set param $i_param
-        %><%= \
-    [format "    %-${param_data_maxlen_type}s " $param(vlog.type)] \
-%><%= \
-    [format "%-${param_data_maxlen_name}s" $param(name)] \
-%> = <%= $param(value) %>;
-<% } %><%= [ig::templates::get_pragma_content $pragma_data "keep" "parameters"] %>
+%>
+<%=     [format "    %-${param_data_maxlen_type}s " $param(vlog.type)] %>
+<%=     [format "%-${param_data_maxlen_name}s" $param(name)] %>
+ = <%=  $param(value) %>
+;
+<%  } %>
+<%= [ig::templates::get_pragma_content $pragma_data "keep" "parameters"] %>
+
 
 <%
     # module port details
     foreach i_port $mod_data(ports) {
         array set port $i_port
-%><%= \
-    [format "    %-${port_data_maxlen_dir}s " $port(vlog.direction)] \
-%><%= \
-    [format "%${port_data_maxlen_range}s " $port(vlog.bitrange)] \
-%><%= $port(name) %>;
-<% } %>
+%>
+<%=     [format "    %-${port_data_maxlen_dir}s " $port(vlog.direction)] %>
+<%=     [format "%${port_data_maxlen_range}s " $port(vlog.bitrange)] %>
+<%=     $port(name) %>
+;
+<%  } %>
+
 
 <%
     # module declarations
     foreach i_decl $mod_data(declarations) {
         array set decl $i_decl
-%><%= \
-    [format "    %-${decl_data_maxlen_type}s " $decl(vlog.type)] \
-%><%= \
-    [format "%${decl_data_maxlen_range}s " $decl(vlog.bitrange)] \
-%><%= $decl(name) %>;
-<% } %><%= [ig::templates::get_pragma_content $pragma_data "keep" "declarations"] %>
+%>
+<%=     [format "    %-${decl_data_maxlen_type}s " $decl(vlog.type)] %>
+<%=     [format "%${decl_data_maxlen_range}s " $decl(vlog.bitrange)] %>
+<%=     $decl(name) %>
+;
+<%  } %>
+<%= [ig::templates::get_pragma_content $pragma_data "keep" "declarations"] %>
+
 
 <%
     # submodule instanciations
@@ -61,29 +73,59 @@ module <%= [ig::db::get_attribute -object $obj_id -attribute "name"] %> (<%
         set i_params_maxlen_name [ig::aux::max_array_entry_len $inst(parameters) name]
         set i_pins_maxlen_name [ig::aux::max_array_entry_len $inst(pins) name]
 %>
-    <%= $inst(module.name) %><% if {$inst(hasparams)} { %> #(<%
-    foreach i_param $inst(parameters) {
-        array set param $i_param
-    %>
-        .<%= [format "%-${i_params_maxlen_name}s" $param(name)] %> (<%= $param(value) %>)<% if {![ig::aux::is_last $inst(parameters) $i_param]} { %>,<% }} %>
-    )<% } %> <%= $inst(name) %> (<%
-    foreach i_pin $inst(pins) {
-        array set pin $i_pin
-    %>
-        .<%= [format "%-${i_pins_maxlen_name}s" $pin(name)] %> (<%= $pin(connection) %>)<% if {![ig::aux::is_last $inst(pins) $i_pin]} { %>,<% }} %>
+
+    <%= $inst(module.name) %>
+<%      if {$inst(hasparams)} {
+%>
+ #(<%
+            foreach i_param $inst(parameters) {
+                array set param $i_param
+%>
+
+        .<%= [format "%-${i_params_maxlen_name}s" $param(name)] %> (<%= $param(value) %>)<%
+                if {![ig::aux::is_last $inst(parameters) $i_param]} {
+%>
+,
+<%
+                }
+            }
+%>
+
+    )<%
+        } %> <%= $inst(name) %> (
+<%
+        foreach i_pin $inst(pins) {
+            array set pin $i_pin
+%>
+        .<%= [format "%-${i_pins_maxlen_name}s" $pin(name)] %> (<%= $pin(connection) %>)<%
+            if {![ig::aux::is_last $inst(pins) $i_pin]} {
+%>
+,
+<%
+            }
+        }
+%>
+
     );
-<% } %>
+<%  } %>
+
 <%= [ig::templates::get_pragma_content $pragma_data "keep" "instances"] %>
+
 <%
     # code sections
     foreach i_cs $mod_data(code) {
         array set cs $i_cs
 %>
-<%= $cs(code) %>
-<% } %>
+
+<%=     $cs(code) %>
+
+<%  } %>
+
 <%= [ig::templates::get_pragma_content $pragma_data "keep" "code"] %>
 
+
 endmodule
-<% if {0} { %>
-// vim: filetype=verilog_template
-<% } %>
+
+<%
+# vim: filetype=verilog_template
+%>
