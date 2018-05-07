@@ -33,6 +33,8 @@ DOCDIRLIB   := $(DOCDIR)/ICGlue-Lib
 DOXYFILETCL := doxy/tcl.doxyfile
 DOXYFILELIB := doxy/lib.doxyfile
 
+BROWSER     ?= firefox
+
 #-------------------------------------------------------
 # Tcl Package
 all: prebuild
@@ -66,12 +68,16 @@ doclib: $(DOXYFILELIB) | $(DOCDIRLIB)
 
 docs: doctcl doclib
 
+showdocs:
+	$(BROWSER) $(DOCDIRTCL))/html/index.html > /dev/null 2> /dev/null
+
 .PHONY: doctcl doclib docs
 
 #-------------------------------------------------------
 # directories
 $(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB):
 	mkdir -p $@
+
 
 #-------------------------------------------------------
 # cleanup targets
