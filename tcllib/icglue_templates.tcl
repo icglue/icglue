@@ -221,6 +221,9 @@ namespace eval ig::templates {
         proc module_to_arraylist {module_id} {
             set result {}
 
+            lappend result name   [ig::db::get_attribute -object $module_id -attribute "name"]
+            lappend result object $module_id
+
             # ports
             set port_data {}
             foreach i_port [ig::db::get_ports -of $module_id] {
