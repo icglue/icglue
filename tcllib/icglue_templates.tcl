@@ -339,22 +339,40 @@ namespace eval ig::templates {
     # slightly modified to fit in here
     proc parse_template {txt} {
         set code "set _res {}\n"
+
+        # search <% delimiter
         while {[set i [string first <% $txt]] != -1} {
             incr i -1
+            # append verbatim/normal template content (tcl-list)
             append code "append _res [list [string range $txt 0 $i]]\n"
             set txt [string range $txt [expr {$i + 3}] end]
+
             if {[string index $txt 0] eq "="} {
+                # <%= will be be append, but evaluated as tcl-argument
                 append code "append _res "
                 set txt [string range $txt 1 end]
+            } else {
+                # append as tcl code
             }
+
+            # search %> delimiter
             if {[set i [string first %> $txt]] == -1} {
                 error "No matching %>"
             }
             incr i -1
             append code "[string range $txt 0 $i] \n"
             set txt [string range $txt [expr {$i + 3}] end]
+
+            # remove end-of-line if possible (%>)
+            if {[string index $txt 0] eq "\n"} {
+                set txt [string range $txt 1 end]
+            }
         }
-        if {$txt ne ""} { append code "append _res [list $txt]\n" }
+
+        # append remainder of verbatim/normal template content
+        if {$txt ne ""} {
+            append code "append _res [list $txt]\n"
+        }
         return $code
     }
 
