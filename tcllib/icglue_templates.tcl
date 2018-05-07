@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-package provide ICGlue 1.0a
+package provide ICGlue 1.0a1
 
 namespace eval ig::templates {
     namespace eval collection {
