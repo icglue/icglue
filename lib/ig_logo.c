@@ -32,7 +32,7 @@ static const char *const ig_logo_lines[] = {
     ",----.| ,.!!!,     |,----.   | | |__| |_| | | |_| |  __/",
     "`----'|`!!':::----< `----'  |___\\____\\____|_|\\__,_|\\___|",
     "|     | ` !!!'     |     |  ",
-    ",----.|   `''      |,----.  ICGlue v0.0.1",
+    ",----.|   `''      |,----.  ICGlue v1.0a",
     "`----'`....'.......'`----'  a Tcl-Library for scripted HDL generation",
     "|    ,--.  ,--.  ,--.    |  Copyright (C) Andreas Dixius, Felix Neumärker",
     "|    |  |  |  |  |  |    |  Use and redistribute under the terms of the",

@@ -24,7 +24,7 @@ PKGDIR      := ICGlue
 PKGIDX      := $(PKGDIR)/pkgIndex.tcl
 PKGGENSCR   := scripts/tcl_pkggen.tcl
 
-VERSION     := 0.0.1
+VERSION     := 1.0a
 VERSIONSCR  := scripts/update_version.sh
 
 DOCDIR      := doc

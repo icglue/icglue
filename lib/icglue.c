@@ -35,8 +35,8 @@ int Icglue_Init (Tcl_Interp *interp)
 
     ig_add_tcl_commands (interp);
 
-    Tcl_PkgProvide (interp, "ICGlue", "0.0.1");
-    log_info ("PLoad", "ICGlue v0.0.1 loaded");
+    Tcl_PkgProvide (interp, "ICGlue", "1.0a");
+    log_info ("PLoad", "ICGlue v1.0a loaded");
 
     return TCL_OK;
 }

@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-package provide ICGlue 0.0.1
+package provide ICGlue 1.0a
 
 namespace eval ig::sng {
     proc split_instances {instances} {
