@@ -26,6 +26,12 @@ namespace eval ig::aux {
             uplevel 1 $body
         }
     }
+    proc foreach_array_with {iter array_list condition body} {
+        foreach __iter $array_list {
+            uplevel 1 array set $iter [list ${__iter}]
+            uplevel 1 if [list $condition] [list $body]
+        }
+    }
     proc max_entry_len {data_list transform_proc} {
         set len 0
         foreach i_entry $data_list {
