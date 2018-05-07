@@ -5,7 +5,13 @@
 init::template_file $template {
     set type [ig::db::get_attribute -object $object -attribute "type"]
     if {$type eq "module"} {
-        return "${template_dir}/module.template.v"
+        ig::logger -level D -linenumber
+        if { [llength [ig::db::get_regfiles -of $object]] } {
+            return "${template_dir}/regfile.template.v"
+        } else {
+            return "${template_dir}/module.template.v"
+        }
+        #ig::logger -level I -nolinenumbers
     } elseif {$type eq "regfile"} {
         return "${template_dir}/regfile.template.csv"
     } else {
