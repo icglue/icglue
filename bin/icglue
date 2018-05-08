@@ -49,12 +49,12 @@ proc main {} {
     foreach i_module [ig::db::get_modules -all] {
         if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
             ig::log -info "generating module $i_module"
-            ig::templates::write_object $i_module
+            ig::templates::write_object_all $i_module
         }
         if {![catch {ig::db::get_regfiles -all -of $i_module} regfiles]} {
             foreach i_regfile $regfiles {
                 ig::log -info "generating regfiledoc $i_regfile"
-                ig::templates::write_object $i_regfile
+                ig::templates::write_object_all $i_regfile
             }
         }
     }

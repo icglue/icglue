@@ -22,6 +22,7 @@ package provide ICGlue 1.0a1
 namespace eval ig::templates {
     namespace eval collection {
         variable template_dir       {}
+        variable output_types_gen   {}
         variable template_path_gen  {}
         variable output_path_gen    {}
         variable default_header_gen {}
@@ -31,6 +32,12 @@ namespace eval ig::templates {
         proc template_dir  {template dir} {
             lappend ig::templates::collection::template_dir [list \
                 $template $dir \
+            ]
+        }
+
+        proc output_types {template body} {
+            lappend ig::templates::collection::output_types_gen [list \
+                $template $body \
             ]
         }
 
@@ -56,20 +63,24 @@ namespace eval ig::templates {
     namespace eval current {
         variable template_dir ""
 
-        proc get_template_file_raw {object template_dir} {
+        proc get_template_file_raw {object type template_dir} {
             ig::log -error -abort "no template loaded"
         }
 
-        proc get_template_file {object} {
+        proc get_output_types {object} {
+            ig::log -error -abort "no template loaded"
+        }
+
+        proc get_template_file {object type} {
             variable template_dir
-            return [get_template_file_raw $object $template_dir]
+            return [get_template_file_raw $object $type $template_dir]
         }
 
-        proc get_output_file {object} {
+        proc get_output_file {object type} {
             ig::log -error -abort "no template loaded"
         }
 
-        proc get_default_header {object} {
+        proc get_default_header {object type} {
             ig::log -error -abort "no template loaded"
         }
     }
@@ -323,18 +334,20 @@ namespace eval ig::templates {
     proc load_template {template} {
         # load vars/procs for current template
         set dir_idx  [lsearch -index 0 $collection::template_dir       $template]
+        set type_idx [lsearch -index 0 $collection::output_types_gen   $template]
         set tmpl_idx [lsearch -index 0 $collection::template_path_gen  $template]
         set out_idx  [lsearch -index 0 $collection::output_path_gen    $template]
         set hdr_idx  [lsearch -index 0 $collection::default_header_gen $template]
 
-        if {($dir_idx < 0) || ($tmpl_idx < 0) || ($out_idx < 0) || ($hdr_idx < 0)} {
+        if {($dir_idx < 0) || ($type_idx < 0) || ($tmpl_idx < 0) || ($out_idx < 0) || ($hdr_idx < 0)} {
             ig::log -error -abort "template $template not (fully) defined"
         }
 
         set current::template_dir [lindex $collection::template_dir $dir_idx 1]
-        proc current::get_template_file_raw {object template_dir} [lindex $collection::template_path_gen $tmpl_idx 1]
-        proc current::get_output_file {object} [lindex $collection::output_path_gen $out_idx 1]
-        proc current::get_default_header {object} [lindex $collection::default_header_gen $hdr_idx 1]
+        proc current::get_output_types {object} [lindex $collection::output_types_gen $type_idx 1]
+        proc current::get_template_file_raw {object type template_dir} [lindex $collection::template_path_gen $tmpl_idx 1]
+        proc current::get_output_file {object type} [lindex $collection::output_path_gen $out_idx 1]
+        proc current::get_default_header {object type} [lindex $collection::default_header_gen $hdr_idx 1]
     }
 
     # parse_template method:
@@ -414,9 +427,9 @@ namespace eval ig::templates {
         return $result
     }
 
-    proc add_pragma_default_header {pragma_data obj_id} {
+    proc add_pragma_default_header {pragma_data obj_id type} {
         if {[lsearch -inline -all -index 1 [lsearch -inline -all -index 0 $pragma_data "keep"] "head"] < 0} {
-            lappend pragma_data [list "keep" "head" [current::get_default_header $obj_id]]
+            lappend pragma_data [list "keep" "head" [current::get_default_header $obj_id $type]]
         }
         return $pragma_data
     }
@@ -430,11 +443,10 @@ namespace eval ig::templates {
         append result "/* pragma icglue ${pragma_entry} end */"
     }
 
+    proc write_object {obj_id type} {
+        set _tt_name [current::get_template_file $obj_id $type]
 
-    proc write_object {obj_id} {
-        set _tt_name [current::get_template_file $obj_id]
-
-        set _outf_name [current::get_output_file $obj_id]
+        set _outf_name [current::get_output_file $obj_id $type]
 
         set pragma_data [list]
         if {[file exists $_outf_name]} {
@@ -443,7 +455,7 @@ namespace eval ig::templates {
             close ${_outf}
             set pragma_data [parse_pragmas ${_old}]
         }
-        set pragma_data [add_pragma_default_header $pragma_data $obj_id]
+        set pragma_data [add_pragma_default_header $pragma_data $obj_id $type]
 
         set _tt_f [open ${_tt_name} "r"]
         set _tt [read ${_tt_f}]
@@ -468,5 +480,11 @@ namespace eval ig::templates {
         set _outf [open ${_outf_name} "w"]
         puts -nonewline ${_outf} ${_res}
         close ${_outf}
+    }
+
+    proc write_object_all {obj_id} {
+        foreach i_type [current::get_output_types $obj_id] {
+            write_object $obj_id $i_type
+        }
     }
 }

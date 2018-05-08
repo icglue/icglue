@@ -1,6 +1,19 @@
 # template init script
 # predefined variable in this script: template (template name)
 
+# generate object output filename: arguments: {object} (object identifier)
+init::output_types $template {
+    set type [ig::db::get_attribute -object $object -attribute "type"]
+    if {$type eq "module"} {
+        return {verilog}
+    } elseif {$type eq "regfile"} {
+        return {csv}
+    } else {
+        ig::log -warning "no templates available for objects of type ${type}"
+        return {}
+    }
+}
+
 # return path to template file: arguments: {object template_dir} (object identifier, path to this template's directory)
 init::template_file $template {
     set type [ig::db::get_attribute -object $object -attribute "type"]
