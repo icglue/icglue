@@ -122,6 +122,16 @@ static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, 
 }
 
 
+/* TCLDOC
+##
+# @brief Create a new module.
+#
+# \param[in] args parsed command arguments:<br>
+# -name <module-name><br>
+# [ (-ilm | -no-ilm) ]<br>
+# [ -resource | -no-resource ]
+# \return Object-ID of the newly created module or an error
+ */
 static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
