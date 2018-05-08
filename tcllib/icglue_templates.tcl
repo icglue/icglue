@@ -350,7 +350,7 @@ namespace eval ig::templates {
             incr i 2
             if {[string match {[-+]} [string index $txt $i]]} {
                 if {([string index $txt $i] eq "-") && ([string index $txt $right_i] eq "\n")} {
-                    incr $right_i -1
+                    incr right_i -1
                 }
                 incr i
             }

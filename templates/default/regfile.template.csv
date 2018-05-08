@@ -2,7 +2,7 @@ address;register;bits;size;value;type;signal;reset
 <%+
 set entry_list [preprocess::regfile_to_arraylist $obj_id]
 -%>
-<%+
+<%-
 # iterate over entries sorted by address
 foreach i_entry $entry_list {
     set idx 0
@@ -11,30 +11,40 @@ foreach i_entry $entry_list {
         array set reg $i_reg
         if {$idx == 0} {
 -%>
-<%+=         [format "0x%08x" $entry(address)] -%>
-;<%+=        $entry(name) -%>
-<%+
+<%-=        [format "0x%08x" $entry(address)] -%>
+;
+<%-=        $entry(name) -%>
+<%-
         } else {
 -%>
-;<%+
+;
+<%-
         }
 -%>
-;<%+=    $reg(entrybits) -%>
-;<%+=    $reg(width) -%>
-;<%+=    $reg(name) -%>
-;<%+=    $reg(type) -%>
-;<%+=    $reg(signal) -%>
-<%+      if {$reg(signalbits) ne ""} { -%>
-<%+=         "\[$reg(signalbits)\]" -%>
-<%+      } -%>
-;<%+=    $reg(reset) -%>
-
+;
+<%-=    $reg(entrybits) -%>
+;
+<%-=    $reg(width) -%>
+;
+<%-=    $reg(name) -%>
+;
+<%-=    $reg(type) -%>
+;
+<%-=    $reg(signal) -%>
+<%-
+        if {$reg(signalbits) ne ""} {
+-%>
+<%-=        "\[$reg(signalbits)\]" -%>
+<%-
+        }
+-%>
+;
+<%-=    $reg(reset) +%>
 <%+
     incr idx
     }
 }
--%>
-
++%>
 <%+
 # vim: filetype=verilog_template
 -%>
