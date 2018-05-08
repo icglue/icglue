@@ -1,6 +1,6 @@
 <%
     # tcl header
-    array set mod_data [preprocess::module_to_arraylist $obj_id]
+    array set mod_data [ig::templates::preprocess::module_to_arraylist $obj_id]
 
     set port_data_maxlen_dir   [ig::aux::max_array_entry_len $mod_data(ports) vlog.direction]
     set port_data_maxlen_range [ig::aux::max_array_entry_len $mod_data(ports) vlog.bitrange]

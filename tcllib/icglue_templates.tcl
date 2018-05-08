@@ -451,9 +451,18 @@ namespace eval ig::templates {
 
         set _tt_code [parse_template ${_tt}]
 
-        # dummy result - will be overwritten by eval
-        set _res {}
-        eval ${_tt_code}
+        # evaluate result in temporary namespace
+        eval [join [list \
+            "namespace eval _template_run \{" \
+            "variable pragma_data [list $pragma_data]" \
+            {variable _res {}} \
+            "variable obj_id [list $obj_id]" \
+            "eval [list ${_tt_code}]" \
+            "\}" \
+            ] "\n"]
+
+        set _res ${_template_run::_res}
+        namespace delete _template_run
 
         file mkdir [file dirname ${_outf_name}]
         set _outf [open ${_outf_name} "w"]
