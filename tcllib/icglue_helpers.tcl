@@ -96,4 +96,18 @@ namespace eval ig::aux {
 
         return $code
     }
+
+    proc adapt_signalname {signalname mod_id} {
+        foreach i_port [ig::db::get_ports -of $mod_id -all] {
+            if {[ig::db::get_attribute -object $i_port -attribute "signal"] eq $signalname} {
+                return [ig::db::get_attribute -object $i_port -attribute "name"]
+            }
+        }
+        foreach i_decl [ig::db::get_declarations -of $mod_id -all] {
+            if {[ig::db::get_attribute -object $i_decl -attribute "signal"] eq $signalname} {
+                return [ig::db::get_attribute -object $i_decl -attribute "name"]
+            }
+        }
+        return $signalname
+    }
 }
