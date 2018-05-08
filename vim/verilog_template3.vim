@@ -244,36 +244,36 @@ syn region  tclComment		start=/;\s*\#/hs=s+1 skip="\\$" end="$" contains=tclTodo
 " Define the default highlighting.
 " Only when an item doesn't have highlighting yet
 
-hi def link tcltkSwitch		Define
-hi def link tclExpand		Define
-hi def link tclLabel		Define
-hi def link tclConditional	Define
-hi def link tclRepeat		Define
-hi def link tclNumber		Define
-hi def link tclError		Define
-hi def link tclCommand		Define
-hi def link tclProcCommand	Define
-hi def link tclString		Define
-hi def link tclComment		Define
-hi def link tclSpecial		Define
-hi def link tclTodo		Define
+hi def link tcltkSwitch		Identifier
+hi def link tclExpand		Identifier
+hi def link tclLabel		Identifier
+hi def link tclConditional	Identifier
+hi def link tclRepeat		Identifier
+hi def link tclNumber		Identifier
+hi def link tclError		Identifier
+hi def link tclCommand		Identifier
+hi def link tclProcCommand	Identifier
+hi def link tclString		Identifier
+hi def link tclComment		Identifier
+hi def link tclSpecial		Identifier
+hi def link tclTodo		Identifier
 " Below here are the commands and their options.
-hi def link tcltkCommandColor	Define
-hi def link tcltkWidgetColor	Define
+hi def link tcltkCommandColor	Identifier
+hi def link tcltkWidgetColor	Identifier
 hi def link tclLineContinue	WarningMsg
 if exists('g:tcl_warn_continuation')
 hi def link tclNotLineContinue	ErrorMsg
 endif
-hi def link tcltkStringSwitch	Define
-hi def link tcltkArraySwitch	Define
-hi def link tcltkLsortSwitch	Define
-hi def link tcltkPackSwitch	Define
-hi def link tcltkPackConfSwitch	Define
-hi def link tcltkMaths		Define
-hi def link tcltkNamespaceSwitch	Define
-hi def link tcltkWidgetSwitch	Define
-hi def link tcltkPackConfColor	Define
-hi def link tclVarRef		Define
+hi def link tcltkStringSwitch	Identifier
+hi def link tcltkArraySwitch	Identifier
+hi def link tcltkLsortSwitch	Identifier
+hi def link tcltkPackSwitch	Identifier
+hi def link tcltkPackConfSwitch	Identifier
+hi def link tcltkMaths		Identifier
+hi def link tcltkNamespaceSwitch	Identifier
+hi def link tcltkWidgetSwitch	Identifier
+hi def link tcltkPackConfColor	Identifier
+hi def link tclVarRef		Identifier
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
