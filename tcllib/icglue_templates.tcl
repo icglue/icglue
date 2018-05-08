@@ -345,10 +345,19 @@ namespace eval ig::templates {
 
         # search <% delimiter
         while {[set i [string first <% $txt]] != -1} {
-            incr i -1
+            # check for right chomp
+            set right_i [expr {$i - 1}]
+            incr i 2
+            if {[string match {[-+]} [string index $txt $i]]} {
+                if {([string index $txt $i] eq "-") && ([string index $txt $right_i] eq "\n")} {
+                    incr $right_i -1
+                }
+                incr i
+            }
+
             # append verbatim/normal template content (tcl-list)
-            append code "append _res [list [string range $txt 0 $i]]\n"
-            set txt [string range $txt [expr {$i + 3}] end]
+            append code "append _res [list [string range $txt 0 $right_i]]\n"
+            set txt [string range $txt $i end]
 
             if {[string index $txt 0] eq "="} {
                 # <%= will be be append, but evaluated as tcl-argument
@@ -362,14 +371,19 @@ namespace eval ig::templates {
             if {[set i [string first %> $txt]] == -1} {
                 error "No matching %>"
             }
-            incr i -1
-            append code "[string range $txt 0 $i] \n"
-            set txt [string range $txt [expr {$i + 3}] end]
 
-            # remove end-of-line if possible (%>)
-            if {[string index $txt 0] eq "\n"} {
-                set txt [string range $txt 1 end]
+            # check for left chomp
+            set left_i [expr {$i + 2}]
+            incr i -1
+            if {[string match {[-+]} [string index $txt $i]]} {
+                if {([string index $txt $i] eq "-") && ([string index $txt $left_i] eq "\n")} {
+                    incr left_i
+                }
+                incr i -1
             }
+
+            append code "[string range $txt 0 $i] \n"
+            set txt [string range $txt $left_i end]
         }
 
         # append remainder of verbatim/normal template content
