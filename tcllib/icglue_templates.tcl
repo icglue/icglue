@@ -97,12 +97,12 @@ namespace eval ig::templates {
 
                 #entry_default_map {name width entrybits type reset signal signalbits}
                 foreach i_reg $regs {
-                    set name  [ig::db::get_attribute -object $i_reg -attribute "name"]
-                    set width [ig::db::get_attribute -object $i_reg -attribute "rf_width" -default -1]
-                    set entrybits [ig::db::get_attribute -object $i_reg -attribute "rf_entrybits" -default ""]
-                    set type [ig::db::get_attribute -object $i_reg -attribute "rf_type" -default "RW"]
-                    set reset [ig::db::get_attribute -object $i_reg -attribute "rf_reset" -default "-"]
-                    set signal [ig::db::get_attribute -object $i_reg -attribute "rf_signal" -default "-"]
+                    set name       [ig::db::get_attribute -object $i_reg -attribute "name"]
+                    set width      [ig::db::get_attribute -object $i_reg -attribute "rf_width"      -default -1]
+                    set entrybits  [ig::db::get_attribute -object $i_reg -attribute "rf_entrybits"  -default ""]
+                    set type       [ig::db::get_attribute -object $i_reg -attribute "rf_type"       -default "RW"]
+                    set reset      [ig::db::get_attribute -object $i_reg -attribute "rf_reset"      -default "-"]
+                    set signal     [ig::db::get_attribute -object $i_reg -attribute "rf_signal"     -default "-"]
                     set signalbits [ig::db::get_attribute -object $i_reg -attribute "rf_signalbits" -default ""]
 
                     if {$width < 0} {
@@ -111,7 +111,7 @@ namespace eval ig::templates {
                             set entrybits "31:0"
                         } else {
                             set blist [split $entrybits ":"]
-                            set width [expr {[lindex $blist 1] - [lindex $blist 0] + 1}]
+                            set width [expr {[lindex $blist 0] - [lindex $blist 1] + 1}]
                         }
                     } elseif {$entrybits eq ""} {
                         set entrybits "[expr {$width - 1}]:0"

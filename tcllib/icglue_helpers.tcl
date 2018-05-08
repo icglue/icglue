@@ -108,6 +108,7 @@ namespace eval ig::aux {
                 return [ig::db::get_attribute -object $i_decl -attribute "name"]
             }
         }
+        ig::log -warning "Signal $signalname not defined in module [ig::db::get_attribute -object $mod_id -attribute "name"]"
         return $signalname
     }
 }

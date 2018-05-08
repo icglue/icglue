@@ -71,7 +71,7 @@ module <%= $mod_data(name) -%> (
     foreach i_inst $mod_data(instances) {
         array set inst $i_inst
         set i_params_maxlen_name [ig::aux::max_array_entry_len $inst(parameters) name]
-        set i_pins_maxlen_name [ig::aux::max_array_entry_len $inst(pins) name]
+        set i_pins_maxlen_name   [ig::aux::max_array_entry_len $inst(pins) name]
 -%>
 
     <%= $inst(module.name) -%>
