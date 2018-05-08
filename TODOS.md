@@ -13,9 +13,6 @@
 
 # tcllib
 - "-help"-switches for main commands
-- templates:
-  - possibility to write out more than one file per object (e.g. csv + systemc for regfile)
-  - preprocessing for module data
 
 # bin
 - improve binary
