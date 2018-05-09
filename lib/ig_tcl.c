@@ -127,11 +127,12 @@ static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, 
 # @brief Create a new module.
 #
 # \param[in] args parsed command arguments:<br>
-# -name <module-name><br>
+# -name \<module-name\><br>
 # [ (-ilm | -no-ilm) ]<br>
 # [ -resource | -no-resource ]
+#
 # \return Object-ID of the newly created module or an error
- */
+*/
 static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
@@ -181,6 +182,17 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
     return TCL_OK;
 }
 
+/* TCLDOC
+##
+# @brief Create a new instance of a module in another (parent) module.
+#
+# \param[in] args parsed command arguments:<br>
+# -name \<instance-name\><br>
+# -of-module \<module-id\><br>
+# -parent-module \<parent-module-id\>
+#
+# \return Object-ID of the newly created instance or an error
+*/
 static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
@@ -245,6 +257,17 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
     return TCL_OK;
 }
 
+/* TCLDOC
+##
+# @brief Create a new codesection in a given module.
+#
+# \param[in] args parsed command arguments:<br>
+# [ -name \<codesection-name\>]<br>
+# -code \<code\><br>
+# -parent-module \<parent-module-id\>
+#
+# \return Object-ID of the newly created module or an error
+*/
 static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
@@ -298,6 +321,22 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
     return TCL_OK;
 }
 
+/* TCLDOC
+##
+# @brief Add regfile objects to another object.
+#
+# \param[in] args parsed command arguments:<br>
+# ( -regfile \<regfile-name\><br>
+# | -entry   \<regfile-entry-name\><br>
+# | -reg     \<regfile-register-name\>)<br>
+# -to \<parent-object-id\>
+#
+# \return Object-ID of the newly created object or an error
+#
+# A regfile can be added to a module,
+# a regfile-entry can be added to a regfile,
+# a regfile_register can be added to a regfile-entry.
+*/
 static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
@@ -373,6 +412,17 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
     return TCL_OK;
 }
 
+/* TCLDOC
+##
+# @brief Set values of object-attributes.
+#
+# \param[in] args parsed command arguments:<br>
+# -object \<object-id\><br>
+# ( -attribute \<attribute-name\><br>
+#   -value \<attribute-value\><br>
+# | -attributes {\<name1\> \<value1\> \<name2\> \<value2\> ...})
+#
+*/
 static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
@@ -392,7 +442,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
         {TCL_ARGV_STRING,   "-attribute",   NULL, (void *)&attr_name,  "attribute name", NULL},
         {TCL_ARGV_STRING,   "-value",       NULL, (void *)&attr_value, "attribute value", NULL},
 
-        {TCL_ARGV_FUNC,     "-attributes",  (void *)(Tcl_ArgvFuncProc *)ig_tclc_tcl_string_list_parse, (void *)&attr_list, "attributes as list of form <name> <value> <name2> <value2> ...", NULL},
+        {TCL_ARGV_FUNC,     "-attributes",  (void *)(Tcl_ArgvFuncProc *)ig_tclc_tcl_string_list_parse, (void *)&attr_list, "attributes as list of form <name1> <value1> <name2> <value2> ...", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -451,6 +501,18 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
     return TCL_OK;
 }
 
+/* TCLDOC
+##
+# @brief Get values of object-attributes.
+#
+# \param[in] args parsed command arguments:<br>
+# -object \<object-id\><br>
+# ( -attribute \<attribute-name\><br>
+# [ -default \<default-value\>]<br>
+# | -attributes {\<name1\> \<name2\> ...})
+#
+# \return Value(s) of the specified attribute(s) or an error
+*/
 static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
@@ -470,7 +532,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
         {TCL_ARGV_STRING,   "-attribute",   NULL, (void *)&attr_name,  "attribute name", NULL},
         {TCL_ARGV_STRING,   "-default",     NULL, (void *)&defaultval, "default value for single attribute if attribute does not exist", NULL},
 
-        {TCL_ARGV_FUNC,     "-attributes",  (void *)(Tcl_ArgvFuncProc *)ig_tclc_tcl_string_list_parse, (void *)&attr_list, "attributes as list of form <name> <value> <name2> <value2> ...", NULL},
+        {TCL_ARGV_FUNC,     "-attributes",  (void *)(Tcl_ArgvFuncProc *)ig_tclc_tcl_string_list_parse, (void *)&attr_list, "attributes as list of form <name1> <name2> ...", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -594,6 +656,17 @@ static enum ig_tclc_get_objs_of_obj_version ig_tclc_get_objs_of_obj_version_from
     return version;
 }
 
+/* TCLDOC
+##
+# @brief Return child object(s) of given parent.
+#
+# \param[in] args parsed command arguments:<br>
+# (-name \<child-name\><br>
+# |-all)<br>
+# -of \<parent-object-id\>
+#
+# \return Object-ID(s) of child object(s) or an error
+*/
 static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
@@ -879,6 +952,26 @@ static void ig_tclc_connection_parse (const char *input, GString *id, GString *n
     }
 }
 
+/* TCLDOC
+##
+# @brief Create a signal connecting modules/instances.
+#
+# \param[in] args parsed command arguments:<br>
+# -signal-name \<signal-name\><br>
+# [-signal-size \<signal-bitwidth\>]<br>
+# (-bidir {\<endpoint1\> \<endpoint2\> ...}<br>
+# |-from \<startpoint\><br>
+#  -to {\<endpoint1\> \<endpoint2\> ...})<br>
+#
+# \return List of objects being part of the newly created signal or an error
+#
+# Start-/Endpoints must be of the form "<Object-ID>[-><local name>[!]]"
+# where \<Object-ID\> is a module or instance object and optionally
+# \<local name\> specifies the name of the signal at the given object (=pin/port).
+# The optional [!] adapts the local name suffix at the specified object,
+# otherwise the name is kept verbatim.
+#
+*/
 static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
@@ -1020,6 +1113,22 @@ l_ig_tclc_connect_nfexit:
     goto l_ig_tclc_connect_exit_pre;
 }
 
+/* TCLDOC
+##
+# @brief Create a parameter for modules/instances.
+#
+# \param[in] args parsed command arguments:<br>
+# -name \<parameter-name\><br>
+# -value \<parameter-value\><br>
+# -targets {\<endpoint1\> \<endpoint2\> ...}
+#
+# \return List of objects being part of the newly created parameterization or an error
+#
+# Start-/Endpoints must be of the form "<Object-ID>[-><local name>]"
+# where \<Object-ID\> is a module or instance object and optionally
+# \<local name\> specifies the name of the parameter at the given object.
+#
+*/
 static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
@@ -1124,6 +1233,17 @@ l_ig_tclc_parameter_nfexit:
     goto l_ig_tclc_parameter_exit_pre;
 }
 
+/* TCLDOC
+##
+# @brief Control log message verbosity.
+#
+# \param[in] args parsed command arguments:<br>
+# -level \<loglevel\><br>
+# [-id \<log-identifier\>]<br>
+# [(-linenumber | -nolinenumber)]<br>
+# [-list]
+#
+*/
 static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     gchar   *loglevel   = NULL;
@@ -1202,6 +1322,17 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
     return TCL_OK;
 }
 
+/* TCLDOC
+##
+# @brief Control log message verbosity.
+#
+# \param[in] args parsed command arguments:<br>
+# [-id \<log-identifier\>]<br>
+# [(-debug|-info|-warning|-error)]<br>
+# [-abort]<br>
+# \<log-message\>
+#
+*/
 static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     gchar *log_id   = "Tcl";
