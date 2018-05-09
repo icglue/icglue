@@ -9,10 +9,10 @@ M -tb  -v -u rftest tb_top       -i {top}
 ## connections
 S clk                mgmt          -> {top core->clk!}
 S clk_ref            tb_top        -> {mgmt->clk_src! mgmt_regfile->clk_ref_i}
-S rf_addr_i   -w 32  tb_top        -> {mgmt_regfile}
-S rf_w_data_i -w 32  tb_top        -> {mgmt_regfile}
-S rf_en_i            tb_top        -> {mgmt_regfile}
-S rf_r_data_o -w 32  tb_top       <- {mgmt_regfile}
+S rf_addr     -w 32  tb_top        -> {mgmt_regfile}
+S rf_w_data   -w 32  tb_top        -> {mgmt_regfile}
+S rf_en              tb_top        -> {mgmt_regfile}
+S rf_r_data   -w 32  tb_top       <- {mgmt_regfile}
 
 S reset_n_ref      tb_top        -> {mgmt_regfile}
 S config -w 32     mgmt_regfile  -> core
