@@ -21,32 +21,6 @@ package provide ICGlue 1.0a1
 
 namespace eval ig::errinf {
 
-#   R (regfile-entry -rfa): too many arguments
-#       while executing
-#   "log -error -abort "R (regfile-entry ${entryname}): too many arguments""
-#       ("default" arm line 7)
-#       invoked from within
-#   "switch -regexp -matchvar mlist -- $i_arg {
-#                           {^-(rf|regf(ile)?)$}        {set lastarg -rf}
-#                           {^@(.*)$}    ..."
-#       (procedure "R" line 18)
-#       invoked from within
-#   "R -rfa mgmt_regfile "config2" @0x0008 {
-#       {name       entrybits type reset signal  signalbits}
-#       {cfg_uiae3  4:0       RW   5'h0  config3  4:0    ..."
-#       (in namespace eval "::ig" script line 40)
-#       invoked from within
-#   "namespace eval ig {
-#   # modules
-#   M -rtl -v -u rftest mgmt_regfile -rf {mgmt_regfile}
-#   M -rtl -v -u rftest mgmt         -i {mgmt_regfile}
-#   M -rtl -v -u rfte..."
-#       (file "../module.construct3.tcl" line 1)
-#       invoked from within
-#   "source $gen_source"
-#   }}}}
-
-
     proc split_st {st} {
         set result {}
         if {[regexp {(^.*?)\s+while executing\n(.*)$} $st m_whole m_msg m_rem]} {
