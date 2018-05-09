@@ -51,7 +51,17 @@ proc main {} {
     # templates provided with package
     set c_template_dirs [list "[file dirname [file normalize $::argv0]]/../templates"]
 
-    #TODO: environment variables
+    # environment
+    # ... template path
+    if {[info exists ::env(ICGLUE_TEMPLATE_PATH)]} {
+        foreach i_dir [split $::env(ICGLUE_TEMPLATE_PATH) "\n"] {
+            lappend c_template_dirs $i_dir
+        }
+    }
+    # ... template to use
+    if {[info exists ::env(ICGLUE_TEMPLATE)]} {
+        set c_template $::env(ICGLUE_TEMPLATE)
+    }
 
     # arguments
     for {set i 0} {$i < $::argc} {incr i} {
