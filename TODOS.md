@@ -14,10 +14,5 @@
 # tcllib
 - "-help"-switches for main commands
 
-# bin
-- improve binary
-  - command line arguments (e.g. icglue -t \<template\> (-f \<construct.tcl\>|-sng \<file.icsng\>))
-  - environment variables for template path
-
 # templates
 - integrate regfile into default template
