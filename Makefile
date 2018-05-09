@@ -69,7 +69,7 @@ doclib: $(DOXYFILELIB) | $(DOCDIRLIB)
 docs: doctcl doclib
 
 showdocs:
-	$(BROWSER) $(DOCDIRTCL)/html/index.html > /dev/null 2> /dev/null
+	$(BROWSER) $(DOCDIRTCL)/html/index.html > /dev/null 2> /dev/null &
 
 .PHONY: doctcl doclib docs
 
