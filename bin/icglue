@@ -22,34 +22,133 @@
 lappend auto_path [file normalize [file dirname [file normalize $::argv0]]/..]
 package require ICGlue
 
+proc printhelp {{exitcode 0} {doexit "true"}} {
+    puts "Usage:"
+    puts "    $::argv0 \[options\] \[-f\] <file>"
+    puts ""
+    puts "Options:"
+    puts "    -h,--help               Show help"
+    puts ""
+    puts "    -f,--file      FILE     Set input file to use"
+    puts "    -t,--template  TEMPLATE Set template to use"
+    puts "    --template-dir DIR      Add DIR to template path"
+    puts ""
+    puts "    -q,--quiet              Show errors only"
+    puts "    -v,--verbose            Be verbose"
+    puts "    -d,--debug              Show debug output"
+
+    if {$doexit} {
+        exit $exitcode
+    }
+}
+
 proc main {} {
-    # init templates
-    ig::templates::add_template_dir "[file dirname [file normalize $::argv0]]/../templates"
-    # TODO: template-dir environment variable?
-    ig::templates::load_template "default"
+    # default config
+    set c_template      "default"
+    set c_loglevel      "W"
+    set c_loglines      "false"
+    set c_file          ""
+    # templates provided with package
+    set c_template_dirs [list "[file dirname [file normalize $::argv0]]/../templates"]
+
+    #TODO: environment variables
 
     # arguments
-    if {$::argc != 1} {
-        ig::log -error "Expected one input file"
+    for {set i 0} {$i < $::argc} {incr i} {
+        switch -- [lindex $::argv $i] {
+            -h     -
+            --help {
+                # help
+                printhelp 0
+            }
+            -q      -
+            --quiet {
+                # verbosity
+                set c_loglevel E
+            }
+            -v        -
+            --verbose {
+                set c_loglevel I
+            }
+            -d      -
+            --debug {
+                if {$c_loglevel eq "D"} {
+                    set c_loglines "true"
+                } else {
+                    set c_loglevel D
+                }
+            }
+            -dd {
+                set c_loglevel D
+                set c_loglines "true"
+            }
+            --template-dir {
+                # templates
+                incr i
+                lappend c_template_dirs [lindex $::argv $i]
+            }
+            -t         -
+            --template {
+                incr i
+                set c_template [lindex $::argv $i]
+            }
+            -f     -
+            --file {
+                # input file
+                incr i
+                set c_file [lindex $::argv $i]
+            }
+            default {
+                set c_file [lindex $::argv $i]
+            }
+        }
+    }
+
+    # argument evaluation
+    if {$c_file eq ""} {
+        ig::log -error "no valid input file specified"
+        printhelp 1
+    }
+    if {![file isfile $c_file]} {
+        ig::log -error "input file \"${c_file}\" invalid"
         exit 1
     }
-    set gen_source [lindex $::argv 0]
-    # TODO: advanced arg parsing: input-file, template to choose, ...?
 
-    if {[string match "*.sng" $gen_source] || [string match "*.icsng" $gen_source]} {
-        ig::sng::parse_file $gen_source
-    } elseif {[string match "*.tcl" $gen_source]} {
-        if {[catch {source $gen_source}]} {
-            ig::errinf::print_st_line $gen_source
-            ig::log -error "Error while parsing source \"$gen_source\""
+    if {$c_loglines} {
+        ig::logger -level ${c_loglevel} -linenumber
+    } else {
+        ig::logger -level ${c_loglevel} -nolinenumber
+    }
+
+    foreach i_tdir $c_template_dirs {
+        if {![file isdir $i_tdir]} {
+            ig::log -error "template include dir argument \"${i_tdir}\" is no directory"
+            exit 1
+        } else {
+            ig::templates::add_template_dir $i_tdir
+        }
+    }
+
+    if {[catch {ig::templates::load_template $c_template}]} {
+        ig::log -error "failed to load template \"${c_template}\""
+        exit 1
+    }
+
+    # construct hierarchy from input file
+    if {[string match "*.sng" $c_file] || [string match "*.icsng" $c_file]} {
+        ig::sng::parse_file $c_file
+    } elseif {[string match "*.tcl" $c_file]} {
+        if {[catch {source $c_file}]} {
+            ig::errinf::print_st_line $c_file
+            ig::log -error "Error while parsing source \"$c_file\""
             exit 1
         }
     } else {
-        ig::log -error "Unknown input file suffix for $gen_source"
+        ig::log -error "Unknown input file suffix for \"$c_file\""
         exit 1
     }
 
-    # generate modules
+    # generate modules with template
     foreach i_module [ig::db::get_modules -all] {
         if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
             ig::log -info "generating module $i_module"
