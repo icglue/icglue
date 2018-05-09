@@ -32,6 +32,15 @@
 #define ICGLUE_LOG_NAMESPACE "ig::"
 #endif
 
+/* TCLDOC
+## \file ig_tcl.c
+# @brief C-file for tcl core-library (db and log) functions.
+#
+# Actual code can be found in the Core-Library.
+# The generated tcl-commands are shortly described here.
+#
+*/
+
 /* Tcl helper function for parsing lists in GSLists of char * */
 static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, void *dest_ptr);
 

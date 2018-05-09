@@ -86,6 +86,13 @@ proc get_tcldoc {file_lines} {
         switch -exact -- $state {
             "plain" {
                 if {[regexp -expanded {/\* \s+ TCLDOC} $i_line m_whole]} {
+                    if {$lastdocline >= 0} {
+                        lappend func_doc_list [list \
+                            -1 "" \
+                            $lastdocline $lastdoc \
+                        ]
+                        set lastdoc {}
+                    }
                     set state "doc"
                     set lastdocline $linenum
                     #puts "found tcldoc at line $linenum"
@@ -126,7 +133,12 @@ proc get_tcldoc {file_lines} {
 proc gen_dummy_tcl {cmdfunclist funcdoclist} {
     set output_list {}
 
-    foreach {i_entry} $cmdfunclist {
+    foreach i_filedoc [lsearch -all -exact -inline -index 1 $funcdoclist {}] {
+        set doc [lindex $i_filedoc 3]
+        lappend output_list $doc
+        lappend output_list ""
+    }
+    foreach i_entry $cmdfunclist {
         set cmd  [lindex $i_entry 1]
         set func [lindex $i_entry 2]
 
