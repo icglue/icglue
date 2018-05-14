@@ -19,7 +19,17 @@
 
 package provide ICGlue 1.0a1
 
+## @brief Functions for sng-file processing
+#
+# Function for external usage is \ref parse_file.
 namespace eval ig::sng {
+    ## @brief Split sng instance expression into list of single instances.
+    #
+    # \param[in] instances SNG instances expression
+    #
+    # \return List of sublists of form {\<instance\> \<instance-with-signal-info\>}.<br>
+    # \<instance\>: SNG instance name.<br>
+    # \<instance-with-signal-info\>: extended sng instance-with-signal name, e.g. "moda:signal_i".
     proc split_instances {instances} {
         set result {}
         foreach i_e $instances {
@@ -52,6 +62,13 @@ namespace eval ig::sng {
         return $result
     }
 
+    ## @brief Create ICGlue db identifier from single sng instance/signal identifier.
+    #
+    # \param[in] name Preprocessed SNG identifier from \ref split_instances.
+    #
+    # \return ICGlue db command identifier.
+    #
+    # Tries to find an instance or module matching the identifier.
     proc sng_name_to_icglue {name} {
         set nsp [split $name ":"]
 
@@ -71,6 +88,12 @@ namespace eval ig::sng {
     variable parse_sng_line_codemod  ""
     variable parse_sng_line_codelist {}
 
+    ## @brief Incrementally parse lines of SNG-file.
+    #
+    # \param[in] number Current linenumber.
+    # \param[in] line Current SNG Line content.
+    #
+    # \return Sublist for preprocessod lines list of form {\<number\> \<identifier\> ...}.
     proc parse_line {number line} {
         variable parse_sng_line_codemod
         variable parse_sng_line_codelist
@@ -195,6 +218,9 @@ namespace eval ig::sng {
         }
     }
 
+    ## @brief Process list of lines preparsed by \ref parse_line.
+    #
+    # \param[in] parsed_lines List of parsed lines by \ref parse_line.
     proc evaluate_lines {parsed_lines} {
         # modules
         foreach i_mod [lsearch -all -inline -index 1 $parsed_lines "module"] {
@@ -342,6 +368,9 @@ namespace eval ig::sng {
         }
     }
 
+    ## @brief Parse and process SNG file.
+    #
+    # \param[in] filename Filename of SNG file.
     proc parse_file {filename} {
         set f [open $filename "r"]
         set lines [split [read $f] "\n"]
