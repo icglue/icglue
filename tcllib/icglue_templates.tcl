@@ -171,12 +171,13 @@ namespace eval ig::templates {
         # Structure of returned array-list:
         # Main List contains arrays with entries
         # \li name = Name of regfile entry.
-        # \li address = Address of regfile entry.
         # \li object = Object-ID of regfile entry.
+        # \li address = Address of regfile entry.
         # \li regs = Array-list for registers in this entry.
         #
         # The regs-entry of the regfile-entry is a list of arrays with entries
         # \li name = Name of the register.
+        # \li object = Object-ID of register.
         # \li bit_high = MSBit occupied inside regfile-entry.
         # \li bit_low = LSBit occupied inside regfile-entry.
         # \li width = Size of register in bits.
@@ -185,7 +186,6 @@ namespace eval ig::templates {
         # \li reset = Reset value of register.
         # \li signal = Signal this register connects to.
         # \li signalbits = Verilog-range of bits of signal to connect to.
-        # \li object = Object-ID of register.
         proc regfile_to_arraylist {regfile_id} {
             # collect all regfile entries, sort by address
             set entries [ig::db::get_regfile_entries -all -of $regfile_id]
@@ -289,7 +289,29 @@ namespace eval ig::templates {
             return $entry_list
         }
 
-        # TODO: doxygen documentation from here...
+        ## @brief Preprocess instance-object into array-list.
+        # \param[in] instance_id Object-ID of instance-object.
+        # \return Array as list (like obtained via array get) with instance data.
+        #
+        # Elements of returned array:
+        # \li name = Name of instance.
+        # \li object = Object-ID of instance.
+        # \li module = Object-ID of module instanciated.
+        # \li module.name = Name of module instanciated.
+        # \li ilm = ilm property of instance.
+        # \li pins = Array-List of pins of instance.
+        # \li parameters = Array-List of parameters of instance.
+        # \li hasparams = Boolean indicating whether instance has parameters.
+        #
+        # The pins entry is an array-list of arrays with entries
+        # \li name = Name of pin.
+        # \li object = Object-ID of pin.
+        # \li connection = Connected signal/value to this pin.
+        #
+        # The parameters entry is an array-list of arrays with entries
+        # \li name = Name of parameter.
+        # \li object = Object-ID of parameter.
+        # \li value = Value assigned to parameter.
         proc instance_to_arraylist {instance_id} {
             set result {}
 
@@ -329,6 +351,56 @@ namespace eval ig::templates {
             return $result
         }
 
+        ## @brief Preprocess module-object into arra-list.
+        # \param[in] module_id Object-ID of module-object.
+        # \return Array as list (like obtained via array get) with module data.
+        #
+        # Elements of returned array:
+        # \li name = Name of module.
+        # \li object = Object-ID of module.
+        # \li ports = Array-List of ports of module.
+        # \li parameters = Array-List of parameters of module.
+        # \li declarations = Array-List of declarations of module.
+        # \li code = Array-List of codesections of module.
+        # \li instances = Array-List of instances of module.
+        # \li regfiles = Array-List of regfiles of module.
+        #
+        # The ports entry is an array-list of arrays with entries
+        # \li name = Name of port.
+        # \li object = Object-ID of port.
+        # \li size = Bitsize of port.
+        # \li %vlog.bitrange = Verilog-Bitrange of port.
+        # \li direction = Direction of port.
+        # \li vlog.direction = Verilog port-direction.
+        #
+        # The parameters entry is an array-list of arrays with entries
+        # \li name = Name of parameter.
+        # \li object = Object-ID of parameter.
+        # \li local = Boolean indicating whether this is a local parameter.
+        # \li vlog.type = Verilog-Type of parameter.
+        # \li value = Default value of parameter.
+        #
+        # The declarations entry is an array-list of arrays with entries
+        # \li name = Name of declaration.
+        # \li object = Object-ID of declaration.
+        # \li size = Bitsize of declaration.
+        # \li %vlog.bitrange = Verilog-Bitrange of declaration.
+        # \li defaulttype = Boolean indicating whether declaration is of default type for declarations.
+        # \li vlog.type = Verilog-Type of declarations.
+        #
+        # The code entry is an array-list of arrays with entries
+        # \li name = Name of codesection.
+        # \li object = Object-ID of codesection.
+        # \li code_raw = Verbatim code of codesection.
+        # \li code = Code adapted according to adapt property by \ref ig::aux::adapt_codesection.
+        #
+        # The instances entry is an array-list of arrays with entries as returned by
+        # \ref instance_to_arraylist
+        #
+        # The regfiles entry is an array-list of arrays with entries
+        # \li name = Name of regfile.
+        # \li object = Object-ID of regfile.
+        # \li entries = Entries of regfile as array-list as returned by \ref regfile_to_arraylist.
         proc module_to_arraylist {module_id} {
             set result {}
 
