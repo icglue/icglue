@@ -135,7 +135,7 @@ static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, 
 ##
 # @brief Create a new module.
 #
-# \param[in] args parsed command arguments:<br>
+# \param[in] args Parsed command arguments:<br>
 # -name \<module-name\><br>
 # [ (-ilm | -no-ilm) ]<br>
 # [ -resource | -no-resource ]
@@ -195,7 +195,7 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
 ##
 # @brief Create a new instance of a module in another (parent) module.
 #
-# \param[in] args parsed command arguments:<br>
+# \param[in] args Parsed command arguments:<br>
 # -name \<instance-name\><br>
 # -of-module \<module-id\><br>
 # -parent-module \<parent-module-id\>
@@ -270,7 +270,7 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
 ##
 # @brief Create a new codesection in a given module.
 #
-# \param[in] args parsed command arguments:<br>
+# \param[in] args Parsed command arguments:<br>
 # [ -name \<codesection-name\>]<br>
 # -code \<code\><br>
 # -parent-module \<parent-module-id\>
@@ -334,7 +334,7 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
 ##
 # @brief Add regfile objects to another object.
 #
-# \param[in] args parsed command arguments:<br>
+# \param[in] args Parsed command arguments:<br>
 # ( -regfile \<regfile-name\><br>
 # | -entry   \<regfile-entry-name\><br>
 # | -reg     \<regfile-register-name\>)<br>
@@ -425,7 +425,7 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
 ##
 # @brief Set values of object-attributes.
 #
-# \param[in] args parsed command arguments:<br>
+# \param[in] args Parsed command arguments:<br>
 # -object \<object-id\><br>
 # ( -attribute \<attribute-name\><br>
 #   -value \<attribute-value\><br>
@@ -514,7 +514,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
 ##
 # @brief Get values of object-attributes.
 #
-# \param[in] args parsed command arguments:<br>
+# \param[in] args Parsed command arguments:<br>
 # -object \<object-id\><br>
 # ( -attribute \<attribute-name\><br>
 # [ -default \<default-value\>]<br>
@@ -669,7 +669,7 @@ static enum ig_tclc_get_objs_of_obj_version ig_tclc_get_objs_of_obj_version_from
 ##
 # @brief Return child object(s) of given parent.
 #
-# \param[in] args parsed command arguments:<br>
+# \param[in] args Parsed command arguments:<br>
 # (-name \<child-name\><br>
 # |-all)<br>
 # -of \<parent-object-id\>
@@ -965,7 +965,7 @@ static void ig_tclc_connection_parse (const char *input, GString *id, GString *n
 ##
 # @brief Create a signal connecting modules/instances.
 #
-# \param[in] args parsed command arguments:<br>
+# \param[in] args Parsed command arguments:<br>
 # -signal-name \<signal-name\><br>
 # [-signal-size \<signal-bitwidth\>]<br>
 # (-bidir {\<endpoint1\> \<endpoint2\> ...}<br>
@@ -1126,7 +1126,7 @@ l_ig_tclc_connect_nfexit:
 ##
 # @brief Create a parameter for modules/instances.
 #
-# \param[in] args parsed command arguments:<br>
+# \param[in] args Parsed command arguments:<br>
 # -name \<parameter-name\><br>
 # -value \<parameter-value\><br>
 # -targets {\<endpoint1\> \<endpoint2\> ...}
@@ -1246,7 +1246,7 @@ l_ig_tclc_parameter_nfexit:
 ##
 # @brief Control log message verbosity.
 #
-# \param[in] args parsed command arguments:<br>
+# \param[in] args Parsed command arguments:<br>
 # -level \<loglevel\><br>
 # [-id \<log-identifier\>]<br>
 # [(-linenumber | -nolinenumber)]<br>
@@ -1335,7 +1335,7 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
 ##
 # @brief Control log message verbosity.
 #
-# \param[in] args parsed command arguments:<br>
+# \param[in] args Parsed command arguments:<br>
 # [-id \<log-identifier\>]<br>
 # [(-debug|-info|-warning|-error)]<br>
 # [-abort]<br>
