@@ -19,8 +19,14 @@
 
 package provide ICGlue 1.0a1
 
+## @brief Error output helpers.
 namespace eval ig::errinf {
 
+    ## @brief Split Tcl error stack trace into a list.
+    #
+    # \param[in] st Tcl stack trace as one string
+    #
+    # \return list of single stack trace items split into command (out of "invoked from within" part) and information (mostly actual code) part
     proc split_st {st} {
         set result {}
         if {[regexp {(^.*?)\s+while executing\n(.*)$} $st m_whole m_msg m_rem]} {
@@ -48,6 +54,12 @@ namespace eval ig::errinf {
         return $result
     }
 
+    ## @brief Try to obtain line where an error occurred in given file out of splitted (\ref split_st) stack trace.
+    #
+    # \param[in] filename Name of file to look for in stack trace.
+    # \param[in] stack Stack trace splitted with \ref split_st (list of stack elements).
+    #
+    # \return Line where the error approximately occurred (might differ because of lines wrapped with "\" or when unable to find relevant parts in stack.
     proc get_file_line {filename stack} {
         set lineacc -1
 
@@ -79,6 +91,15 @@ namespace eval ig::errinf {
         return $lineacc
     }
 
+    ## @brief print error stack trace and try to print line of given file where the error occurred.
+    #
+    # \param[in] filename Name of file to look for in current stack trace.
+    #
+    # Should only be called after an error occurred when sourcing a file (filename)
+    # and the error was catched.
+    # In this case first the stack trace as logged, then the stack trace is processed trying to obtain the
+    # linenumber in the sourced file where the error occurred.
+    # In case an approximate line number was found it is logged as well after the stack trace.
     proc print_st_line {filename} {
         set st $::errorInfo
 

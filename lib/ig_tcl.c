@@ -39,6 +39,8 @@
 # Actual code can be found in the Core-Library.
 # The generated tcl-commands are shortly described here.
 #
+# \namespace ig::db
+# @brief Lowlevel database commands covered by C-library.
 */
 
 /* Tcl helper function for parsing lists in GSLists of char * */
