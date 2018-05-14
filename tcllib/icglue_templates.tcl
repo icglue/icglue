@@ -162,8 +162,30 @@ namespace eval ig::templates {
         }
     }
 
+    ## @brief Preprocess helpers for template files
     namespace eval preprocess {
-        # template helpers
+        ## @brief Preprocess regfile-object into array-list.
+        # \param[in] regfile_id Object-ID of regfile-object.
+        # \return List of arrays (as list like obtained via array get) of regfile-entry data.
+        #
+        # Structure of returned array-list:
+        # Main List contains arrays with entries
+        # \li name = Name of regfile entry.
+        # \li address = Address of regfile entry.
+        # \li object = Object-ID of regfile entry.
+        # \li regs = Array-list for registers in this entry.
+        #
+        # The regs-entry of the regfile-entry is a list of arrays with entries
+        # \li name = Name of the register.
+        # \li bit_high = MSBit occupied inside regfile-entry.
+        # \li bit_low = LSBit occupied inside regfile-entry.
+        # \li width = Size of register in bits.
+        # \li entrybits = Verilog-range of bits occupied inside regfile-entry.
+        # \li type = Type of register, e.g. R, RW.
+        # \li reset = Reset value of register.
+        # \li signal = Signal this register connects to.
+        # \li signalbits = Verilog-range of bits of signal to connect to.
+        # \li object = Object-ID of register.
         proc regfile_to_arraylist {regfile_id} {
             # collect all regfile entries, sort by address
             set entries [ig::db::get_regfile_entries -all -of $regfile_id]
@@ -267,6 +289,7 @@ namespace eval ig::templates {
             return $entry_list
         }
 
+        # TODO: doxygen documentation from here...
         proc instance_to_arraylist {instance_id} {
             set result {}
 
