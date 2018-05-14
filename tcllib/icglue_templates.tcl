@@ -404,6 +404,7 @@ namespace eval ig::templates {
                     entries [regfile_to_arraylist $i_regfile] \
                 ]
             }
+            lappend result regfiles $regfile_data
 
             return $result
         }
