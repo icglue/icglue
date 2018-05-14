@@ -344,10 +344,12 @@ namespace eval ig::templates {
         }
 
         set current::template_dir [lindex $collection::template_dir $dir_idx 1]
-        proc current::get_output_types {object} [lindex $collection::output_types_gen $type_idx 1]
-        proc current::get_template_file_raw {object type template_dir} [lindex $collection::template_path_gen $tmpl_idx 1]
-        proc current::get_output_file {object type} [lindex $collection::output_path_gen $out_idx 1]
-        proc current::get_default_header {object type} [lindex $collection::default_header_gen $hdr_idx 1]
+        # workaround for doxygen: is otherwise irritated by directly visible proc keyword
+        set procdef "proc"
+        $procdef current::get_output_types      {object}                   [lindex $collection::output_types_gen   $type_idx 1]
+        $procdef current::get_template_file_raw {object type template_dir} [lindex $collection::template_path_gen  $tmpl_idx 1]
+        $procdef current::get_output_file       {object type}              [lindex $collection::output_path_gen    $out_idx  1]
+        $procdef current::get_default_header    {object type}              [lindex $collection::default_header_gen $hdr_idx  1]
     }
 
     # parse_template method:
