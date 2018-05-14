@@ -19,7 +19,13 @@
 
 package provide ICGlue 1.0a1
 
+## @brief Helper functions for verilog output
 namespace eval ig::vlog {
+    ## @brief Convert a size to a verilog (declaration) bitrange expression.
+    #
+    # \param[in] size Size to convert.
+    #
+    # \return Bitrange of form "[size-1:0]".
     proc bitrange {size} {
         if {[string is integer $size]} {
             if {$size == 1} {
@@ -32,11 +38,21 @@ namespace eval ig::vlog {
         }
     }
 
+    ## @brief Return (declaration) bitrange of database object.
+    #
+    # \param[in] obj Object-ID to process.
+    #
+    # \return Bitrange as in \ref bitrange.
     proc obj_bitrange {obj} {
         set size [ig::db::get_attribute -object $obj -attribute "size"]
         return [bitrange $size]
     }
 
+    ## @brief Return (declaration) type of a port for verilog based on its direction.
+    #
+    # \param[in] port Object-ID of port.
+    #
+    # \return Verilog port direction.
     proc port_dir {port} {
         set dir [ig::db::get_attribute -object $port -attribute "direction"]
         if {$dir eq "input"} {return "input"}
@@ -45,6 +61,11 @@ namespace eval ig::vlog {
         return ""
     }
 
+    ## @brief Return (declaration) type of a parameter for verilog.
+    #
+    # \param[in] param Object-ID of parameter.
+    #
+    # \return Verilog parameter type.
     proc param_type {param} {
         if {[ig::db::get_attribute -object $param -attribute "local"]} {
             return "localparam"
@@ -53,6 +74,11 @@ namespace eval ig::vlog {
         }
     }
 
+    ## @brief Return (declaration) type of a variable for verilog.
+    #
+    # \param[in] decl Object-ID of variable.
+    #
+    # \return Verilog declaration type.
     proc declaration_type {decl} {
         if {[ig::db::get_attribute -object $decl -attribute "default_type"]} {
             return "wire"
