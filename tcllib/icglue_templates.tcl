@@ -19,7 +19,9 @@
 
 package provide ICGlue 1.0a1
 
+## @brief Template related functionality
 namespace eval ig::templates {
+    ## @brief Collect template data
     namespace eval collection {
         variable template_dir       {}
         variable output_types_gen   {}
@@ -28,31 +30,72 @@ namespace eval ig::templates {
         variable default_header_gen {}
     }
 
+    ## @brief Functions to call from/with template init script
     namespace eval init {
+        ## @brief Set path to template.
+        # \param[in] template Name of template.
+        # \param[in] dir Path to template directory.
         proc template_dir  {template dir} {
             lappend ig::templates::collection::template_dir [list \
                 $template $dir \
             ]
         }
 
+        ## @brief Set template callback for obtaining output types.
+        # \param[in] template Name of template.
+        # \param[in] body Proc body of callback.
+        #
+        # Proc callback body should match for argument list {object}, where
+        # object is the Object-ID of the Object to generate output for.
+        #
+        # See also \ref ig::templates::current::get_output_types.
         proc output_types {template body} {
             lappend ig::templates::collection::output_types_gen [list \
                 $template $body \
             ]
         }
 
+        ## @brief Set template callback for path to template file.
+        # \param[in] template Name of template.
+        # \param[in] body Proc body of callback.
+        #
+        # Proc callback body should match for argument list {object type template_dir}, where
+        # object is the Object-ID of the Object to generate output for,
+        # type is one of the types returned by the callback set via \ref output_types for
+        # the given object and template_dir is the path to this template.
+        #
+        # See also \ref ig::templates::current::get_template_file_raw and
+        # \ref ig::templates::current::get_template_file.
         proc template_file {template body} {
             lappend ig::templates::collection::template_path_gen [list \
                 $template $body \
             ]
         }
 
+        ## @brief Set template callback for path to output file.
+        # \param[in] template Name of template.
+        # \param[in] body Proc body of callback.
+        #
+        # Proc callback body should match for argument list {object type}, where
+        # object is the Object-ID of the Object to generate output for and
+        # type is one of the types returned by the callback set via \ref output_types for
+        # the given object.
+        #
+        # See also \ref ig::templates::current::get_output_file.
         proc output_file {template body} {
             lappend ig::templates::collection::output_path_gen [list \
                 $template $body \
             ]
         }
 
+        ## @brief Set template callback for generating a default file header.
+        # \param[in] template Name of template.
+        # \param[in] body Proc body of callback.
+        #
+        # Proc callback body should match for argument list {object type}, where
+        # object is the Object-ID of the Object to generate output for and
+        # type is one of the types returned by the callback set via \ref output_types for
+        # the given object.
         proc default_header {template body} {
             lappend ig::templates::collection::default_header_gen [list \
                 $template $body \
@@ -60,26 +103,60 @@ namespace eval ig::templates {
         }
     }
 
+    ## @brief Callback procs of currently loaded template.
     namespace eval current {
         variable template_dir ""
 
+        ## @brief Actual callback to get the template file.
+        # \param[in] object The Object-ID of the Object to generate output for.
+        # \param[in] type One of the types returned by \ref get_output_types for the given object.
+        # \param[in] template_dir Path to this template.
+        # \return Filename of the template file.
+        #
+        # See also \ref ig::templates::init::template_file.
+        # Should be called by \ref get_template_file.
         proc get_template_file_raw {object type template_dir} {
             ig::log -error -abort "no template loaded"
         }
 
+        ## @brief Callback to get supported output types for given object.
+        # \param[in] object Object-ID of the Object to generate output for.
+        # \return A list of supported output types needed by
+        # \ref get_template_file, \ref get_template_file_raw,
+        # \ref get_output_file and \ref get_default_header.
+        #
+        # See also \ref ig::templates::init::output_types.
         proc get_output_types {object} {
             ig::log -error -abort "no template loaded"
         }
 
+        ## @brief Callback wrapper to get the template file.
+        # \param[in] object The Object-ID of the Object to generate output for.
+        # \param[in] type One of the types returned by \ref get_output_types for the given object.
+        # \return Filename of the template file.
+        #
+        # Calls \ref get_template_file_raw with the path to the current template.
         proc get_template_file {object type} {
             variable template_dir
             return [get_template_file_raw $object $type $template_dir]
         }
 
+        ## @brief Callback to get path to output file.
+        # \param[in] object Object-ID of the Object to generate output for.
+        # \param[in] type One of the types returned by \ref get_output_types for the given object.
+        # \return Path to the output file to generate.
+        #
+        # See also \ref ig::templates::init::output_file.
         proc get_output_file {object type} {
             ig::log -error -abort "no template loaded"
         }
 
+        ## @brief Callback to get a default header for object and given output type.
+        # \param[in] object Object-ID of the Object to generate output for.
+        # \param[in] type One of the types returned by \ref get_output_types for the given object.
+        # \return A default header for output type and given object.
+        #
+        # See also \ref ig::templates::init::default_header.
         proc get_default_header {object type} {
             ig::log -error -abort "no template loaded"
         }
