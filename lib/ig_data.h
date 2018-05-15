@@ -62,6 +62,8 @@ struct ig_attribute {
 
 /**
  * @brief Common object data type.
+ *
+ * For memory allocation/free see @ref ig_obj_new and @ref ig_obj_free.
  */
 struct ig_object {
     const char          *id;           /**< @brief Unique Object-ID */
@@ -194,35 +196,44 @@ struct ig_module {
     struct ig_instance *default_instance; /**< @brief Default instance of non-resource module. */
 };
 
+/**
+ * @brief Instance pin data.
+ */
 struct ig_pin {
-    struct ig_object *object;
+    struct ig_object *object;   /**< @brief Related Object. */
 
-    const char *name;
-    const char *connection;
+    const char *name;           /**< @brief Name of pin */
+    const char *connection;     /**< @brief Value/signal connected to pin. */
 
-    struct ig_instance *parent;
+    struct ig_instance *parent; /**< @brief Instance containing pin */
 };
 
+/**
+ * @brief Instance parameter adjustment data.
+ */
 struct ig_adjustment {
-    struct ig_object *object;
+    struct ig_object *object;   /**< @brief Related Object. */
 
-    const char *name;
-    const char *value;
+    const char *name;           /**< @brief Name of parameter. */
+    const char *value;          /**< @brief Adjusted value. */
 
-    struct ig_instance *parent;
+    struct ig_instance *parent; /**< @brief Instance containing adjustment. */
 };
 
+/**
+ * @brief Instance data.
+ */
 struct ig_instance {
-    struct ig_object *object;
+    struct ig_object *object; /**< @brief Related Object. */
 
-    const char       *name;
-    struct ig_module *module;
+    const char       *name;   /**< @brief Name of instance. */
+    struct ig_module *module; /**< @brief Module instanciated. */
 
-    struct ig_module *parent;
+    struct ig_module *parent; /**< @brief Module instanciating instance. */
 
     /* instance values */
-    GQueue *adjustments; /* data: (struct ig_adjustment *)    */
-    GQueue *pins;        /* data: (struct ig_pin *)     */
+    GQueue *adjustments;      /**< @brief Instance adjustments. Queue data: (struct @ref ig_adjustment *) */
+    GQueue *pins;             /**< @brief Instance pins. Queue data: (struct @ref ig_pin *) */
 };
 
 /* TODO: net? */
@@ -240,10 +251,33 @@ struct ig_instance {
  * @param storage GStringChunk string storage for shared string storage or NULL to create local string storage.
  * @return The newly created object struct or NULL in case of an error.
  */
-struct ig_object *ig_obj_new  (enum ig_object_type type, const char *name, struct ig_object *parent, gpointer obj, GStringChunk *storage);
-void              ig_obj_free (struct ig_object *obj);
+struct ig_object *ig_obj_new (enum ig_object_type type, const char *name, struct ig_object *parent, gpointer obj, GStringChunk *storage);
 
-bool        ig_obj_attr_set (struct ig_object *obj, const char *name, const char *value, bool constant);
+/**
+ * @brief Free object data.
+ * @param obj Pointer to object to free.
+ *
+ * This frees the ig_object struct, its attributes and if allocated its string container.
+ */
+void ig_obj_free (struct ig_object *obj);
+
+
+/**
+ * @brief Set attribute of object.
+ * @param obj Object where attribute is set.
+ * @param name Name of attribute to set.
+ * @param value Value to set.
+ * @param constant Make attribute constant (read-only).
+ * @return @c true on success, @c false in case of errors.
+ */
+bool ig_obj_attr_set (struct ig_object *obj, const char *name, const char *value, bool constant);
+
+/**
+ * @brief Get attribute of object.
+ * @param obj Object to get attribute from.
+ * @param name Name of attribute to get.
+ * @return Value of specified attribute of object or @c NULL in case of an error/nonexisting attribute.
+ */
 const char *ig_obj_attr_get (struct ig_object *obj, const char *name);
 
 struct ig_port *ig_port_new  (const char *name, enum ig_port_dir dir, struct ig_module *parent, GStringChunk *storage);
