@@ -17,6 +17,10 @@
  *
  */
 
+/**
+ * @file
+ * @brief Database lowlevel types and functions.
+ */
 #ifndef __IG_DATA_H__
 #define __IG_DATA_H__
 
@@ -31,6 +35,9 @@ extern "C" {
  * Data types
  *******************************************************/
 
+/**
+ * @brief Distinguish object types in @ref ig_object.
+ */
 enum ig_object_type {
     IG_OBJ_PORT,
     IG_OBJ_PIN,
@@ -45,116 +52,146 @@ enum ig_object_type {
     IG_OBJ_REGFILE
 };
 
+/**
+ * @brief Attributes used in @ref ig_object
+ */
 struct ig_attribute {
-    /* constant = cannot be changed */
-    bool        constant;
-    const char *value;
+    bool        constant; /**< @brief Attribute is write-once/read-only. */
+    const char *value;    /**< @brief Value of attribute. */
 };
 
+/**
+ * @brief Common object data type.
+ */
 struct ig_object {
-    const char          *id;
-    enum  ig_object_type type;
-    gpointer             obj;
+    const char          *id;           /**< @brief Unique Object-ID */
+    enum  ig_object_type type;         /**< @brief Type of Object stored in @c obj */
+    gpointer             obj;          /**< @brief Actual Data. Type depending on @ref type */
 
-    GHashTable   *attributes; /* key: (const char *) -> value: (struct ig_attribute *) */
-    GStringChunk *string_storage;
-    bool          string_storage_free;
+    GHashTable   *attributes;          /**< @brief Attributes. Key: (const char *), value: (struct @ref ig_attribute *). */
+    GStringChunk *string_storage;      /**< @brief Strings used here, in @ref attributes and @ref obj. */
+    bool          string_storage_free; /**< @brief Free @ref string_storage when freeing object. */
 };
 
+/**
+ * @brief Distinguish port direction in @ref ig_port.
+ */
 enum ig_port_dir {
     IG_PD_IN,
     IG_PD_OUT,
     IG_PD_BIDIR,
 };
 
+/**
+ * @brief Module port data.
+ */
 struct ig_port {
-    struct ig_object *object;
+    struct ig_object *object; /**< @brief Related Object. */
 
-    const char      *name;
-    enum ig_port_dir dir;
+    const char      *name;    /**< @brief Name of port. */
+    enum ig_port_dir dir;     /**< @brief Direction of port. */
 
-    struct ig_module *parent;
+    struct ig_module *parent; /**< @brief Module containing port. */
 };
 
+/**
+ * @brief Module parameter data.
+ */
 struct ig_param {
-    struct ig_object *object;
+    struct ig_object *object; /**< @brief Related Object. */
 
-    const char *name;
-    const char *value;
-    bool        local;
+    const char *name;         /**< @brief Name of parameter. */
+    const char *value;        /**< @brief Default value of parameter. */
+    bool        local;        /**< @brief Set if local parameter. */
 
-    struct ig_module *parent;
+    struct ig_module *parent; /**< @brief Module containing parameter. */
 };
 
+/**
+ * @brief Module declaration data.
+ */
 struct ig_decl {
-    struct ig_object *object;
+    struct ig_object *object;       /**< @brief Related Object. */
 
-    const char *name;
-    /* is of default signal type? */
-    bool default_type;
+    const char *name;               /**< @brief Name of declaration. */
+    bool default_type;              /**< @brief Set if declaration is of default type (language dependant). */
 
-    /* NULL or value this is assigned to */
-    const char *default_assignment;
+    const char *default_assignment; /**< @brief Default assignment to declared variable or NULL if unassigned. */
 
-    struct ig_module *parent;
+    struct ig_module *parent;       /**< @brief Module containing declaration. */
 };
 
+/**
+ * @brief Module codesection data.
+ */
 struct ig_code {
-    struct ig_object *object;
+    struct ig_object *object; /**< @brief Related Object. */
 
-    const char *name;
-    const char *code;
+    const char *name;         /**< @brief Name of codesection. */
+    const char *code;         /**< @brief Actual code. */
 
-    struct ig_module *parent;
+    struct ig_module *parent; /**< @brief Module containing codesection. */
 };
 
+/**
+ * @brief Regfile single register data.
+ */
 struct ig_rf_reg {
-    struct ig_object *object;
+    struct ig_object *object;   /**< @brief Related Object. */
 
-    const char *name;
+    const char *name;           /**< @brief Name of register. */
 
-    struct ig_rf_entry *parent;
+    struct ig_rf_entry *parent; /**< @brief Regfile-entry containing register. */
 };
 
+/**
+ * @brief Regfile entry data.
+ */
 struct ig_rf_entry {
-    struct ig_object *object;
+    struct ig_object *object;     /**< @brief Related Object. */
 
-    const char *name;
+    const char *name;             /**< @brief Name of entry. */
 
-    GQueue *regs; /* data: (struct ig_rf_reg *) */
+    GQueue *regs;                 /**< @brief Registers of entry. Queue data: (struct @ref ig_rf_reg *) */
 
-    struct ig_rf_regfile *parent;
+    struct ig_rf_regfile *parent; /**< @brief Regfile containing regfile-entry. */
 };
 
+/**
+ * @brief Regfile data.
+ */
 struct ig_rf_regfile {
-    struct ig_object *object;
+    struct ig_object *object; /**< @brief Related Object. */
 
-    const char *name;
+    const char *name;         /**< @brief Name of regfile. */
 
-    GQueue *entries; /* data: (struct ig_rf_entry *) */
+    GQueue *entries;          /**< @brief Regfile-entries. Queue data: (struct @ref ig_rf_entry *) */
 
-    struct ig_module *parent;
+    struct ig_module *parent; /**< @brief Module containing regfile. */
 };
 
+/**
+ * @brief Module data.
+ */
 struct ig_module {
-    struct ig_object *object;
+    struct ig_object *object;             /**< @brief Related Object. */
 
-    const char *name;
-    bool        ilm;
-    bool        resource;
+    const char *name;                     /**< @brief Name of module. */
+    bool        ilm;                      /**< @brief ILM property. */
+    bool        resource;                 /**< @brief Resource property. */
 
     /* module content */
-    GQueue *params;   /* data: (struct ig_param *)   */
-    GQueue *ports;    /* data: (struct ig_port *)    */
-    GQueue *decls;    /* data: (struct ig_decl *)    */
-    GQueue *code;     /* data: (struct ig_code *)    */
-    GQueue *regfiles; /* data: (struct ig_regfile *) */
+    GQueue *params;                       /**< @brief Parameters.   Queue data: (struct @ref ig_param *)      */
+    GQueue *ports;                        /**< @brief Ports.        Queue data: (struct @ref ig_port *)       */
+    GQueue *decls;                        /**< @brief Declarations. Queue data: (struct @ref ig_decl *)       */
+    GQueue *code;                         /**< @brief Codesections. Queue data: (struct @ref ig_code *)       */
+    GQueue *regfiles;                     /**< @brief Regfiles.     Queue data: (struct @ref ig_rf_regfile *) */
     /* child instances inside module */
-    GQueue *child_instances; /* data: (struct ig_instance *) */
+    GQueue *child_instances;              /**< @brief Instances within module. Queue data: (struct @ref ig_instance *) */
     /* instances of this module elsewhere */
-    GQueue *mod_instances;   /* data: (struct ig_instance *) */
+    GQueue *mod_instances;                /**< @brief Instances of module. Queue data: (struct @ref ig_instance *) */
     /* default instance of this module */
-    struct ig_instance *default_instance;
+    struct ig_instance *default_instance; /**< @brief Default instance of non-resource module. */
 };
 
 struct ig_pin {
@@ -194,6 +231,15 @@ struct ig_instance {
  * Functions
  *******************************************************/
 
+/**
+ * @brief Create new object.
+ * @param type Type of object to create.
+ * @param name Name of object (depending on type this has to be unique).
+ * @param parent Parent-Object in hierarchy or @c NULL.
+ * @param obj Actual data structure for data represented by result object.
+ * @param storage GStringChunk string storage for shared string storage or NULL to create local string storage.
+ * @return The newly created object struct or NULL in case of an error.
+ */
 struct ig_object *ig_obj_new  (enum ig_object_type type, const char *name, struct ig_object *parent, gpointer obj, GStringChunk *storage);
 void              ig_obj_free (struct ig_object *obj);
 
