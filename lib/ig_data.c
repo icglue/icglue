@@ -21,7 +21,7 @@
 #include "logger.h"
 #include <stdio.h>
 
-static struct ig_attribute *ig_attribtue_new (const char *value, bool constant);
+static struct ig_attribute *ig_attribute_new (const char *value, bool constant);
 static inline void          ig_attribute_free (struct ig_attribute *attr);
 static void                 ig_attribute_free_gpointer (gpointer attr);
 static const char          *ig_obj_type_name (enum ig_object_type type);
@@ -31,7 +31,7 @@ static const char          *ig_port_dir_name (enum ig_port_dir dir);
  * object data
  *******************************************************/
 
-static struct ig_attribute *ig_attribtue_new (const char *value, bool constant)
+static struct ig_attribute *ig_attribute_new (const char *value, bool constant)
 {
     struct ig_attribute *result = g_slice_new (struct ig_attribute);
 
@@ -141,7 +141,7 @@ bool ig_obj_attr_set (struct ig_object *obj, const char *name, const char *value
 
     char                *local_name         = g_string_chunk_insert_const (obj->string_storage, name);
     char                *local_value_string = g_string_chunk_insert_const (obj->string_storage, value);
-    struct ig_attribute *value_entry        = ig_attribtue_new (local_value_string, constant);
+    struct ig_attribute *value_entry        = ig_attribute_new (local_value_string, constant);
 
     g_hash_table_insert (obj->attributes, local_name, value_entry);
 
