@@ -44,11 +44,11 @@ typedef enum log_level {
 extern gchar *loglevel_label[LOGLEVEL_COUNT];
 
 
-        #define log_debug(id, format ...)    log_base (LOGLEVEL_DEBUG,    id, __FILE__, __LINE__, format)
-        #define log_info(id, format ...)     log_base (LOGLEVEL_INFO,     id, __FILE__, __LINE__, format)
-        #define log_warn(id, format ...)     log_base (LOGLEVEL_WARNING,  id, __FILE__, __LINE__, format)
-        #define log_error(id, format ...)    log_base (LOGLEVEL_ERROR,    id, __FILE__, __LINE__, format)
-        #define log_errorint(id, format ...) log_base (LOGLEVEL_ERRORINT, id, __FILE__, __LINE__, format)
+#define log_debug(id, format ...)    log_base (LOGLEVEL_DEBUG,    id, __FILE__, __LINE__, format)
+#define log_info(id, format ...)     log_base (LOGLEVEL_INFO,     id, __FILE__, __LINE__, format)
+#define log_warn(id, format ...)     log_base (LOGLEVEL_WARNING,  id, __FILE__, __LINE__, format)
+#define log_error(id, format ...)    log_base (LOGLEVEL_ERROR,    id, __FILE__, __LINE__, format)
+#define log_errorint(id, format ...) log_base (LOGLEVEL_ERRORINT, id, __FILE__, __LINE__, format)
 
 void log_base  (const log_level_t level, const gchar *id, const gchar *sfile, gint sline, const gchar *format, ...) __attribute__((format (printf, 5, 6)));
 void log_basev (const log_level_t level, const gchar *id, const gchar *sfile, gint sline, const gchar *format, va_list arg_list) __attribute__((format (printf, 5, 0)));
