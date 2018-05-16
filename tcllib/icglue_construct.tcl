@@ -26,11 +26,11 @@ namespace eval ig {
     namespace eval construct {
         ## @brief Expand instance expression list.
         #
-        # \param[in] inst_list List of instance expressions.
-        # \param[in] ids Return instance object IDs instead of names (default: false).
-        # \param[in] merge (Only in combination with ids=true) Return list of merged expressions with IDs and originial expression remainder (default: false).
+        # @param inst_list List of instance expressions.
+        # @param ids Return instance object IDs instead of names (default: false).
+        # @param merge (Only in combination with ids=true) Return list of merged expressions with IDs and originial expression remainder (default: false).
         #
-        # \return List of expanded instance expressions {instance-name module-name remainder}.
+        # @return List of expanded instance expressions {instance-name module-name remainder}.
         #
         # The input list can contain expressions of the form module\<instance1,instance2\>-\>signal.
         # The default result would then contain two lists: {module_instance1 module -\>signal} and {module_instance2 module -\>signal}.
@@ -95,7 +95,7 @@ namespace eval ig {
 
     ## @brief Create a new module.
     #
-    # \param[in] args Parsed command arguments:<br>
+    # @param args Parsed command arguments:<br>
     # [( -v | -sv | -vhdl )]<br>
     # [( -rtl | -behavioral | -tb )]<br>
     # [ -ilm ]<br>
@@ -105,7 +105,7 @@ namespace eval ig {
     # [ -rf \<regfile-name\> ]<br>
     # \<module-name\>
     #
-    # \return Object-ID of the newly created module.
+    # @return Object-ID of the newly created module.
     proc M args {
         # defaults
         set name      ""
@@ -214,14 +214,14 @@ namespace eval ig {
 
     ## @brief Create a new signal.
     #
-    # \param[in] args Parsed command arguments:<br>
+    # @param args Parsed command arguments:<br>
     # [ -w \<signal-width\> ]<br>
     # \<signal-name\><br>
     # ( \<source\> -\> \<target-list\><br>
     # | \<target-list\> \<- \<source\><br>
     # | (-bidir | \<-\>) \<target-list\> )
     #
-    # \return Object-IDs of the newly created objects of newly created signal.
+    # @return Object-IDs of the newly created objects of newly created signal.
     #
     # Source and target-lists will be expanded and can contain local signal-name specifications after a "->" symbol
     # (local signal-name suffixes can be generated when the signal-name is followed by "!")
@@ -316,12 +316,12 @@ namespace eval ig {
 
     ## @brief Create a new parameter.
     #
-    # \param[in] args Parsed command arguments:<br>
+    # @param args Parsed command arguments:<br>
     # -v \<parameter-value\><br>
     # \<parameter-name\><br>
     # \<endpoint-list\>
     #
-    # \return Object-IDs of the newly created objects of newly created parameter.
+    # @return Object-IDs of the newly created objects of newly created parameter.
     #
     # Endpoint-list will be expanded and can contain local parameter-name specifications after a "->" symbol
     # and multi-instance-expressions e.g. module\<1,4..9,a,b\>.
@@ -386,12 +386,12 @@ namespace eval ig {
 
     ## @brief Create a new codesection.
     #
-    # \param[in] args Parsed command arguments:<br>
+    # @param args Parsed command arguments:<br>
     # -m \<module\><br>
     # [( -adapt | -verbatim )]<br>
     # \<code\>
     #
-    # \return Object-ID of the newly created codesection.
+    # @return Object-ID of the newly created codesection.
     #
     # If adapt is specified (default), signal names in the code-block will be adapted by their local names.
     proc C args {
@@ -451,25 +451,25 @@ namespace eval ig {
 
     ## @brief Create a new regfile-entry.
     #
-    # \param[in] args Parsed command arguments:<br>
+    # @param args Parsed command arguments:<br>
     # -rf \<regfile-name\><br>
     # \<entry-name\><br>
     # \@\<address\><br>
     # \<register-table\>
     #
-    # \return Object-ID of the newly created regfile-entry.
+    # @return Object-ID of the newly created regfile-entry.
     #
     # \<register-table\> is a list of the form {\<header\> \<reg1\> \<reg2\> ...}.
     #
     # \<header\> is the register-table header and specifies the order of register-info block
     # in the following register sublists. It must contain at least "name", can contain:
-    # \li name = name of the generated register.
-    # \li width = bitwidth of the generated register.
-    # \li entrybits = bitrange (\<high\>:\<low\>) inside the generated regfile-entry.
-    # \li type = type of generated register. Can be one of "R","RW".
-    # \li reset = reset value of generated register.
-    # \li signal = signal to drive from generated register.
-    # \li signalbits = bits of signal to drive (default: whole signal).
+    # @li name = name of the generated register.
+    # @li width = bitwidth of the generated register.
+    # @li entrybits = bitrange (\<high\>:\<low\>) inside the generated regfile-entry.
+    # @li type = type of generated register. Can be one of "R","RW".
+    # @li reset = reset value of generated register.
+    # @li signal = signal to drive from generated register.
+    # @li signalbits = bits of signal to drive (default: whole signal).
     #
     # \<reg\<n\>\>: Sublists containing the actual register-data.
     proc R args {

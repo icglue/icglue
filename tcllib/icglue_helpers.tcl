@@ -23,9 +23,9 @@ package provide ICGlue 1.0a1
 namespace eval ig::aux {
     ## @brief Iterate over a list of arrays.
     #
-    # \param[in] iter Iterator variable.
-    # \param[in] array_list List of arrays as list as obtained by [array get ...].
-    # \param[in] body Code to run in each iteration.
+    # @param iter Iterator variable.
+    # @param array_list List of arrays as list as obtained by [array get ...].
+    # @param body Code to run in each iteration.
     proc foreach_array {iter array_list body} {
         foreach __iter $array_list {
             uplevel 1 array set $iter [list ${__iter}]
@@ -35,10 +35,10 @@ namespace eval ig::aux {
 
     ## @brief Iterate over a list of arrays meeting a condition.
     #
-    # \param[in] iter Iterator variable.
-    # \param[in] array_list List of arrays as list as obtained by [array get ...].
-    # \param[in] condition Condition an array must meet (otherwise the loop will continue with the next array).
-    # \param[in] body Code to run in each iteration.
+    # @param iter Iterator variable.
+    # @param array_list List of arrays as list as obtained by [array get ...].
+    # @param condition Condition an array must meet (otherwise the loop will continue with the next array).
+    # @param body Code to run in each iteration.
     proc foreach_array_with {iter array_list condition body} {
         foreach __iter $array_list {
             uplevel 1 array set $iter [list ${__iter}]
@@ -48,10 +48,10 @@ namespace eval ig::aux {
 
     ## @brief Get maximum string length out of a list of data.
     #
-    # \param[in] data_list List of data to process.
-    # \param[in] transform_proc Proc to call on each list entry to obtain string to check.
+    # @param data_list List of data to process.
+    # @param transform_proc Proc to call on each list entry to obtain string to check.
     #
-    # \return Length of maximum string obtained when iterating over data_list and calling transform_proc on each element.
+    # @return Length of maximum string obtained when iterating over data_list and calling transform_proc on each element.
     proc max_entry_len {data_list transform_proc} {
         set len 0
         foreach i_entry $data_list {
@@ -63,10 +63,10 @@ namespace eval ig::aux {
 
     ## @brief Get maximum string length of a certain entry out of a list of arrays.
     #
-    # \param[in] array_list List of arrays to process (in list form as from [array get ...]).
-    # \param[in] array_entry Entry of each array to check.
+    # @param array_list List of arrays to process (in list form as from [array get ...]).
+    # @param array_entry Entry of each array to check.
     #
-    # \return Length of maximum string obtained when iterating over array_list and checking for array_entry.
+    # @return Length of maximum string obtained when iterating over array_list and checking for array_entry.
     proc max_array_entry_len {array_list array_entry} {
         set len 0
         foreach i_entry $array_list {
@@ -79,10 +79,10 @@ namespace eval ig::aux {
 
     ## @brief Check whether ar list entry is last of the list.
     #
-    # \param[in] lst List to check.
-    # \param[in] entry Entry to check.
+    # @param lst List to check.
+    # @param entry Entry to check.
     #
-    # \return true if entry is the last entry of lst, falso otherwise.
+    # @return true if entry is the last entry of lst, falso otherwise.
     proc is_last {lst entry} {
         if {[lindex $lst end] eq $entry} {
             return "true"
@@ -93,18 +93,18 @@ namespace eval ig::aux {
 
     ## @brief Get object name from database object-ID
     #
-    # \param[in] obj ID of Object.
+    # @param obj ID of Object.
     #
-    # \return Name of the given Object.
+    # @return Name of the given Object.
     proc object_name {obj} {
         return [ig::db::get_attribute -object $obj -attribute "name"]
     }
 
     ## @brief Adapt signalnames in a codesection object if adapt-attribute is set.
     #
-    # \param[in] codesection Codesection Object-ID.
+    # @param codesection Codesection Object-ID.
     #
-    # \return Modified codesection based on "adapt" property.
+    # @return Modified codesection based on "adapt" property.
     proc adapt_codesection {codesection} {
         set do_adapt [ig::db::get_attribute -object $codesection -attribute "adapt" -default "false"]
         set code [ig::db::get_attribute -object $codesection -attribute "code"]
@@ -141,10 +141,10 @@ namespace eval ig::aux {
 
     ## @brief Adapt a signalname in given module to the local signal name.
     #
-    # \param[in] signalname Name of the signal to check.
-    # \param[in] mod_id Object-ID of the module to adapt for.
+    # @param signalname Name of the signal to check.
+    # @param mod_id Object-ID of the module to adapt for.
     #
-    # \return Adapted signal name if found in specified module.
+    # @return Adapted signal name if found in specified module.
     proc adapt_signalname {signalname mod_id} {
         foreach i_port [ig::db::get_ports -of $mod_id -all] {
             if {[ig::db::get_attribute -object $i_port -attribute "signal"] eq $signalname} {

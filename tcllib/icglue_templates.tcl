@@ -33,8 +33,8 @@ namespace eval ig::templates {
     ## @brief Functions to call from/with template init script
     namespace eval init {
         ## @brief Set path to template.
-        # \param[in] template Name of template.
-        # \param[in] dir Path to template directory.
+        # @param template Name of template.
+        # @param dir Path to template directory.
         proc template_dir  {template dir} {
             lappend ig::templates::collection::template_dir [list \
                 $template $dir \
@@ -42,13 +42,13 @@ namespace eval ig::templates {
         }
 
         ## @brief Set template callback for obtaining output types.
-        # \param[in] template Name of template.
-        # \param[in] body Proc body of callback.
+        # @param template Name of template.
+        # @param body Proc body of callback.
         #
         # Proc callback body should match for argument list {object}, where
         # object is the Object-ID of the Object to generate output for.
         #
-        # See also \ref ig::templates::current::get_output_types.
+        # See also @ref ig::templates::current::get_output_types.
         proc output_types {template body} {
             lappend ig::templates::collection::output_types_gen [list \
                 $template $body \
@@ -56,16 +56,16 @@ namespace eval ig::templates {
         }
 
         ## @brief Set template callback for path to template file.
-        # \param[in] template Name of template.
-        # \param[in] body Proc body of callback.
+        # @param template Name of template.
+        # @param body Proc body of callback.
         #
         # Proc callback body should match for argument list {object type template_dir}, where
         # object is the Object-ID of the Object to generate output for,
-        # type is one of the types returned by the callback set via \ref output_types for
+        # type is one of the types returned by the callback set via @ref output_types for
         # the given object and template_dir is the path to this template.
         #
-        # See also \ref ig::templates::current::get_template_file_raw and
-        # \ref ig::templates::current::get_template_file.
+        # See also @ref ig::templates::current::get_template_file_raw and
+        # @ref ig::templates::current::get_template_file.
         proc template_file {template body} {
             lappend ig::templates::collection::template_path_gen [list \
                 $template $body \
@@ -73,15 +73,15 @@ namespace eval ig::templates {
         }
 
         ## @brief Set template callback for path to output file.
-        # \param[in] template Name of template.
-        # \param[in] body Proc body of callback.
+        # @param template Name of template.
+        # @param body Proc body of callback.
         #
         # Proc callback body should match for argument list {object type}, where
         # object is the Object-ID of the Object to generate output for and
-        # type is one of the types returned by the callback set via \ref output_types for
+        # type is one of the types returned by the callback set via @ref output_types for
         # the given object.
         #
-        # See also \ref ig::templates::current::get_output_file.
+        # See also @ref ig::templates::current::get_output_file.
         proc output_file {template body} {
             lappend ig::templates::collection::output_path_gen [list \
                 $template $body \
@@ -89,12 +89,12 @@ namespace eval ig::templates {
         }
 
         ## @brief Set template callback for generating a default file header.
-        # \param[in] template Name of template.
-        # \param[in] body Proc body of callback.
+        # @param template Name of template.
+        # @param body Proc body of callback.
         #
         # Proc callback body should match for argument list {object type}, where
         # object is the Object-ID of the Object to generate output for and
-        # type is one of the types returned by the callback set via \ref output_types for
+        # type is one of the types returned by the callback set via @ref output_types for
         # the given object.
         proc default_header {template body} {
             lappend ig::templates::collection::default_header_gen [list \
@@ -108,55 +108,55 @@ namespace eval ig::templates {
         variable template_dir ""
 
         ## @brief Actual callback to get the template file.
-        # \param[in] object The Object-ID of the Object to generate output for.
-        # \param[in] type One of the types returned by \ref get_output_types for the given object.
-        # \param[in] template_dir Path to this template.
-        # \return Filename of the template file.
+        # @param object The Object-ID of the Object to generate output for.
+        # @param type One of the types returned by @ref get_output_types for the given object.
+        # @param template_dir Path to this template.
+        # @return Filename of the template file.
         #
-        # See also \ref ig::templates::init::template_file.
-        # Should be called by \ref get_template_file.
+        # See also @ref ig::templates::init::template_file.
+        # Should be called by @ref get_template_file.
         proc get_template_file_raw {object type template_dir} {
             ig::log -error -abort "no template loaded"
         }
 
         ## @brief Callback to get supported output types for given object.
-        # \param[in] object Object-ID of the Object to generate output for.
-        # \return A list of supported output types needed by
-        # \ref get_template_file, \ref get_template_file_raw,
-        # \ref get_output_file and \ref get_default_header.
+        # @param object Object-ID of the Object to generate output for.
+        # @return A list of supported output types needed by
+        # @ref get_template_file, @ref get_template_file_raw,
+        # @ref get_output_file and @ref get_default_header.
         #
-        # See also \ref ig::templates::init::output_types.
+        # See also @ref ig::templates::init::output_types.
         proc get_output_types {object} {
             ig::log -error -abort "no template loaded"
         }
 
         ## @brief Callback wrapper to get the template file.
-        # \param[in] object The Object-ID of the Object to generate output for.
-        # \param[in] type One of the types returned by \ref get_output_types for the given object.
-        # \return Filename of the template file.
+        # @param object The Object-ID of the Object to generate output for.
+        # @param type One of the types returned by @ref get_output_types for the given object.
+        # @return Filename of the template file.
         #
-        # Calls \ref get_template_file_raw with the path to the current template.
+        # Calls @ref get_template_file_raw with the path to the current template.
         proc get_template_file {object type} {
             variable template_dir
             return [get_template_file_raw $object $type $template_dir]
         }
 
         ## @brief Callback to get path to output file.
-        # \param[in] object Object-ID of the Object to generate output for.
-        # \param[in] type One of the types returned by \ref get_output_types for the given object.
-        # \return Path to the output file to generate.
+        # @param object Object-ID of the Object to generate output for.
+        # @param type One of the types returned by @ref get_output_types for the given object.
+        # @return Path to the output file to generate.
         #
-        # See also \ref ig::templates::init::output_file.
+        # See also @ref ig::templates::init::output_file.
         proc get_output_file {object type} {
             ig::log -error -abort "no template loaded"
         }
 
         ## @brief Callback to get a default header for object and given output type.
-        # \param[in] object Object-ID of the Object to generate output for.
-        # \param[in] type One of the types returned by \ref get_output_types for the given object.
-        # \return A default header for output type and given object.
+        # @param object Object-ID of the Object to generate output for.
+        # @param type One of the types returned by @ref get_output_types for the given object.
+        # @return A default header for output type and given object.
         #
-        # See also \ref ig::templates::init::default_header.
+        # See also @ref ig::templates::init::default_header.
         proc get_default_header {object type} {
             ig::log -error -abort "no template loaded"
         }
@@ -165,27 +165,27 @@ namespace eval ig::templates {
     ## @brief Preprocess helpers for template files
     namespace eval preprocess {
         ## @brief Preprocess regfile-object into array-list.
-        # \param[in] regfile_id Object-ID of regfile-object.
-        # \return List of arrays (as list like obtained via array get) of regfile-entry data.
+        # @param regfile_id Object-ID of regfile-object.
+        # @return List of arrays (as list like obtained via array get) of regfile-entry data.
         #
         # Structure of returned array-list:
         # Main List contains arrays with entries
-        # \li name = Name of regfile entry.
-        # \li object = Object-ID of regfile entry.
-        # \li address = Address of regfile entry.
-        # \li regs = Array-list for registers in this entry.
+        # @li name = Name of regfile entry.
+        # @li object = Object-ID of regfile entry.
+        # @li address = Address of regfile entry.
+        # @li regs = Array-list for registers in this entry.
         #
         # The regs-entry of the regfile-entry is a list of arrays with entries
-        # \li name = Name of the register.
-        # \li object = Object-ID of register.
-        # \li bit_high = MSBit occupied inside regfile-entry.
-        # \li bit_low = LSBit occupied inside regfile-entry.
-        # \li width = Size of register in bits.
-        # \li entrybits = Verilog-range of bits occupied inside regfile-entry.
-        # \li type = Type of register, e.g. R, RW.
-        # \li reset = Reset value of register.
-        # \li signal = Signal this register connects to.
-        # \li signalbits = Verilog-range of bits of signal to connect to.
+        # @li name = Name of the register.
+        # @li object = Object-ID of register.
+        # @li bit_high = MSBit occupied inside regfile-entry.
+        # @li bit_low = LSBit occupied inside regfile-entry.
+        # @li width = Size of register in bits.
+        # @li entrybits = Verilog-range of bits occupied inside regfile-entry.
+        # @li type = Type of register, e.g. R, RW.
+        # @li reset = Reset value of register.
+        # @li signal = Signal this register connects to.
+        # @li signalbits = Verilog-range of bits of signal to connect to.
         proc regfile_to_arraylist {regfile_id} {
             # collect all regfile entries, sort by address
             set entries [ig::db::get_regfile_entries -all -of $regfile_id]
@@ -290,28 +290,28 @@ namespace eval ig::templates {
         }
 
         ## @brief Preprocess instance-object into array-list.
-        # \param[in] instance_id Object-ID of instance-object.
-        # \return Array as list (like obtained via array get) with instance data.
+        # @param instance_id Object-ID of instance-object.
+        # @return Array as list (like obtained via array get) with instance data.
         #
         # Elements of returned array:
-        # \li name = Name of instance.
-        # \li object = Object-ID of instance.
-        # \li module = Object-ID of module instanciated.
-        # \li module.name = Name of module instanciated.
-        # \li ilm = ilm property of instance.
-        # \li pins = Array-List of pins of instance.
-        # \li parameters = Array-List of parameters of instance.
-        # \li hasparams = Boolean indicating whether instance has parameters.
+        # @li name = Name of instance.
+        # @li object = Object-ID of instance.
+        # @li module = Object-ID of module instanciated.
+        # @li module.name = Name of module instanciated.
+        # @li ilm = ilm property of instance.
+        # @li pins = Array-List of pins of instance.
+        # @li parameters = Array-List of parameters of instance.
+        # @li hasparams = Boolean indicating whether instance has parameters.
         #
         # The pins entry is an array-list of arrays with entries
-        # \li name = Name of pin.
-        # \li object = Object-ID of pin.
-        # \li connection = Connected signal/value to this pin.
+        # @li name = Name of pin.
+        # @li object = Object-ID of pin.
+        # @li connection = Connected signal/value to this pin.
         #
         # The parameters entry is an array-list of arrays with entries
-        # \li name = Name of parameter.
-        # \li object = Object-ID of parameter.
-        # \li value = Value assigned to parameter.
+        # @li name = Name of parameter.
+        # @li object = Object-ID of parameter.
+        # @li value = Value assigned to parameter.
         proc instance_to_arraylist {instance_id} {
             set result {}
 
@@ -352,55 +352,55 @@ namespace eval ig::templates {
         }
 
         ## @brief Preprocess module-object into arra-list.
-        # \param[in] module_id Object-ID of module-object.
-        # \return Array as list (like obtained via array get) with module data.
+        # @param module_id Object-ID of module-object.
+        # @return Array as list (like obtained via array get) with module data.
         #
         # Elements of returned array:
-        # \li name = Name of module.
-        # \li object = Object-ID of module.
-        # \li ports = Array-List of ports of module.
-        # \li parameters = Array-List of parameters of module.
-        # \li declarations = Array-List of declarations of module.
-        # \li code = Array-List of codesections of module.
-        # \li instances = Array-List of instances of module.
-        # \li regfiles = Array-List of regfiles of module.
+        # @li name = Name of module.
+        # @li object = Object-ID of module.
+        # @li ports = Array-List of ports of module.
+        # @li parameters = Array-List of parameters of module.
+        # @li declarations = Array-List of declarations of module.
+        # @li code = Array-List of codesections of module.
+        # @li instances = Array-List of instances of module.
+        # @li regfiles = Array-List of regfiles of module.
         #
         # The ports entry is an array-list of arrays with entries
-        # \li name = Name of port.
-        # \li object = Object-ID of port.
-        # \li size = Bitsize of port.
-        # \li %vlog.bitrange = Verilog-Bitrange of port.
-        # \li direction = Direction of port.
-        # \li vlog.direction = Verilog port-direction.
+        # @li name = Name of port.
+        # @li object = Object-ID of port.
+        # @li size = Bitsize of port.
+        # @li %vlog.bitrange = Verilog-Bitrange of port.
+        # @li direction = Direction of port.
+        # @li vlog.direction = Verilog port-direction.
         #
         # The parameters entry is an array-list of arrays with entries
-        # \li name = Name of parameter.
-        # \li object = Object-ID of parameter.
-        # \li local = Boolean indicating whether this is a local parameter.
-        # \li vlog.type = Verilog-Type of parameter.
-        # \li value = Default value of parameter.
+        # @li name = Name of parameter.
+        # @li object = Object-ID of parameter.
+        # @li local = Boolean indicating whether this is a local parameter.
+        # @li vlog.type = Verilog-Type of parameter.
+        # @li value = Default value of parameter.
         #
         # The declarations entry is an array-list of arrays with entries
-        # \li name = Name of declaration.
-        # \li object = Object-ID of declaration.
-        # \li size = Bitsize of declaration.
-        # \li %vlog.bitrange = Verilog-Bitrange of declaration.
-        # \li defaulttype = Boolean indicating whether declaration is of default type for declarations.
-        # \li vlog.type = Verilog-Type of declarations.
+        # @li name = Name of declaration.
+        # @li object = Object-ID of declaration.
+        # @li size = Bitsize of declaration.
+        # @li %vlog.bitrange = Verilog-Bitrange of declaration.
+        # @li defaulttype = Boolean indicating whether declaration is of default type for declarations.
+        # @li vlog.type = Verilog-Type of declarations.
         #
         # The code entry is an array-list of arrays with entries
-        # \li name = Name of codesection.
-        # \li object = Object-ID of codesection.
-        # \li code_raw = Verbatim code of codesection.
-        # \li code = Code adapted according to adapt property by \ref ig::aux::adapt_codesection.
+        # @li name = Name of codesection.
+        # @li object = Object-ID of codesection.
+        # @li code_raw = Verbatim code of codesection.
+        # @li code = Code adapted according to adapt property by @ref ig::aux::adapt_codesection.
         #
         # The instances entry is an array-list of arrays with entries as returned by
-        # \ref instance_to_arraylist
+        # @ref instance_to_arraylist
         #
         # The regfiles entry is an array-list of arrays with entries
-        # \li name = Name of regfile.
-        # \li object = Object-ID of regfile.
-        # \li entries = Entries of regfile as array-list as returned by \ref regfile_to_arraylist.
+        # @li name = Name of regfile.
+        # @li object = Object-ID of regfile.
+        # @li entries = Entries of regfile as array-list as returned by @ref regfile_to_arraylist.
         proc module_to_arraylist {module_id} {
             set result {}
 
@@ -483,11 +483,11 @@ namespace eval ig::templates {
     }
 
     ## @brief Load directory with templates.
-    # \param[in] dir Path to directory with templates.
+    # @param dir Path to directory with templates.
     #
     # dir should contain one subdirectory for each template.
     # Each subdirectory should contain an "init.tcl" script inserting the template's
-    # callbacks using the methods provided by \ref ig::templates::init
+    # callbacks using the methods provided by @ref ig::templates::init
     proc add_template_dir {dir} {
         set _tmpl_dirs [glob -directory $dir *]
         foreach _i_dir ${_tmpl_dirs} {
@@ -511,8 +511,8 @@ namespace eval ig::templates {
     }
 
     ## @brief Load a template to use.
-    # \param[in] template Template to use. The template must have been loaded with a
-    # template directory using \ref add_template_dir.
+    # @param template Template to use. The template must have been loaded with a
+    # template directory using @ref add_template_dir.
     proc load_template {template} {
         # load vars/procs for current template
         set dir_idx  [lsearch -index 0 $collection::template_dir       $template]
@@ -535,13 +535,13 @@ namespace eval ig::templates {
     }
 
     ## @brief Parse a template.
-    # \param[in] txt Template as a single String.
-    # \return Tcl-Code generated from template as a single String.
+    # @param txt Template as a single String.
+    # @return Tcl-Code generated from template as a single String.
     #
     # The template method is copied/modified to fit here from
     # http://wiki.tcl.tk/18175
     #
-    # The resulting Tcl Code will write the generated output to a variable \c _res
+    # The resulting Tcl Code will write the generated output to a variable @c _res
     # when evaluated.
     proc parse_template {txt} {
         set code "set _res {}\n"
@@ -597,15 +597,15 @@ namespace eval ig::templates {
     }
 
     ## @brief Parse pragma comments of an existing output (file).
-    # \param[in] txt Existing generated output as single String.
-    # \return List of parsed pragmas as sublists of form {\<maintype\> \<subtype\> \<content\>}.
+    # @param txt Existing generated output as single String.
+    # @return List of parsed pragmas as sublists of form {\<maintype\> \<subtype\> \<content\>}.
     #
-    # The pragmas parsed are of the form \code{.v}
+    # The pragmas parsed are of the form @code{.v}
     # /* pragma icglue <maintype> begin <subtype> */
     # /* pragma icglue <maintype> end */
-    # \endcode
+    # @endcode
     #
-    # Currently only \c keep is supported as maintype.
+    # Currently only @c keep is supported as maintype.
     # Subtypes depend on the template used.
     proc parse_pragmas {txt} {
         set result [list]
@@ -629,10 +629,10 @@ namespace eval ig::templates {
     }
 
     ## @brief Generate default header to pragma data if no header is contained.
-    # \param[in] pragma_data Pragma data as generated by \ref parse_pragmas.
-    # \param[in] obj_id Object-ID of object to generate header for.
-    # \param[in] type Type of template as delivered by \ref ig::templates::current::get_output_types.
-    # \return Modified version of pragma_data in case no header was included.
+    # @param pragma_data Pragma data as generated by @ref parse_pragmas.
+    # @param obj_id Object-ID of object to generate header for.
+    # @param type Type of template as delivered by @ref ig::templates::current::get_output_types.
+    # @return Modified version of pragma_data in case no header was included.
     proc add_pragma_default_header {pragma_data obj_id type} {
         if {[lsearch -inline -all -index 1 [lsearch -inline -all -index 0 $pragma_data "keep"] "head"] < 0} {
             lappend pragma_data [list "keep" "head" [current::get_default_header $obj_id $type]]
@@ -641,10 +641,10 @@ namespace eval ig::templates {
     }
 
     ## @brief Get content of specific pargma.
-    # \param[in] pragma_data Pragma data as generated by \ref parse_pragmas.
-    # \param[in] pragma_entry Pragma main type to look up.
-    # \param[in] pragma_subentry Pragma sub type to look up.
-    # \return Content of specified pragma block previously parsed.
+    # @param pragma_data Pragma data as generated by @ref parse_pragmas.
+    # @param pragma_entry Pragma main type to look up.
+    # @param pragma_subentry Pragma sub type to look up.
+    # @return Content of specified pragma block previously parsed.
     proc get_pragma_content {pragma_data pragma_entry pragma_subentry} {
         set result {}
         append result "/* pragma icglue ${pragma_entry} begin ${pragma_subentry} */"
@@ -655,10 +655,10 @@ namespace eval ig::templates {
     }
 
     ## @brief Generate output for given object of specified type.
-    # \param[in] obj_id Object-ID to write output for.
-    # \param[in] type Type of template as delivered by \ref ig::templates::current::get_output_types.
+    # @param obj_id Object-ID to write output for.
+    # @param type Type of template as delivered by @ref ig::templates::current::get_output_types.
     #
-    # The output is written to the file specified by the template callback \ref ig::templates::current::get_output_file.
+    # The output is written to the file specified by the template callback @ref ig::templates::current::get_output_file.
     proc write_object {obj_id type} {
         set _tt_name [current::get_template_file $obj_id $type]
 
@@ -699,9 +699,9 @@ namespace eval ig::templates {
     }
 
     ## @brief Generate output for given object for all output types provided by template.
-    # \param[in] obj_id Object-ID to write output for.
+    # @param obj_id Object-ID to write output for.
     #
-    # Iterates over all output types provided by template callback \ref ig::templates::current::get_output_file
+    # Iterates over all output types provided by template callback @ref ig::templates::current::get_output_file
     # and writes output via the template.
     proc write_object_all {obj_id} {
         foreach i_type [current::get_output_types $obj_id] {
