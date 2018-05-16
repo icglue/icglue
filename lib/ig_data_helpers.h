@@ -17,6 +17,10 @@
  *
  */
 
+/**
+ * @file
+ * @brief Auxiliary helper functions for data structures.
+ */
 #ifndef __IG_DATA_HELPERS_H__
 #define __IG_DATA_HELPERS_H__
 
@@ -28,6 +32,14 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Set multiple object attributes at once.
+ * @param obj Object where attributes are to be set.
+ * @param list of attributes and values, list data: @c (char*).
+ * @return @c true on success or @c false if one or more attributes could not be set.
+ *
+ * The list must contain attributes and values interleaved (so {attribute 1, value 1, attribute 2, value 2, ...}).
+ */
 bool ig_obj_attr_set_from_gslist (struct ig_object *obj, GSList *list);
 
 #ifdef __cplusplus

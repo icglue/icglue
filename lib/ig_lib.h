@@ -17,6 +17,10 @@
  *
  */
 
+/**
+ * @file
+ * @brief Core library functions for ICGlue.
+ */
 #ifndef __IG_LIB_H__
 #define __IG_LIB_H__
 
@@ -28,34 +32,47 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Database struct with all available objects.
+ *
+ * For memory allocation/free see @ref ig_lib_db_new and @ref ig_lib_db_free.
+ */
 struct ig_lib_db {
-    GHashTable *objects_by_id;   /* key: (const char *) -> value: (struct ig_object *) */
+    GHashTable *objects_by_id;     /**< @brief Mapping of ID to objects. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
 
-    GHashTable *modules_by_name; /* key: (const char *) -> value: (struct ig_module *) */
-    GHashTable *modules_by_id;   /* key: (const char *) -> value: (struct ig_module *) */
+    GHashTable *modules_by_name;   /**< @brief Mapping of module names to module data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_module *) </tt> */
+    GHashTable *modules_by_id;     /**< @brief Mapping of Object-ID to module data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_module *) </tt> */
 
-    GHashTable *instances_by_name; /* key: (const char *) -> value: (struct ig_instance *) */
-    GHashTable *instances_by_id;   /* key: (const char *) -> value: (struct ig_instance *) */
+    GHashTable *instances_by_name; /**< @brief Mapping of instance names to instance data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_instance *) </tt> */
+    GHashTable *instances_by_id;   /**< @brief Mapping of Object-ID to instance data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_instance *) </tt> */
 
     /* TODO: remaining */
 
-    GStringChunk *str_chunks;
+    GStringChunk *str_chunks;      /**< @brief String container used for all generated objects. */
 };
 
+/**
+ * @brief Logical direction of a signal in hierarchy.
+ */
 enum ig_lib_connection_dir {
-    IG_LCDIR_UP,
-    IG_LCDIR_DOWN,
-    IG_LCDIR_BIDIR,
-    IG_LCDIR_DEFAULT
+    IG_LCDIR_UP,     /**< Signal towards upper hierarchy elements.*/
+    IG_LCDIR_DOWN,   /**< Signal towards lower hierarchy elements. */
+    IG_LCDIR_BIDIR,  /**< Bidirectional signal. */
+    IG_LCDIR_DEFAULT /**< Direction to be calculated based on other elements. */
 };
 
+/**
+ * @brief Temporary data for storing signal/parameter data of a single element in hierarchy.
+ *
+ * For memory allocation/free see @ref ig_lib_connection_info_new, @ref ig_lib_connection_info_copy and @ref ig_lib_connection_info_free.
+ */
 struct ig_lib_connection_info {
-    struct ig_object          *obj;
-    const char                *parent_name;
-    const char                *local_name;
-    bool                       is_explicit;
-    bool                       force_name;
-    enum ig_lib_connection_dir dir;
+    struct ig_object          *obj;         /**< @brief Object of signal/parameter hierarchy (instance or module object). */
+    const char                *parent_name; /**< @brief Signal/parameter name at upper hierarchy level or @c NULL. */
+    const char                *local_name;  /**< @brief Signal/parameter name at current hierarchy level or @c NULL. */
+    bool                       is_explicit; /**< @brief Signal/parameter name was explicitly set at this hierarchy point. */
+    bool                       force_name;  /**< @brief Signal/parameter name must be kept verbatim. */
+    enum ig_lib_connection_dir dir;         /**< @brief Signal direction in hierarchy.*/
 };
 
 struct ig_lib_db *ig_lib_db_new  ();
