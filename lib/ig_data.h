@@ -86,6 +86,8 @@ enum ig_port_dir {
 
 /**
  * @brief Module port data.
+ *
+ * For memory allocation/free see @ref ig_port_new and @ref ig_port_free.
  */
 struct ig_port {
     struct ig_object *object; /**< @brief Related Object. */
@@ -98,6 +100,8 @@ struct ig_port {
 
 /**
  * @brief Module parameter data.
+ *
+ * For memory allocation/free see @ref ig_param_new and @ref ig_param_free.
  */
 struct ig_param {
     struct ig_object *object; /**< @brief Related Object. */
@@ -111,20 +115,24 @@ struct ig_param {
 
 /**
  * @brief Module declaration data.
+ *
+ * For memory allocation/free see @ref ig_decl_new and @ref ig_decl_free.
  */
 struct ig_decl {
     struct ig_object *object;       /**< @brief Related Object. */
 
     const char *name;               /**< @brief Name of declaration. */
-    bool default_type;              /**< @brief Set if declaration is of default type (language dependant). */
+    bool        default_type;       /**< @brief Set if declaration is of default type (language dependant). */
 
-    const char *default_assignment; /**< @brief Default assignment to declared variable or NULL if unassigned. */
+    const char *default_assignment; /**< @brief Default assignment to declared variable or @c NULL if unassigned. */
 
     struct ig_module *parent;       /**< @brief Module containing declaration. */
 };
 
 /**
  * @brief Module codesection data.
+ *
+ * For memory allocation/free see @ref ig_code_new and @ref ig_code_free.
  */
 struct ig_code {
     struct ig_object *object; /**< @brief Related Object. */
@@ -137,6 +145,8 @@ struct ig_code {
 
 /**
  * @brief Regfile single register data.
+ *
+ * For memory allocation/free see @ref ig_rf_reg_new and @ref ig_rf_reg_free.
  */
 struct ig_rf_reg {
     struct ig_object *object;   /**< @brief Related Object. */
@@ -148,6 +158,8 @@ struct ig_rf_reg {
 
 /**
  * @brief Regfile entry data.
+ *
+ * For memory allocation/free see @ref ig_rf_entry_new and @ref ig_rf_entry_free.
  */
 struct ig_rf_entry {
     struct ig_object *object;     /**< @brief Related Object. */
@@ -161,6 +173,8 @@ struct ig_rf_entry {
 
 /**
  * @brief Regfile data.
+ *
+ * For memory allocation/free see @ref ig_rf_regfile_new and @ref ig_rf_regfile_free.
  */
 struct ig_rf_regfile {
     struct ig_object *object; /**< @brief Related Object. */
@@ -174,30 +188,34 @@ struct ig_rf_regfile {
 
 /**
  * @brief Module data.
+ *
+ * For memory allocation/free see @ref ig_module_new and @ref ig_module_free.
  */
 struct ig_module {
-    struct ig_object *object;             /**< @brief Related Object. */
+    struct ig_object *object; /**< @brief Related Object. */
 
-    const char *name;                     /**< @brief Name of module. */
-    bool        ilm;                      /**< @brief ILM property. */
-    bool        resource;                 /**< @brief Resource property. */
+    const char *name;         /**< @brief Name of module. */
+    bool        ilm;          /**< @brief ILM property. */
+    bool        resource;     /**< @brief Resource property. */
 
     /* module content */
-    GQueue *params;                       /**< @brief Parameters.   Queue data: (struct @ref ig_param *)      */
-    GQueue *ports;                        /**< @brief Ports.        Queue data: (struct @ref ig_port *)       */
-    GQueue *decls;                        /**< @brief Declarations. Queue data: (struct @ref ig_decl *)       */
-    GQueue *code;                         /**< @brief Codesections. Queue data: (struct @ref ig_code *)       */
-    GQueue *regfiles;                     /**< @brief Regfiles.     Queue data: (struct @ref ig_rf_regfile *) */
+    GQueue *params;           /**< @brief Parameters.   Queue data: (struct @ref ig_param *)      */
+    GQueue *ports;            /**< @brief Ports.        Queue data: (struct @ref ig_port *)       */
+    GQueue *decls;            /**< @brief Declarations. Queue data: (struct @ref ig_decl *)       */
+    GQueue *code;             /**< @brief Codesections. Queue data: (struct @ref ig_code *)       */
+    GQueue *regfiles;         /**< @brief Regfiles.     Queue data: (struct @ref ig_rf_regfile *) */
     /* child instances inside module */
-    GQueue *child_instances;              /**< @brief Instances within module. Queue data: (struct @ref ig_instance *) */
+    GQueue *child_instances;  /**< @brief Instances within module. Queue data: (struct @ref ig_instance *) */
     /* instances of this module elsewhere */
-    GQueue *mod_instances;                /**< @brief Instances of module. Queue data: (struct @ref ig_instance *) */
+    GQueue *mod_instances;    /**< @brief Instances of module. Queue data: (struct @ref ig_instance *) */
     /* default instance of this module */
     struct ig_instance *default_instance; /**< @brief Default instance of non-resource module. */
 };
 
 /**
  * @brief Instance pin data.
+ *
+ * For memory allocation/free see @ref ig_pin_new and @ref ig_pin_free.
  */
 struct ig_pin {
     struct ig_object *object;   /**< @brief Related Object. */
@@ -210,6 +228,8 @@ struct ig_pin {
 
 /**
  * @brief Instance parameter adjustment data.
+ *
+ * For memory allocation/free see @ref ig_adjustment_new and @ref ig_adjustment_free.
  */
 struct ig_adjustment {
     struct ig_object *object;   /**< @brief Related Object. */
@@ -222,6 +242,8 @@ struct ig_adjustment {
 
 /**
  * @brief Instance data.
+ *
+ * For memory allocation/free see @ref ig_instance_new and @ref ig_instance_free.
  */
 struct ig_instance {
     struct ig_object *object; /**< @brief Related Object. */
@@ -248,8 +270,10 @@ struct ig_instance {
  * @param name Name of object (depending on type this has to be unique).
  * @param parent Parent-Object in hierarchy or @c NULL.
  * @param obj Actual data structure for data represented by result object.
- * @param storage GStringChunk string storage for shared string storage or NULL to create local string storage.
- * @return The newly created object struct or NULL in case of an error.
+ * @param storage GStringChunk string storage for shared string storage or @c NULL to create local string storage.
+ * @return The newly created object struct or @c NULL in case of an error.
+ *
+ * This function should be called within the allocation function of the actual data struct pointed to by @c obj.
  */
 struct ig_object *ig_obj_new (enum ig_object_type type, const char *name, struct ig_object *parent, gpointer obj, GStringChunk *storage);
 
@@ -258,6 +282,7 @@ struct ig_object *ig_obj_new (enum ig_object_type type, const char *name, struct
  * @param obj Pointer to object to free.
  *
  * This frees the ig_object struct, its attributes and if allocated its string container.
+ * It should preferably called from the free function of the data struct pointed to by @c obj->obj.
  */
 void ig_obj_free (struct ig_object *obj);
 
@@ -280,38 +305,235 @@ bool ig_obj_attr_set (struct ig_object *obj, const char *name, const char *value
  */
 const char *ig_obj_attr_get (struct ig_object *obj, const char *name);
 
+/**
+ * @brief Create new port data struct.
+ * @param name Name of port.
+ * @param dir Port direction.
+ * @param parent Module where port is to be added.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated port structure or @c NULL in case of an error.
+ *
+ * This creates the port with the related object and adds the port to the specified parent module.
+ * Default attributes are set in the related object.
+ */
 struct ig_port *ig_port_new  (const char *name, enum ig_port_dir dir, struct ig_module *parent, GStringChunk *storage);
-void            ig_port_free (struct ig_port *port);
 
+/**
+ * @brief Free port data struct.
+ * @param port Pointer to port data struct to free.
+ *
+ * Frees the port data struct together with the related object.
+ */
+void ig_port_free (struct ig_port *port);
+
+/**
+ * @brief Create new parameter data struct.
+ * @param name Name of parameter.
+ * @param value Value of parameter.
+ * @param local Local parameter property.
+ * @param parent Module where parameter is to be added.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated parameter structure or @c NULL in case of an error.
+ *
+ * This creates the parameter with the related object and adds the parameter to the specified parent module.
+ * Default attributes are set in the related object.
+ */
 struct ig_param *ig_param_new  (const char *name, const char *value, bool local, struct ig_module *parent, GStringChunk *storage);
-void             ig_param_free (struct ig_param *param);
 
+/**
+ * @brief Free parameter data struct.
+ * @param param Pointer to parameter data struct to free.
+ *
+ * Frees the parameter data struct together with the related object.
+ */
+void ig_param_free (struct ig_param *param);
+
+/**
+ * @brief Create new declaration data struct.
+ * @param name Name of declared variable.
+ * @param assign Value assigned to variable or @c NULL.
+ * @param default_type Use default variable type.
+ * @param parent Module where declaration is to be added.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated declaration structure or @c NULL in case of an error.
+ *
+ * This creates the declaration with the related object and adds the declaration to the specified parent module.
+ * Default attributes are set in the related object.
+ */
 struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_type, struct ig_module *parent, GStringChunk *storage);
-void            ig_decl_free (struct ig_decl *decl);
 
+/**
+ * @brief Free declaration data struct.
+ * @param decl Pointer to declaration data struct to free.
+ *
+ * Frees the declaration data struct together with the related object.
+ */
+void ig_decl_free (struct ig_decl *decl);
+
+/**
+ * @brief Create new codesection data struct.
+ * @param name Name of codesection or @c NULL.
+ * @param codesection Code of codesection.
+ * @param parent Module where codesection is to be added.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated codesection structure or @c NULL in case of an error.
+ *
+ * This creates the codesection with the related object and adds the codesection to the specified parent module.
+ * Default attributes are set in the related object.
+ */
 struct ig_code *ig_code_new  (const char *name, const char *codesection, struct ig_module *parent, GStringChunk *storage);
-void            ig_code_free (struct ig_code *code);
 
+/**
+ * @brief Free codesection data struct.
+ * @param code Pointer to codesection data struct to free.
+ *
+ * Frees the codesection data struct together with the related object.
+ */
+void ig_code_free (struct ig_code *code);
+
+/**
+ * @brief Create new register data struct.
+ * @param name Name of register.
+ * @param parent Regfile-entry where register is to be added.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated register structure or @c NULL in case of an error.
+ *
+ * This creates the register with the related object and adds the register to the specified parent regfile-entry.
+ * Default attributes are set in the related object.
+ */
 struct ig_rf_reg *ig_rf_reg_new (const char *name, struct ig_rf_entry *parent, GStringChunk *storage);
-void              ig_rf_reg_free (struct ig_rf_reg *reg);
 
+/**
+ * @brief Free register data struct.
+ * @param reg Pointer to register data struct to free.
+ *
+ * Frees the register data struct together with the related object.
+ */
+void ig_rf_reg_free (struct ig_rf_reg *reg);
+
+/**
+ * @brief Create new regfile-entry data struct.
+ * @param name Name of regfile-entry.
+ * @param parent Regfile where regfile-entry is to be added.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated regfile-entry structure or @c NULL in case of an error.
+ *
+ * This creates the regfile-entry with the related object and adds the regfile-entry to the specified parent regfile.
+ * Default attributes are set in the related object.
+ */
 struct ig_rf_entry *ig_rf_entry_new (const char *name, struct ig_rf_regfile *parent, GStringChunk *storage);
-void                ig_rf_entry_free (struct ig_rf_entry *entry);
 
+/**
+ * @brief Free regfile-entry data struct.
+ * @param entry Pointer to regfile-entry data struct to free.
+ *
+ * Frees the regfile-entry data struct together with the related object.
+ */
+void ig_rf_entry_free (struct ig_rf_entry *entry);
+
+/**
+ * @brief Create new regfile data struct.
+ * @param name Name of regfile.
+ * @param parent Module where regfile is to be added.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated regfile structure or @c NULL in case of an error.
+ *
+ * This creates the regfile with the related object and adds the regfile to the specified parent module.
+ * Default attributes are set in the related object.
+ */
 struct ig_rf_regfile *ig_rf_regfile_new (const char *name, struct ig_module *parent, GStringChunk *storage);
-void                  ig_rf_regfile_free (struct ig_rf_regfile *regfile);
 
+/**
+ * @brief Free regfile data struct.
+ * @param regfile Pointer to regfile data struct to free.
+ *
+ * Frees the regfile data struct together with the related object.
+ */
+void ig_rf_regfile_free (struct ig_rf_regfile *regfile);
+
+/**
+ * @brief Create new module data struct.
+ * @param name Name of module.
+ * @param ilm ILM property.
+ * @param resource Resource property. Resource modules must not contain any regfiles, instances, codesections.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated module structure or @c NULL in case of an error.
+ *
+ * This creates the module with the related object.
+ * Default attributes are set in the related object.
+ */
 struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStringChunk *storage);
-void              ig_module_free (struct ig_module *module);
 
+/**
+ * @brief Free module data struct.
+ * @param module Pointer to module data struct to free.
+ *
+ * Frees the module data struct together with the related object.
+ */
+void ig_module_free (struct ig_module *module);
+
+/**
+ * @brief Create new pin data struct.
+ * @param name Name of pin.
+ * @param connection Value/wire connectod to pin.
+ * @param parent Instance where pin is to be added.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated pin structure or @c NULL in case of an error.
+ *
+ * This creates the pin with the related object and adds the pin to the specified parent instance.
+ * Default attributes are set in the related object.
+ */
 struct ig_pin *ig_pin_new (const char *name, const char *connection, struct ig_instance *parent, GStringChunk *storage);
-void           ig_pin_free (struct ig_pin *pin);
 
+/**
+ * @brief Free pin data struct.
+ * @param pin Pointer to pin data struct to free.
+ *
+ * Frees the pin data struct together with the related object.
+ */
+void ig_pin_free (struct ig_pin *pin);
+
+/**
+ * @brief Create new parameter adjustmen data struct.
+ * @param name Name of parameter.
+ * @param value Adjusted value for parameter.
+ * @param parent Instance where adjustment is to be added.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated adjustment structure or @c NULL in case of an error.
+ *
+ * This creates the adjustment with the related object and adds the adjustment to the specified parent instance.
+ * Default attributes are set in the related object.
+ */
 struct ig_adjustment *ig_adjustment_new (const char *name, const char *value, struct ig_instance *parent, GStringChunk *storage);
-void                  ig_adjustment_free (struct ig_adjustment *adjustment);
 
+/**
+ * @brief Free adjustment data struct.
+ * @param adjustment Pointer to adjustment data struct to free.
+ *
+ * Frees the adjustment data struct together with the related object.
+ */
+void ig_adjustment_free (struct ig_adjustment *adjustment);
+
+/**
+ * @brief Create new instance data struct.
+ * @param name Name of instance.
+ * @param module Module to be instanciated.
+ * @param parent Module where instance is to be added or @c NULL.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated instance structure or @c NULL in case of an error.
+ *
+ * This creates the instance with the related object and adds the instance to the specified parent module.
+ * Default attributes are set in the related object.
+ */
 struct ig_instance *ig_instance_new (const char *name, struct ig_module *module, struct ig_module *parent, GStringChunk *storage);
-void                ig_instance_free (struct ig_instance *instance);
+
+/**
+ * @brief Free instance data struct.
+ * @param instance Pointer to instance data struct to free.
+ *
+ * Frees the instance data struct together with the related object.
+ */
+void ig_instance_free (struct ig_instance *instance);
 
 #ifdef __cplusplus
 }
