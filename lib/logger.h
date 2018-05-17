@@ -60,10 +60,6 @@ void set_loglinenumbers (gboolean value);
 void     log_particular_level (const gchar *id, const log_level_t level);
 gboolean log_suppress (const log_level_t level, const gchar *id);
 
-
-void log_colors_on ();
-void log_colors_off ();
-
 void log_dump_settings ();
 
 #ifdef __cplusplus
