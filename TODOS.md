@@ -3,6 +3,11 @@
   - some markdown pages with explanations?
 - makefile
   - add install target?
+    - install vim-dir (in vim: add to runtimepath)
+    - install syntax-db (somewhere)
+    - install package
+    - install bin
+    - ...?
 
 # lib
 - regfile support
@@ -15,3 +20,7 @@
 
 # templates
 - integrate regfile into default template
+
+# vim
+- decide on one template-syntax file
+- export syntax-db into vim dir?
