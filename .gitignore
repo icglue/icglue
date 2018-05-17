@@ -5,6 +5,7 @@
 .*.sw*
 *.v
 !*.template.v
-ICGlue
-doc
-examples/test
+/ICGlue
+/doc
+/examples/test
+/nagelfar

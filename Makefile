@@ -35,6 +35,10 @@ DOXYFILELIB := doxy/lib.doxyfile
 
 BROWSER     ?= firefox
 
+SYNTAXDIR   := nagelfar
+SYNTAXFILE  := $(SYNTAXDIR)/ICGlue.nagelfar.db.tcl
+SYNTAXGEN   := scripts/gen_nagelfar_db.tcl
+
 #-------------------------------------------------------
 # Tcl Package
 all: prebuild
@@ -74,8 +78,23 @@ showdocs:
 .PHONY: doctcl doclib docs
 
 #-------------------------------------------------------
+# syntax check
+syntaxdb: $(SYNTAXFILE)
+
+$(SYNTAXFILE): $(PKGIDX) | $(SYNTAXDIR)
+	$(SYNTAXGEN) $(SYNTAXFILE)
+
+.PHONY: syntaxdb
+
+#-------------------------------------------------------
+# build everything
+everything: all syntaxdb docs
+
+.PHONY: everything
+
+#-------------------------------------------------------
 # directories
-$(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB):
+$(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB) $(SYNTAXDIR):
 	mkdir -p $@
 
 
@@ -87,7 +106,10 @@ clean:
 cleandoc:
 	rm -rf $(DOCDIR)
 
-cleanall: clean cleandoc
+cleansyntax:
+	rm -rf $(SYNTAXDIR)
+
+cleanall: clean cleandoc cleansyntax
 	@$(MAKE) -C $(LIBDIR) clean
 
-.PHONY: clean cleanall cleandoc
+.PHONY: clean cleanall cleandoc cleansyntax
