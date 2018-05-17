@@ -131,7 +131,7 @@ proc main {} {
     }
 
     foreach i_tdir $c_template_dirs {
-        if {![file isdir $i_tdir]} {
+        if {![file isdirectory $i_tdir]} {
             ig::log -error "template include dir argument \"${i_tdir}\" is no directory"
             exit 1
         } else {

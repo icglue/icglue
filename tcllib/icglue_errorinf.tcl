@@ -108,7 +108,7 @@ namespace eval ig::errinf {
         if {(![catch {
                 set st_list [split_st $st]
                 set line [get_file_line $filename [lindex $st_list 1]]
-                }]) && ($line >= 0)} {
+        }]) && ($line >= 0)} {
             ig::log -error "aborted in file \"$filename\" around line $line with:"
             ig::log -error [lindex $st_list 0]
         }
