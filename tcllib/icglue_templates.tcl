@@ -235,28 +235,29 @@ namespace eval ig::templates {
                         set tmp_high [expr {$i_bit_low - 1}]
                         set tmp_low  [expr {$idx_start + 1}]
                         lappend reg_list [list \
-                            name       "-" \
-                            bit_high   $tmp_high \
-                            bit_low    $tmp_low \
-                            width      [expr {$tmp_high - $tmp_low + 1}] \
-                            entrybits  "${tmp_high}:${tmp_low}" \
-                            type       "-" \
-                            reset      "-" \
-                            signal     "-" \
-                            signalbits "" \
+                            "name"       "-" \
+                            "bit_high"   $tmp_high \
+                            "bit_low"    $tmp_low \
+                            "width"      [expr {$tmp_high - $tmp_low + 1}] \
+                            "entrybits"  "${tmp_high}:${tmp_low}" \
+                            "type"       "-" \
+                            "reset"      "-" \
+                            "signal"     "-" \
+                            "signalbits" "" \
+                            "object"     "" \
                         ]
                     }
                     lappend reg_list [list \
-                        name       [lindex $i_reg 0] \
-                        bit_high   [lindex $i_reg 1] \
-                        bit_low    [lindex $i_reg 2] \
-                        width      [lindex $i_reg 3] \
-                        entrybits  [lindex $i_reg 4] \
-                        type       [lindex $i_reg 5] \
-                        reset      [lindex $i_reg 6] \
-                        signal     [lindex $i_reg 7] \
-                        signalbits [lindex $i_reg 8] \
-                        object     [lindex $i_reg 9] \
+                        "name"       [lindex $i_reg 0] \
+                        "bit_high"   [lindex $i_reg 1] \
+                        "bit_low"    [lindex $i_reg 2] \
+                        "width"      [lindex $i_reg 3] \
+                        "entrybits"  [lindex $i_reg 4] \
+                        "type"       [lindex $i_reg 5] \
+                        "reset"      [lindex $i_reg 6] \
+                        "signal"     [lindex $i_reg 7] \
+                        "signalbits" [lindex $i_reg 8] \
+                        "object"     [lindex $i_reg 9] \
                     ]
 
                     set idx_start $i_bit_high
@@ -265,23 +266,24 @@ namespace eval ig::templates {
                     set tmp_high 31
                     set tmp_low  [expr {$idx_start + 1}]
                     lappend reg_list [list \
-                        name       "-" \
-                        bit_high   $tmp_high \
-                        bit_low    $tmp_low \
-                        width      [expr {$tmp_high - $tmp_low + 1}] \
-                        entrybits  "${tmp_high}:${tmp_low}" \
-                        type       "-" \
-                        reset      "-" \
-                        signal     "-" \
-                        signalbits "" \
+                        "name"       "-" \
+                        "bit_high"   $tmp_high \
+                        "bit_low"    $tmp_low \
+                        "width"      [expr {$tmp_high - $tmp_low + 1}] \
+                        "entrybits"  "${tmp_high}:${tmp_low}" \
+                        "type"       "-" \
+                        "reset"      "-" \
+                        "signal"     "-" \
+                        "signalbits" "" \
+                        "object"     "" \
                     ]
                 }
 
                 lappend entry_list [list \
-                    address [ig::db::get_attribute -object $i_entry -attribute "address"] \
-                    name    [ig::db::get_attribute -object $i_entry -attribute "name"] \
-                    object  $i_entry \
-                    regs    $reg_list \
+                    "address" [ig::db::get_attribute -object $i_entry -attribute "address"] \
+                    "name"    [ig::db::get_attribute -object $i_entry -attribute "name"] \
+                    "object"  $i_entry \
+                    "regs"    $reg_list \
                 ]
             }
             set entry_list [lsort -integer -index 1 $entry_list]
@@ -318,35 +320,35 @@ namespace eval ig::templates {
             set mod [ig::db::get_modules -of $instance_id]
             set ilm [ig::db::get_attribute -object $mod -attribute "ilm" -default "false"]
 
-            lappend result name        [ig::db::get_attribute -object $instance_id -attribute "name"]
-            lappend result object      $instance_id
-            lappend result module      $mod
-            lappend result ilm         $ilm
-            lappend result module.name [ig::db::get_attribute -object $mod -attribute "name"]
+            lappend result "name"        [ig::db::get_attribute -object $instance_id -attribute "name"]
+            lappend result "object"      $instance_id
+            lappend result "module"      $mod
+            lappend result "ilm"         $ilm
+            lappend result "module.name" [ig::db::get_attribute -object $mod -attribute "name"]
 
             # pins
             set pin_data {}
             foreach i_pin [ig::db::get_pins -of $instance_id] {
                 lappend pin_data [list \
-                    name           [ig::db::get_attribute -object $i_pin -attribute "name"] \
-                    object         $i_pin \
-                    connection     [ig::db::get_attribute -object $i_pin -attribute "connection"] \
+                    "name"           [ig::db::get_attribute -object $i_pin -attribute "name"] \
+                    "object"         $i_pin \
+                    "connection"     [ig::db::get_attribute -object $i_pin -attribute "connection"] \
                 ]
             }
-            lappend result pins $pin_data
+            lappend result "pins" $pin_data
 
             # parameters
             set param_data {}
             foreach i_param [ig::db::get_adjustments -of $instance_id] {
                 lappend param_data [list \
-                    name           [ig::db::get_attribute -object $i_param -attribute "name"] \
-                    object         $i_param \
-                    value          [ig::db::get_attribute -object $i_param -attribute "value"] \
+                    "name"           [ig::db::get_attribute -object $i_param -attribute "name"] \
+                    "object"         $i_param \
+                    "value"          [ig::db::get_attribute -object $i_param -attribute "value"] \
                 ]
             }
-            lappend result parameters $param_data
+            lappend result "parameters" $param_data
 
-            lappend result hasparams [expr {(!$ilm) && ([llength $param_data] > 0)}]
+            lappend result "hasparams" [expr {(!$ilm) && ([llength $param_data] > 0)}]
 
             return $result
         }
@@ -404,79 +406,79 @@ namespace eval ig::templates {
         proc module_to_arraylist {module_id} {
             set result {}
 
-            lappend result name   [ig::db::get_attribute -object $module_id -attribute "name"]
-            lappend result object $module_id
+            lappend result "name"   [ig::db::get_attribute -object $module_id -attribute "name"]
+            lappend result "object" $module_id
 
             # ports
             set port_data {}
             foreach i_port [ig::db::get_ports -of $module_id] {
                 lappend port_data [list \
-                    name           [ig::db::get_attribute -object $i_port -attribute "name"] \
-                    object         $i_port \
-                    size           [ig::db::get_attribute -object $i_port -attribute "size"] \
-                    vlog.bitrange  [ig::vlog::obj_bitrange $i_port] \
-                    direction      [ig::db::get_attribute -object $i_port -attribute "direction"] \
-                    vlog.direction [ig::vlog::port_dir $i_port] \
+                    "name"           [ig::db::get_attribute -object $i_port -attribute "name"] \
+                    "object"         $i_port \
+                    "size"           [ig::db::get_attribute -object $i_port -attribute "size"] \
+                    "vlog.bitrange"  [ig::vlog::obj_bitrange $i_port] \
+                    "direction"      [ig::db::get_attribute -object $i_port -attribute "direction"] \
+                    "vlog.direction" [ig::vlog::port_dir $i_port] \
                 ]
             }
-            lappend result ports $port_data
+            lappend result "ports" $port_data
 
             # parameters
             set param_data {}
             foreach i_param [ig::db::get_parameters -of $module_id] {
                 lappend param_data [list \
-                    name           [ig::db::get_attribute -object $i_param -attribute "name"] \
-                    object         $i_param \
-                    local          [ig::db::get_attribute -object $i_param -attribute "local"] \
-                    vlog.type      [ig::vlog::param_type $i_param] \
-                    value          [ig::db::get_attribute -object $i_param -attribute "value"] \
+                    "name"           [ig::db::get_attribute -object $i_param -attribute "name"] \
+                    "object"         $i_param \
+                    "local"          [ig::db::get_attribute -object $i_param -attribute "local"] \
+                    "vlog.type"      [ig::vlog::param_type $i_param] \
+                    "value"          [ig::db::get_attribute -object $i_param -attribute "value"] \
                 ]
             }
-            lappend result parameters $param_data
+            lappend result "parameters" $param_data
 
             # delarations
             set decl_data {}
             foreach i_decl [ig::db::get_declarations -of $module_id] {
                 lappend decl_data [list \
-                    name           [ig::db::get_attribute -object $i_decl -attribute "name"] \
-                    object         $i_decl \
-                    size           [ig::db::get_attribute -object $i_decl -attribute "size"] \
-                    vlog.bitrange  [ig::vlog::obj_bitrange $i_decl] \
-                    defaulttype    [ig::db::get_attribute -object $i_decl -attribute "default_type"] \
-                    vlog.type      [ig::vlog::declaration_type $i_decl] \
+                    "name"           [ig::db::get_attribute -object $i_decl -attribute "name"] \
+                    "object"         $i_decl \
+                    "size"           [ig::db::get_attribute -object $i_decl -attribute "size"] \
+                    "vlog.bitrange"  [ig::vlog::obj_bitrange $i_decl] \
+                    "defaulttype"    [ig::db::get_attribute -object $i_decl -attribute "default_type"] \
+                    "vlog.type"      [ig::vlog::declaration_type $i_decl] \
                 ]
             }
-            lappend result declarations $decl_data
+            lappend result "declarations" $decl_data
 
             # codesections
             set code_data {}
             foreach i_code [ig::db::get_codesections -of $module_id] {
                 lappend code_data [list \
-                    name           [ig::db::get_attribute -object $i_code -attribute "name"] \
-                    object         $i_code \
-                    code_raw       [ig::db::get_attribute -object $i_code -attribute "code"] \
-                    code           [ig::aux::adapt_codesection $i_code] \
+                    "name"           [ig::db::get_attribute -object $i_code -attribute "name"] \
+                    "object"         $i_code \
+                    "code_raw"       [ig::db::get_attribute -object $i_code -attribute "code"] \
+                    "code"           [ig::aux::adapt_codesection $i_code] \
                 ]
             }
-            lappend result code $code_data
+            lappend result "code" $code_data
 
             # instances
             set inst_data {}
             foreach i_inst [ig::db::get_instances -of $module_id] {
                 lappend inst_data [instance_to_arraylist $i_inst]
             }
-            lappend result instances $inst_data
+            lappend result "instances" $inst_data
 
             # regfiles
             set regfile_data {}
             foreach i_regfile [ig::db::get_regfiles -of $module_id] {
                 lappend regfile_data [list \
-                    name    [ig::db::get_attribute -object $i_regfile -attribute "name"] \
-                    object  $i_regfile \
-                    entries [regfile_to_arraylist $i_regfile] \
+                    "name"    [ig::db::get_attribute -object $i_regfile -attribute "name"] \
+                    "object"  $i_regfile \
+                    "entries" [regfile_to_arraylist $i_regfile] \
                 ]
             }
-            lappend result regfiles $regfile_data
+            lappend result "regfiles" $regfile_data
 
             return $result
         }
