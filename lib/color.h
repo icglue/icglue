@@ -17,6 +17,14 @@
  *
  */
 
+/**
+ * @file
+ * @brief Escape sequences for colored terminal output.
+ *
+ * Escape sequences can be integrated in strings, but should not be modified externally.
+ * To switch on/off color use @ref colors_on and @ref colors_off.
+ */
+
 #ifndef __COLOR_H__
 #define __COLOR_H__
 
@@ -26,16 +34,23 @@
 extern "C" {
 #endif
 
-extern gchar color_red     [];
-extern gchar color_green   [];
-extern gchar color_yellow  [];
-extern gchar color_blue    [];
-extern gchar color_magenta [];
-extern gchar color_cyan    [];
-extern gchar color_reset   [];
-extern gchar color_bold    [];
+extern gchar color_red     []; /**< @brief Escape sequence for red. */
+extern gchar color_green   []; /**< @brief Escape sequence for green. */
+extern gchar color_yellow  []; /**< @brief Escape sequence for yellow. */
+extern gchar color_blue    []; /**< @brief Escape sequence for blue. */
+extern gchar color_magenta []; /**< @brief Escape sequence for magenta. */
+extern gchar color_cyan    []; /**< @brief Escape sequence for cyan. */
+extern gchar color_reset   []; /**< @brief Escape sequence for resetting color. */
+extern gchar color_bold    []; /**< @brief Escape sequence for bold output. */
 
+/**
+ * @brief Load escape sequences provided with actual color codes.
+ */
 void colors_on ();
+
+/**
+ * @brief Load escape sequences provided with empty values to turn off color.
+ */
 void colors_off ();
 
 #ifdef __cplusplus
