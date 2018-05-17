@@ -175,4 +175,4 @@ proc main {} {
 
 main
 
-# vim: set filetype=tcl
+# vim: filetype=icgluetcl

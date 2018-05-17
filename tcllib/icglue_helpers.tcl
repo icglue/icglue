@@ -160,3 +160,5 @@ namespace eval ig::aux {
         return $signalname
     }
 }
+
+# vim: filetype=icgluetcl

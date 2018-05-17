@@ -116,3 +116,5 @@ namespace eval ig::errinf {
 
 
 }
+
+# vim: filetype=icgluetcl

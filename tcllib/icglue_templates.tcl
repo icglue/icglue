@@ -709,3 +709,5 @@ namespace eval ig::templates {
         }
     }
 }
+
+# vim: filetype=icgluetcl

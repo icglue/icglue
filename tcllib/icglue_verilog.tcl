@@ -87,3 +87,5 @@ namespace eval ig::vlog {
         }
     }
 }
+
+# vim: filetype=icgluetcl

@@ -581,3 +581,5 @@ namespace eval ig {
     }
 
 }
+
+# vim: filetype=icgluetcl
