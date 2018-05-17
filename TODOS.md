@@ -1,7 +1,6 @@
 # general
-- add documentation
-  - doxygen for lib?
-  - man-pages for tcl-commands?
+- documentation
+  - some markdown pages with explanations?
 - makefile
   - add install target?
 
