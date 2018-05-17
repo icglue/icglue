@@ -21,8 +21,11 @@ let g:loaded_syntastic_icgluetcl_nagelfar_checker = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
+" Folder in which script resides: (not safe for symlinks)
+let s:icglue_syntaxdb = expand('<sfile>:p:h') .  "/ICGlue.nagelfar.db.tcl"
+
 function! SyntaxCheckers_icgluetcl_nagelfar_GetLocList() dict
-    let makeprg = self.makeprgBuild({ 'args' : '-s ~/.vim/syntax_checkers/icgluetcl/ICGlue.nagelfar.db.tcl' , 'args_after': '-H' })
+    let makeprg = self.makeprgBuild({ 'args' : '-s ' . s:icglue_syntaxdb, 'args_after': '-H' })
 
     let errorformat =
         \ '%I%f: %l: N %m,'.
