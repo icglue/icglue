@@ -66,6 +66,8 @@ void ig_lib_db_free (struct ig_lib_db *db)
     g_hash_table_destroy (db->instances_by_id);
     g_hash_table_destroy (db->instances_by_name);
 
+    /* TODO: free content */
+
     g_string_chunk_free (db->str_chunks);
 }
 
@@ -297,10 +299,15 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
     } else {
         log_warn ("LConn", "nothing created for signal %s", signame);
     }
-    if (gen_objs != NULL) *gen_objs = gen_objs_res;
     for (GList *li = gen_objs_res; li != NULL; li = li->next) {
         struct ig_object *io = (struct ig_object *)li->data;
         ig_obj_attr_set (io, "signal", signame, true);
+    }
+
+    if (gen_objs != NULL) {
+        *gen_objs = gen_objs_res;
+    } else {
+        g_list_free (gen_objs_res);
     }
 
     log_debug ("LConn", "deleting hierarchy tree...");
@@ -376,10 +383,14 @@ bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *de
     } else {
         log_warn ("LParm", "nothing created for parameter %s", parname);
     }
-    if (gen_objs != NULL) *gen_objs = gen_objs_res;
     for (GList *li = gen_objs_res; li != NULL; li = li->next) {
         struct ig_object *io = (struct ig_object *)li->data;
         ig_obj_attr_set (io, "parameter", parname, true);
+    }
+    if (gen_objs != NULL) {
+        *gen_objs = gen_objs_res;
+    } else {
+        g_list_free (gen_objs_res);
     }
 
     log_debug ("LParm", "deleting hierarchy tree...");
