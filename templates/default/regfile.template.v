@@ -271,4 +271,4 @@ module <%= $mod_data(name) -%> (
 -%>
 endmodule
 
-<%+ # vim: filetype=verilog_template2 -%>
+<%+ # vim: set filetype=verilog_template: -%>

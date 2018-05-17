@@ -45,6 +45,4 @@ foreach i_entry $entry_list {
     }
 }
 +%>
-<%+
-# vim: filetype=verilog_template
--%>
+<%+ # vim: set filetype=verilog_template: -%>
