@@ -21,6 +21,119 @@ package provide ICGlue 1.0a1
 
 ## @brief Helper functions mainly in template/output context.
 namespace eval ig::aux {
+
+    ## @brief Option parser helper
+    #
+    # @param opt_regex  Regex of the optspec list
+    #
+    # @return stripping version of the regex
+    proc opt_regex_to_helpname {opt_regex} {
+        # remove ^$?
+        set name [string trim $opt_regex [list "^$?"]]
+        return $name
+    }
+    ## @brief Option parser helper
+    #
+    # @param cmdname        Commandname to be printed for the help message
+    # @param optspec        Option specification
+    # @param helpcontext    Helpcontext to be printed [arguments]
+    # @param arguments      Arguments to be parsed
+    #
+    # optspec is a list of list containing the following elements
+    #     1. regex - matching the optionname
+    #     2. type - can be [const=value|TCL-TYPE] (1st form does not accept arguments, 2nd take a argument of type or throws error)
+    #     3. varName - variable to be set if specified in $arguments
+    #     4. description - help text for the descrition
+    #
+    # Example:
+    # @code
+    # set all 0
+    # set color "no"
+    # set args [ig::aux::parse_opts "ls" [list \
+        {{^-a(ll)?$}   {const=1} {all}   "do not ignore entries starting with ."} \
+        {{^-c(olor)?$} {string}  {color} "colorize the output"} \
+        ] \
+        "Files" \
+        $::argv \
+        ]
+    #
+    # puts "Flags: $color, $all - Args $args"
+    #
+    # @endcode
+    #
+    # @return Argument without a match
+    proc parse_opts {cmdname optspec helpcontext arguments} {
+        set retval {}
+        array set opt {}
+
+        while {[llength $arguments] > 0} {
+            set arg [lindex $arguments 0]
+            set arguments [lrange $arguments 1 end]
+            set found 0
+            foreach o $optspec {
+
+                # option listing goes here (<regex> <type>[const=value|TCL-TYPE] <up-varname> <description>:
+                set opt_regex [lindex $o 0]
+                set opt_type  [lindex $o 1]
+                set opt_var   [lindex $o 2]
+                set opt_descr [lindex $o 3]
+
+                if {[regexp $opt_regex $arg]} {
+                    set found 1
+                    set typelist [split $opt_type =]
+                    set type [lindex $typelist 0]
+                    if {$type eq "const"} {
+                        set opt([lindex $o 2]) [lindex $typelist 1]
+                    } else {
+                        #TODO: check type
+                        set arg [lindex $arguments 0]
+                        set arguments [lrange $arguments 1 end]
+                        if {($type ne "string") && (![string is $type $arg])} {
+                            error "Option [opt_regex_to_helpname $opt_regex] expects value of type $type but got: $arg"
+                        }
+                        set opt($opt_var) $arg
+                    }
+                    break;
+                }
+                # check for default help
+                if {[regexp ^-h(elp)?$ $arg]} {
+                    set helpmsg {}
+                    lappend helpmsg "Usage: $cmdname \[OPTION\] $helpcontext"
+                    set optlist {}
+                    set opthelpname_maxlen 0
+                    foreach o $optspec {
+                        set opt_regex [lindex $o 0]
+                        set opt_descr [lindex $o 3]
+                        set opthelpname [opt_regex_to_helpname $opt_regex]
+                        set opthelpname_len [string length $opthelpname]
+                        if {$opthelpname_maxlen < $opthelpname_len} {
+                            set opthelpname_maxlen $opthelpname_len
+                        }
+                        lappend optlist $opthelpname
+                        lappend optlist $opt_descr
+                    }
+
+                    foreach {opt_name opt_descr} $optlist {
+                        lappend helpmsg [format "  %-${opthelpname_maxlen}s %s" $opt_name $opt_descr]
+                    }
+                    set helpmsg [join $helpmsg "\n"]
+                    error $helpmsg
+                    break;
+                }
+            }
+
+            if {$found == 0} {
+                lappend retval $arg
+            }
+        }
+
+        foreach {upvarname upvarvalue} [array get opt] {
+            uplevel set $upvarname $upvarvalue
+        }
+
+        return $retval
+    }
+
     ## @brief Iterate over a list of arrays.
     #
     # @param iter Iterator variable.
