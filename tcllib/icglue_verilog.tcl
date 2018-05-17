@@ -86,6 +86,8 @@ namespace eval ig::vlog {
             return "reg"
         }
     }
+
+    namespace export *
 }
 
 # vim: filetype=icgluetcl

@@ -101,6 +101,8 @@ namespace eval ig::templates {
                 $template $body \
             ]
         }
+
+        namespace export *
     }
 
     ## @brief Callback procs of currently loaded template.
@@ -482,6 +484,8 @@ namespace eval ig::templates {
 
             return $result
         }
+
+        namespace export *
     }
 
     ## @brief Load directory with templates.
@@ -710,6 +714,8 @@ namespace eval ig::templates {
             write_object $obj_id $i_type
         }
     }
+
+    namespace export *
 }
 
 # vim: filetype=icgluetcl

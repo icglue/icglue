@@ -580,6 +580,7 @@ namespace eval ig {
         return $entry_id
     }
 
+    namespace export *
 }
 
 # vim: filetype=icgluetcl

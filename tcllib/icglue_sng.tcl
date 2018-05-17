@@ -393,6 +393,8 @@ namespace eval ig::sng {
 
         evaluate_lines $parsed
     }
+
+    namespace export parse_file
 }
 
 # vim: filetype=icgluetcl

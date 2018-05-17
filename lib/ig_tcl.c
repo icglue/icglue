@@ -67,6 +67,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
 
     struct ig_lib_db *lib_db = ig_lib_db_new ();
 
+    Tcl_Namespace *db_ns = Tcl_CreateNamespace (interp, ICGLUE_LIB_NAMESPACE, NULL, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_module",       ig_tclc_create_module,   lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_instance",     ig_tclc_create_instance, lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "add_codesection",     ig_tclc_add_codesection, lib_db, NULL);
@@ -86,9 +87,12 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_regs",    ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "connect",             ig_tclc_connect,         lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "parameter",           ig_tclc_parameter,       lib_db, NULL);
+    Tcl_Export (interp, db_ns, "*", true);
 
+    Tcl_Namespace *log_ns = Tcl_CreateNamespace (interp, ICGLUE_LOG_NAMESPACE, NULL, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "logger",              ig_tclc_logger,          lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log",                 ig_tclc_log,             lib_db, NULL);
+    Tcl_Export (interp, log_ns, "*", true);
 }
 
 /* Tcl helper function for parsing lists in GSLists */

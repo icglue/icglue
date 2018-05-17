@@ -114,7 +114,7 @@ namespace eval ig::errinf {
         }
     }
 
-
+    namespace export print_st_line
 }
 
 # vim: filetype=icgluetcl
