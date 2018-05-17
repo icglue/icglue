@@ -17,6 +17,11 @@
  *
  */
 
+/**
+ * @file
+ * @brief ICGlue logo.
+ */
+
 #ifndef __IG_LOGO_H__
 #define __IG_LOGO_H__
 
@@ -26,6 +31,10 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Print ICGlue logo.
+ * @param file Output file. Use @c stdout or @c stderr if you want to show the logo.
+ */
 void ig_print_logo (FILE *file);
 
 #ifdef __cplusplus

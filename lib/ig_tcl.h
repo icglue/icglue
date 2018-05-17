@@ -17,6 +17,11 @@
  *
  */
 
+/**
+ * @file
+ * @brief Integrate icglue library into Tcl.
+ */
+
 #ifndef __IG_TCL_H__
 #define __IG_TCL_H__
 
@@ -26,8 +31,11 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Add ICGlue lib commands to tcl interpreter.
+ * @param interp Tcl interpreter to add commands to.
+ */
 void ig_add_tcl_commands (Tcl_Interp *interp);
-
 
 #ifdef __cplusplus
 }
