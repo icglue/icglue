@@ -86,7 +86,7 @@ module <%= $mod_data(name) -%> (
                 if {![ig::aux::is_last $inst(parameters) $i_param]} {
 -%>
 ,
-<%
+<%-
                 }
             }
 -%>
