@@ -39,6 +39,7 @@ namespace eval ig::aux {
     # @param helpcontext    Helpcontext to be printed [arguments]
     # @param optspec        Option specification
     # @param arguments      Arguments to be parsed
+    # @param level          Uplevel for varName (default 1)
     #
     # optspec is a list of list containing the following elements
     #     1. regex - matching the optionname
@@ -48,7 +49,7 @@ namespace eval ig::aux {
     #
     #
     # @return Argument without a match
-    proc _parse_opts {cmdname helpcontext optspec arguments} {
+    proc _parse_opts {cmdname helpcontext optspec arguments {level 1}} {
         set retval {}
         array set opt {}
 
@@ -148,7 +149,7 @@ namespace eval ig::aux {
         }
 
         foreach {upvarname upvarvalue} [array get opt] {
-            uplevel set $upvarname [list $upvarvalue]
+            uplevel $level set $upvarname [list $upvarvalue]
         }
 
         return $retval
@@ -217,6 +218,7 @@ namespace eval ig::aux {
                 "OPTSPEC ARGUMENTS" \
                 $optspec            \
                 $args               \
+                1                   \
             ]
 
         if {$help == 1} {
@@ -227,7 +229,7 @@ namespace eval ig::aux {
         }
 
         if {[llength $arguments] == 2} {
-            return [_parse_opts $cmdname $helpcontext {*}$arguments]
+            return [_parse_opts $cmdname $helpcontext {*}$arguments 2]
         } elseif {[llength $arguments] < 2} {
             error "$procname: not enough arguments\nUSAGE: $procname \[-name CMDNAME\] \[-context HELPCONTEXT\] OPTSPEC ARGUMENT"
         } elseif {[llength $arguments] > 2} {

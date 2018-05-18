@@ -111,78 +111,65 @@ namespace eval ig {
         }
     }
 
+
     ## @brief Create a new module.
     #
-    # @param args Parsed command arguments:<br>
-    # [( -v | -sv | -vhdl )]<br>
-    # [( -rtl | -behavioral | -tb )]<br>
-    # [ -ilm ]<br>
-    # [ -resource ]<br>
-    # [ -u \<unit-name\> ]<br>
-    # [ -i \<instance-list\> ]<br>
-    # [ -rf \<regfile-name\> ]<br>
-    # \<module-name\>
+    ## @brief Option parser helper wrapper
     #
+    # @param args <b> [OPTION]... MODULENAME</b><br>
+    #    <table style="border:0px; border-spacing:40px 0px;">
+    #      <tr><td><b> MODULENAME  </b></td><td> specify a modulename <br></td></tr>
+    #      <tr><td><b> OPTION </b></td><td><br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -u(nit)                  </i></td><td>  specify unit name [directory]      <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -i(nst(ances|anciate)?)  </i></td><td>  specify Module to be instanciated  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -rtl                     </i></td><td>  specify rtl attribute for module   <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -beh(av(ioral|ioural)?)  </i></td><td>  specify rtl attribute for module   <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(tb|testbench)          </i></td><td>  specify rtl attribute for module   <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -v(erilog)               </i></td><td>  output verilog language            <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -sv|-s(ystemverilog)     </i></td><td>  output systemverilog language      <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -v(dhl)                  </i></td><td>  output vhdl language               <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(ilm|macro)             </i></td><td>  pass ilm attribute to icglue       <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -res(ource)              </i></td><td>  pass ressource attribute to icglue <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(rf|(regf(ile)?))       </i></td><td>  pass regfile attribute to icglue   <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -attr(ibutes)            </i></td><td>  pass an arribute dict to icglue    <br></td></tr>
+    #    </table>
     # @return Object-ID of the newly created module.
     proc M args {
         # defaults
-        set name      ""
-        set unit      ""
-        set mode      "rtl"
-        set lang      "verilog"
-        set ilm       "false"
-        set resource  "false"
-        set instances {}
-        set regfiles  {}
+        set name          ""
+        set unit          ""
+        set instance_tree {}
+        set mode          "rtl"
+        set lang          "verilog"
+        set ilm           "false"
+        set resource      "false"
+        set instances     {}
+        set regfiles      {}
 
-        # args
-        set lastarg {}
-
-        foreach i_arg $args {
-            switch -- $lastarg {
-                -u {
-                    set unit $i_arg
-                    set lastarg {}
-                }
-                -i {
-                    set instances $i_arg
-                    set lastarg {}
-                }
-                -rf {
-                    set regfiles $i_arg
-                    set lastarg {}
-                }
-                default {
-                    switch -regexp -- $i_arg {
-                        {^-u(nit)?$}                 {set lastarg -u}
-                        {^-i(nst(ances|anciate)?)?$} {set lastarg -i}
-                        {^-(rf|(regf(ile)?))$}       {set lastarg -rf}
-
-                        {^-v(erilog)?$}              {set lang "verilog"}
-                        {^(-sv|-s(ystemverilog)?)$}  {set lang "systemverilog"}
-                        {^-vhd(l)?$}                 {set lang "vhdl"}
-
-                        {^-rtl$}                     {set mode "rtl"}
-                        {^-beh(av(ioral|ioural)?)?$} {set mode "behavioral"}
-                        {^-(tb|testbench)$}          {set mode "tb"}
-
-                        {^-(ilm|macro)$}             {set ilm      "true"}
-                        {^-res(ource)?$}             {set resource "true"}
-
-                        default {
-                            if {$name ne ""} {
-                                log -error -abort "M (module ${name}): too many arguments"
-                            }
-                            set name $i_arg
-                        }
-                    }
-                }
-            }
-        }
+        # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
+        set name [ig::aux::parse_opts [list \
+                   { {^-u(nit)?$}                 "string"              unit       "specify unit name \[directory\]"     } \
+                   { {^-i(nst(ances|anciate)?)?$} "string"              instances  "specify Module to be instanciated"   } \
+                                                                                                                           \
+                   { {^-rtl$}                     "const=rtl"           mode       "specify rtl attribute for module"    } \
+                   { {^-beh(av(ioral|ioural)?)?$} "const=behavioral"    mode       "specify rtl attribute for module"    } \
+                   { {^-(tb|testbench)$}          "const=behavioral"    mode       "specify rtl attribute for module"    } \
+                                                                                                                           \
+                   { {^-v(erilog)?$}              "const=verilog"       lang       "output verilog language"             } \
+                   { {^-sv|-s(ystemverilog)?$}    "const=systemverilog" lang       "output systemverilog language"       } \
+                   { {^-v(dhl)?$}                 "const=vhdl"          lang       "output vhdl language"                } \
+                                                                                                                           \
+                   { {^-(ilm|macro)$}             "const=ilm"           ilm        "pass ilm attribute to icglue"        } \
+                   { {^-res(ource)?$}             "const=true"          resource   "pass ressource attribute to icglue"  } \
+                                                                                                                           \
+                   { {^-(rf|(regf(ile)?))$}       "string"              regfiles   "pass regfile attribute to icglue"    } \
+                                                                                                                           \
+                   { {^-attr(ibutes)?$}           "string"              attributes "pass an arribute dict to icglue"     } \
+            ] -context "MODULENAME" $args]
 
         # argument checks
-        if {[lsearch {-u -i -rf} $lastarg] >= 0} {
-            log -error -abort "M (module ${name}): need an argument after ${lastarg}"
+        if {[llength $name] > 1} {
+            log -error -abort "M: too many arguments ($name)"
         }
 
         if {$unit eq ""} {set unit $name}
