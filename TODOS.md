@@ -1,6 +1,9 @@
 # general
 - documentation
   - some markdown pages with explanations?
+    - how to write a template/template set
+    - how to write a construct script
+    - ...?
 - makefile
   - add install target?
     - install vim-dir (in vim: add to runtimepath)
