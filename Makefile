@@ -93,7 +93,10 @@ everything: all syntaxdb docs
 shell:
 	TCLLIBPATH=. eltclsh scripts/elinit.tcl
 
-.PHONY: everything
+memcheck:
+	TCLLIBPATH=. G_SLICE=always-malloc valgrind --leak-check=full eltclsh scripts/elinit.tcl
+
+.PHONY: everything shell memcheck
 
 #-------------------------------------------------------
 # directories
