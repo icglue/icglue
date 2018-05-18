@@ -90,6 +90,9 @@ $(SYNTAXFILE): $(PKGIDX) | $(SYNTAXDIR)
 # build everything
 everything: all syntaxdb docs
 
+shell:
+	TCLLIBPATH=. eltclsh scripts/elinit.tcl
+
 .PHONY: everything
 
 #-------------------------------------------------------

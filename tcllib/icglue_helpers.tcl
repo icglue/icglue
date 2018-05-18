@@ -32,11 +32,12 @@ namespace eval ig::aux {
         set name [string trim $opt_regex [list "^$?"]]
         return $name
     }
+
     ## @brief Option parser helper
     #
     # @param cmdname        Commandname to be printed for the help message
-    # @param optspec        Option specification
     # @param helpcontext    Helpcontext to be printed [arguments]
+    # @param optspec        Option specification
     # @param arguments      Arguments to be parsed
     #
     # optspec is a list of list containing the following elements
@@ -45,24 +46,9 @@ namespace eval ig::aux {
     #     3. varName - variable to be set if specified in $arguments
     #     4. description - help text for the descrition
     #
-    # Example:
-    # @code
-    # set all 0
-    # set color "no"
-    # set args [ig::aux::parse_opts "ls" [list \
-        {{^-a(ll)?$}   {const=1} {all}   "do not ignore entries starting with ."} \
-        {{^-c(olor)?$} {string}  {color} "colorize the output"} \
-        ] \
-        "Files" \
-        $::argv \
-        ]
-    #
-    # puts "Flags: $color, $all - Args $args"
-    #
-    # @endcode
     #
     # @return Argument without a match
-    proc parse_opts {cmdname optspec helpcontext arguments} {
+    proc _parse_opts {cmdname helpcontext optspec arguments} {
         set retval {}
         array set opt {}
 
@@ -85,7 +71,6 @@ namespace eval ig::aux {
                     if {$type eq "const"} {
                         set opt([lindex $o 2]) [lindex $typelist 1]
                     } else {
-                        #TODO: check type
                         set arg [lindex $arguments 0]
                         set arguments [lrange $arguments 1 end]
                         if {($type ne "string") && (![string is $type $arg])} {
@@ -98,7 +83,7 @@ namespace eval ig::aux {
                 # check for default help
                 if {[regexp ^-h(elp)?$ $arg]} {
                     set helpmsg {}
-                    lappend helpmsg "Usage: $cmdname \[OPTION\] $helpcontext"
+                    lappend helpmsg "Usage: $cmdname \[OPTION\]... $helpcontext"
                     set optlist {}
                     set opthelpname_maxlen 0
                     foreach o $optspec {
@@ -128,10 +113,73 @@ namespace eval ig::aux {
         }
 
         foreach {upvarname upvarvalue} [array get opt] {
-            uplevel set $upvarname $upvarvalue
+            uplevel set $upvarname [list $upvarvalue]
         }
 
         return $retval
+    }
+
+    ## @brief Option parser helper wrapper
+    #
+    # @param args <b>[OPTION]... OPTSPEC ARGUMENTS</b><br>
+    #    <table style="border:0px; border-spacing:40px 0px;">
+    #      <tr><td><b>  OPTSPEC  </b></td><td>  Option specification is a list of list containing the following elements  <br></td></tr>
+    #      <tr><td></td><td>
+    #         <table style="border:0px">
+    #           <tr><td><i> &ensp; &ensp; 1. regexp       </i></td><td>  matching the optionname                                                                                          <br></td></tr>
+    #           <tr><td><i> &ensp; &ensp; 2. type         </i></td><td>  can be [const=value|TCL-TYPE] (1st form does not accept arguments, 2nd take a argument of type or throws error)  <br></td></tr>
+    #           <tr><td><i> &ensp; &ensp; 3. varName      </i></td><td>  variable to be set if option exist in ARGUMENTS                                                                  <br></td></tr>
+    #           <tr><td><i> &ensp; &ensp; 4. description  </i></td><td>  help text for the descrition                                                                                     <br></td></tr>
+    #         </table>
+    #       </td></tr>
+    #     <tr><td><b>  ARGUMENTS  </b></td><td>  Arguments that should be parsed into specified variables  <br></td></tr>
+    #     <tr><td><b>  OPTION     </b></td><td>                                                            <br></td></tr>
+    #         <tr><td>&ensp; &ensp; &ensp; -name COMMANDNAME    </td><td>  set commandname for help message default is proc-name of caller / filename  <br></td></tr>
+    #         <tr><td>&ensp; &ensp; &ensp; -context HELPCONTEXT </td><td>  set helpcontext for specifing the position dependendent arguments           <br></td></tr>
+    #    </table>
+    #
+    # Example:
+    # @code
+    # set all 0
+    # set color "no"
+    #
+    # set args [ig::aux::_parse_opts -name "ls" {
+    #     {{^-a(ll)?$}   "const=1" all   "do not ignore entries starting with ."}
+    #     {{^-c(olor)?$} "string"  color "colorize the output"}
+    #   } -context "FILES..." $::argv ]
+    #
+    # puts "Flags: $color, $all - Args $args"
+    # @endcode
+    #
+    # @return Arguments without a match
+    proc parse_opts args {
+        set procname [lindex [info level 0] 0]
+        # default command name is proc caller
+        if {[info level] == 1} {
+            set cmdname $::argv0
+        } else {
+            set cmdname [lindex [info level -1] 0]
+        }
+
+        set helpcontext {}
+        set arguments [                                                                        \
+            _parse_opts                                                                        \
+                $procname                                                                      \
+                "OPTSPEC ARGUMENTS"                                                            \
+                [list                                                                          \
+                    { {-name} "string" cmdname "specfiy a command name for the helpmsg"}       \
+                    { {-context} "string" helpcontext "specfiy a helpcontext for the helpmsg"} \
+                ]                                                                              \
+                $args                                                                          \
+            ]
+
+        if {[llength $arguments] == 2} {
+            return [_parse_opts $cmdname $helpcontext {*}$arguments]
+        } elseif {[llength $arguments] < 2} {
+            error "$procname: not enough arguments: $arguments"
+        } elseif {[llength $arguments] > 2} {
+            error "$procname: too many arguments: $arguments"
+        }
     }
 
     ## @brief Iterate over a list of arrays.
