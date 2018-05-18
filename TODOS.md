@@ -17,6 +17,7 @@
 
 # tcllib
 - "-help"-switches for main commands
+- include statement for templates
 
 # templates
 - integrate regfile into default template
