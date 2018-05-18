@@ -397,4 +397,4 @@ namespace eval ig::sng {
     namespace export parse_file
 }
 
-# vim: filetype=icgluetcl
+# vim: set filetype=icgluetcl syntax=tcl:

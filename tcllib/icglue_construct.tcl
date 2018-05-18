@@ -583,4 +583,4 @@ namespace eval ig {
     namespace export *
 }
 
-# vim: filetype=icgluetcl
+# vim: set filetype=icgluetcl syntax=tcl:

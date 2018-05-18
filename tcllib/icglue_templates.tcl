@@ -718,4 +718,4 @@ namespace eval ig::templates {
     namespace export *
 }
 
-# vim: filetype=icgluetcl
+# vim: set filetype=icgluetcl syntax=tcl:

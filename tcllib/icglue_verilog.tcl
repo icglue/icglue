@@ -90,4 +90,4 @@ namespace eval ig::vlog {
     namespace export *
 }
 
-# vim: filetype=icgluetcl
+# vim: set filetype=icgluetcl syntax=tcl:
