@@ -15,7 +15,6 @@
 # lib
 - regfile support
   - add get\_regfile -name (without -of option) possibility
-- add cleanup function to reset library (with proper freeing of db...)
 - add net/signal data type to retrieve signals?
 
 # tcllib
@@ -29,4 +28,4 @@
 
 # bin
 - allow multiple construction scripts?
-- add "nowriteout" function or similar? -> allows for construction with intermediate clean, depends on cleanup function
+- add "nowriteout" function or similar? -> allows for construction with intermediate clean
