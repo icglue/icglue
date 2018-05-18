@@ -48,9 +48,7 @@
     }
 
     proc signal_name {} {
-        return [uplevel 1 {
-                adapt_signalname $reg(signal) $obj_id
-        }]
+        return [uplevel 1 {adapt_signalname $reg(signal) $obj_id}]
     }
     proc signal_entrybits {} {
         return [uplevel 1 {format "%2d:%2d" {*}[split $reg(signalbits) ":"]}]
@@ -60,126 +58,86 @@
 
 <%-= [get_pragma_content $pragma_data "keep" "head"] -%>
 
-module <%= $mod_data(name) -%> (
-<%
-    # module port list
-    foreach i_port $mod_data(ports) {
-        array set port $i_port
+module <%=$mod_data(name)%> (
+<%+ 
+    ###########################################
+    ## <module port list>
+    foreach_array_join port $mod_data(ports) { -%>
+        <%=$port(name)%><% } { -%><%=",\n"%><% }
+    ## </module port list>
+    ###########################################
++%>
+    );
+
+<%+
+    ###########################################
+    ## <parameters>
+    foreach_array param $mod_data(parameters) { -%>
+    <%=[format "%-${param_data_maxlen_type}s %-${param_data_maxlen_name}s = %s;\n" $param(vlog.type) $param(name) $param(value)]%><% } -%>
+    <%=[get_pragma_content $pragma_data "keep" "parameters"]%><%
+    ## </parameters>
+    ###########################################
 -%>
-    <%= $port(name) -%>
-<%      if {![is_last $mod_data(ports) $i_port]} { -%>,<%
-        } -%>
 
-<%  } -%>
-);
-
-<%
-    # module parameters
-    foreach i_param $mod_data(parameters) {
-        array set param $i_param
+<%+
+    ###########################################
+    ## <port declaration>
+    foreach_array port $mod_data(ports) { -%>
+    <%=[format "%-${port_data_maxlen_dir}s %${port_data_maxlen_range}s %s;\n" $port(vlog.direction) $port(vlog.bitrange) $port(name)]%><% }
+    ## </port declaration>
+    ###########################################
 -%>
-<%=     [format "    %-${param_data_maxlen_type}s " $param(vlog.type)] -%>
-<%=     [format "%-${param_data_maxlen_name}s" $param(name)] -%>
- = <%=  $param(value) -%>
-;
-<%  } -%>
-<%= [get_pragma_content $pragma_data "keep" "parameters"] -%>
 
-
-<%
-    # module port details
-    foreach i_port $mod_data(ports) {
-        array set port $i_port
+<%+
+    ###########################################
+    ## <signal declaration>
+    foreach_array decl $mod_data(declarations) { -%>
+    <%=[format "%-${decl_data_maxlen_type}s %${decl_data_maxlen_range}s %s;\n" $decl(vlog.type) $decl(vlog.bitrange)  $decl(name)]%><% } -%>
+    <%=[get_pragma_content $pragma_data "keep" "declarations"]%><%-
+    ## </signal declaration>
+    ###########################################
 -%>
-<%=     [format "    %-${port_data_maxlen_dir}s " $port(vlog.direction)] -%>
-<%=     [format "%${port_data_maxlen_range}s " $port(vlog.bitrange)] -%>
-<%=     $port(name) -%>
-;
-<%  } -%>
 
-
-<%
-    # module declarations
-    foreach i_decl $mod_data(declarations) {
-        array set decl $i_decl
--%>
-<%=     [format "    %-${decl_data_maxlen_type}s " $decl(vlog.type)] -%>
-<%=     [format "%${decl_data_maxlen_range}s " $decl(vlog.bitrange)] -%>
-<%=     $decl(name) -%>
-;
-<%  } -%>
-<%= [get_pragma_content $pragma_data "keep" "declarations"] -%>
-
-
-<%
-    # submodule instanciations
-    foreach i_inst $mod_data(instances) {
-        array set inst $i_inst
+<%+
+    ###########################################
+    ## <submodule instanciations>
+    foreach_array inst $mod_data(instances) {
         set i_params_maxlen_name [max_array_entry_len $inst(parameters) name]
-        set i_pins_maxlen_name   [max_array_entry_len $inst(pins) name]
--%>
-
-    <%= $inst(module.name) -%>
-<%      if {$inst(hasparams)} {
--%>
- #(<%
-            foreach i_param $inst(parameters) {
-                array set param $i_param
--%>
-
-        .<%= [format "%-${i_params_maxlen_name}s" $param(name)] -%> (<%= $param(value) %>)<%
-                if {![is_last $inst(parameters) $i_param]} {
--%>
-,
-<%
-                }
-            }
--%>
-
-    )<%
-        } -%> <%= $inst(name) %> (
-<%
-        foreach i_pin $inst(pins) {
-            array set pin $i_pin
--%>
-        .<%= [format "%-${i_pins_maxlen_name}s" $pin(name)] -%> (<%= $pin(connection) %>)<%
-            if {![is_last $inst(pins) $i_pin]} {
--%>
-,
-<%
-            }
-        }
--%>
-
+        set i_pins_maxlen_name   [max_array_entry_len $inst(pins) name] +%>
+    <%=$inst(module.name)%>
+<%- if {$inst(hasparams)} { -%>
+ #(
+<% foreach_array_join param $inst(parameters) { -%>
+        .<%=[format "%-${i_params_maxlen_name}s (%s)" $param(name) $param(value)]%><% } { %><%=",\n"%><% } %>
+    )
+<%- } -%> <%=$inst(name)%> (
+<%+ foreach_array_join pin $inst(pins) { -%>
+        .<%=[format "%-${i_pins_maxlen_name}s (%s)" $pin(name) $pin(connection)]%><%- } { -%><%=",\n"%><% } %>
     );
 <%  } -%>
 
-<%= [get_pragma_content $pragma_data "keep" "instances"] -%>
-
-<%
-    # code sections
-    foreach i_cs $mod_data(code) {
-        array set cs $i_cs
+    <%=[get_pragma_content $pragma_data "keep" "instances"]%><%-
+    ## </submodule instanciations>
+    ###########################################
 -%>
 
-<%=     $cs(code) -%>
-
-<%  } -%>
-
-<%= [get_pragma_content $pragma_data "keep" "code"] -%>
-
+<%+
+    ###########################################
+    ## <code>
+    foreach_array cs $mod_data(code) { -%>
+<%=     $cs(code)%><%+ } -%>
+    <%=[get_pragma_content $pragma_data "keep" "code"]-%><%-
+    ## </code>
+    ###########################################
+%>
 
 <%+
     ###########################################
     ## <localparams>
 -%>
     // Regfile ADDRESS definition:
-<%+
-    foreach_array entry $entry_list {
--%>
-    localparam <%=[param]%> = <%=[addr_vlog]%>;
-<%+
-    }
+<%+ foreach_array entry $entry_list { -%>
+    localparam <%=[param]%> = <%=[addr_vlog]%><%=";\n"%><%+ }
     ## </localparams> ##
     ###########################################
 -%>
@@ -187,8 +145,7 @@ module <%= $mod_data(name) -%> (
 <%+
     ###########################################
     ## <registers>
--%>
-<%+
+
     ###########################################
     ## <definition>
 -%>
@@ -199,9 +156,7 @@ module <%= $mod_data(name) -%> (
 <%+ foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} {-%>
     reg  [<%=[reg_range]-%>] <%=[reg_name]%>;
 <%+ }+%>
-<%+}-%>
-
-<%+
+<%+}
     ## </definition> ##
     ###########################################
 -%>
@@ -244,8 +199,7 @@ module <%= $mod_data(name) -%> (
 <%+   } -%>
 <%- } -%>
 
-<%+}-%>
-<%+
+<%+}
     ## </registers> ##
     ###########################################
 -%>
