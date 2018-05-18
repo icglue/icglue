@@ -194,7 +194,7 @@ module <%= $mod_data(name) -%> (
 -%>
 
     reg  [31: 0] <%=[r_data]%>;
-<%-ig::aux::foreach_array entry $entry_list {-%>
+<%- ig::aux::foreach_array entry $entry_list {-%>
     wire [31: 0] <%=[reg_val]%>;
 <%+ ig::aux::foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} {-%>
     reg  [<%=[reg_range]-%>] <%=[reg_name]%>;
@@ -206,7 +206,7 @@ module <%= $mod_data(name) -%> (
     ###########################################
 -%>
 
-<%+ig::aux::foreach_array entry $entry_list {
+<%+ ig::aux::foreach_array entry $entry_list {
     set maxlen_regname [ig::aux::max_array_entry_len $entry(regs) name]
 -%>
     //////////////////////////////////////////////////////////////////////////////
