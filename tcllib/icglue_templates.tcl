@@ -726,10 +726,13 @@ namespace eval ig::templates {
         # evaluate result in temporary namespace
         eval [join [list \
             "namespace eval _template_run \{" \
-            "variable pragma_data [list $pragma_data]" \
-            {variable _res {}} \
-            "variable obj_id [list $obj_id]" \
-            "eval [list ${_tt_code}]" \
+            {    namespace import ::ig::aux::*} \
+            {    namespace import ::ig::templates::preprocess::*} \
+            {    namespace import ::ig::templates::get_pragma_content} \
+            "    variable pragma_data [list $pragma_data]" \
+            {    variable _res {}} \
+            "    variable obj_id [list $obj_id]" \
+            "    eval [list ${_tt_code}]" \
             "\}" \
             ] "\n"]
 

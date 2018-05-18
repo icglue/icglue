@@ -1,18 +1,18 @@
 <%
     # tcl header
-    array set mod_data [ig::templates::preprocess::module_to_arraylist $obj_id]
+    array set mod_data [module_to_arraylist $obj_id]
 
-    set port_data_maxlen_dir   [ig::aux::max_array_entry_len $mod_data(ports) vlog.direction]
-    set port_data_maxlen_range [ig::aux::max_array_entry_len $mod_data(ports) vlog.bitrange]
+    set port_data_maxlen_dir   [max_array_entry_len $mod_data(ports) vlog.direction]
+    set port_data_maxlen_range [max_array_entry_len $mod_data(ports) vlog.bitrange]
 
-    set decl_data_maxlen_type  [ig::aux::max_array_entry_len $mod_data(declarations) vlog.type]
-    set decl_data_maxlen_range [ig::aux::max_array_entry_len $mod_data(declarations) vlog.bitrange]
+    set decl_data_maxlen_type  [max_array_entry_len $mod_data(declarations) vlog.type]
+    set decl_data_maxlen_range [max_array_entry_len $mod_data(declarations) vlog.bitrange]
 
-    set param_data_maxlen_type [ig::aux::max_array_entry_len $mod_data(parameters) vlog.type]
-    set param_data_maxlen_name [ig::aux::max_array_entry_len $mod_data(parameters) name]
+    set param_data_maxlen_type [max_array_entry_len $mod_data(parameters) vlog.type]
+    set param_data_maxlen_name [max_array_entry_len $mod_data(parameters) name]
 -%>
 
-<%= [ig::templates::get_pragma_content $pragma_data "keep" "head"] -%>
+<%= [get_pragma_content $pragma_data "keep" "head"] -%>
 
 
 module <%= $mod_data(name) -%> (
@@ -22,7 +22,7 @@ module <%= $mod_data(name) -%> (
         array set port $i_port
 -%>
     <%= $port(name) -%>
-<%      if {![ig::aux::is_last $mod_data(ports) $i_port]} { -%>,<%
+<%      if {![is_last $mod_data(ports) $i_port]} { -%>,<%
         } -%>
 
 <%  } -%>
@@ -38,7 +38,7 @@ module <%= $mod_data(name) -%> (
  = <%=  $param(value) -%>
 ;
 <%  } -%>
-<%= [ig::templates::get_pragma_content $pragma_data "keep" "parameters"] -%>
+<%= [get_pragma_content $pragma_data "keep" "parameters"] -%>
 
 
 <%
@@ -63,15 +63,15 @@ module <%= $mod_data(name) -%> (
 <%=     $decl(name) -%>
 ;
 <%  } -%>
-<%= [ig::templates::get_pragma_content $pragma_data "keep" "declarations"] -%>
+<%= [get_pragma_content $pragma_data "keep" "declarations"] -%>
 
 
 <%
     # submodule instanciations
     foreach i_inst $mod_data(instances) {
         array set inst $i_inst
-        set i_params_maxlen_name [ig::aux::max_array_entry_len $inst(parameters) name]
-        set i_pins_maxlen_name   [ig::aux::max_array_entry_len $inst(pins) name]
+        set i_params_maxlen_name [max_array_entry_len $inst(parameters) name]
+        set i_pins_maxlen_name   [max_array_entry_len $inst(pins) name]
 -%>
 
     <%= $inst(module.name) -%>
@@ -83,7 +83,7 @@ module <%= $mod_data(name) -%> (
 -%>
 
         .<%= [format "%-${i_params_maxlen_name}s" $param(name)] -%> (<%= $param(value) %>)<%
-                if {![ig::aux::is_last $inst(parameters) $i_param]} {
+                if {![is_last $inst(parameters) $i_param]} {
 -%>
 ,
 <%-
@@ -98,7 +98,7 @@ module <%= $mod_data(name) -%> (
             array set pin $i_pin
 -%>
         .<%= [format "%-${i_pins_maxlen_name}s" $pin(name)] -%> (<%= $pin(connection) %>)<%
-            if {![ig::aux::is_last $inst(pins) $i_pin]} {
+            if {![is_last $inst(pins) $i_pin]} {
 -%>
 ,
 <%
@@ -109,7 +109,7 @@ module <%= $mod_data(name) -%> (
     );
 <%  } -%>
 
-<%= [ig::templates::get_pragma_content $pragma_data "keep" "instances"] -%>
+<%= [get_pragma_content $pragma_data "keep" "instances"] -%>
 
 <%
     # code sections
@@ -121,7 +121,7 @@ module <%= $mod_data(name) -%> (
 
 <%  } -%>
 
-<%= [ig::templates::get_pragma_content $pragma_data "keep" "code"] -%>
+<%= [get_pragma_content $pragma_data "keep" "code"] -%>
 
 
 endmodule

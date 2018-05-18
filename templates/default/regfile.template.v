@@ -1,19 +1,19 @@
 <%+
     ##  icglue - template regfile
 
-    array set mod_data [ig::templates::preprocess::module_to_arraylist $obj_id]
-    set entry_list     [ig::templates::preprocess::regfile_to_arraylist [lindex [ig::db::get_regfiles -of $obj_id] 0]]
+    array set mod_data [module_to_arraylist $obj_id]
+    set entry_list     [regfile_to_arraylist [lindex [ig::db::get_regfiles -of $obj_id] 0]]
 
-    set port_data_maxlen_dir   [ig::aux::max_array_entry_len $mod_data(ports) vlog.direction]
-    set port_data_maxlen_range [ig::aux::max_array_entry_len $mod_data(ports) vlog.bitrange]
+    set port_data_maxlen_dir   [max_array_entry_len $mod_data(ports) vlog.direction]
+    set port_data_maxlen_range [max_array_entry_len $mod_data(ports) vlog.bitrange]
 
-    set decl_data_maxlen_type  [ig::aux::max_array_entry_len $mod_data(declarations) vlog.type]
-    set decl_data_maxlen_range [ig::aux::max_array_entry_len $mod_data(declarations) vlog.bitrange]
+    set decl_data_maxlen_type  [max_array_entry_len $mod_data(declarations) vlog.type]
+    set decl_data_maxlen_range [max_array_entry_len $mod_data(declarations) vlog.bitrange]
 
-    set param_data_maxlen_type [ig::aux::max_array_entry_len $mod_data(parameters) vlog.type]
-    set param_data_maxlen_name [ig::aux::max_array_entry_len $mod_data(parameters) name]
+    set param_data_maxlen_type [max_array_entry_len $mod_data(parameters) vlog.type]
+    set param_data_maxlen_name [max_array_entry_len $mod_data(parameters) name]
 
-    set maxlen_name            [ig::aux::max_array_entry_len $entry_list name]
+    set maxlen_name            [max_array_entry_len $entry_list name]
     set maxlen_regname         0
 
     proc reset     {} { return "reset_n_ref_i" }
@@ -49,7 +49,7 @@
 
     proc signal_name {} {
         return [uplevel 1 {
-                ig::aux::adapt_signalname $reg(signal) $obj_id
+                adapt_signalname $reg(signal) $obj_id
         }]
     }
     proc signal_entrybits {} {
@@ -58,7 +58,7 @@
 
 -%>
 
-<%-= [ig::templates::get_pragma_content $pragma_data "keep" "head"] -%>
+<%-= [get_pragma_content $pragma_data "keep" "head"] -%>
 
 module <%= $mod_data(name) -%> (
 <%
@@ -67,7 +67,7 @@ module <%= $mod_data(name) -%> (
         array set port $i_port
 -%>
     <%= $port(name) -%>
-<%      if {![ig::aux::is_last $mod_data(ports) $i_port]} { -%>,<%
+<%      if {![is_last $mod_data(ports) $i_port]} { -%>,<%
         } -%>
 
 <%  } -%>
@@ -83,7 +83,7 @@ module <%= $mod_data(name) -%> (
  = <%=  $param(value) -%>
 ;
 <%  } -%>
-<%= [ig::templates::get_pragma_content $pragma_data "keep" "parameters"] -%>
+<%= [get_pragma_content $pragma_data "keep" "parameters"] -%>
 
 
 <%
@@ -108,15 +108,15 @@ module <%= $mod_data(name) -%> (
 <%=     $decl(name) -%>
 ;
 <%  } -%>
-<%= [ig::templates::get_pragma_content $pragma_data "keep" "declarations"] -%>
+<%= [get_pragma_content $pragma_data "keep" "declarations"] -%>
 
 
 <%
     # submodule instanciations
     foreach i_inst $mod_data(instances) {
         array set inst $i_inst
-        set i_params_maxlen_name [ig::aux::max_array_entry_len $inst(parameters) name]
-        set i_pins_maxlen_name   [ig::aux::max_array_entry_len $inst(pins) name]
+        set i_params_maxlen_name [max_array_entry_len $inst(parameters) name]
+        set i_pins_maxlen_name   [max_array_entry_len $inst(pins) name]
 -%>
 
     <%= $inst(module.name) -%>
@@ -128,7 +128,7 @@ module <%= $mod_data(name) -%> (
 -%>
 
         .<%= [format "%-${i_params_maxlen_name}s" $param(name)] -%> (<%= $param(value) %>)<%
-                if {![ig::aux::is_last $inst(parameters) $i_param]} {
+                if {![is_last $inst(parameters) $i_param]} {
 -%>
 ,
 <%
@@ -143,7 +143,7 @@ module <%= $mod_data(name) -%> (
             array set pin $i_pin
 -%>
         .<%= [format "%-${i_pins_maxlen_name}s" $pin(name)] -%> (<%= $pin(connection) %>)<%
-            if {![ig::aux::is_last $inst(pins) $i_pin]} {
+            if {![is_last $inst(pins) $i_pin]} {
 -%>
 ,
 <%
@@ -154,7 +154,7 @@ module <%= $mod_data(name) -%> (
     );
 <%  } -%>
 
-<%= [ig::templates::get_pragma_content $pragma_data "keep" "instances"] -%>
+<%= [get_pragma_content $pragma_data "keep" "instances"] -%>
 
 <%
     # code sections
@@ -166,7 +166,7 @@ module <%= $mod_data(name) -%> (
 
 <%  } -%>
 
-<%= [ig::templates::get_pragma_content $pragma_data "keep" "code"] -%>
+<%= [get_pragma_content $pragma_data "keep" "code"] -%>
 
 
 <%+
@@ -175,7 +175,7 @@ module <%= $mod_data(name) -%> (
 -%>
     // Regfile ADDRESS definition:
 <%+
-    ig::aux::foreach_array entry $entry_list {
+    foreach_array entry $entry_list {
 -%>
     localparam <%=[param]%> = <%=[addr_vlog]%>;
 <%+
@@ -194,9 +194,9 @@ module <%= $mod_data(name) -%> (
 -%>
 
     reg  [31: 0] <%=[r_data]%>;
-<%- ig::aux::foreach_array entry $entry_list {-%>
+<%- foreach_array entry $entry_list {-%>
     wire [31: 0] <%=[reg_val]%>;
-<%+ ig::aux::foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} {-%>
+<%+ foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} {-%>
     reg  [<%=[reg_range]-%>] <%=[reg_name]%>;
 <%+ }+%>
 <%+}-%>
@@ -206,14 +206,14 @@ module <%= $mod_data(name) -%> (
     ###########################################
 -%>
 
-<%+ ig::aux::foreach_array entry $entry_list {
-    set maxlen_regname [ig::aux::max_array_entry_len $entry(regs) name]
+<%+ foreach_array entry $entry_list {
+    set maxlen_regname [max_array_entry_len $entry(regs) name]
 -%>
     //////////////////////////////////////////////////////////////////////////////
     <%=[reg_comment]%>
     always @(posedge <%=[clk]%> or negedge <%=[reset]%>) begin
         if (<%=[reset]%> == 1'b0) begin
-<%+ ig::aux::foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} {
+<%+ foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} {
 -%>
             <%=[reg_name]%> <= <%=$reg(reset)%>;
 <%+ }-%>
@@ -221,20 +221,20 @@ module <%= $mod_data(name) -%> (
             if (<%=[rf_w_en]%> == 1'b1) begin
                 <%=[reg_comment]%>
                 if (<%=[rf_addr]%> == <%=[string trim [param]]%>) begin
-<%+ ig::aux::foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} {-%>
+<%+ foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} {-%>
                     <%=[reg_name]%> <= <%=[rf_w_data]%>[<%=[reg_entrybits]%>];
 <%+ }-%>
                 end
             end
         end
     end
-<%+ ig::aux::foreach_array reg $entry(regs) { -%>
+<%+ foreach_array reg $entry(regs) { -%>
 <%+   if {$reg(type) eq "RW"} { -%>
     assign <%=[signal_name]%>[<%=[signal_entrybits]%>] = <%=[string trim [reg_name]]%>;
 <%+   } -%>
 <%- } -%>
 
-<%+ ig::aux::foreach_array reg $entry(regs) { -%>
+<%+ foreach_array reg $entry(regs) { -%>
 <%+   if {$reg(type) eq "RW"} { -%>
     assign <%=[reg_val]%>[<%=[reg_entrybits]%>] = <%=[string trim [reg_name]]%>;
 <%+   } elseif {$reg(type) eq "R"} { -%>
@@ -257,7 +257,7 @@ module <%= $mod_data(name) -%> (
     always @(*) begin
         case (<%=[rf_addr]%>)
 <%+
-    ig::aux::foreach_array entry $entry_list {
+    foreach_array entry $entry_list {
 -%>
             <%=[param]%>: <%=[r_data]%> = <%=[reg_val]%>;
 <%+}-%>
