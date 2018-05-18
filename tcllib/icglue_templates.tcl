@@ -554,6 +554,9 @@ namespace eval ig::templates {
 
         # search <% delimiter
         while {[set i [string first <% $txt]] != -1} {
+            # include tag
+            set incltag 0
+
             # check for right chomp
             set right_i [expr {$i - 1}]
             incr i 2
@@ -571,6 +574,10 @@ namespace eval ig::templates {
             if {[string index $txt 0] eq "="} {
                 # <%= will be be append, but evaluated as tcl-argument
                 append code "append _res "
+                set txt [string range $txt 1 end]
+            } elseif {[string index $txt 0] eq "i"} {
+                # <%i will be be included here
+                set incltag 1
                 set txt [string range $txt 1 end]
             } else {
                 # append as tcl code
@@ -591,8 +598,16 @@ namespace eval ig::templates {
                 incr i -1
             }
 
-            append code "[string range $txt 0 $i] \n"
-            set txt [string range $txt $left_i end]
+            # include tag / code
+            if {$incltag} {
+                set incfname [eval "file join \${current::template_dir} [string range $txt 0 $i]"]
+                set incfile [open $incfname "r"]
+                set txt [string cat [read $incfile] [string range $txt $left_i end]]
+                close $incfile
+            } else {
+                append code "[string range $txt 0 $i] \n"
+                set txt [string range $txt $left_i end]
+            }
         }
 
         # append remainder of verbatim/normal template content
