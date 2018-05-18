@@ -660,6 +660,33 @@ namespace eval ig::templates {
         append result "/* pragma icglue ${pragma_entry} end */"
     }
 
+    # template parse cache
+    variable template_script_cache [list]
+
+    ## @brief Lookup template file in cache and returned cached template script or parse @c template_filename.
+    # @param template_filename Path to file to lookup.
+    # @return cached or parsed template file script.
+    proc get_template_script {template_filename} {
+        variable template_script_cache
+
+        set fname_full [file normalize $template_filename]
+
+        set idx [lsearch -index 0 $template_script_cache $fname_full]
+        if {$idx >= 0} {
+            return [lindex $template_script_cache $idx 1]
+        }
+
+        set template_file [open ${template_filename} "r"]
+        set template_raw [read ${template_file}]
+        close ${template_file}
+
+        set template_script [parse_template ${template_raw}]
+
+        lappend template_script_cache [list $fname_full $template_script]
+
+        return $template_script
+    }
+
     ## @brief Generate output for given object of specified type.
     # @param obj_id Object-ID to write output for.
     # @param type Type of template as delivered by @ref ig::templates::current::get_output_types.
@@ -679,11 +706,7 @@ namespace eval ig::templates {
         }
         set pragma_data [add_pragma_default_header $pragma_data $obj_id $type]
 
-        set _tt_f [open ${_tt_name} "r"]
-        set _tt [read ${_tt_f}]
-        close ${_tt_f}
-
-        set _tt_code [parse_template ${_tt}]
+        set _tt_code [get_template_script ${_tt_name}]
 
         # evaluate result in temporary namespace
         eval [join [list \
