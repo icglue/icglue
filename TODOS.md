@@ -20,19 +20,13 @@
 
 # tcllib
 - "-help"-switches for main commands
-- include statement for templates
-- template cache
 
 # templates
 - integrate regfile into default template
-- import namespace functions of aux,preprocess,... into template run namespace?
+- regfiles: support
+  - handshake read
+  - trigger reg (different types: 1-0 trigger, toggle trigger, ...?)
 
 # bin
-- import construction namespace procs before sourcing construction scripts?
 - allow multiple construction scripts?
-- run construction script in encapsulated namespace
 - add "nowriteout" function or similar? -> allows for construction with intermediate clean, depends on cleanup function
-
-# vim
-- decide on one template-syntax file
-- export syntax-db into vim dir?
