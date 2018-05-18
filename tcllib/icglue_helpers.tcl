@@ -80,36 +80,71 @@ namespace eval ig::aux {
                     }
                     break;
                 }
-                # check for default help
-                if {[regexp ^-h(elp)?$ $arg]} {
-                    set helpmsg {}
-                    lappend helpmsg "Usage: $cmdname \[OPTION\]... $helpcontext"
-                    set optlist {}
-                    set opthelpname_maxlen 0
-                    foreach o $optspec {
-                        set opt_regex [lindex $o 0]
-                        set opt_descr [lindex $o 3]
-                        set opthelpname [opt_regex_to_helpname $opt_regex]
-                        set opthelpname_len [string length $opthelpname]
-                        if {$opthelpname_maxlen < $opthelpname_len} {
-                            set opthelpname_maxlen $opthelpname_len
-                        }
-                        lappend optlist $opthelpname
-                        lappend optlist $opt_descr
-                    }
+            }
 
-                    foreach {opt_name opt_descr} $optlist {
-                        lappend helpmsg [format "  %-${opthelpname_maxlen}s %s" $opt_name $opt_descr]
+            if {$found == 1} {
+                continue;
+            }
+
+            # check for default help
+            if {[regexp ^-h(elp)?$ $arg]} {
+                set helpmsg {}
+                lappend helpmsg "Usage: $cmdname \[OPTION\]... $helpcontext"
+                set optlist {}
+                set opthelpname_maxlen 0
+                foreach o $optspec {
+                    set opt_regex [lindex $o 0]
+                    set opt_descr [lindex $o 3]
+                    set opthelpname [opt_regex_to_helpname $opt_regex]
+                    set opthelpname_len [string length $opthelpname]
+                    if {$opthelpname_maxlen < $opthelpname_len} {
+                        set opthelpname_maxlen $opthelpname_len
                     }
-                    set helpmsg [join $helpmsg "\n"]
-                    error $helpmsg
-                    break;
+                    lappend optlist $opthelpname
+                    lappend optlist $opt_descr
                 }
+
+                foreach {opt_name opt_descr} $optlist {
+                    lappend helpmsg [format "  %-${opthelpname_maxlen}s %s" $opt_name $opt_descr]
+                }
+                set helpmsg [join $helpmsg "\n"]
+                error $helpmsg
+                break;
+            } elseif {$arg eq "-helpdoxy"} {
+                set helpmsg {}
+                lappend helpmsg "    # @param args <b> \[OPTION\]... $helpcontext</b><br>"
+                lappend helpmsg "    #    <table style=\"border:0px; border-spacing:40px 0px;\">"
+                lappend helpmsg "    #      <tr><td><b> __TODO__ HELPCONTEXT </b></td><td> __TODO__ ARGUMENT DESCRIPTION <br></td></tr>"
+                lappend helpmsg "    #      <tr><td><b> OPTION </b></td><td><br></td></tr>"
+                set optlist {}
+                set opthelpname_maxlen 0
+                set optdescr_maxlen 0
+                foreach o $optspec {
+                    set opt_regex [lindex $o 0]
+                    set opt_descr [lindex $o 3]
+                    set opthelpname [opt_regex_to_helpname $opt_regex]
+                    set opthelpname_len [string length $opthelpname]
+                    if {$opthelpname_maxlen < $opthelpname_len} {
+                        set opthelpname_maxlen $opthelpname_len
+                    }
+                    set optdescr_len [string length $opt_descr]
+                    if {$optdescr_maxlen < $optdescr_len} {
+                        set optdescr_maxlen $optdescr_len
+                    }
+                    lappend optlist $opthelpname
+                    lappend optlist $opt_descr
+                }
+
+                foreach {opt_name opt_descr} $optlist {
+                    lappend helpmsg [format "    #      <tr><td><i> &ensp; &ensp; %-${opthelpname_maxlen}s  </i></td><td>  %-${optdescr_maxlen}s <br></td></tr>" $opt_name $opt_descr]
+                }
+                lappend helpmsg "    #    </table>"
+                set helpmsg [join $helpmsg "\n"]
+                error $helpmsg
+                break;
             }
 
-            if {$found == 0} {
-                lappend retval $arg
-            }
+            lappend retval $arg
         }
 
         foreach {upvarname upvarvalue} [array get opt] {
@@ -136,6 +171,7 @@ namespace eval ig::aux {
     #     <tr><td><b>  OPTION     </b></td><td>                                                            <br></td></tr>
     #         <tr><td>&ensp; &ensp; &ensp; -name COMMANDNAME    </td><td>  set commandname for help message default is proc-name of caller / filename  <br></td></tr>
     #         <tr><td>&ensp; &ensp; &ensp; -context HELPCONTEXT </td><td>  set helpcontext for specifing the position dependendent arguments           <br></td></tr>
+    #         <tr><td>&ensp; &ensp; &ensp; -helpdoxy            </td><td>  generate templalte for doxygen help for the caller                          <br></td></tr>
     #    </table>
     #
     # Example:
@@ -154,6 +190,8 @@ namespace eval ig::aux {
     # @return Arguments without a match
     proc parse_opts args {
         set procname [lindex [info level 0] 0]
+        set help 0
+        set helpdoxy 0
         # default command name is proc caller
         if {[info level] == 1} {
             set cmdname $::argv0
@@ -161,22 +199,37 @@ namespace eval ig::aux {
             set cmdname [lindex [info level -1] 0]
         }
 
+        set optspec [list                                                                                           \
+                    { {^-name$}      "string"  cmdname     "specfiy a command name for the helpmsg"}            \
+                    { {^-context$}   "string"  helpcontext "specfiy a helpcontext for the helpmsg"}             \
+                ]                                                                                               \
+
+        if {[llength $args] != 1} {
+            lappend optspec \
+                { {^-h(elp)?$}   "const=1" help        "generate help message for the caller"}              \
+                { {^-helpdoxy$}  "const=1" helpdoxy    "generate template for doxygen help for the caller"} \
+        }
+
         set helpcontext {}
-        set arguments [                                                                        \
-            _parse_opts                                                                        \
-                $procname                                                                      \
-                "OPTSPEC ARGUMENTS"                                                            \
-                [list                                                                          \
-                    { {-name} "string" cmdname "specfiy a command name for the helpmsg"}       \
-                    { {-context} "string" helpcontext "specfiy a helpcontext for the helpmsg"} \
-                ]                                                                              \
-                $args                                                                          \
+        set arguments [             \
+            _parse_opts             \
+                $procname           \
+                "OPTSPEC ARGUMENTS" \
+                $optspec            \
+                $args               \
             ]
+
+        if {$help == 1} {
+            return [_parse_opts $cmdname $helpcontext [lindex $arguments 0] -help]
+        }
+        if {$helpdoxy == 1} {
+            return [_parse_opts $cmdname $helpcontext [lindex $arguments 0] -helpdoxy]
+        }
 
         if {[llength $arguments] == 2} {
             return [_parse_opts $cmdname $helpcontext {*}$arguments]
         } elseif {[llength $arguments] < 2} {
-            error "$procname: not enough arguments: $arguments"
+            error "$procname: not enough arguments\nUSAGE: $procname \[-name CMDNAME\] \[-context HELPCONTEXT\] OPTSPEC ARGUMENT"
         } elseif {[llength $arguments] > 2} {
             error "$procname: too many arguments: $arguments"
         }
