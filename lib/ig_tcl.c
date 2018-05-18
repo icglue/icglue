@@ -58,6 +58,7 @@ static int ig_tclc_get_attribute    (ClientData clientdata, Tcl_Interp *interp, 
 static int ig_tclc_get_objs_of_obj  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_connect          (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_parameter        (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_reset            (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_logger           (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_log              (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
@@ -87,6 +88,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_regs",    ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "connect",             ig_tclc_connect,         lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "parameter",           ig_tclc_parameter,       lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "reset",               ig_tclc_reset,           lib_db, NULL);
     Tcl_Export (interp, db_ns, "*", true);
 
     Tcl_Namespace *log_ns = Tcl_CreateNamespace (interp, ICGLUE_LOG_NAMESPACE, NULL, NULL);
@@ -1246,6 +1248,28 @@ l_ig_tclc_parameter_nfexit:
     result = TCL_ERROR;
     Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not find object", -1));
     goto l_ig_tclc_parameter_exit_pre;
+}
+
+/* TCLDOC
+##
+# @brief Clear database of all objects.
+#
+# This removes everything from the database.
+# Can be useful to create multiple individual hierarchy sets with overlapping definitions one after another.
+#
+*/
+static int ig_tclc_reset (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    ig_lib_db_clear (db);
+
+    return TCL_OK;
 }
 
 /* TCLDOC

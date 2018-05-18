@@ -129,6 +129,26 @@ void ig_obj_free (struct ig_object *obj)
     g_slice_free (struct ig_object, obj);
 }
 
+void ig_obj_free_full (struct ig_object *obj)
+{
+    if (obj == NULL) return;
+
+    /* type-specific frees call ig_object_free on object */
+    switch (obj->type) {
+        case IG_OBJ_PORT:          ig_port_free       ((struct ig_port       *)obj->obj); break;
+        case IG_OBJ_PIN:           ig_pin_free        ((struct ig_pin        *)obj->obj); break;
+        case IG_OBJ_PARAMETER:     ig_param_free      ((struct ig_param      *)obj->obj); break;
+        case IG_OBJ_ADJUSTMENT:    ig_adjustment_free ((struct ig_adjustment *)obj->obj); break;
+        case IG_OBJ_DECLARATION:   ig_decl_free       ((struct ig_decl       *)obj->obj); break;
+        case IG_OBJ_CODESECTION:   ig_code_free       ((struct ig_code       *)obj->obj); break;
+        case IG_OBJ_MODULE:        ig_module_free     ((struct ig_module     *)obj->obj); break;
+        case IG_OBJ_INSTANCE:      ig_instance_free   ((struct ig_instance   *)obj->obj); break;
+        case IG_OBJ_REGFILE_REG:   ig_rf_reg_free     ((struct ig_rf_reg     *)obj->obj); break;
+        case IG_OBJ_REGFILE_ENTRY: ig_rf_entry_free   ((struct ig_rf_entry   *)obj->obj); break;
+        case IG_OBJ_REGFILE:       ig_rf_regfile_free ((struct ig_rf_regfile *)obj->obj); break;
+    }
+}
+
 bool ig_obj_attr_set (struct ig_object *obj, const char *name, const char *value, bool constant)
 {
     if (obj == NULL) return false;
@@ -453,6 +473,14 @@ struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStr
 void ig_module_free (struct ig_module *module)
 {
     if (module == NULL) return;
+
+    if (!module->resource) {
+        if (module->default_instance != NULL) {
+            if (module->default_instance->parent == NULL) {
+                ig_instance_free (module->default_instance);
+            }
+        }
+    }
 
     ig_obj_free (module->object);
 

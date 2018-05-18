@@ -286,6 +286,15 @@ struct ig_object *ig_obj_new (enum ig_object_type type, const char *name, struct
  */
 void ig_obj_free (struct ig_object *obj);
 
+/**
+ * @brief Free object data and related data struct.
+ * @param obj Pointer to object to free.
+ *
+ * This frees the ig_object struct, its attributes and if allocated its string container.
+ * It calls the free function of the data struct pointed to by @c obj->obj.
+ */
+void ig_obj_free_full (struct ig_object *obj);
+
 
 /**
  * @brief Set attribute of object.

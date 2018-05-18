@@ -45,7 +45,7 @@ struct ig_lib_db *ig_lib_db_new ()
 {
     struct ig_lib_db *result = g_slice_new (struct ig_lib_db);
 
-    result->objects_by_id     = g_hash_table_new (g_str_hash, g_str_equal);
+    result->objects_by_id     = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_free_full);
     result->modules_by_id     = g_hash_table_new (g_str_hash, g_str_equal);
     result->modules_by_name   = g_hash_table_new (g_str_hash, g_str_equal);
     result->instances_by_id   = g_hash_table_new (g_str_hash, g_str_equal);
@@ -56,17 +56,26 @@ struct ig_lib_db *ig_lib_db_new ()
     return result;
 }
 
+void ig_lib_db_clear (struct ig_lib_db *db)
+{
+    g_hash_table_remove_all (db->modules_by_id);
+    g_hash_table_remove_all (db->modules_by_name);
+    g_hash_table_remove_all (db->instances_by_id);
+    g_hash_table_remove_all (db->instances_by_name);
+    g_hash_table_remove_all (db->objects_by_id);
+
+    g_string_chunk_clear (db->str_chunks);
+}
+
 void ig_lib_db_free (struct ig_lib_db *db)
 {
     if (db == NULL) return;
 
-    g_hash_table_destroy (db->objects_by_id);
     g_hash_table_destroy (db->modules_by_id);
     g_hash_table_destroy (db->modules_by_name);
     g_hash_table_destroy (db->instances_by_id);
     g_hash_table_destroy (db->instances_by_name);
-
-    /* TODO: free content */
+    g_hash_table_destroy (db->objects_by_id);
 
     g_string_chunk_free (db->str_chunks);
 }

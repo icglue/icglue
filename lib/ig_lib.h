@@ -82,6 +82,12 @@ struct ig_lib_connection_info {
 struct ig_lib_db *ig_lib_db_new  ();
 
 /**
+ * @brief Free icglue database content.
+ * @param db Database to clear.
+ */
+void ig_lib_db_clear (struct ig_lib_db *db);
+
+/**
  * @brief Free icglue database struct.
  * @param db Database to free.
  */
