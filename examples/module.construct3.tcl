@@ -1,4 +1,3 @@
-namespace eval ig {
 # modules
 M -rtl -v -u rftest mgmt_regfile -rf {mgmt_regfile}
 M -rtl -v -u rftest mgmt         -i {mgmt_regfile}
@@ -43,4 +42,3 @@ R -rf mgmt_regfile "config2" @0x0008 {
     {status     15:0      R    16'h0  status  16:0       }
 }
 
-}

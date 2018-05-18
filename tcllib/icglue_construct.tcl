@@ -91,6 +91,24 @@ namespace eval ig {
 
             return $result
         }
+
+        ## @brief Run a construction script in encapsulated namespace.
+        #
+        # @param filename Path to script.
+        proc run_script {filename} {
+            eval [join [list \
+                "namespace eval _construct_run \{" \
+                "    namespace import ::ig::*" \
+                "    if {\[catch {source [list $filename]}\]} \{" \
+                "        ig::errinf::print_st_line [list $filename]" \
+                "        ig::log -error \"Error while parsing source \\\"[list $filename]\\\"\"" \
+                "        exit 1" \
+                "    \}" \
+                "\}" \
+                ] "\n"]
+
+            namespace delete _construct_run
+        }
     }
 
     ## @brief Create a new module.

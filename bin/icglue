@@ -148,11 +148,7 @@ proc main {} {
     if {[string match "*.sng" $c_file] || [string match "*.icsng" $c_file]} {
         ig::sng::parse_file $c_file
     } elseif {[string match "*.tcl" $c_file]} {
-        if {[catch {source $c_file}]} {
-            ig::errinf::print_st_line $c_file
-            ig::log -error "Error while parsing source \"$c_file\""
-            exit 1
-        }
+        ig::construct::run_script $c_file
     } else {
         ig::log -error "Unknown input file suffix for \"$c_file\""
         exit 1
