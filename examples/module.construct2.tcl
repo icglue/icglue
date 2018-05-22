@@ -15,7 +15,7 @@ S status -w 16     proc_mgmt  <-  proc_core
 S bddata -w 16 -b  {proc_mgmt proc_core tb_proc_top}
 
 # code
-C -m proc_mgmt -a {
+C proc_mgmt -a {
     assign clk = clk_ref;
 }
 

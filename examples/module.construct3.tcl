@@ -33,44 +33,45 @@ S data   -w DATA_W mgmt_regfile  -> core
 S status -w 16     mgmt_regfile <-  core
 
 # code
-C -m mgmt -a {
+C mgmt -a {
     assign clk = clk_ref;
 }
 
 # parameters
-P DATA_W -v 32 {mgmt_regfile core tb_top}
-P DATA_W0 -v 32 {mgmt_regfile}
-P DATA_W1 -v 32 {mgmt_regfile}
-P DELAY   -v 0.1      {common_sync<4,test>}
-P TEST    -v "uiae"   {common_sync<4,test>}
+P DATA_W = 32 "mgmt_regfile core tb_top"
+P DATA_W0 -v32 {mgmt_regfile core}
+P DATA_W1 {mgmt_regfile} = 32
+P =0.1 DELAY      {common_sync<4,test>}
+P TEST    = "uiae"   {common_sync<4,test>}
 
-C -m mgmt_regfile -a {
+C mgmt_regfile -a {
     // assign clk signal
     assign clk = clk_ref;
 }
 
 # regfile
-R -rf mgmt_regfile "config" @0x0004 {
+R -rf=mgmt_regfile "config" @0x0004 {
     {name        entrybits type reset signal  signalbits}
     {cfg1_zzzzz  4:0       RW   5'h0  config  4:0       }
     {cfg2_eu     11:5      RW   6'h0  config2 6:0       }
 }
 
-R -rf mgmt_regfile "config2" @0x0008 {
+R -rf=mgmt_regfile "config2" @0x0008 {
     {name       entrybits type reset signal  signalbits}
     {cfg_uiae3  4:0       RW   5'h0  config3  4:0        }
     {status     15:0      R    16'h0  status  16:0       }
 }
 
-S config_test0 -w 32     mgmt_regfile  -> core
-S config_test___1 -w 32     mgmt_regfile  -> core
-S config_test______2 -w 32     mgmt_regfile  -> core
-S status_test -w 16     mgmt_regfile <-  core
+S config_test0       -w 32 mgmt_regfile -> core
+S config_test___1    -w 32 mgmt_regfile -> core
+S config_test______2 -w 32 mgmt_regfile -> core
+S status_test        -w 16 mgmt_regfile <- core
+
 R -rf mgmt_regfile "config1" @0x0008 {
-    {name      entrybits type reset signal  signalbits}
-    {cfg_test_0      4:0  RW 5'h0  config_test0 4:0  }
-    {cfg_test___1    4:0  RW 5'h0  config_test___1 4:0  }
-    {cfg_test______2 4:0  RW 5'h0  config_test______2 4:0  }
-    {status_test     15:0 R  16'h0 status_test  16:0 }
+    {name            entrybits type reset signal             signalbits}
+    {cfg_test_0      4:0       RW   5'h0  config_test0       4:0         }
+    {cfg_test___1    4:0       RW   5'h0  config_test___1    4:0         }
+    {cfg_test______2 4:0       RW   5'h0  config_test______2 4:0         }
+    {status_test     15:0      R    16'h0 status_test        16:0        }
 }
 

@@ -120,18 +120,18 @@ namespace eval ig {
     #    <table style="border:0px; border-spacing:40px 0px;">
     #      <tr><td><b> MODULENAME  </b></td><td> specify a modulename <br></td></tr>
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -u(nit)                  </i></td><td>  specify unit name [directory]      <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -i(nst(ances|anciate)?)  </i></td><td>  specify Module to be instanciated  <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -rtl                     </i></td><td>  specify rtl attribute for module   <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -beh(av(ioral|ioural)?)  </i></td><td>  specify rtl attribute for module   <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -(tb|testbench)          </i></td><td>  specify rtl attribute for module   <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -v(erilog)               </i></td><td>  output verilog language            <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -sv|-s(ystemverilog)     </i></td><td>  output systemverilog language      <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -v(dhl)                  </i></td><td>  output vhdl language               <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -(ilm|macro)             </i></td><td>  pass ilm attribute to icglue       <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -res(ource)              </i></td><td>  pass ressource attribute to icglue <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -(rf|(regf(ile)?))       </i></td><td>  pass regfile attribute to icglue   <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -attr(ibutes)            </i></td><td>  pass an arribute dict to icglue    <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -u(nit)(=)                </i></td><td>  specify unit name [directory]      <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -i(nst(ances|anciate))(=) </i></td><td>  specify Module to be instanciated  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -rtl                      </i></td><td>  specify rtl attribute for module   <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -beh(av(ioral|ioural))    </i></td><td>  specify rtl attribute for module   <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(tb|testbench)           </i></td><td>  specify rtl attribute for module   <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -v(erilog)                </i></td><td>  output verilog language            <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -sv|-s(ystemverilog)      </i></td><td>  output systemverilog language      <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -v(dhl)                   </i></td><td>  output vhdl language               <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(ilm|macro)              </i></td><td>  pass ilm attribute to icglue       <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -res(ource)               </i></td><td>  pass ressource attribute to icglue <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(rf|(regf(ile)))(=)      </i></td><td>  pass regfile attribute to icglue   <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -attr(ibutes)(=)          </i></td><td>  pass an arribute dict to icglue    <br></td></tr>
     #    </table>
     # @return Object-ID of the newly created module.
     proc M args {
@@ -147,24 +147,24 @@ namespace eval ig {
         set regfiles      {}
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set name [ig::aux::parse_opts [list \
-                   { {^-u(nit)?$}                 "string"              unit       "specify unit name \[directory\]"     } \
-                   { {^-i(nst(ances|anciate)?)?$} "string"              instances  "specify Module to be instanciated"   } \
-                                                                                                                           \
-                   { {^-rtl$}                     "const=rtl"           mode       "specify rtl attribute for module"    } \
-                   { {^-beh(av(ioral|ioural)?)?$} "const=behavioral"    mode       "specify rtl attribute for module"    } \
-                   { {^-(tb|testbench)$}          "const=behavioral"    mode       "specify rtl attribute for module"    } \
-                                                                                                                           \
-                   { {^-v(erilog)?$}              "const=verilog"       lang       "output verilog language"             } \
-                   { {^-sv|-s(ystemverilog)?$}    "const=systemverilog" lang       "output systemverilog language"       } \
-                   { {^-v(dhl)?$}                 "const=vhdl"          lang       "output vhdl language"                } \
-                                                                                                                           \
-                   { {^-(ilm|macro)$}             "const=ilm"           ilm        "pass ilm attribute to icglue"        } \
-                   { {^-res(ource)?$}             "const=true"          resource   "pass ressource attribute to icglue"  } \
-                                                                                                                           \
-                   { {^-(rf|(regf(ile)?))$}       "string"              regfiles   "pass regfile attribute to icglue"    } \
-                                                                                                                           \
-                   { {^-attr(ibutes)?$}           "string"              attributes "pass an arribute dict to icglue"     } \
+        set name [ig::aux::parse_opts [list                                                                                    \
+                   { {^-u(nit)?(=)?}                 "string"              unit       "specify unit name \[directory\]"     }  \
+                   { {^-i(nst(ances|anciate)?)?(=)?} "string"              instances  "specify Module to be instanciated"   }  \
+                                                                                                                               \
+                   { {^-rtl$}                        "const=rtl"           mode       "specify rtl attribute for module"    }  \
+                   { {^-beh(av(ioral|ioural)?)$}     "const=behavioral"    mode       "specify rtl attribute for module"    }  \
+                   { {^-(tb|testbench)$}             "const=behavioral"    mode       "specify rtl attribute for module"    }  \
+                                                                                                                               \
+                   { {^-v(erilog)?$}                 "const=verilog"       lang       "output verilog language"             }  \
+                   { {^-sv|-s(ystemverilog)?$}       "const=systemverilog" lang       "output systemverilog language"       }  \
+                   { {^-v(dhl)?$}                    "const=vhdl"          lang       "output vhdl language"                }  \
+                                                                                                                               \
+                   { {^-(ilm|macro)$}                "const=ilm"           ilm        "pass ilm attribute to icglue"        }  \
+                   { {^-res(ource)?$}                "const=true"          resource   "pass ressource attribute to icglue"  }  \
+                                                                                                                               \
+                   { {^-(rf|(regf(ile)?))(=)?}       "string"              regfiles   "pass regfile attribute to icglue"    }  \
+                                                                                                                               \
+                   { {^-attr(ibutes)?(=)?}           "string"              attributes "pass an arribute dict to icglue"     }  \
             ] -context "MODULENAME" $args]
 
         # argument checks
@@ -321,55 +321,40 @@ namespace eval ig {
 
     ## @brief Create a new parameter.
     #
-    # @param args Parsed command arguments:<br>
-    # -v \<parameter-value\><br>
-    # \<parameter-name\><br>
-    # \<endpoint-list\>
+    # @param args <b> [OPTION]... PARAMETERNAME MODULENAME...</b><br>
+    #    <table style="border:0px; border-spacing:40px 0px;">
+    #      <tr><td><b> PARAMETERNAME </b></td><td> name of the parameter <br></td></tr>
+    #      <tr><td><b> MODULENAME </b></td><td>modules obtaining the parameter (can be a list of modules as well)<br></td></tr>
+    #      <tr><td><b> OPTION </b></td><td><br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; (=|-v(alue)(=))  </i></td><td>  specify parameter value <br></td></tr>
+    #    </table>
     #
     # @return Object-IDs of the newly created objects of newly created parameter.
-    #
-    # Endpoint-list will be expanded and can contain local parameter-name specifications after a "->" symbol
-    # and multi-instance-expressions e.g. module\<1,4..9,a,b\>.
     proc P args {
         # defaults
         set name      ""
         set value     {}
+        #set value     0
         set endpoints {}
         set ilist     0
 
-        # args
-        set lastarg {}
+        # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
+        set params [ig::aux::parse_opts [list \
+                   { {^(=|-v(alue)?)(=)?} "string" value "specify parameter value" } \
+            ] -context "PARAMETERNAME MODULENAME..." $args]
 
-        foreach i_arg $args {
-            switch -- $lastarg {
-                -v {
-                    set value $i_arg
-                    set lastarg {}
-                }
-                default {
-                    switch -regexp -- $i_arg {
-                        {^-v(alue)?$}                {set lastarg -v}
+        set name [lindex $params 0]
 
-                        default {
-                            if {$ilist == 0} {
-                                incr ilist
-                                set name $i_arg
-                            } else {
-                                foreach i_elem $i_arg {
-                                    lappend endpoints $i_elem
-                                }
-                            }
-                        }
-                    }
-                }
+        set endpoints {}
+        foreach ep [lrange $params 1 end] {
+            if {[llength $ep] > 1} {
+                lappend endpoints {*}$ep
+            } else {
+                lappend endpoints $ep
             }
         }
 
         # argument checks
-        if {[lsearch {-v} $lastarg] >= 0} {
-            log -error -abort "P (parameter ${name}): need an argument after ${lastarg}"
-        }
-
         if {$name eq ""} {
             log -error -abort "P: no parameter name specified"
         }
@@ -383,7 +368,7 @@ namespace eval ig {
 
             set paramid [ig::db::parameter -name $name -value $value -targets $endpoints]
         } emsg]} {
-            log -error -abort "P (parameter ${name}): error while creating parameter:\n${emsg}"
+            log -error -abort "P (parameter ${name}): error while creating parameter:\n\t${emsg}"
         }
 
         return $paramid
@@ -391,53 +376,35 @@ namespace eval ig {
 
     ## @brief Create a new codesection.
     #
-    # @param args Parsed command arguments:<br>
-    # -m \<module\><br>
-    # [( -adapt | -verbatim )]<br>
-    # \<code\>
+    # @param args <b> [OPTION]... MODULENAME CODE</b><br>
+    #    <table style="border:0px; border-spacing:40px 0px;">
+    #      <tr><td><b> MODULENAME </b></td><td> name of the module contain the code</td></tr>
+    #      <tr><td><b> CODE </b></td><td> the actual code that should be inlined </td></tr>
+    #      <tr><td><b> OPTION </b></td><td><br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -a(dapt)                  </i></td><td>  adapt signal names        <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; (-v(erbatim)|-noa(dapt))  </i></td><td>  do not adapt signal names <br></td></tr>
+    #    </table>
     #
     # @return Object-ID of the newly created codesection.
     #
     # If adapt is specified (default), signal names in the code-block will be adapted by their local names.
     proc C args {
         # defaults
-        set modname   ""
         set adapt     "true"
-        set code      {}
 
-        # args
-        set lastarg {}
-
-        foreach i_arg $args {
-            switch -- $lastarg {
-                -m {
-                    set modname $i_arg
-                    set lastarg {}
-                }
-                default {
-                    switch -regexp -- $i_arg {
-                        {^-m(od(ule)?)?$}           {set lastarg -m}
-                        {^-a(dapt)?$}               {set adapt "true"}
-                        {^(-v(erbatim)?|-noadapt)$} {set adapt "false"}
-
-                        default {
-                            lappend code $i_arg
-                        }
-                    }
-                }
-            }
-        }
+        # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
+        set arguments [ig::aux::parse_opts [list \
+                { {^-a(dapt)?$}                   "const=true"  adapt "adapt signal names" } \
+                { {^(-v(erbatim)?|-noa(dapt)?)$} "const=false" adapt "do not adapt signal names" } \
+            ] -context "MODULENAME CODE" $args]
 
         # argument checks
-        if {[lsearch {-m} $lastarg] >= 0} {
-            log -error -abort "C: need an argument after ${lastarg}"
-        }
-
+        set modname [lindex $arguments 0]
         if {$modname eq ""} {
             log -error -abort "C: no module name specified"
         }
 
-        set code [join $code "\n"]
+        set code [lindex $arguments 1]
         if {$code eq ""} {
             log -error -abort "C (module ${modname}): no code section specified"
         }
@@ -487,34 +454,19 @@ namespace eval ig {
         # args
         set lastarg {}
 
-        foreach i_arg $args {
-            switch -- $lastarg {
-                -rf {
-                    set regfilename $i_arg
-                    set lastarg {}
-                }
-                default {
-                    switch -regexp -matchvar mlist -- $i_arg {
-                        {^-(rf|regf(ile)?)$}        {set lastarg -rf}
-                        {^@(.*)$}                   {set address [lindex $mlist 1]}
+        # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
+        set arguments [ig::aux::parse_opts [list \
+                { {^-(rf|regf(ile)?)(=)?} "string" regfilename "specify the regfile name" } \
+                { {^@}                    "string" address     "set the adress"} \
+            ] -context "ENTRYNAME REGISTERTABLE" $args]
 
-                        default {
-                            if {$entryname eq ""} {
-                                set entryname $i_arg
-                            } elseif {[llength $regdef] == 0} {
-                                set regdef $i_arg
-                            } else {
-                                log -error -abort "R (regfile-entry ${entryname}): too many arguments"
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        set entryname [lindex $arguments 0]
+        set regdef    [lindex $arguments 1]
 
-        # argument checks
-        if {[lsearch {-rf} $lastarg] >= 0} {
-            log -error -abort "R: need an argument after ${lastarg}"
+        if {[llength $arguments] < 2} {
+            log -error -abort "R : not enough arguments"
+        } elseif {[llength $arguments] > 2} {
+            log -error -abort "R (regfile-entry ${entryname}): too many arguments"
         }
 
         if {$entryname eq ""} {

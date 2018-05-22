@@ -59,7 +59,7 @@ module <%=$mod_data(name)%> (
     ###########################################
     ## <module port list>
     foreach_array_join port $mod_data(ports) { -%>
-        <%=$port(name)%><% } { -%><%=",\n"%><% }
+        <%=$port(name)%><% } { -%>,<%="\n"%><% }
     ## </module port list>
     ###########################################
 %>
@@ -100,10 +100,10 @@ module <%=$mod_data(name)%> (
     foreach_array inst $mod_data(instances) {
         set i_params_maxlen_name [max_array_entry_len $inst(parameters) name]
         set i_pins_maxlen_name   [max_array_entry_len $inst(pins) name]  %>
-    <%=$inst(module.name)%><% if {$inst(hasparams)} { %><%=" #(\n"%><% foreach_array_join param $inst(parameters) { -%>
-        .<%=[format "%-${i_params_maxlen_name}s (%s)" $param(name) $param(value)]%><% } { %><%=",\n"%><% } %>
-    )<% } %><%=" $inst(name) (\n"%><% foreach_array_join pin $inst(pins) { -%>
-        .<%=[format "%-${i_pins_maxlen_name}s (%s)" $pin(name) $pin(connection)]%><% } { %><%=",\n"%><% } %>
+    <%=$inst(module.name)%><% if {$inst(hasparams)} { %> #(<%="\n"%><% foreach_array_join param $inst(parameters) { -%>
+        .<%=[format "%-${i_params_maxlen_name}s (%s)" $param(name) $param(value)]%><% } { %>,<%="\n"%><% } %>
+    )<% } %> <%=$inst(name)%> (<%="\n"%><% foreach_array_join pin $inst(pins) { -%>
+        .<%=[format "%-${i_pins_maxlen_name}s (%s)" $pin(name) $pin(connection)]%><% } { %>,<%="\n"%><% } %>
     );<% } %>
 
     <%=[get_pragma_content $pragma_data "keep" "instances"]%><%
@@ -125,7 +125,7 @@ module <%=$mod_data(name)%> (
     ###########################################
     ## <localparams> -%>
     <%="// Regfile ADDRESS definition:\n"%><% foreach_array entry $entry_list { -%>
-    localparam <%=[param]%> = <%=[addr_vlog]%><%=";\n"%><% } -%>
+    localparam <%=[param]%> = <%=[addr_vlog]%>;<%="\n"%><% } -%>
     <%=[get_pragma_content $pragma_data "keep" "regfile-addresses"]%><%
     ## </localparams> ##
     ###########################################

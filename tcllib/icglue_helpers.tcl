@@ -28,8 +28,9 @@ namespace eval ig::aux {
     #
     # @return stripping version of the regex
     proc opt_regex_to_helpname {opt_regex} {
-        # remove ^$?
-        set name [string trim $opt_regex [list "^$?"]]
+        # remove ^$
+        set name [string trim $opt_regex [list "^$"]]
+        set name [string map {"?" {}} $name]
         return $name
     }
 
@@ -64,16 +65,25 @@ namespace eval ig::aux {
                 set opt_type  [lindex $o 1]
                 set opt_var   [lindex $o 2]
                 set opt_descr [lindex $o 3]
-
-                if {[regexp $opt_regex $arg]} {
+                set index [regexp $opt_regex $arg match]
+                if {$index > 0} {
                     set found 1
                     set typelist [split $opt_type =]
                     set type [lindex $typelist 0]
                     if {$type eq "const"} {
                         set opt([lindex $o 2]) [lindex $typelist 1]
                     } else {
-                        set arg [lindex $arguments 0]
-                        set arguments [lrange $arguments 1 end]
+                        set len_match [string length $match]
+                        set len_arg   [string length $arg]
+                        if {$len_match == $len_arg} {
+                            if {[llength $arguments] == 0} {
+                                error "Option [opt_regex_to_helpname $opt_regex] expects an argument"
+                            }
+                            set arg [lindex $arguments 0]
+                            set arguments [lrange $arguments 1 end]
+                        } else {
+                            set arg [string range $arg $len_match end]
+                        }
                         if {($type ne "string") && (![string is $type $arg])} {
                             error "Option [opt_regex_to_helpname $opt_regex] expects value of type $type but got: $arg"
                         }
@@ -170,8 +180,8 @@ namespace eval ig::aux {
     #       </td></tr>
     #     <tr><td><b>  ARGUMENTS  </b></td><td>  Arguments that should be parsed into specified variables  <br></td></tr>
     #     <tr><td><b>  OPTION     </b></td><td>                                                            <br></td></tr>
-    #         <tr><td>&ensp; &ensp; &ensp; -name COMMANDNAME    </td><td>  set commandname for help message default is proc-name of caller / filename  <br></td></tr>
-    #         <tr><td>&ensp; &ensp; &ensp; -context HELPCONTEXT </td><td>  set helpcontext for specifing the position dependendent arguments           <br></td></tr>
+    #         <tr><td>&ensp; &ensp; &ensp; -name(=)COMMANDNAME    </td><td>  set commandname for help message default is proc-name of caller / filename  <br></td></tr>
+    #         <tr><td>&ensp; &ensp; &ensp; -context(=)HELPCONTEXT </td><td>  set helpcontext for specifing the position dependendent arguments           <br></td></tr>
     #         <tr><td>&ensp; &ensp; &ensp; -helpdoxy            </td><td>  generate templalte for doxygen help for the caller                          <br></td></tr>
     #    </table>
     #
@@ -181,8 +191,8 @@ namespace eval ig::aux {
     # set color "no"
     #
     # set args [ig::aux::_parse_opts -name "ls" {
-    #     {{^-a(ll)?$}   "const=1" all   "do not ignore entries starting with ."}
-    #     {{^-c(olor)?$} "string"  color "colorize the output"}
+    #     {{^-a(ll)?}   "const=1" all   "do not ignore entries starting with ."}
+    #     {{^-c(olor)?} "string"  color "colorize the output"}
     #   } -context "FILES..." $::argv ]
     #
     # puts "Flags: $color, $all - Args $args"
@@ -200,9 +210,9 @@ namespace eval ig::aux {
             set cmdname [lindex [info level -1] 0]
         }
 
-        set optspec [list                                                                                           \
-                    { {^-name$}      "string"  cmdname     "specfiy a command name for the helpmsg"}            \
-                    { {^-context$}   "string"  helpcontext "specfiy a helpcontext for the helpmsg"}             \
+        set optspec [list                                                                                       \
+                    { {^-name(=)?}      "string"  cmdname     "specfiy a command name for the helpmsg"}         \
+                    { {^-context(=)?}   "string"  helpcontext "specfiy a helpcontext for the helpmsg"}          \
                 ]                                                                                               \
 
         if {[llength $args] != 1} {
