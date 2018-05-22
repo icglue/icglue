@@ -219,12 +219,15 @@ namespace eval ig {
 
     ## @brief Create a new signal.
     #
-    # @param args Parsed command arguments:<br>
-    # [ -w \<signal-width\> ]<br>
-    # \<signal-name\><br>
-    # ( \<source\> -\> \<target-list\><br>
-    # | \<target-list\> \<- \<source\><br>
-    # | (-bidir | \<-\>) \<target-list\> )
+    # @param args <b> [OPTION]... SIGNALNAME CONNECTIONPORTS...</b><br>
+    #    <table style="border:0px; border-spacing:40px 0px;">
+    #      <tr><td><b> __TODO__ HELPCONTEXT </b></td><td> __TODO__ ARGUMENT DESCRIPTION <br></td></tr>
+    #      <tr><td><b> OPTION </b></td><td><br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -w(idth)(=)         </i></td><td>  set signal width                             <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -b(idir(ectional))  </i></td><td>  bidirectional connection                     <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; <->                 </i></td><td>  bidirectional connection                     <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(-)>               </i></td><td>  first element is interpreted as input source <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; <(-)-               </i></td><td>  last element is interpreted as input source  <br></td></tr>
     #
     # @return Object-IDs of the newly created objects of newly created signal.
     #
@@ -237,56 +240,29 @@ namespace eval ig {
         set width     1
         set bidir     "false"
         set invert    "false"
-        set con_left  {}
+
+        # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
+        set arguments [ig::aux::parse_opts [list                                                                \
+                { {^-w(idth)?(=)?}         "string"      width  "set signal width" }                            \
+                { {^-b(idir(ectional)?)?$} "const=true"  bidir  "bidirectional connection"}                     \
+                { {^<->$}                  "const=true"  bidir  "bidirectional connection"}                     \
+                { {^-(-)?>$}               "const=false" invert "first element is interpreted as input source"} \
+                { {^<(-)?-$}               "const=true"  invert "last element is interpreted as input source"}  \
+            ] -context "SIGNALNAME CONNECTIONPORTS..." $args]
+
+        set name      [lindex $arguments 0]
+        set con_left  [lindex $arguments 1]
+
         set con_right {}
-        set con_list  0
-
-        # args
-        set lastarg {}
-
-        foreach i_arg $args {
-            switch -- $lastarg {
-                -w {
-                    set width $i_arg
-                    set lastarg {}
-                }
-                default {
-                    switch -regexp -- $i_arg {
-                        {^-w(idth)?$}                {set lastarg -w}
-                        {^-b(idir(ectional)?)?$}     {incr con_list; set bidir "true"}
-
-                        {^->$}                       {incr con_list}
-                        {^<-$}                       {incr con_list; set invert "true"}
-                        {^<->$}                      {incr con_list; set bidir  "true"}
-
-                        default {
-                            if {$con_list == 0} {
-                                incr con_list
-                                set name $i_arg
-                            } else {
-                                foreach i_elem $i_arg {
-                                    if {$con_list == 1} {
-                                        lappend con_left $i_elem
-                                    } elseif {$con_list == 2} {
-                                        lappend con_right $i_elem
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+        foreach cr [lrange $arguments 2 end] {
+            if {[llength $cr] > 1} {
+                lappend con_right {*}$cr
+            } else {
+                lappend con_right $cr
             }
         }
 
         # argument checks
-        if {[lsearch {-w} $lastarg] >= 0} {
-            log -error -abort "S (signal ${name}): need an argument after ${lastarg}"
-        }
-
-        if {$con_list > 2} {
-            log -error -abort "S (signal ${name}): too many direction arguments"
-        }
-
         if {$name eq ""} {
             log -error -abort "S: no signal name specified"
         }
@@ -339,7 +315,7 @@ namespace eval ig {
         set ilist     0
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set params [ig::aux::parse_opts [list \
+        set params [ig::aux::parse_opts [list                                        \
                    { {^(=|-v(alue)?)(=)?} "string" value "specify parameter value" } \
             ] -context "PARAMETERNAME MODULENAME..." $args]
 
@@ -393,8 +369,8 @@ namespace eval ig {
         set adapt     "true"
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list \
-                { {^-a(dapt)?$}                   "const=true"  adapt "adapt signal names" } \
+        set arguments [ig::aux::parse_opts [list                                                   \
+                { {^-a(dapt)?$}                   "const=true"  adapt "adapt signal names" }       \
                 { {^(-v(erbatim)?|-noa(dapt)?)$} "const=false" adapt "do not adapt signal names" } \
             ] -context "MODULENAME CODE" $args]
 
@@ -423,17 +399,20 @@ namespace eval ig {
 
     ## @brief Create a new regfile-entry.
     #
-    # @param args Parsed command arguments:<br>
-    # -rf \<regfile-name\><br>
-    # \<entry-name\><br>
-    # \@\<address\><br>
-    # \<register-table\>
+    # @param args <b> [OPTION]... ENTRYNAME REGISTERTABLE</b><br>
+    #    <table style="border:0px; border-spacing:40px 0px;">
+    #      <tr><td><b> ENTRYNAME </b></td><td> unique name for the register entry </td></tr>
+    #      <tr><td><b> REGISTERTABLE </b></td><td> specification of the register table </td></tr>
+    #      <tr><td><b> OPTION </b></td><td><br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))(=)  </i></td><td>  specify the regfile name <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; @                   </i></td><td>  specifies the address    <br></td></tr>
+    #    </table>
     #
     # @return Object-ID of the newly created regfile-entry.
     #
-    # \<register-table\> is a list of the form {\<header\> \<reg1\> \<reg2\> ...}.
+    # <b>REGISTERTABLE</b> is a list of the form {<b>HEADER REG1 REG2</b> ...}.
     #
-    # \<header\> is the register-table header and specifies the order of register-info block
+    # <b>HEADER</b> is the register-table header and specifies the order of register-info block
     # in the following register sublists. It must contain at least "name", can contain:
     # @li name = name of the generated register.
     # @li width = bitwidth of the generated register.
@@ -443,7 +422,7 @@ namespace eval ig {
     # @li signal = signal to drive from generated register.
     # @li signalbits = bits of signal to drive (default: whole signal).
     #
-    # \<reg\<n\>\>: Sublists containing the actual register-data.
+    # <b>REGn</b>: Sublists containing the actual register-data.
     proc R args {
         # defaults
         set entryname   ""
@@ -451,13 +430,10 @@ namespace eval ig {
         set address     -1
         set regdef      {}
 
-        # args
-        set lastarg {}
-
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list \
+        set arguments [ig::aux::parse_opts [list                                            \
                 { {^-(rf|regf(ile)?)(=)?} "string" regfilename "specify the regfile name" } \
-                { {^@}                    "string" address     "set the adress"} \
+                { {^@}                    "string" address     "specify the address"}       \
             ] -context "ENTRYNAME REGISTERTABLE" $args]
 
         set entryname [lindex $arguments 0]

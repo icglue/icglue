@@ -17,17 +17,17 @@ M -tb  -v -u rftest tb_top       -i {top}
 
 
 ## connections
-S clk                mgmt          -> {top core->clk!}
-S clk_ref            tb_top        -> {mgmt->clk_src! mgmt_regfile->clk_ref_i common_sync<1..2,4,test>->clk_i}
-S rf_addr     -w 32  tb_top        -> {mgmt_regfile}
-S rf_w_data   -w 32  tb_top        -> {mgmt_regfile}
-S rf_en              tb_top        -> {mgmt_regfile}
-S rf_r_data   -w 32  tb_top       <- {mgmt_regfile}
+S clk                mgmt         --> top core->clk!
+S clk_ref            tb_top       --> mgmt->clk_src_i mgmt_regfile->clk_ref_i common_sync<1..2,4,test>->clk_i
+S rf_addr     -w 32  tb_top       --> mgmt_regfile
+S rf_w_data   -w 32  tb_top       --> mgmt_regfile
+S rf_en              tb_top       --> mgmt_regfile
+S rf_r_data   -w 32  tb_top       <-- mgmt_regfile
 
-S reset_n_ref      tb_top        -> {mgmt_regfile common_sync<1..2,4,test>->resetn_i}
-S config -w 32     mgmt_regfile  -> core
-S config2 -w 32     mgmt_regfile  -> core
-S config3 -w 32     mgmt_regfile  -> core
+S reset_n_ref              tb_top --> {mgmt_regfile common_sync<1..2,4,test>->resetn_i}
+S config      -w32  mgmt_regfile  --> core
+S config2     -w32  mgmt_regfile  --> core
+S config3     -w32  mgmt_regfile  --> core
 
 S data   -w DATA_W mgmt_regfile  -> core
 S status -w 16     mgmt_regfile <-  core

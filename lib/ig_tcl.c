@@ -1276,11 +1276,15 @@ static int ig_tclc_reset (ClientData clientdata, Tcl_Interp *interp, int objc, T
 ##
 # @brief Control log message verbosity.
 #
-# @param args Parsed command arguments:<br>
-# -level \<loglevel\><br>
-# [-id \<log-identifier\>]<br>
-# [(-linenumber | -nolinenumber)]<br>
-# [-list]
+# @param args <b> [OPTION]</b><br>
+#    <table style="border:0px; border-spacing:40px 0px;">
+#      <tr><td><b> OPTION </b></td><td><br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -level  </i></td><td>  specify the loglevel  <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -id  </i></td><td>  specify the logid  <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -list  </i></td><td>  list available loglevels  <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -linenumber</i></td><td>  add file/line number to log-output (debug)  <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -nolinenumber</i></td><td>  do not add file/line number to log-output  <br></td></tr>
+#    </table>
 #
 */
 static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
@@ -1365,11 +1369,17 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
 ##
 # @brief Control log message verbosity.
 #
-# @param args Parsed command arguments:<br>
-# [-id \<log-identifier\>]<br>
-# [(-debug|-info|-warning|-error)]<br>
-# [-abort]<br>
-# \<log-message\>
+# @param args <b> [OPTION] LOGMESSAGE</b><br>
+#    <table style="border:0px; border-spacing:40px 0px;">
+#      <tr><td><b> LOGMESSAGE </b></td><td> specify the logmessage to be printed </td></tr>
+#      <tr><td><b> OPTION </b></td><td><br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -id      </i></td><td>  specify the logid                 <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -debug   </i></td><td>  specify debug as max. loglevel    <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -info    </i></td><td>  specify info as max. loglevel     <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -warning </i></td><td>  specify warning as max. loglevel  <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -error   </i></td><td>  specify error as max. loglevel    <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -abort   </i></td><td>  throw TCL_ERROR                   <br></td></tr>
+#    </table>
 #
 */
 static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
@@ -1380,10 +1390,10 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-id",      NULL,                               (void *)&log_id,       "log id",                              NULL},
+        {TCL_ARGV_CONSTANT, "-debug",   GINT_TO_POINTER (LOGLEVEL_DEBUG),   (void *)&loglevel,     "loglevel debug",                      NULL},
         {TCL_ARGV_CONSTANT, "-info",    GINT_TO_POINTER (LOGLEVEL_INFO),    (void *)&loglevel,     "loglevel info",                       NULL},
         {TCL_ARGV_CONSTANT, "-warning", GINT_TO_POINTER (LOGLEVEL_WARNING), (void *)&loglevel,     "loglevel warning",                    NULL},
         {TCL_ARGV_CONSTANT, "-error",   GINT_TO_POINTER (LOGLEVEL_ERROR),   (void *)&loglevel,     "loglevel error",                      NULL},
-        {TCL_ARGV_CONSTANT, "-debug",   GINT_TO_POINTER (LOGLEVEL_DEBUG),   (void *)&loglevel,     "loglevel debig",                      NULL},
         {TCL_ARGV_CONSTANT, "-abort",   GINT_TO_POINTER (1),                (void *)&abort,        "return the log message as tcl error", NULL},
 
         TCL_ARGV_AUTO_HELP,
