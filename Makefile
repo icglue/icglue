@@ -39,6 +39,13 @@ SYNTAXDIR   := nagelfar
 SYNTAXFILE  := $(SYNTAXDIR)/ICGlue.nagelfar.db.tcl
 SYNTAXGEN   := scripts/gen_nagelfar_db.tcl
 
+BINSCRIPT   := bin/icglue
+DESTDIR     ?= install/usr
+DESTDIREXE  := $(DESTDIR)/bin
+DESTDIRPKG  := $(DESTDIR)/lib/icglue/ICGlue
+DESTDIRBIN  := $(DESTDIR)/lib/icglue/bin
+DESTDIRAUX  := $(DESTDIR)/share/icglue
+
 #-------------------------------------------------------
 # Tcl Package
 all: prebuild
@@ -99,8 +106,26 @@ memcheck:
 .PHONY: everything shell memcheck
 
 #-------------------------------------------------------
+# install
+install: all syntaxdb docs | $(DESTDIR)
+	install -m755 -d $(DESTDIRPKG)
+	install -m644 $(PKGDIR)/*.tcl -t $(DESTDIRPKG)
+	install -m755 $(PKGDIR)/*.so -t $(DESTDIRPKG)
+	install -m755 -D $(BINSCRIPT) -t $(DESTDIRBIN)/
+	install -m755 -d $(DESTDIREXE)
+	ln -rfs $(DESTDIRBIN)/icglue $(DESTDIREXE)/icglue
+	install -m755 -d $(DESTDIRAUX)
+	cp -r $(DOCDIRTCL)/man $(DESTDIRAUX)
+	cp -r $(DOCDIRTCL)/html $(DESTDIRAUX)
+	cp -r vim $(DESTDIRAUX)
+	cp -r $(SYNTAXDIR) $(DESTDIRAUX)
+
+
+.PHONY: install
+
+#-------------------------------------------------------
 # directories
-$(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB) $(SYNTAXDIR):
+$(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB) $(SYNTAXDIR) $(DESTDIR):
 	mkdir -p $@
 
 
@@ -108,6 +133,7 @@ $(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB) $(SYNTAXDIR):
 # cleanup targets
 clean:
 	rm -rf $(PKGDIR)
+	rm -rf install
 
 cleandoc:
 	rm -rf $(DOCDIR)

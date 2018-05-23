@@ -18,8 +18,12 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-# set package path and load ICGlue package
-lappend auto_path [file normalize [file dirname [file normalize $::argv0]]/..]
+# try to set package path and load ICGlue package for typical cases
+set binpath $::argv0
+# in case script is a relative symlink, get to absolute path of script
+catch {set binpath [file normalize [file join [file dirname $binpath] [file readlink $binpath]]]}
+lappend auto_path [file normalize [file dirname [file normalize $binpath]]/..]
+puts $auto_path
 package require ICGlue
 
 proc printhelp {{exitcode 0} {doexit "true"}} {
