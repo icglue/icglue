@@ -153,7 +153,7 @@ namespace eval ig {
                                                                                                                                \
                    { {^-rtl$}                        "const=rtl"           mode       "specify rtl attribute for module"    }  \
                    { {^-beh(av(ioral|ioural)?)$}     "const=behavioral"    mode       "specify rtl attribute for module"    }  \
-                   { {^-(tb|testbench)$}             "const=behavioral"    mode       "specify rtl attribute for module"    }  \
+                   { {^-(tb|testbench)$}             "const=tb"            mode       "specify rtl attribute for module"    }  \
                                                                                                                                \
                    { {^-v(erilog)?$}                 "const=verilog"       lang       "output verilog language"             }  \
                    { {^-sv|-s(ystemverilog)?$}       "const=systemverilog" lang       "output systemverilog language"       }  \

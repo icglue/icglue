@@ -150,7 +150,7 @@ module <%=$mod_data(name)%> (
         set maxlen_regname [max_array_entry_len $entry(regs) name]
         set maxlen_signalname [expr [max_array_entry_len $entry(regs) signal] + 2]
     %>
-    //////////////////////////////////////////////////////////////////////////////
+    /****************************************************************************/
     <%=[format "// %s @ %s" $entry(name)  $entry(address)]%>
     always @(posedge <%=[clk]%> or negedge <%=[reset]%>) begin
         if (<%=[reset]%> == 1'b0) begin<% foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} { %>
