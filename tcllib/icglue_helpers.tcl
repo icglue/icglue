@@ -87,7 +87,11 @@ namespace eval ig::aux {
                         if {($type ne "string") && (![string is $type $arg])} {
                             error "Option [opt_regex_to_helpname $opt_regex] expects value of type $type but got: $arg"
                         }
-                        set opt($opt_var) $arg
+                        if {$type eq "list"} {
+                            lappend opt($opt_var) $arg
+                        } else {
+                            set opt($opt_var) $arg
+                        }
                     }
                     break;
                 }

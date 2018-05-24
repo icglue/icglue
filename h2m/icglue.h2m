@@ -1,0 +1,105 @@
+[description]
+Tcl-Library for scripted HDL generation. It generations HDL code form a user-defined Tcl-Input script.
+
+[enviroment]
+Environment variables are additional to the options passed to \fBicglue\fR.
+Options specfied take precedence over enviroment variables.
+
+.IP ICGLUE_TEMPLATE_PATH
+Sets the template directories, equivalent to the \fB--template-dir\fR option. Mutliple directories must be seperate by a colon (:).
+
+.IP ICGLUE_TEMPLATE
+Sets the default template, equivalent to the \fB--template\fR option.
+
+[examples]
+Creating hierarchies via the \fIM\fR command with the -tree flag:
+.PP
+.in +2n
+The hierarchie level is specified by the indentation of dots (.).
+.br
+After this, it directly follows the modulename.
+.br
+Multiple instances of the same type can be create be using the <...> syntax.
+.br
+Attributes of the module are passed in brackets.
+See the \fIM\fR command in \fBig(10i)\fR for further details.
+.PP
+.in +4n
+.EX
+# Generate hierarchie in unit submodule
+M -unit "component" -tree {
+    ..tb_component(tb,v)
+    ...component_top(rtl)
+    .....submod_wrap(rtl,unit=submod_wrap)
+    ......submod_wrap(inc)
+    .....component_regfile(rf)
+}
+
+M -unit "submod" -tree {
+    ...submod_top(rtl)
+    .....submod(rtl)
+    .........common_sync<submod0..4,submod_my_sync>(res)
+}
+
+.EE
+.PP
+Connection modules can be done via the \fIS\fR command:
+See the \fIS\fR command in \fBig(10i)\fR for further details.
+.PP
+.in +4n
+.EX
+# connections
+S        clk          tb_component --> component_regfile submod
+S        resetn       tb_component --> component_regfile submod
+S -w 32 rf_addr       tb_top       --> component_regfile
+S -w 5 config_submod  submod       <-- component_regfile
+S -w 16 status_submod submod       --> component_regfile
+.EE
+.PP
+Passing parameters can be done via the \fIP\fR command:
+See the \fIP\fR command in \fBig(10i)\fR for further details.
+.PP
+.in +4n
+.EX
+# parameters
+P DATA_W = 32 component_regfile submod
+.EE
+.PP
+
+Passing inline code can be done via the \fIC\fR command:
+See the \fIC\fR command in \fBig(10i)\fR for further details.
+.PP
+.in +4n
+.EX
+# code placed in submod_wrap
+C submod_wrap {
+    assign reset_sync = ~data_valid;
+}
+.EE
+.PP
+
+Regfile code can be create via the \fIR\fR command:
+See the \fIR\fR command in \fBig(10i)\fR for further details.
+.PP
+.in +4n
+.EX
+R -rf=component_regfile "entry_name" @0x0008 {
+    {name       entrybits type   reset  signal        signalbits}
+    {s_cfg        4:0       RW    5'h0  config_submod    4:0    }
+    {s_status     15:0      R    16'h0  status_submod    16:0   }
+}
+.EE
+.PP
+
+[reporting bugs]
+E-mail bug reports to \fBandreas.dixius@tu-dresden.de\fR, \fBfelix.neumaerker@tu-dresden.de\fR.
+.br
+Also, please include the output  of  ``icglue --version'' in the body of your report if at all possible.
+
+[see also]
+\fBig(10i)\fR - Scripting commands manpage
+.PP
+HTML documentation of the Tcl-library at \fB%DOCDIRTCL%/html/indext.html\fR
+.br
+HTML documentation of the C-library at \fB%DOCDIRLIB%/html/index.html\fR
+\" vim: ft=nroff

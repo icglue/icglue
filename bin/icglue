@@ -23,111 +23,111 @@ set binpath $::argv0
 # in case script is a relative symlink, get to absolute path of script
 catch {set binpath [file normalize [file join [file dirname $binpath] [file readlink $binpath]]]}
 lappend auto_path [file normalize [file dirname [file normalize $binpath]]/..]
-puts $auto_path
 package require ICGlue
 
 proc printhelp {{exitcode 0} {doexit "true"}} {
-    puts "Usage:"
-    puts "    $::argv0 \[options\] \[-f\] <file>"
+    puts "Usage: [file tail $::argv0] \[OPTION\]... FILE"
     puts ""
     puts "Options:"
-    puts "    -h,--help               Show help"
+    puts "Mandatory arguments to long options are mandatory for short options too."
+    puts "    -h, --help               Show help"
     puts ""
-    puts "    -f,--file      FILE     Set input file to use"
-    puts "    -t,--template  TEMPLATE Set template to use"
-    puts "    --template-dir DIR      Add DIR to template path"
+    puts "    -f, --file=FILE          Set input FILE to use"
+    puts "    -t, --template=TEMPLATE  Set TEMPLATE to use"
+    puts "    --template-dir=DIR       Add DIR to template path"
     puts ""
-    puts "    -q,--quiet              Show errors only"
-    puts "    -v,--verbose            Be verbose"
-    puts "    -d,--debug              Show debug output"
+    puts "    -q, --quiet              Show errors only"
+    puts "    -v, --verbose            Be verbose"
+    puts "    ---version               Show version"
+    puts "    -d, --debug              Show debug output"
 
     if {$doexit} {
         exit $exitcode
     }
 }
 
+proc printversion {} {
+    puts "ICGlue 1.0a1"
+    puts "Copyright (C) 2017 Andreas Dixius, Felix Neumaerker"
+    puts ""
+    puts "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>."
+    puts "This is free software: you are free to change and redistribute it."
+    puts "There is NO WARRANTY, to the extent permitted by law."
+    puts ""
+    puts "Written by Andreas Dixius, Felix Neumaerker"
+    exit 0
+}
+
 proc main {} {
     variable binpath
 
-    # default config
-    set c_template      "default"
+    # flags
+    set help            "false"
+    set help_invalid    "false"
     set c_loglevel      "W"
-    set c_loglines      "false"
+    set debugdebug      "false"
+    set print_version   "false"
+
+    # flags with mandatory arguments
+    set c_template      {}
+    set c_template_dirs {}
     set c_file          ""
-    # templates provided with package
-    set     c_template_dirs [list "[file dirname [file normalize $binpath]]/../templates"]
-    lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../../../share/icglue/templates"]
+
+    # arguments
+    set filename [ig::aux::_parse_opts {} {} [list                   \
+        {  {^(-h|--help)$}         "const=true" help            {} } \
+        {  {^-help(doxy)?$}        "const=true" help_invalid    {} } \
+        {  {^(-q|--quiet)$}        "const=E"    c_loglevel      {} } \
+        {  {^(-v|--verbose)$}      "const=I"    c_loglevel      {} } \
+        {  {^(-d|--debug)$}        "const=D"    c_loglevel      {} } \
+        {  {^(-dd|--debugdebug)$}  "const=true" debugdebug      {} } \
+        {  {^(--version$)}         "const=true" print_version   {} } \
+                                                                     \
+        {  {^--template-dir(=|$)}  "list"       c_template_dirs {} } \
+        {  {^(-t|--template)(=|$)} "list"       c_template      {} } \
+        {  {^(-f|--file)(=|$)}     "list"       c_file          {} } \
+        ] $::argv]
+
+    if {$help} {
+        printhelp 0
+    }
+    if {$help_invalid} {
+        printhelp 1
+    }
+    set c_loglines "false"
+    if {$debugdebug} {
+        set c_loglines "true"
+    }
+
+    if {$print_version} {
+        printversion
+    }
 
     # environment
-    # ... template path
+    # ... template path ($ICGLUE_TEMPLATE_PATH)
     if {[info exists ::env(ICGLUE_TEMPLATE_PATH)]} {
         foreach i_dir [split $::env(ICGLUE_TEMPLATE_PATH) "\n"] {
             lappend c_template_dirs $i_dir
         }
     }
-    # ... template to use
+    # ... template to use ($ICGLUE_TEMPLATE)
     if {[info exists ::env(ICGLUE_TEMPLATE)]} {
         set c_template $::env(ICGLUE_TEMPLATE)
     }
 
-    # arguments
-    for {set i 0} {$i < $::argc} {incr i} {
-        switch -- [lindex $::argv $i] {
-            -h     -
-            --help {
-                # help
-                printhelp 0
-            }
-            -q      -
-            --quiet {
-                # verbosity
-                set c_loglevel E
-            }
-            -v        -
-            --verbose {
-                set c_loglevel I
-            }
-            -d      -
-            --debug {
-                if {$c_loglevel eq "D"} {
-                    set c_loglines "true"
-                } else {
-                    set c_loglevel D
-                }
-            }
-            -dd {
-                set c_loglevel D
-                set c_loglines "true"
-            }
-            --template-dir {
-                # templates
-                incr i
-                lappend c_template_dirs [lindex $::argv $i]
-            }
-            -t         -
-            --template {
-                incr i
-                set c_template [lindex $::argv $i]
-            }
-            -f     -
-            --file {
-                # input file
-                incr i
-                set c_file [lindex $::argv $i]
-            }
-            default {
-                set c_file [lindex $::argv $i]
-            }
-        }
-    }
+    # templates provided with package
+    set     c_template      "default"
+    set     c_template_dirs [list "[file dirname [file normalize $binpath]]/../templates"]
+    lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../../../share/icglue/templates"]
 
+    lappend c_file $filename
     # argument evaluation
-    if {$c_file eq ""} {
-        ig::log -error "no valid input file specified"
+    if {[llength {*}$c_file] == 0} {
+        ig::log -error "Not enough arguments"
         printhelp 1
     }
     if {![file isfile $c_file]} {
-        ig::log -error "input file \"${c_file}\" invalid"
+        ig::log -error "Cant open file \"${c_file}\" for reading"
         exit 1
     }
 

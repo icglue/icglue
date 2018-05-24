@@ -31,3 +31,6 @@
 ## bin
 - allow multiple construction scripts?
 - add "nowriteout" function or similar? -> allows for construction with intermediate clean
+
+# vim
+- add alignment vim-script for signals usw. <(-)- -(-)>
