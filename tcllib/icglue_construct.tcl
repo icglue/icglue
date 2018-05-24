@@ -53,9 +53,9 @@ namespace eval ig {
                         lappend result [list $m_module $m_module $m_rem]
                     } else {
                         foreach i_sfx [split $m_insts ","] {
-                            if {[regexp {(.*)\.\.(.*)} $i_sfx m_sfx m_start m_stop]} {
+                            if {[regexp {^(\w*?)(\d+)\.\.(\d+)$} $i_sfx m_sfx m_prefix m_start m_stop]} {
                                 for {set i $m_start} {$i <= $m_stop} {incr i} {
-                                    lappend result [list "${m_module}_${i}" $m_module $m_rem]
+                                    lappend result [list "${m_module}_${m_prefix}${i}" $m_module $m_rem]
                                 }
                             } else {
                                 lappend result [list "${m_module}_${i_sfx}" $m_module $m_rem]
@@ -145,26 +145,28 @@ namespace eval ig {
         set resource      "false"
         set instances     {}
         set regfiles      {}
+        set attributes    {}
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set name [ig::aux::parse_opts [list                                                                                    \
-                   { {^-u(nit)?(=)?}                 "string"              unit       "specify unit name \[directory\]"     }  \
-                   { {^-i(nst(ances|anciate)?)?(=)?} "string"              instances  "specify Module to be instanciated"   }  \
-                                                                                                                               \
-                   { {^-rtl$}                        "const=rtl"           mode       "specify rtl attribute for module"    }  \
-                   { {^-beh(av(ioral|ioural)?)$}     "const=behavioral"    mode       "specify rtl attribute for module"    }  \
-                   { {^-(tb|testbench)$}             "const=tb"            mode       "specify rtl attribute for module"    }  \
-                                                                                                                               \
-                   { {^-v(erilog)?$}                 "const=verilog"       lang       "output verilog language"             }  \
-                   { {^-sv|-s(ystemverilog)?$}       "const=systemverilog" lang       "output systemverilog language"       }  \
-                   { {^-v(dhl)?$}                    "const=vhdl"          lang       "output vhdl language"                }  \
-                                                                                                                               \
-                   { {^-(ilm|macro)$}                "const=ilm"           ilm        "pass ilm attribute to icglue"        }  \
-                   { {^-res(ource)?$}                "const=true"          resource   "pass ressource attribute to icglue"  }  \
-                                                                                                                               \
-                   { {^-(rf|(regf(ile)?))(=)?}       "string"              regfiles   "pass regfile attribute to icglue"    }  \
-                                                                                                                               \
-                   { {^-attr(ibutes)?(=)?}           "string"              attributes "pass an arribute dict to icglue"     }  \
+        set name [ig::aux::parse_opts [list                                                                                        \
+                   { {^-u(nit)?(=)?}                 "string"              unit          "specify unit name \[directory\]"     }   \
+                   { {^-i(nst(ances|anciate)?)?(=)?} "string"              instances     "specify Module to be instanciated"   }   \
+                   { {^-t(ree)?(=)?}                 "string"              instance_tree "specify module instance tree"        }   \
+                                                                                                                                   \
+                   { {^-rtl$}                        "const=rtl"           mode          "specify rtl attribute for module"    }   \
+                   { {^-beh(av(ioral|ioural)?)$}     "const=behavioral"    mode          "specify rtl attribute for module"    }   \
+                   { {^-(tb|testbench)$}             "const=tb"            mode          "specify rtl attribute for module"    }   \
+                                                                                                                                   \
+                   { {^-v(erilog)?$}                 "const=verilog"       lang          "output verilog language"             }   \
+                   { {^-sv|-s(ystemverilog)?$}       "const=systemverilog" lang          "output systemverilog language"       }   \
+                   { {^-v(dhl)?$}                    "const=vhdl"          lang          "output vhdl language"                }   \
+                                                                                                                                   \
+                   { {^-(ilm|macro)$}                "const=ilm"           ilm           "pass ilm attribute to icglue"        }   \
+                   { {^-res(ource)?$}                "const=true"          resource      "pass ressource attribute to icglue"  }   \
+                                                                                                                                   \
+                   { {^-(rf|(regf(ile)?))(=)?}       "string"              regfiles      "pass regfile attribute to icglue"    }   \
+                                                                                                                                   \
+                   { {^-attr(ibutes)?(=)?}           "string"              attributes    "pass an arribute dict to icglue"     }   \
             ] -context "MODULENAME" $args]
 
         # argument checks
@@ -172,6 +174,189 @@ namespace eval ig {
             log -error -abort "M: too many arguments ($name)"
         }
 
+        if {[llength $instance_tree] > 0} {
+            set cur_parent {}
+            set cur_level {}
+            set parents_stack {}
+            set level_stack {}
+            set last_instance {}
+            set module_list {}
+            set maxlen_modname 0
+            foreach inst $instance_tree {
+                set m_level {}
+                set m_instance {}
+                set m_flags_full {}
+                set m_flags {}
+                regexp -expanded {
+                    # Match level dots
+                    ^\s*([\.]+)\s*
+                    # Match instance_name
+                    ([^(]+)\s*
+                    # Match flags
+                    (\((.*)\))?
+                }  $inst m_whole m_level m_instance m_flags_full m_flags
+                set m_instance $m_instance
+                set level [string length $m_level]
+                set len_modname [string length $m_instance]
+                if {$len_modname > $maxlen_modname} {
+                    set maxlen_modname $len_modname
+                }
+
+                if {$level != 0  && $len_modname == 0} {
+                    log -error -abort "M: Can't match instance_name - syntax error in instance tree"
+                }
+
+                if {$level > $cur_level} {
+                    # one level up
+                    lappend parents_stack $last_instance
+                    lappend level_stack $level
+
+                    set cur_parent $last_instance
+                    set cur_level  $level
+                    set last_instance $m_instance
+                } elseif {$level < $cur_level} {
+                    # pop levels down
+                    set level_stack_size [llength $level_stack]
+                    for {set keep 0} {$keep<$level_stack_size} {incr keep} {
+                        if {[lindex $level_stack $keep] > $level} {
+                            incr keep -1
+                            break;
+                        }
+                    }
+                    if {[lindex $level_stack $keep] == $level} {
+                        set level_stack [lrange $level_stack 0 $keep]
+                        set last_instance [lindex $parents_stack [expr {$keep+1}]]
+                    } else {
+                        set level_stack [lrange $level_stack 0 $keep]
+                        lappend level_stack $level
+                        set last_instance $m_instance
+                        incr keep 1
+                    }
+
+                    set parents_stack [lrange $parents_stack 0 $keep]
+                    set cur_parent [lindex $parents_stack end]
+                    set cur_level [lindex $level_stack end]
+                } else {
+                    set last_instance $m_instance
+                }
+
+                lappend module_list [list $m_instance $cur_parent $m_flags]
+            }
+            #logger -level D -id MTREE -linenumber
+            set module_inc_list {}
+            foreach m $module_list {
+                set instance_name [lindex $m 0]
+                set moduleparent  [lindex $m 1]
+                set moduleflags   [lindex $m 2]
+                set module_name   [lindex [split $instance_name <] 0]
+                set modids {}
+                log -id "MTREE" -debug [format "module: %-${maxlen_modname}s -- parent: %-${maxlen_modname}s -- Flags: %s" $instance_name $moduleparent $moduleflags]
+
+                set film "false"
+                set fres "false"
+                set finc "false"
+                ig::aux::parse_opts [list                    \
+                    { {^(ilm|macro)$} "const=true" film {} } \
+                    { {^res(ource)?$} "const=true" fres {} } \
+                    { {^inc(lude)?$}  "const=true" finc {} } \
+                    ] [split $moduleflags ","]
+
+                set cf [list ]
+                if {$fres} {
+                    lappend cf "-resource"
+                }
+                if {$film} {
+                    lappend cf "-ilm"
+                }
+                if {$finc} {
+                    lappend module_inc_list $module_name
+                }
+
+                if {[catch {db::get_modules -name $module_name}]} {
+                    log -debug -id MTREE "M (module = $module_name): creating..."
+                    lappend modids [db::create_module {*}$cf -name $module_name]
+                } else {
+                    if {!$fres && !$finc} {
+                        puts "$moduleflags $fres $finc"
+                        if {[lsearch $module_inc_list $module_name] == 0} {
+                            log -error -abort "M (module = $module_name): exists multiple times and is neither resource nor included."
+                        }
+                    }
+                }
+            }
+
+            foreach m $module_list {
+                set instance_name   [lindex $m 0]
+                set moduleparent [lindex $m 1]
+                set moduleflags  [lindex $m 2]
+
+                set funit $unit
+                set film "false"
+                set fres "false"
+                set finc "false"
+                set fmode $mode
+                set flang $lang
+                set fattributes $attributes
+                set fregfiles "false"
+
+                # TODO
+                set funknown [ig::aux::parse_opts [list                                     \
+                    { {^u(nit)?(=)?}                 "string"              funit       {} } \
+                    { {^(ilm|macro)$}                "const=true"          film        {} } \
+                    { {^res(ource)?$}                "const=true"          fres        {} } \
+                                                                                            \
+                    { {^inc(lude)?$}                 "const=true"          finc        {} } \
+                    { {^rtl$}                        "const=rtl"           fmode       {} } \
+                    { {^beh(av(ioral|ioural)?)$}     "const=behavioral"    fmode       {} } \
+                    { {^(tb|testbench)$}             "const=tb"            fmode       {} } \
+                                                                                            \
+                    { {^v(erilog)?$}                 "const=verilog"       flang       {} } \
+                    { {^sv|-s(ystemverilog)?$}       "const=systemverilog" flang       {} } \
+                    { {^v(dhl)?$}                    "const=vhdl"          flang       {} } \
+                                                                                            \
+                    { {^(rf|(regf(ile)?)?)$}         "const=true"          fregfiles   {} } \
+                                                                                            \
+                    { {^attr(ibutes)?(=)?}           "string"              fattributes {} } \
+                    ] [split $moduleflags ","]]
+
+                if {[llength $funknown] != 0} {
+                    log -warn -id MTREE "M (instance $instance_name): Unknown flag(s) - $funknown"
+                }
+
+                set module_name [lindex [split $instance_name <] 0]
+                set modid [ig::db::get_modules -name $module_name]
+                if {!$finc} {
+                    if {$funit ne ""} {
+                        ig::db::set_attribute -object $modid -attribute "parentunit" -value $funit
+                    }
+                    if {$fmode ne ""} {
+                        ig::db::set_attribute -object $modid -attribute "mode"       -value $fmode
+                    }
+                    if {$flang ne ""} {
+                        ig::db::set_attribute -object $modid -attribute "language"   -value $flang
+                    }
+                    if {$fregfiles} {
+                        ig::db::add_regfile -regfile $instance_name -to $modid
+                    }
+                }
+
+                if {$moduleparent ne ""} {
+                    foreach i_inst [construct::expand_instances $instance_name] {
+                        set i_name [lindex $i_inst 0]
+                        set i_mod  [lindex $i_inst 1]
+
+                        log -debug -id MTREE "M (module = $instance_name): creating instance $i_name of module $moduleparent"
+
+                        ig::db::create_instance \
+                            -name $i_name \
+                            -of-module [ig::db::get_modules -name $i_mod] \
+                            -parent-module [ig::db::get_modules -name $moduleparent]
+                    }
+                }
+            }
+
+            return $modids
+        }
         if {$unit eq ""} {set unit $name}
         if {$name eq ""} {
             log -error -abort "M: need a module name"
@@ -182,12 +367,14 @@ namespace eval ig {
 
         # actual module creation
         if {[catch {
-            if {$resource} {
-                set modid [ig::db::create_module -resource -name $name]
-            } elseif {$ilm} {
-                set modid [ig::db::create_module -ilm -name $name]
-            } else {
-                set modid [ig::db::create_module -name $name]
+            catch {
+                if {$resource} {
+                    set modid [ig::db::create_module -resource -name $name]
+                } elseif {$ilm} {
+                    set modid [ig::db::create_module -ilm -name $name]
+                } else {
+                    set modid [ig::db::create_module -name $name]
+                }
             }
             ig::db::set_attribute -object $modid -attribute "language"   -value $lang
             ig::db::set_attribute -object $modid -attribute "mode"       -value $mode

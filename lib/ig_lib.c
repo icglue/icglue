@@ -488,8 +488,8 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
 
         /* object equality */
         if (i_cinfo->obj != cinfo_node->obj) {
-            ig_lib_connection_info_free (cinfo_node);
             log_error ("LMrHi", "hierarchy has no common start (%s and %s)", i_cinfo->obj->id, cinfo_node->obj->id);
+            ig_lib_connection_info_free (cinfo_node);
             g_list_free (successor_list);
             return NULL;
         }

@@ -1,19 +1,39 @@
-# modules
-M -rtl -v -u rftest common_sync -res
-M -rtl -v -u rftest mgmt_regfile -rf {mgmt_regfile} -i {common_sync<1..2,4,test>}
-M -rtl -v -u rftest mgmt         -i {mgmt_regfile}
-M -rtl -v -u rftest core
-M -rtl -v -u rftest top          -i {core mgmt}
-M -tb  -v -u rftest tb_top       -i {top}
 
-#M -unit "rftest" -tree {
-#    ..tb_top(tb,v)
-#    ....top(rtl)
-#    ......mgmt(rtl)
-#    .........mgmt_regfile(rf)
-#    ......core(rtl)
-#}
-    #........common_sync<1,4..9,test1..3>(res)
+M -unit "chungo" -tree {
+    ...chungo(rtl)
+    .....chungo_inst(rtl)
+    ......common_sync<chungo12..15>(res)
+}
+
+M -unit "rftest" -tree {
+    ..tb_top(tb,v)
+    ....top(rtl)
+    ......mgmt(rtl)
+    .........mgmt_regfile(rf)
+    ..........common_sync<1..2,4,test>(res)
+    .........test_mgmt(res)
+    .........test_mgmt2(res)
+    ........test_mgmt3(res)
+    ........test_mgmt4(res)
+    .......chungo(inc)
+    .......mgmt_wrap0(rtl)
+    ........mgmt_wrap1(rtl)
+    .........test_mgmt5(rtl)
+    ..........test_mgmt6(res)
+    ..........test_mgmt7(res)
+    .........test_mgmt71(rtl,unit=test)
+    ........test_mgmt8(res)
+    .......test_mgmt9(res)
+    .....core(rtl)
+}
+
+# modules
+#M -rtl -v -u rftest common_sync -res
+#M -rtl -v -u rftest mgmt_regfile -rf {mgmt_regfile} -i {common_sync<1..2,4,test>}
+#M -rtl -v -u rftest mgmt         -i {mgmt_regfile}
+#M -rtl -v -u rftest core
+#M -rtl -v -u rftest top          -i {core mgmt}
+#M -tb  -v -u rftest tb_top       -i {top}
 
 
 ## connections
