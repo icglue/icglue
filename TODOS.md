@@ -7,12 +7,8 @@
     - how to write a construct script
     - ...?
 - makefile
-  - add install target?
-    - install vim-dir (in vim: add to runtimepath)
-    - install syntax-db (somewhere)
-    - install package
-    - install bin
-    - ...?
+  - improve install target?
+  - man target
 - add check (nagelfar shell script)
 - add manpage
 - add prepare[template]
