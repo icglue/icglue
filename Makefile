@@ -16,35 +16,37 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-LIBDIR      := lib
-LIBSOURCES  := $(LIBDIR)/binaries/icglue.so
-TCLSOURCES  := $(wildcard tcllib/*.tcl)
-PKGDIR      := ICGlue
+LIBDIR           := lib
+LIBSOURCES       := $(LIBDIR)/binaries/icglue.so
+TCLSOURCES       := $(wildcard tcllib/*.tcl)
+PKGDIR           := ICGlue
 
-PKGIDX      := $(PKGDIR)/pkgIndex.tcl
-PKGGENSCR   := scripts/tcl_pkggen.tcl
+PKGIDX           := $(PKGDIR)/pkgIndex.tcl
+PKGGENSCR        := scripts/tcl_pkggen.tcl
 
-VERSION     := 1.0a1
-VERSIONSCR  := scripts/update_version.sh
+VERSION          := 1.0a1
+VERSIONSCR       := scripts/update_version.sh
 
-DOCDIR      := doc
-DOCDIRTCL   := $(DOCDIR)/ICGlue
-DOCDIRLIB   := $(DOCDIR)/ICGlue-Lib
-DOXYFILETCL := doxy/tcl.doxyfile
-DOXYFILELIB := doxy/lib.doxyfile
+DOCDIR           := doc
+DOCDIRTCL        := $(DOCDIR)/ICGlue
+DOCDIRLIB        := $(DOCDIR)/ICGlue-Lib
+DOXYFILETCL      := doxy/tcl.doxyfile
+DOXYFILELIB      := doxy/lib.doxyfile
 
-BROWSER     ?= firefox
+BROWSER          ?= firefox
 
-SYNTAXDIR   := nagelfar
-SYNTAXFILE  := $(SYNTAXDIR)/ICGlue.nagelfar.db.tcl
-SYNTAXGEN   := scripts/gen_nagelfar_db.tcl
+SYNTAXDIR        := nagelfar
+SYNTAXFILE_LIB   := $(SYNTAXDIR)/ICGlue.nagelfar.db.tcl
+SYNTAXFILE_CNSTR := $(SYNTAXDIR)/ICGlue_construct.nagelfar.db.tcl
+SYNTAXGEN_LIB    := scripts/gen_nagelfar_db.tcl
+SYNTAXGEN_CNSTR  := scripts/gen_nagelfar_db_construct.tcl
 
-BINSCRIPT   := bin/icglue
-DESTDIR     ?= install/usr
-DESTDIREXE  := $(DESTDIR)/bin
-DESTDIRPKG  := $(DESTDIR)/lib/icglue/ICGlue
-DESTDIRBIN  := $(DESTDIR)/lib/icglue/bin
-DESTDIRAUX  := $(DESTDIR)/share/icglue
+BINSCRIPT        := bin/icglue
+DESTDIR          ?= install/usr
+DESTDIREXE       := $(DESTDIR)/bin
+DESTDIRPKG       := $(DESTDIR)/lib/icglue/ICGlue
+DESTDIRBIN       := $(DESTDIR)/lib/icglue/bin
+DESTDIRAUX       := $(DESTDIR)/share/icglue
 
 #-------------------------------------------------------
 # Tcl Package
@@ -86,10 +88,13 @@ showdocs:
 
 #-------------------------------------------------------
 # syntax check
-syntaxdb: $(SYNTAXFILE)
+syntaxdb: $(SYNTAXFILE_LIB) $(SYNTAXFILE_CNSTR)
 
-$(SYNTAXFILE): $(PKGIDX) | $(SYNTAXDIR)
-	$(SYNTAXGEN) $(SYNTAXFILE)
+$(SYNTAXFILE_LIB): $(PKGIDX) | $(SYNTAXDIR)
+	$(SYNTAXGEN_LIB) $(SYNTAXFILE_LIB)
+
+$(SYNTAXFILE_CNSTR): $(PKGIDX) | $(SYNTAXDIR)
+	$(SYNTAXGEN_CNSTR) $(SYNTAXFILE_CNSTR)
 
 .PHONY: syntaxdb
 
