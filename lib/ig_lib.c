@@ -544,15 +544,23 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
             GList                         *i_hier_list = (GList *)li->data;
             struct ig_lib_connection_info *i_cinfo     = (struct ig_lib_connection_info *)i_hier_list->data;
 
-            if (i_cinfo->obj == ref_cinfo->obj) {
-                /* part of equal list */
-                GList *li_next = li->next;
-                successor_list = g_list_remove_link (successor_list, li);
-                equal_list     = g_list_concat (equal_list, li);
-                li             = li_next;
-            } else {
+            if (i_cinfo->obj != ref_cinfo->obj) {
                 li = li->next;
+                continue;
             }
+            /* don't merge different names */
+            if ((i_cinfo->local_name != NULL) && (ref_cinfo->local_name != NULL)) {
+                if (strcmp (i_cinfo->local_name, ref_cinfo->local_name) != 0) {
+                    li = li->next;
+                    continue;
+                }
+            }
+
+            /* part of equal list */
+            GList *li_next = li->next;
+            successor_list = g_list_remove_link (successor_list, li);
+            equal_list     = g_list_concat (equal_list, li);
+            li             = li_next;
         }
 
         GNode *child_node = ig_lib_merge_hierarchy_list (db, equal_list, local_default_name);
