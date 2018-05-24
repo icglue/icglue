@@ -42,6 +42,7 @@ SYNTAXGEN_LIB    := scripts/gen_nagelfar_db.tcl
 SYNTAXGEN_CNSTR  := scripts/gen_nagelfar_db_construct.tcl
 
 BINSCRIPT        := bin/icglue
+TEMPLATES        := templates
 DESTDIR          ?= install/usr
 DESTDIREXE       := $(DESTDIR)/bin
 DESTDIRPKG       := $(DESTDIR)/lib/icglue/ICGlue
@@ -124,6 +125,7 @@ install: all syntaxdb docs | $(DESTDIR)
 	cp -r $(DOCDIRTCL)/html $(DESTDIRAUX)
 	cp -r vim $(DESTDIRAUX)
 	cp -r $(SYNTAXDIR) $(DESTDIRAUX)
+	cp -r $(TEMPLATES) $(DESTDIRAUX)
 
 
 .PHONY: install

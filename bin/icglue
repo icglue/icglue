@@ -47,13 +47,16 @@ proc printhelp {{exitcode 0} {doexit "true"}} {
 }
 
 proc main {} {
+    variable binpath
+
     # default config
     set c_template      "default"
     set c_loglevel      "W"
     set c_loglines      "false"
     set c_file          ""
     # templates provided with package
-    set c_template_dirs [list "[file dirname [file normalize $::argv0]]/../templates"]
+    set     c_template_dirs [list "[file dirname [file normalize $binpath]]/../templates"]
+    lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../../../share/icglue/templates"]
 
     # environment
     # ... template path
@@ -135,10 +138,7 @@ proc main {} {
     }
 
     foreach i_tdir $c_template_dirs {
-        if {![file isdirectory $i_tdir]} {
-            ig::log -error "template include dir argument \"${i_tdir}\" is no directory"
-            exit 1
-        } else {
+        if {[file isdirectory $i_tdir]} {
             ig::templates::add_template_dir $i_tdir
         }
     }
