@@ -272,9 +272,9 @@ namespace eval ig {
                     lappend module_inc_list $module_name
                 }
 
-                if {[catch {db::get_modules -name $module_name}]} {
+                if {[catch {ig::db::get_modules -name $module_name}]} {
                     log -debug -id MTREE "M (module = $module_name): creating..."
-                    lappend modids [db::create_module {*}$cf -name $module_name]
+                    lappend modids [ig::db::create_module {*}$cf -name $module_name]
                 } else {
                     if {!$fres && !$finc} {
                         puts "$moduleflags $fres $finc"
