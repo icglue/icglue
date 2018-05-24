@@ -13,14 +13,14 @@
     - install package
     - install bin
     - ...?
+- add check (nagelfar shell script)
+- add manpage
+- add prepare[template]
 
 ## lib
 - regfile support
   - add get\_regfile -name (without -of option) possibility
 - add net/signal data type to retrieve signals?
-
-## tcllib
-- "-help"-switches for main commands
 
 ## templates
 - integrate regfile into default template
