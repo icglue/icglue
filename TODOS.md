@@ -21,6 +21,7 @@
 - regfile support
   - add get\_regfile -name (without -of option) possibility
 - add net/signal data type to retrieve signals?
+- signal-connect: add signal-invertsion feature at target ports
 
 ## templates
 - regfiles: support
