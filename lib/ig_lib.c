@@ -508,6 +508,9 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
             cinfo_node->dir = IG_LCDIR_BIDIR;
         }
 
+        /* inv merge */
+        cinfo_node->invert = (cinfo_node->invert || i_cinfo->invert);
+
         /* explicit */
         if (i_cinfo->is_explicit) cinfo_node->is_explicit = true;
 
@@ -610,8 +613,10 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
             if (mod->default_instance == NULL) return result;
             if (copy_first) {
                 bool force_name = cinfo->force_name;
+                bool invert     = cinfo->invert;
                 cinfo             = ig_lib_connection_info_new (db->str_chunks, mod->default_instance->object, cinfo->local_name, cinfo->dir);
                 cinfo->force_name = force_name;
+                cinfo->invert     = invert;
                 copy_first        = false;
             } else {
                 cinfo = ig_lib_connection_info_new (db->str_chunks, mod->default_instance->object, NULL, cinfo->dir);
@@ -640,6 +645,7 @@ struct ig_lib_connection_info *ig_lib_connection_info_new (GStringChunk *str_chu
     result->dir         = dir;
     result->is_explicit = false;
     result->force_name  = false;
+    result->invert      = false;
 
     if (local_name == NULL) {
         result->local_name = NULL;
@@ -663,6 +669,7 @@ struct ig_lib_connection_info *ig_lib_connection_info_copy (GStringChunk *str_ch
     result->dir         = original->dir;
     result->is_explicit = original->is_explicit;
     result->force_name  = original->force_name;
+    result->invert      = original->invert;
 
     if (original->local_name != NULL) {
         result->local_name = g_string_chunk_insert_const (str_chunks, original->local_name);
@@ -719,6 +726,9 @@ static void ig_lib_htree_print (GNode *hier_tree)
 
         str_t = g_string_append (str_t, i_info->obj->id);
         str_t = g_string_append (str_t, ".");
+        if (i_info->invert) {
+            str_t = g_string_append (str_t, "~");
+        }
         str_t = g_string_append (str_t, i_info->local_name);
         if (i_info->is_explicit) {
             if (i_info->force_name) {
@@ -830,6 +840,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
 
         /* create a pin */
         struct ig_pin *inst_pin = ig_pin_new (pin_name, conn_name, inst, db->str_chunks);
+        ig_obj_attr_set (inst_pin->object, "invert", (cinfo->invert ? "true" : "false"), false);
         if (g_hash_table_contains (db->objects_by_id, inst_pin->object->id)) {
             log_error ("HTrPS", "Already declared pin %s", inst_pin->object->id);
         }

@@ -30,35 +30,36 @@ namespace eval ig {
         # @param ids Return instance object IDs instead of names (default: false).
         # @param merge (Only in combination with ids=true) Return list of merged expressions with IDs and originial expression remainder (default: false).
         #
-        # @return List of expanded instance expressions {instance-name module-name remainder}.
+        # @return List of expanded instance expressions {instance-name module-name remainder inverted}.
         #
-        # The input list can contain expressions of the form module\<instance1,instance2\>-\>signal.
-        # The default result would then contain two lists: {module_instance1 module -\>signal} and {module_instance2 module -\>signal}.
+        # The input list can contain expressions of the form ~module\<instance1,instance2\>-\>signal.
+        # The default result would then contain two lists: {~module_instance1 module -\>signal} and {~module_instance2 module -\>signal}.
         #
         # If ids is set, the object ids of module and instance will be returned.
         # If there is no instance of the given instance-name to be found, a module id will be looked up.
-        # If merge is set as well, the result-list will be reduced to a single entry for each instance of the form ${id}-\>signal.
+        # If merge is set as well, the result-list will be reduced to a single entry for each instance of the form [~]${id}-\>signal.
         proc expand_instances {inst_list {ids false} {merge false}} {
             set result [list]
 
             foreach i_entry $inst_list {
                 if {[regexp -expanded {
                     ^
+                    ([~]?)
                     ([^<>]+)
                     (<(.*)>)?
                     (->[^\s]+)?
                     $
-                } $i_entry m_entry m_module m_instwrap m_insts m_rem]} {
+                } $i_entry m_entry m_inv m_module m_instwrap m_insts m_rem]} {
                     if {$m_instwrap eq ""} {
-                        lappend result [list $m_module $m_module $m_rem]
+                        lappend result [list $m_module $m_module $m_rem $m_inv]
                     } else {
                         foreach i_sfx [split $m_insts ","] {
                             if {[regexp {^(\w*?)(\d+)\.\.(\d+)$} $i_sfx m_sfx m_prefix m_start m_stop]} {
                                 for {set i $m_start} {$i <= $m_stop} {incr i} {
-                                    lappend result [list "${m_module}_${m_prefix}${i}" $m_module $m_rem]
+                                    lappend result [list "${m_module}_${m_prefix}${i}" $m_module $m_rem $m_inv]
                                 }
                             } else {
-                                lappend result [list "${m_module}_${i_sfx}" $m_module $m_rem]
+                                lappend result [list "${m_module}_${i_sfx}" $m_module $m_rem $m_inv]
                             }
                         }
                     }
@@ -76,12 +77,13 @@ namespace eval ig {
                         set inst_id [ig::db::get_modules -name $inst]
                     }
                     if {$merge} {
-                        lappend result_ids "${inst_id}[lindex $i_r 2]"
+                        lappend result_ids "[lindex $i_r 3]${inst_id}[lindex $i_r 2]"
                     } else {
                         lappend result_ids [list \
                             $inst_id \
-                            [ig::db::get_modules   -name [lindex $i_r 1]] \
-                            [lindex $i_r 2]
+                            [ig::db::get_modules -name [lindex $i_r 1]] \
+                            [lindex $i_r 2] \
+                            [lindex $i_r 3]
                         ]
                     }
                 }

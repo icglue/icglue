@@ -311,6 +311,7 @@ namespace eval ig::templates {
         # @li name = Name of pin.
         # @li object = Object-ID of pin.
         # @li connection = Connected signal/value to this pin.
+        # @li invert = Pin should be inverted.
         #
         # The parameters entry is an array-list of arrays with entries
         # @li name = Name of parameter.
@@ -335,6 +336,7 @@ namespace eval ig::templates {
                     "name"           [ig::db::get_attribute -object $i_pin -attribute "name"] \
                     "object"         $i_pin \
                     "connection"     [ig::db::get_attribute -object $i_pin -attribute "connection"] \
+                    "invert"         [ig::db::get_attribute -object $i_pin -attribute "invert" -default "false"] \
                 ]
             }
             lappend result "pins" $pin_data

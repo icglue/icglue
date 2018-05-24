@@ -46,7 +46,7 @@
 /* Tcl helper function for parsing lists in GSLists of char * */
 static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, void *dest_ptr);
 
-static void ig_tclc_connection_parse (const char *input, GString *id, GString *net, bool *adapt);
+static void ig_tclc_connection_parse (const char *input, GString *id, GString *net, bool *adapt, bool *inv);
 
 /* tcl proc declarations */
 static int ig_tclc_create_module    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
@@ -933,12 +933,19 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     return TCL_OK;
 }
 
-static void ig_tclc_connection_parse (const char *input, GString *id, GString *net, bool *adapt)
+static void ig_tclc_connection_parse (const char *input, GString *id, GString *net, bool *adapt, bool *inv_ptr)
 {
     if (input == NULL) return;
     if (id == NULL) return;
     if (net == NULL) return;
     if (adapt == NULL) return;
+
+    bool inv = false;
+    if ((strlen (input) >= 2) && (input[0] == '~')) {
+        input++;
+        inv = true;
+    }
+    if (inv_ptr != NULL) *inv_ptr = inv;
 
     log_debug ("TCnPr", "parsing connection info: %s", input);
     const char *split_net = strstr (input, "->");
@@ -1045,7 +1052,8 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     bool                           t_adapt  = false;
 
     if (from != NULL) {
-        ig_tclc_connection_parse (from, tstr_id, tstr_net, &t_adapt);
+        bool inv = false;
+        ig_tclc_connection_parse (from, tstr_id, tstr_net, &t_adapt, &inv);
         struct ig_object *src_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
         if (src_obj == NULL) goto l_ig_tclc_connect_nfexit;
 
@@ -1055,6 +1063,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         } else {
             src = ig_lib_connection_info_new (db->str_chunks, src_obj, NULL, IG_LCDIR_UP);
         }
+        src->invert = inv;
     }
 
     GSList                    *trg_orig_list = to_list;
@@ -1065,7 +1074,8 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     }
 
     for (GSList *li = trg_orig_list; li != NULL; li = li->next) {
-        ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_net, &t_adapt);
+        bool inv = false;
+        ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_net, &t_adapt, &inv);
         struct ig_object *trg_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
         if (trg_obj == NULL) goto l_ig_tclc_connect_nfexit;
 
@@ -1076,6 +1086,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         } else {
             trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, NULL, trg_dir);
         }
+        trg->invert = inv;
         trg_list = g_list_prepend (trg_list, trg);
     }
     trg_list = g_list_reverse (trg_list);
@@ -1196,7 +1207,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
     enum ig_lib_connection_dir trg_dir = IG_LCDIR_DEFAULT;
 
     for (GSList *li = ept_list; li != NULL; li = li->next) {
-        ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_par, &t_adapt);
+        ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_par, &t_adapt, NULL);
         struct ig_object *trg_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
         if (trg_obj == NULL) goto l_ig_tclc_parameter_nfexit;
 

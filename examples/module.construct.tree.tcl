@@ -34,6 +34,7 @@ S rf_addr     -w 32  tb_top       --> mgmt_regfile
 S rf_w_data   -w 32  tb_top       --> mgmt_regfile
 S rf_en              tb_top       --> mgmt_regfile
 S rf_r_data   -w 32  tb_top       <-- mgmt_regfile
+S en_invtest         mgmt         --> ~core
 
 S reset_n_ref              tb_top --> {mgmt_regfile common_sync<1..2,4,test>->resetn_i}
 S config      -w32  mgmt_regfile  --> core

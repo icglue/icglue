@@ -99,7 +99,7 @@ module <%=$mod_data(name)%> (
     <%=$inst(module.name)%><% if {$inst(hasparams)} { %> #(<%="\n"%><% foreach_array_join param $inst(parameters) { -%>
         .<%=[format "%-${i_params_maxlen_name}s (%s)" $param(name) $param(value)]%><% } { %>,<%="\n"%><% } %>
     )<% } %> <%=$inst(name)%> (<%="\n"%><% foreach_array_join pin $inst(pins) { -%>
-        .<%=[format "%-${i_pins_maxlen_name}s (%s)" $pin(name) $pin(connection)]%><% } { %>,<%="\n"%><% } %>
+        .<%=[format "%-${i_pins_maxlen_name}s (%s%s)" $pin(name) [expr {$pin(invert) ? "~" : ""}] $pin(connection)]%><% } { %>,<%="\n"%><% } %>
     );<% } %>
 
     <%=[get_pragma_content $pragma_data "keep" "instances"]%><%

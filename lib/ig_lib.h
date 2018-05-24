@@ -73,6 +73,7 @@ struct ig_lib_connection_info {
     bool                       is_explicit; /**< @brief Hierarchy element is explicitly set. */
     bool                       force_name;  /**< @brief Signal/parameter name must be kept verbatim. */
     enum ig_lib_connection_dir dir;         /**< @brief Signal direction in hierarchy.*/
+    bool                       invert;      /**< @brief Signal: invert at this point. */
 };
 
 /**
