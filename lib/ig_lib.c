@@ -25,6 +25,7 @@
 
 /* static functions */
 static GList   *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connection_info *cinfo);
+static bool     ig_lib_check_cycle (struct ig_lib_db *db, struct ig_instance *child, struct ig_module *parent);
 static GNode   *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_list, const char *signame);
 static void     ig_lib_htree_print (GNode *hier_tree);
 static GNode   *ig_lib_htree_reduce (GNode *hier_tree);
@@ -108,6 +109,32 @@ struct ig_module *ig_lib_add_module (struct ig_lib_db *db, const char *name, boo
     return mod;
 }
 
+static bool ig_lib_check_cycle (struct ig_lib_db *db, struct ig_instance *child, struct ig_module *parent)
+{
+    bool result = false;
+
+    if (child == NULL)  return false;
+    if (parent == NULL) return false;
+
+    struct ig_lib_connection_info *start = ig_lib_connection_info_new (db->str_chunks, parent->object, NULL, IG_LCDIR_DEFAULT);
+    GList *hlist = ig_lib_gen_hierarchy (db, start);
+
+    if (hlist == NULL) return false;
+
+    struct ig_object *root = ((struct ig_lib_connection_info *) hlist->data)->obj;
+
+    if (strcmp (root->id, child->object->id) == 0) {
+        result = true;
+    }
+
+    for (GList *li = hlist; li != NULL; li = li->next) {
+        ig_lib_connection_info_free ((struct ig_lib_connection_info *)li->data);
+    }
+    g_list_free (hlist);
+
+    return result;
+}
+
 struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name, struct ig_module *type, struct ig_module *parent)
 {
     if (db == NULL) return NULL;
@@ -133,6 +160,11 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
         }
 
         inst = type->default_instance;
+
+        if (ig_lib_check_cycle (db, inst, parent)) {
+            log_error ("ECycl", "cannot instanciate module %s in module %s - would create hierarchy cycle!", type->name, parent->name);
+            return NULL;
+        }
 
         inst->parent = parent;
         ig_obj_attr_set (inst->object, "parent", parent->object->id, true);
