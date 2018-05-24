@@ -574,6 +574,11 @@ struct ig_instance *ig_instance_new (const char *name, struct ig_module *module,
     if (module == NULL) return NULL;
     log_debug ("DINew", "Generating instance %s", name);
 
+    if ((parent != NULL) && (parent->resource)) {
+        log_error ("DINew", "Cannot create instances within resource module %s", parent->name);
+        return NULL;
+    }
+
     struct ig_instance *instance = g_slice_new (struct ig_instance);
     struct ig_object   *obj      = ig_obj_new (IG_OBJ_INSTANCE, name, (parent == NULL ? NULL : parent->object), instance, storage);
     instance->object = obj;

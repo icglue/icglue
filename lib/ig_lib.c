@@ -147,6 +147,11 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
         return NULL;
     }
 
+    if (parent->resource) {
+        log_error ("EPRes", "cannot create instances in resource module %s", parent->name);
+        return NULL;
+    }
+
     struct ig_instance *inst = NULL;
 
     if (!type->resource) {
