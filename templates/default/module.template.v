@@ -107,11 +107,11 @@ module <%=$mod_data(name)%> (
     ###########################################
 %>
 
-<%
+<%-
     ###########################################
     ## <code>
-    foreach_array cs $mod_data(code) { -%>
-    <%= [string trim $cs(code)]%><% } %>
+    foreach_array cs $mod_data(code) {
+    -%><%="$cs(code)"%><% } %>
     <%=[get_pragma_content $pragma_data "keep" "code"]%><%
     ## </code>
     ###########################################
