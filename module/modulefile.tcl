@@ -29,6 +29,11 @@ if { ([module-info mode load] || [module-info mode switch2]) } {
 }
 
 #------------------------------------------------------------------------
+if {(![info exists ::env(MANPATH)]) || ($::env(MANPATH) eq "")} {
+    if {![catch {exec manpath} manpath]} {
+        prepend-path MANPATH $manpath
+    }
+}
 prepend-path PATH       "${tool_root}/bin"
 prepend-path MANPATH    "${tool_root}/share/icglue/man"
 prepend-path TCLLIBPATH "${tool_root}/lib/icglue"
