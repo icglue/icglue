@@ -24,3 +24,4 @@ set_attribute -object $cs -attribute "adapt" -value "true"
 parameter -targets [list [get_instances -name proc_mgmt] [get_instances -name proc_core] [get_modules -name tb_proc_top]] -name DATA_W -value 32
 
 }
+# vim: set filetype=icglueconstructtcl syntax=tcl:

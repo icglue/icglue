@@ -95,3 +95,4 @@ R -rf mgmt_regfile "config1" @0x0008 {
     {status_test     15:0      R    16'h0 status_test        16:0        }
 }
 
+# vim: set filetype=icglueconstructtcl syntax=tcl:
