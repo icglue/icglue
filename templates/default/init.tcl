@@ -18,11 +18,7 @@ init::output_types $template {
 init::template_file $template {
     set type [ig::db::get_attribute -object $object -attribute "type"]
     if {$type eq "module"} {
-        if { [llength [ig::db::get_regfiles -of $object]] } {
-            return "${template_dir}/regfile.template.v"
-        } else {
-            return "${template_dir}/module.template.v"
-        }
+        return "${template_dir}/module.template.v"
     } elseif {$type eq "regfile"} {
         return "${template_dir}/regfile.template.csv"
     } else {

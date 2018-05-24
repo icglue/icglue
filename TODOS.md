@@ -23,7 +23,6 @@
 - add net/signal data type to retrieve signals?
 
 ## templates
-- integrate regfile into default template
 - regfiles: support
   - handshake read
   - trigger reg (different types: 1-0 trigger, toggle trigger, ...?)
