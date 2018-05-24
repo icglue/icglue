@@ -151,7 +151,7 @@ namespace eval ig {
         set name [ig::aux::parse_opts [list                                                                                        \
                    { {^-u(nit)?(=)?}                 "string"              unit          "specify unit name \[directory\]"     }   \
                    { {^-i(nst(ances|anciate)?)?(=)?} "string"              instances     "specify Module to be instanciated"   }   \
-                   { {^-t(ree)?(=)?}                 "string"              instance_tree "specify module instance tree"        }   \
+                   { {^-tree(=)?}                    "string"              instance_tree "specify module instance tree"        }   \
                                                                                                                                    \
                    { {^-rtl$}                        "const=rtl"           mode          "specify rtl attribute for module"    }   \
                    { {^-beh(av(ioral|ioural)?)$}     "const=behavioral"    mode          "specify rtl attribute for module"    }   \
@@ -390,7 +390,7 @@ namespace eval ig {
                 ig::db::create_instance \
                     -name $i_name \
                     -of-module [ig::db::get_modules -name $i_mod] \
-                    -parent-module $modid \
+                    -parent-module $modid
             }
 
             # regfiles
