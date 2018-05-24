@@ -1,4 +1,4 @@
-namespace eval ig::db {
+namespace import ::ig::db::*
 
 create_module -name tb_proc_top
 create_module -name proc_top
@@ -23,5 +23,4 @@ set_attribute -object $cs -attribute "adapt" -value "true"
 
 parameter -targets [list [get_instances -name proc_mgmt] [get_instances -name proc_core] [get_modules -name tb_proc_top]] -name DATA_W -value 32
 
-}
 # vim: set filetype=icglueconstructtcl syntax=tcl:

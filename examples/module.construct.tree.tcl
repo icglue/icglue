@@ -1,4 +1,4 @@
-
+# modules
 M -unit "chungo" -tree {
     ...chungo(rtl)
     .....chungo_inst(rtl)
@@ -27,16 +27,7 @@ M -unit "rftest" -tree {
     .....core(rtl)
 }
 
-# modules
-#M -rtl -v -u rftest common_sync -res
-#M -rtl -v -u rftest mgmt_regfile -rf {mgmt_regfile} -i {common_sync<1..2,4,test>}
-#M -rtl -v -u rftest mgmt         -i {mgmt_regfile}
-#M -rtl -v -u rftest core
-#M -rtl -v -u rftest top          -i {core mgmt}
-#M -tb  -v -u rftest tb_top       -i {top}
-
-
-## connections
+# connections
 S clk                mgmt         --> top core->clk!
 S clk_ref            tb_top       --> mgmt->clk_src_i mgmt_regfile->clk_ref_i common_sync<1..2,4,test>->clk_i
 S rf_addr     -w 32  tb_top       --> mgmt_regfile
