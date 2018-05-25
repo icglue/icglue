@@ -50,7 +50,6 @@ namespace eval ig {
                     (:[^\s]+)?
                     $
                 } $i_entry m_entry m_inv m_module m_instwrap m_insts m_rem]} {
-                    puts "$i_entry $m_entry $m_inv $m_module $m_instwrap $m_insts $m_rem"
                     if {$m_instwrap eq ""} {
                         lappend result [list $m_module $m_module $m_rem $m_inv]
                     } else {
