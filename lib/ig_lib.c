@@ -113,15 +113,15 @@ static bool ig_lib_check_cycle (struct ig_lib_db *db, struct ig_instance *child,
 {
     bool result = false;
 
-    if (child == NULL)  return false;
+    if (child == NULL) return false;
     if (parent == NULL) return false;
 
     struct ig_lib_connection_info *start = ig_lib_connection_info_new (db->str_chunks, parent->object, NULL, IG_LCDIR_DEFAULT);
-    GList *hlist = ig_lib_gen_hierarchy (db, start);
+    GList                         *hlist = ig_lib_gen_hierarchy (db, start);
 
     if (hlist == NULL) return false;
 
-    struct ig_object *root = ((struct ig_lib_connection_info *) hlist->data)->obj;
+    struct ig_object *root = ((struct ig_lib_connection_info *)hlist->data)->obj;
 
     if (strcmp (root->id, child->object->id) == 0) {
         result = true;

@@ -1087,7 +1087,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
             trg = ig_lib_connection_info_new (db->str_chunks, trg_obj, NULL, trg_dir);
         }
         trg->invert = inv;
-        trg_list = g_list_prepend (trg_list, trg);
+        trg_list    = g_list_prepend (trg_list, trg);
     }
     trg_list = g_list_reverse (trg_list);
 
