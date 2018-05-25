@@ -122,7 +122,7 @@ proc main {} {
 
     lappend c_file $filename
     # argument evaluation
-    if {[llength {*}$c_file] == 0} {
+    if {[llength $c_file] == 0} {
         ig::log -error "Not enough arguments"
         printhelp 1
     }
