@@ -84,7 +84,11 @@ docs: doctcl doclib
 showdocs:
 	$(BROWSER) $(DOCDIRLIB)/html/index.html $(DOCDIRTCL)/html/index.html > /dev/null 2> /dev/null &
 
-.PHONY: doctcl doclib docs
+man:
+	-mkdir -p ./man/man1
+	-help2man -i ./h2m/icglue.h2m ./bin/icglue > ./man/man1/icglue.1
+
+.PHONY: doctcl doclib docs man
 
 #-------------------------------------------------------
 # syntax check
@@ -100,7 +104,7 @@ $(SYNTAXFILE_CNSTR): $(PKGIDX) | $(SYNTAXDIR)
 
 #-------------------------------------------------------
 # build everything
-everything: all syntaxdb docs
+everything: all syntaxdb docs h2m
 
 shell:
 	TCLLIBPATH=. eltclsh scripts/elinit.tcl
@@ -120,12 +124,13 @@ install: all syntaxdb docs | $(INSTDIR)
 	install -m755 -d $(INSTDIR)/bin
 	ln -fs $(PREFIX)/lib/icglue/icglue $(INSTDIR)/bin/icglue
 	install -m755 -d $(INSTDIR)/share/icglue
-	cp -r $(DOCDIRTCL)/man $(INSTDIR)/share/icglue
+	cp -r $(DOCDIRTCL)/man $(INSTDIR)/share
 	cp -r $(DOCDIRTCL)/html $(INSTDIR)/share/icglue
 	cp -r vim $(INSTDIR)/share/icglue
 	cp -r $(SYNTAXDIR) $(INSTDIR)/share/icglue
 	cp -r $(TEMPLATES) $(INSTDIR)/share/icglue
-
+	install -D ./man/man1/icglue.1 $(INSTDIR)/share/man/man1/icglue.1
+	sed -i -e 's#%DOCDIRTCL%#'$(PREFIX)/share/icglue'#' $(INSTDIR)/share/man/man1/icglue.1
 
 .PHONY: install
 

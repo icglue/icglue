@@ -35,7 +35,7 @@ if {(![info exists ::env(MANPATH)]) || ($::env(MANPATH) eq "")} {
     }
 }
 prepend-path PATH       "${tool_root}/bin"
-prepend-path MANPATH    "${tool_root}/share/icglue/man"
+prepend-path MANPATH    "${tool_root}/share/man"
 prepend-path TCLLIBPATH "${tool_root}/lib/icglue"
 
 #------------------------------------------------------------------------
