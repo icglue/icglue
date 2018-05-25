@@ -948,7 +948,7 @@ static void ig_tclc_connection_parse (const char *input, GString *id, GString *n
     if (inv_ptr != NULL) *inv_ptr = inv;
 
     log_debug ("TCnPr", "parsing connection info: %s", input);
-    const char *split_net = strstr (input, "->");
+    const char *split_net = strstr (input, ":");
     g_string_assign (id, input);
     if (split_net == NULL) {
         g_string_assign (net, "");
@@ -958,7 +958,7 @@ static void ig_tclc_connection_parse (const char *input, GString *id, GString *n
     }
 
     g_string_truncate (id, (split_net - input));
-    g_string_assign (net, split_net + 2);
+    g_string_assign (net, split_net + 1);
 
     if (net->len == 0) {
         *adapt = true;

@@ -94,10 +94,10 @@ struct ig_object *ig_obj_new (enum ig_object_type type, const char *name, struct
     /* id */
     GString *s_id = g_string_new (NULL);
     s_id = g_string_append (s_id, ig_obj_type_name (type));
-    s_id = g_string_append (s_id, "::");
+    s_id = g_string_append (s_id, "##");
     if (parent != NULL) {
         s_id = g_string_append (s_id, ig_obj_attr_get (parent, "name"));
-        s_id = g_string_append (s_id, ".");
+        s_id = g_string_append (s_id, "#");
     }
     s_id = g_string_append (s_id, name);
 

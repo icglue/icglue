@@ -32,12 +32,12 @@ namespace eval ig {
         #
         # @return List of expanded instance expressions {instance-name module-name remainder inverted}.
         #
-        # The input list can contain expressions of the form ~module\<instance1,instance2\>-\>signal.
-        # The default result would then contain two lists: {~module_instance1 module -\>signal} and {~module_instance2 module -\>signal}.
+        # The input list can contain expressions of the form ~module\<instance1,instance2\>:signal.
+        # The default result would then contain two lists: {~module_instance1 module:signal} and {~module_instance2 module:signal}.
         #
         # If ids is set, the object ids of module and instance will be returned.
         # If there is no instance of the given instance-name to be found, a module id will be looked up.
-        # If merge is set as well, the result-list will be reduced to a single entry for each instance of the form [~]${id}-\>signal.
+        # If merge is set as well, the result-list will be reduced to a single entry for each instance of the form [~]${id}:signal.
         proc expand_instances {inst_list {ids false} {merge false}} {
             set result [list]
 
@@ -45,11 +45,12 @@ namespace eval ig {
                 if {[regexp -expanded {
                     ^
                     ([~]?)
-                    ([^<>]+)
+                    ([^<>:]+)
                     (<(.*)>)?
-                    (->[^\s]+)?
+                    (:[^\s]+)?
                     $
                 } $i_entry m_entry m_inv m_module m_instwrap m_insts m_rem]} {
+                    puts "$i_entry $m_entry $m_inv $m_module $m_instwrap $m_insts $m_rem"
                     if {$m_instwrap eq ""} {
                         lappend result [list $m_module $m_module $m_rem $m_inv]
                     } else {
@@ -420,7 +421,7 @@ namespace eval ig {
     #
     # @return Object-IDs of the newly created objects of newly created signal.
     #
-    # Source and target-lists will be expanded and can contain local signal-name specifications after a "->" symbol
+    # Source and target-lists will be expanded and can contain local signal-name specifications after a ":" symbol
     # (local signal-name suffixes can be generated when the signal-name is followed by "!")
     # and multi-instance-expressions e.g. module\<1,4..9,a,b\>.
     proc S args {
@@ -495,6 +496,10 @@ namespace eval ig {
     #    </table>
     #
     # @return Object-IDs of the newly created objects of newly created parameter.
+    #
+    # Source and target-lists will be expanded and can contain local signal-name specifications after a ":" symbol
+    # (local signal-name suffixes can be generated when the signal-name is followed by "!")
+    # and multi-instance-expressions e.g. module\<1,4..9,a,b\>.
     proc P args {
         # defaults
         set name      ""

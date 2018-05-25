@@ -28,15 +28,15 @@ M -unit "rftest" -tree {
 }
 
 # connections
-S clk                mgmt         --> top core->clk!
-S clk_ref            tb_top       --> mgmt->clk_src_i mgmt_regfile->clk_ref_i common_sync<1..2,4,test>->clk_i
+S clk                mgmt         --> top core:clk!
+S clk_ref            tb_top       --> mgmt:clk_src_i mgmt_regfile:clk_ref_i common_sync<1..2,4,test>:clk_i
 S rf_addr     -w 32  tb_top       --> mgmt_regfile
 S rf_w_data   -w 32  tb_top       --> mgmt_regfile
 S rf_en              tb_top       --> mgmt_regfile
 S rf_r_data   -w 32  tb_top       <-- mgmt_regfile
 S en_invtest         mgmt         --> ~core
 
-S reset_n_ref              tb_top --> {mgmt_regfile common_sync<1..2,4,test>->resetn_i}
+S reset_n_ref              tb_top --> {mgmt_regfile common_sync<1..2,4,test>:resetn_i}
 S config      -w32  mgmt_regfile  --> core
 S config2     -w32  mgmt_regfile  --> core
 S config3     -w32  mgmt_regfile  --> core
