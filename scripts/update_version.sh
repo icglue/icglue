@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "x$1" == "x" ] ; then
+if [ "x$1" = "x" ] ; then
     echo "need a version number as argument"
     exit 1
 fi

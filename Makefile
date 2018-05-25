@@ -67,6 +67,7 @@ $(PKGIDX): $(TCLSOURCES) $(LIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 # version number/header update
 updateversion:
 	$(VERSIONSCR) $(VERSION)
+	$(MAKE)
 
 .PHONY: updateversion
 

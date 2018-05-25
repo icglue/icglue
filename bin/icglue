@@ -33,7 +33,7 @@ proc printhelp {{exitcode 0} {doexit "true"}} {
     puts "    -h, --help               Show help"
     puts ""
     puts "    -f, --file=FILE          Set input FILE to use"
-    puts "    -t, --template=TEMPLATE  Set TEMPLATE to use"
+    puts "    -t, --template=FILE      Set FILE to use as template"
     puts "    --template-dir=DIR       Add DIR to template path"
     puts ""
     puts "    -q, --quiet              Show errors only"
@@ -119,7 +119,7 @@ proc main {} {
     lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../templates"]
     lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../../share/icglue/templates"]
 
-    lappend c_file $filename
+    set c_file [concat $c_file $filename]
     # argument evaluation
     if {[llength $c_file] == 0} {
         ig::log -error "Not enough arguments"
