@@ -43,11 +43,9 @@ SYNTAXGEN_CNSTR  := scripts/gen_nagelfar_db_construct.tcl
 
 BINSCRIPT        := bin/icglue
 TEMPLATES        := templates
-DESTDIR          ?= install/usr
-DESTDIREXE       := $(DESTDIR)/bin
-DESTDIRPKG       := $(DESTDIR)/lib/icglue/ICGlue
-DESTDIRBIN       := $(DESTDIR)/lib/icglue/bin
-DESTDIRAUX       := $(DESTDIR)/share/icglue
+PREFIX           ?= $(CURDIR)/install
+DESTDIR          ?=
+INSTDIR          := $(DESTDIR)$(PREFIX)
 
 #-------------------------------------------------------
 # Tcl Package
@@ -113,26 +111,26 @@ memcheck:
 
 #-------------------------------------------------------
 # install
-install: all syntaxdb docs | $(DESTDIR)
-	install -m755 -d $(DESTDIRPKG)
-	install -m644 $(PKGDIR)/*.tcl -t $(DESTDIRPKG)
-	install -m755 $(PKGDIR)/*.so -t $(DESTDIRPKG)
-	install -m755 -D $(BINSCRIPT) -t $(DESTDIRBIN)/
-	install -m755 -d $(DESTDIREXE)
-	ln -rfs $(DESTDIRBIN)/icglue $(DESTDIREXE)/icglue
-	install -m755 -d $(DESTDIRAUX)
-	cp -r $(DOCDIRTCL)/man $(DESTDIRAUX)
-	cp -r $(DOCDIRTCL)/html $(DESTDIRAUX)
-	cp -r vim $(DESTDIRAUX)
-	cp -r $(SYNTAXDIR) $(DESTDIRAUX)
-	cp -r $(TEMPLATES) $(DESTDIRAUX)
+install: all syntaxdb docs | $(INSTDIR)
+	install -m755 -d $(INSTDIR)/lib/icglue/$(PKGDIR)
+	install -m644 $(PKGDIR)/*.tcl -t $(INSTDIR)/lib/icglue/$(PKGDIR)
+	install -m755 $(PKGDIR)/*.so -t $(INSTDIR)/lib/icglue/$(PKGDIR)
+	install -m755 -D $(BINSCRIPT) -T $(INSTDIR)/lib/icglue/icglue
+	install -m755 -d $(INSTDIR)/bin
+	ln -fs $(PREFIX)/lib/icglue/icglue $(INSTDIR)/bin/icglue
+	install -m755 -d $(INSTDIR)/share/icglue
+	cp -r $(DOCDIRTCL)/man $(INSTDIR)/share/icglue
+	cp -r $(DOCDIRTCL)/html $(INSTDIR)/share/icglue
+	cp -r vim $(INSTDIR)/share/icglue
+	cp -r $(SYNTAXDIR) $(INSTDIR)/share/icglue
+	cp -r $(TEMPLATES) $(INSTDIR)/share/icglue
 
 
 .PHONY: install
 
 #-------------------------------------------------------
 # directories
-$(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB) $(SYNTAXDIR) $(DESTDIR):
+$(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB) $(SYNTAXDIR) $(INSTDIR):
 	mkdir -p $@
 
 
