@@ -249,16 +249,20 @@ namespace eval ig::sng {
                     default         {error "line ${linenumber}: could not parse module args"}
                 }
             }
-            if {$resource} {
-                set modid [ig::db::create_module -resource -name $modname]
-            } elseif {$ilm} {
-                set modid [ig::db::create_module -ilm -name $modname]
-            } else {
-                set modid [ig::db::create_module -name $modname]
+            if {[catch {
+                    if {$resource} {
+                        set modid [ig::db::create_module -resource -name $modname]
+                    } elseif {$ilm} {
+                        set modid [ig::db::create_module -ilm -name $modname]
+                    } else {
+                        set modid [ig::db::create_module -name $modname]
+                    }
+                    ig::db::set_attribute -object $modid -attribute "language"   -value $lang
+                    ig::db::set_attribute -object $modid -attribute "mode"       -value $mode
+                    ig::db::set_attribute -object $modid -attribute "parentunit" -value $parent
+                }]} {
+                error "line ${linenumber}: could not create module for ${modname}"
             }
-            ig::db::set_attribute -object $modid -attribute "language"   -value $lang
-            ig::db::set_attribute -object $modid -attribute "mode"       -value $mode
-            ig::db::set_attribute -object $modid -attribute "parentunit" -value $parent
         }
 
         # instances
@@ -295,7 +299,11 @@ namespace eval ig::sng {
                 }
             }
 
-            ig::db::parameter -targets $targets -name $name -value $value
+            if {[catch {
+                    ig::db::parameter -targets $targets -name $name -value $value
+                }]} {
+                error "line ${linenumber}: G: failed to create parameter"
+            }
         }
 
         # signals
@@ -328,29 +336,33 @@ namespace eval ig::sng {
                     error "line ${linenumber}: could not find module/instance for ${i_tr}"
                 }
             }
-            if {$arrow eq "<->"} {
-                ig::db::connect -bidir $targets -signal-name $name -signal-size $size
-            } else {
-                if {[llength $src_raw] != 1} {
-                    error "line ${linenumber}: expected exactly 1 source of signal ${name}"
-                } else {
-                    set src_mod [lindex $src_raw 0 0]
-                    set src_raw [lindex $src_raw 0 1]
-                }
-                if {[catch {set src [sng_name_to_icglue $src_raw]}]} {
-                    error "line ${linenumber}: could not find module/instance for ${src_raw}"
-                }
-                ig::db::connect -from $src -to $targets -signal-name $name -signal-size $size
+            if {[catch {
+                    if {$arrow eq "<->"} {
+                        ig::db::connect -bidir $targets -signal-name $name -signal-size $size
+                    } else {
+                        if {[llength $src_raw] != 1} {
+                            error "line ${linenumber}: expected exactly 1 source of signal ${name}"
+                        } else {
+                            set src_mod [lindex $src_raw 0 0]
+                            set src_raw [lindex $src_raw 0 1]
+                        }
+                        if {[catch {set src [sng_name_to_icglue $src_raw]}]} {
+                            error "line ${linenumber}: could not find module/instance for ${src_raw}"
+                        }
+                        ig::db::connect -from $src -to $targets -signal-name $name -signal-size $size
 
-                if {$assign ne ""} {
-                    ig::log -debug "sng signal assignment: get module..."
-                    set mod [ig::db::get_modules -name $src_mod]
-                    ig::log -debug "sng signal assignment: add codesection..."
-                    set cs [ig::db::add_codesection -parent-module $mod -code "    assign ${name} = ${assign};\n"]
-                    ig::log -debug "sng signal assignment: add codesection attributes..."
-                    ig::db::set_attribute -object $cs -attribute "adapt" -value "true"
-                    ig::log -debug "sng signal assignment: ...done"
-                }
+                        if {$assign ne ""} {
+                            ig::log -debug "sng signal assignment: get module..."
+                            set mod [ig::db::get_modules -name $src_mod]
+                            ig::log -debug "sng signal assignment: add codesection..."
+                            set cs [ig::db::add_codesection -parent-module $mod -code "    assign ${name} = ${assign};\n"]
+                            ig::log -debug "sng signal assignment: add codesection attributes..."
+                            ig::db::set_attribute -object $cs -attribute "adapt" -value "true"
+                            ig::log -debug "sng signal assignment: ...done"
+                        }
+                    }
+                }]} {
+                error "line ${linenumber}: S: failed to connect"
             }
         }
 
@@ -364,7 +376,9 @@ namespace eval ig::sng {
                 error "line ${linenumber}: could not find module for ${mod}"
             }
 
-            ig::db::add_codesection -parent-module $mod -code "\n${code}\n"
+            if {[catch {ig::db::add_codesection -parent-module $mod -code "\n${code}\n"}]} {
+                error "line ${linenumber}: C: failed to create codesection"
+            }
         }
     }
 
