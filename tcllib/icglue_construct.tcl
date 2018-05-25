@@ -151,24 +151,24 @@ namespace eval ig {
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set name [ig::aux::parse_opts [list                                                                                        \
-                   { {^-u(nit)?(=)?}                 "string"              unit          "specify unit name \[directory\]"     }   \
-                   { {^-i(nst(ances|anciate)?)?(=)?} "string"              instances     "specify Module to be instanciated"   }   \
-                   { {^-tree(=)?}                    "string"              instance_tree "specify module instance tree"        }   \
-                                                                                                                                   \
-                   { {^-rtl$}                        "const=rtl"           mode          "specify rtl attribute for module"    }   \
-                   { {^-beh(av(ioral|ioural)?)$}     "const=behavioral"    mode          "specify rtl attribute for module"    }   \
-                   { {^-(tb|testbench)$}             "const=tb"            mode          "specify rtl attribute for module"    }   \
-                                                                                                                                   \
-                   { {^-v(erilog)?$}                 "const=verilog"       lang          "output verilog language"             }   \
-                   { {^-sv|-s(ystemverilog)?$}       "const=systemverilog" lang          "output systemverilog language"       }   \
-                   { {^-v(dhl)?$}                    "const=vhdl"          lang          "output vhdl language"                }   \
-                                                                                                                                   \
-                   { {^-(ilm|macro)$}                "const=ilm"           ilm           "pass ilm attribute to icglue"        }   \
-                   { {^-res(ource)?$}                "const=true"          resource      "pass ressource attribute to icglue"  }   \
-                                                                                                                                   \
-                   { {^-(rf|(regf(ile)?))(=)?}       "string"              regfiles      "pass regfile attribute to icglue"    }   \
-                                                                                                                                   \
-                   { {^-attr(ibutes)?(=)?}           "string"              attributes    "pass an arribute dict to icglue"     }   \
+                   { {^-u(nit)?(=|$)}                 "string"              unit          "specify unit name \[directory\]"     }   \
+                   { {^-i(nst(ances|anciate)?)?(=|$)} "string"              instances     "specify Module to be instanciated"   }   \
+                   { {^-tree(=)?}                     "string"              instance_tree "specify module instance tree"        }   \
+                                                                                                                                    \
+                   { {^-rtl$}                         "const=rtl"           mode          "specify rtl attribute for module"    }   \
+                   { {^-beh(av(ioral|ioural)?)$}      "const=behavioral"    mode          "specify rtl attribute for module"    }   \
+                   { {^-(tb|testbench)$}              "const=tb"            mode          "specify rtl attribute for module"    }   \
+                                                                                                                                    \
+                   { {^-v(erilog)?$}                  "const=verilog"       lang          "output verilog language"             }   \
+                   { {^-sv|-s(ystemverilog)?$}        "const=systemverilog" lang          "output systemverilog language"       }   \
+                   { {^-v(dhl)?$}                     "const=vhdl"          lang          "output vhdl language"                }   \
+                                                                                                                                    \
+                   { {^-(ilm|macro)$}                 "const=ilm"           ilm           "pass ilm attribute to icglue"        }   \
+                   { {^-res(ource)?$}                 "const=true"          resource      "pass ressource attribute to icglue"  }   \
+                                                                                                                                    \
+                   { {^-(rf|(regf(ile)?))(=|$)}       "string"              regfiles      "pass regfile attribute to icglue"    }   \
+                                                                                                                                    \
+                   { {^-attr(ibutes)?(=|$)}           "string"              attributes    "pass an arribute dict to icglue"     }   \
             ] -context "MODULENAME" $args]
 
         # argument checks
