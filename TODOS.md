@@ -19,6 +19,9 @@
 - add net/signal data type to retrieve signals?
 - signal-connect: add signal-invertsion feature at target ports
 
+## tcllib
+- instances: expand multiple occurrences of ".."
+
 ## templates
 - regfiles: support
   - handshake read
