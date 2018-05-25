@@ -69,7 +69,7 @@ proc main {} {
     set print_version   "false"
 
     # flags with mandatory arguments
-    set c_template      {}
+    set c_template      "default"
     set c_template_dirs {}
     set c_file          ""
 
@@ -84,7 +84,7 @@ proc main {} {
         {  {^(--version$)}         "const=true" print_version   {} } \
                                                                      \
         {  {^--template-dir(=|$)}  "list"       c_template_dirs {} } \
-        {  {^(-t|--template)(=|$)} "list"       c_template      {} } \
+        {  {^(-t|--template)(=|$)} "string"     c_template      {} } \
         {  {^(-f|--file)(=|$)}     "list"       c_file          {} } \
         ] $::argv]
 
@@ -106,7 +106,7 @@ proc main {} {
     # environment
     # ... template path ($ICGLUE_TEMPLATE_PATH)
     if {[info exists ::env(ICGLUE_TEMPLATE_PATH)]} {
-        foreach i_dir [split $::env(ICGLUE_TEMPLATE_PATH) "\n"] {
+        foreach i_dir [split $::env(ICGLUE_TEMPLATE_PATH) ":"] {
             lappend c_template_dirs $i_dir
         }
     }
@@ -116,9 +116,8 @@ proc main {} {
     }
 
     # templates provided with package
-    set     c_template      "default"
-    set     c_template_dirs [list "[file dirname [file normalize $binpath]]/../templates"]
-    lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../../../share/icglue/templates"]
+    lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../templates"]
+    lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../../share/icglue/templates"]
 
     lappend c_file $filename
     # argument evaluation
