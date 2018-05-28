@@ -148,9 +148,9 @@ proc main {} {
     }
 
     # construct hierarchy from input file
-    if {[string match "*.sng" $c_file] || [string match "*.icsng" $c_file]} {
+    if {[regexp "\.(ic)?sng$" $c_file]} {
         ig::sng::parse_file $c_file
-    } elseif {[string match "*.tcl" $c_file]} {
+    } elseif {[regexp ".(tcl|(ic)?glue)$" $c_file]} {
         ig::construct::run_script $c_file
     } else {
         ig::log -error "Unknown input file suffix for \"$c_file\""
