@@ -38,11 +38,10 @@ BROWSER              ?= firefox
 SYNTAXDIR            := nagelfar
 SYNTAXFILE_LIB       := $(SYNTAXDIR)/ICGlue.nagelfar.db.tcl
 SYNTAXFILE_CNSTR     := $(SYNTAXDIR)/ICGlue_construct.nagelfar.db.tcl
-NAGELFAR_SYNTAXBUILD := /usr/lib/nagelfar/syntaxbuild.tcl
+NAGELFAR_SYNTAXBUILD := /home2/neumaerker/.nobackup/g-sysroot/usr/share/nagelfar-125/syntaxbuild.tcl
 SYNTAXGEN_LIB        := scripts/gen_nagelfar_db.tcl
 SYNTAXGEN_CNSTR      := scripts/gen_nagelfar_db_construct.tcl
 
-BINSCRIPT            := bin/icglue
 TEMPLATES            := templates
 PREFIX               ?= $(CURDIR)/install
 DESTDIR              ?=
@@ -96,10 +95,10 @@ man:
 syntaxdb: $(SYNTAXFILE_LIB) $(SYNTAXFILE_CNSTR)
 
 $(SYNTAXFILE_LIB): $(PKGIDX) | $(SYNTAXDIR)
-	NAGELFAR_SYNTAXBUILD=$(NAGELFAR_SYNTAXBUILD) $(SYNTAXGEN_LIB) $(SYNTAXFILE_LIB)
+	-NAGELFAR_SYNTAXBUILD=$(NAGELFAR_SYNTAXBUILD) $(SYNTAXGEN_LIB) $(SYNTAXFILE_LIB)
 
 $(SYNTAXFILE_CNSTR): $(PKGIDX) | $(SYNTAXDIR)
-	NAGELFAR_SYNTAXBUILD=$(NAGELFAR_SYNTAXBUILD) $(SYNTAXGEN_CNSTR) $(SYNTAXFILE_CNSTR)
+	-NAGELFAR_SYNTAXBUILD=$(NAGELFAR_SYNTAXBUILD) $(SYNTAXGEN_CNSTR) $(SYNTAXFILE_CNSTR)
 
 .PHONY: syntaxdb
 
@@ -117,27 +116,35 @@ memcheck:
 
 #-------------------------------------------------------
 # install
-install: all syntaxdb docs | $(INSTDIR)
-	install -m755 -d $(INSTDIR)/lib/icglue/$(PKGDIR)
-	install -m644 $(PKGDIR)/*.tcl -t $(INSTDIR)/lib/icglue/$(PKGDIR)
-	install -m755 $(PKGDIR)/*.so -t $(INSTDIR)/lib/icglue/$(PKGDIR)
-	install -m755 -D $(BINSCRIPT) -T $(INSTDIR)/lib/icglue/icglue
-	install -m755 -d $(INSTDIR)/bin
-	ln -fs $(PREFIX)/lib/icglue/icglue $(INSTDIR)/bin/icglue
-	install -m755 -d $(INSTDIR)/share/icglue
-	cp -r $(DOCDIRTCL)/man $(INSTDIR)/share
-	cp -r $(DOCDIRTCL)/html $(INSTDIR)/share/icglue
-	cp -r vim $(INSTDIR)/share/icglue
-	cp -r $(SYNTAXDIR) $(INSTDIR)/share/icglue
-	cp -r $(TEMPLATES) $(INSTDIR)/share/icglue
-	install -D ./man/man1/icglue.1 $(INSTDIR)/share/man/man1/icglue.1
-	sed -i -e 's#%DOCDIRTCL%#'$(PREFIX)/share/icglue'#' $(INSTDIR)/share/man/man1/icglue.1
+install: install_bin install_doc install_helpers
 
-.PHONY: install
+install_bin:
+	install -m755 -d $(INSTDIR)/lib/icglue/$(PKGDIR)
+	install -m644    $(PKGDIR)/*.tcl -t          $(INSTDIR)/lib/icglue/$(PKGDIR)
+	install -m755    $(PKGDIR)/*.so -t           $(INSTDIR)/lib/icglue/$(PKGDIR)
+	install -m755 -D ./bin/icglue -T             $(INSTDIR)/lib/icglue/icglue
+	install -m755 -d $(INSTDIR)/bin
+	ln -sf           $(PREFIX)/lib/icglue/icglue $(INSTDIR)/bin/icglue
+	install -m755 -d $(INSTDIR)/share/icglue
+	cp -r            $(TEMPLATES)                $(INSTDIR)/share/icglue
+
+install_doc:
+	install -m755 -d $(INSTDIR)/share/icglue
+	install -D       $(CURDIR)/share/man/man1/icglue.1 $(INSTDIR)/share/man/man1/icglue.1
+	-cp -r           $(DOCDIRTCL)/man                  $(INSTDIR)/share
+	-cp -r           $(DOCDIRTCL)/html                 $(INSTDIR)/share/icglue
+	sed -i -e 's#%DOCDIRTCL%#$(PREFIX)/share/icglue#' $(INSTDIR)/share/man/man1/icglue.1
+
+install_helpers:
+	install -m755 -d $(INSTDIR)/share/icglue
+	cp -r            $(CURDIR)/vim            $(INSTDIR)/share/icglue     # vim
+	-cp -r           $(SYNTAXDIR)             $(INSTDIR)/share/icglue     # nagelfar
+
+.PHONY: install install_bin install_doc install_helpers
 
 #-------------------------------------------------------
 # directories
-$(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB) $(SYNTAXDIR) $(INSTDIR):
+$(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB) $(SYNTAXDIR):
 	mkdir -p $@
 
 
