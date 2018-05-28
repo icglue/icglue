@@ -16,36 +16,37 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-LIBDIR           := lib
-LIBSOURCES       := $(LIBDIR)/binaries/icglue.so
-TCLSOURCES       := $(wildcard tcllib/*.tcl)
-PKGDIR           := ICGlue
+LIBDIR               := lib
+LIBSOURCES           := $(LIBDIR)/binaries/icglue.so
+TCLSOURCES           := $(wildcard tcllib/*.tcl)
+PKGDIR               := ICGlue
 
-PKGIDX           := $(PKGDIR)/pkgIndex.tcl
-PKGGENSCR        := scripts/tcl_pkggen.tcl
+PKGIDX               := $(PKGDIR)/pkgIndex.tcl
+PKGGENSCR            := scripts/tcl_pkggen.tcl
 
-VERSION          := 1.0a1
-VERSIONSCR       := scripts/update_version.sh
+VERSION              := 1.0a1
+VERSIONSCR           := scripts/update_version.sh
 
-DOCDIR           := doc
-DOCDIRTCL        := $(DOCDIR)/ICGlue
-DOCDIRLIB        := $(DOCDIR)/ICGlue-Lib
-DOXYFILETCL      := doxy/tcl.doxyfile
-DOXYFILELIB      := doxy/lib.doxyfile
+DOCDIR               := doc
+DOCDIRTCL            := $(DOCDIR)/ICGlue
+DOCDIRLIB            := $(DOCDIR)/ICGlue-Lib
+DOXYFILETCL          := doxy/tcl.doxyfile
+DOXYFILELIB          := doxy/lib.doxyfile
 
-BROWSER          ?= firefox
+BROWSER              ?= firefox
 
-SYNTAXDIR        := nagelfar
-SYNTAXFILE_LIB   := $(SYNTAXDIR)/ICGlue.nagelfar.db.tcl
-SYNTAXFILE_CNSTR := $(SYNTAXDIR)/ICGlue_construct.nagelfar.db.tcl
-SYNTAXGEN_LIB    := scripts/gen_nagelfar_db.tcl
-SYNTAXGEN_CNSTR  := scripts/gen_nagelfar_db_construct.tcl
+SYNTAXDIR            := nagelfar
+SYNTAXFILE_LIB       := $(SYNTAXDIR)/ICGlue.nagelfar.db.tcl
+SYNTAXFILE_CNSTR     := $(SYNTAXDIR)/ICGlue_construct.nagelfar.db.tcl
+NAGELFAR_SYNTAXBUILD := /usr/lib/nagelfar/syntaxbuild.tcl
+SYNTAXGEN_LIB        := scripts/gen_nagelfar_db.tcl
+SYNTAXGEN_CNSTR      := scripts/gen_nagelfar_db_construct.tcl
 
-BINSCRIPT        := bin/icglue
-TEMPLATES        := templates
-PREFIX           ?= $(CURDIR)/install
-DESTDIR          ?=
-INSTDIR          := $(DESTDIR)$(PREFIX)
+BINSCRIPT            := bin/icglue
+TEMPLATES            := templates
+PREFIX               ?= $(CURDIR)/install
+DESTDIR              ?=
+INSTDIR              := $(DESTDIR)$(PREFIX)
 
 #-------------------------------------------------------
 # Tcl Package
@@ -74,10 +75,10 @@ updateversion:
 #-------------------------------------------------------
 # documentation
 doctcl: $(DOXYFILETCL) | $(DOCDIRTCL)
-	doxygen $(DOXYFILETCL)
+	-doxygen $(DOXYFILETCL)
 
 doclib: $(DOXYFILELIB) | $(DOCDIRLIB)
-	doxygen $(DOXYFILELIB)
+	-doxygen $(DOXYFILELIB)
 
 docs: doctcl doclib
 
@@ -95,10 +96,10 @@ man:
 syntaxdb: $(SYNTAXFILE_LIB) $(SYNTAXFILE_CNSTR)
 
 $(SYNTAXFILE_LIB): $(PKGIDX) | $(SYNTAXDIR)
-	$(SYNTAXGEN_LIB) $(SYNTAXFILE_LIB)
+	NAGELFAR_SYNTAXBUILD=$(NAGELFAR_SYNTAXBUILD) $(SYNTAXGEN_LIB) $(SYNTAXFILE_LIB)
 
 $(SYNTAXFILE_CNSTR): $(PKGIDX) | $(SYNTAXDIR)
-	$(SYNTAXGEN_CNSTR) $(SYNTAXFILE_CNSTR)
+	NAGELFAR_SYNTAXBUILD=$(NAGELFAR_SYNTAXBUILD) $(SYNTAXGEN_CNSTR) $(SYNTAXFILE_CNSTR)
 
 .PHONY: syntaxdb
 

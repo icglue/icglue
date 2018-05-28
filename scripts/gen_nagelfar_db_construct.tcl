@@ -22,7 +22,8 @@
 lappend auto_path [file normalize [file dirname [file normalize $::argv0]]/..]
 package require ICGlue
 
+# import namespace ig (syntaxdb for *.icglue files)
 namespace import ::ig::*
 
-source "/usr/lib/nagelfar/syntaxbuild.tcl"
+source "$::env(NAGELFAR_SYNTAXBUILD)"
 
