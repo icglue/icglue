@@ -7,7 +7,6 @@ set tool_version      [lindex $tool_name_version 1]
 
 #------------------------------------------------------------------------
 set tool_root  "/opt/${tool_name}/${tool_version}"
-set tool_root  "/home2/neumaerker/icglue"
 
 #------------------------------------------------------------------------
 proc ModulesHelp { } {
