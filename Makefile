@@ -57,8 +57,10 @@ prebuild $(LIBSOURCES):
 
 $(PKGIDX): $(TCLSOURCES) $(LIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 	rm -f $(PKGIDX)
-	cp $(LIBSOURCES) $(PKGDIR)
-	cp $(TCLSOURCES) $(PKGDIR)
+	@for S in  $(LIBSOURCES) $(TCLSOURCES); do  \
+		echo "ln -sft $(PKGDIR) ../$$S"; \
+		ln -sft $(PKGDIR) ../$$S; \
+	done
 	$(PKGGENSCR) $(PKGDIR)
 
 .PHONY: all prebuild
