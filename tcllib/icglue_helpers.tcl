@@ -358,6 +358,7 @@ namespace eval ig::aux {
 
         set parent_mod [ig::db::get_attribute -object $codesection -attribute "parent"]
         set signal_replace [list]
+        #set t_start [clock microseconds]
         foreach i_port [ig::db::get_ports -of $parent_mod -all] {
             set i_rep [list \
                 [ig::db::get_attribute -object $i_port -attribute "signal"] \
@@ -373,14 +374,28 @@ namespace eval ig::aux {
             lappend signal_replace $i_rep
         }
 
-        foreach i_rep $signal_replace {
-            set i_orig  "\\m[lindex $i_rep 0]\\M"
-            set i_subst [lindex $i_rep 1]
-
-            regsub -all $i_orig $code $i_subst code
+        #set t_collect [clock microseconds]
+        set code_out {}
+        while {[string length $code] > 0} {
+            if {[regexp {^(.*?)(\m[[:alnum:]_]+\M)(.*)$} $code m_whole m_pre m_var m_post]} {
+                append code_out $m_pre
+                set    code     $m_post
+                set    idx      [lsearch -exact -index 0 $signal_replace $m_var]
+                if {$idx < 0} {
+                    append code_out $m_var
+                } else {
+                    append code_out [lindex $signal_replace $idx 1]
+                }
+            } else {
+                append code_out $code
+                set code {}
+            }
         }
 
-        return $code
+        #set t_replaced [clock microseconds]
+        #puts "t_collect: [expr {$t_collect - $t_start}]us, t_replace: [expr {$t_replaced - $t_collect}]us"
+
+        return $code_out
     }
 
     ## @brief Adapt a signalname in given module to the local signal name.
