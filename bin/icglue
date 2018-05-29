@@ -73,6 +73,7 @@ proc main {} {
     set c_template_dirs {}
     set c_file          ""
 
+    ig::logger -level I -id GEN
     # arguments
     set filename [ig::aux::_parse_opts {} {} [list                   \
         {  {^(-h|--help)$}         "const=true" help            {} } \

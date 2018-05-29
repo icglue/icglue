@@ -12,11 +12,11 @@
     set param_data_maxlen_type [max_array_entry_len $mod_data(parameters) vlog.type]
     set param_data_maxlen_name [max_array_entry_len $mod_data(parameters) name]
 
-    proc reset     {} { return "reset_n_ref_i" }
-    proc clk       {} { return "clk_ref_i"     }
+    proc reset     {} { return "resetn_i"      }
+    proc clk       {} { return "clk_i"         }
     proc rf_addr   {} { return "rf_addr_i";    }
     proc rf_w_data {} { return "rf_w_data_i"   }
-    proc rf_r_data {} { return "rf_r_data_i"   }
+    proc rf_r_data {} { return "rf_r_data_o"   }
     proc rf_w_en   {} { return "rf_en_i"       }
     proc r_data    {} { return "rf_r_data"     }
 
@@ -37,14 +37,24 @@
         return [uplevel 1 {format "val_%s" $entry(name)}]
     }
     proc reg_entrybits {} {
-        return [uplevel 1 {format "%2d:%2d" {*}[split $reg(entrybits) ":"]}]
+        set bits [uplevel {split $reg(entrybits) ":"}]
+        if {[llength $bits] == 2} {
+            return [format "%2d:%2d" {*}$bits]
+        } else {
+            return [format "%5d" {*}$bits]
+        }
     }
 
     proc signal_name {} {
         return [uplevel 1 {format "%-${maxlen_signalname}s" [adapt_signalname $reg(signal) $obj_id]}]
     }
     proc signal_entrybits {} {
-        return [uplevel 1 {format "%2d:%2d" {*}[split $reg(signalbits) ":"]}]
+        set bits [uplevel {split $reg(signalbits) ":"}]
+        if {[llength $bits] == 2} {
+            return [format "%2d:%2d" {*}$bits]
+        } else {
+            return [format "%5d" $bits]
+        }
     }
 -%>
 
@@ -98,7 +108,7 @@ module <%=$mod_data(name)%> (
         set i_pins_maxlen_name   [max_array_entry_len $inst(pins) name]  %>
     <%=$inst(module.name)%><% if {$inst(hasparams)} { %> #(<%="\n"%><% foreach_array_join param $inst(parameters) { -%>
         .<%=[format "%-${i_params_maxlen_name}s (%s)" $param(name) $param(value)]%><% } { %>,<%="\n"%><% } %>
-    )<% } %> <%=$inst(name)%> (<%="\n"%><% foreach_array_join pin $inst(pins) { -%>
+    )<% } %> i_<%=$inst(name)%> (<%="\n"%><% foreach_array_join pin $inst(pins) { -%>
         .<%=[format "%-${i_pins_maxlen_name}s (%s%s)" $pin(name) [expr {$pin(invert) ? "~" : ""}] $pin(connection)]%><% } { %>,<%="\n"%><% } %>
     );<% } %>
 
@@ -169,7 +179,7 @@ module <%=$mod_data(name)%> (
                 end
             end
         end
-    end<% foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} { %>
+    end<% foreach_array_with reg $entry(regs) {($reg(type) eq "RW") && ($reg(signal) ne "-")} { %>
     assign <%=[signal_name]%>[<%=[signal_entrybits]%>] = <%=[string trim [reg_name]]%>;<% } %><%="\n"%><%
     foreach_array reg $entry(regs) {
         if {$reg(type) eq "RW"} { %>

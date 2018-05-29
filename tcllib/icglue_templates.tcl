@@ -212,7 +212,11 @@ namespace eval ig::templates {
                             set entrybits "31:0"
                         } else {
                             set blist [split $entrybits ":"]
-                            set width [expr {[lindex $blist 0] - [lindex $blist 1] + 1}]
+                            if {[llength $blist] == 1} {
+                                set width [expr {[lindex $blist 0] + 1}]
+                            } else {
+                                set width [expr {[lindex $blist 0] - [lindex $blist 1] + 1}]
+                            }
                         }
                     } elseif {$entrybits eq ""} {
                         set entrybits "[expr {$width - 1}]:0"
@@ -220,7 +224,11 @@ namespace eval ig::templates {
 
                     set blist [split $entrybits ":"]
                     set bit_high [lindex $blist 0]
-                    set bit_low  [lindex $blist 1]
+                    if {[llength $blist] == 2} {
+                        set bit_low  [lindex $blist 1]
+                    } else {
+                        set bit_low  $bit_high
+                    }
 
                     lappend reg_list [list \
                         $name $bit_high $bit_low $width $entrybits $type $reset $signal $signalbits $i_reg \
@@ -714,6 +722,7 @@ namespace eval ig::templates {
 
         set _outf_name [current::get_output_file $obj_id $type]
 
+        ig::log -info -id GEN "Generating ${_outf_name} with template ${_tt_name}..."
         set pragma_data [list]
         if {[file exists $_outf_name]} {
             set _outf [open ${_outf_name} "r"]
