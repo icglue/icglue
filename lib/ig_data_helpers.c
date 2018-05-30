@@ -22,18 +22,18 @@
 
 #include <stdio.h>
 
-bool ig_obj_attr_set_from_gslist (struct ig_object *obj, GSList *list)
+bool ig_obj_attr_set_from_gslist (struct ig_object *obj, GList *list)
 {
     if (obj == NULL) return false;
 
     bool result = true;
 
-    if (g_slist_length (list) % 2 == 1) {
+    if (g_list_length (list) % 2 == 1) {
         log_error ("OStAt", "need a value for every attribute in attribute list");
         return false;
     }
 
-    for (GSList *li = list; li != NULL; li = li->next) {
+    for (GList *li = list; li != NULL; li = li->next) {
         char *name = (char *)li->data;
         li = li->next;
         char *val = (char *)li->data;

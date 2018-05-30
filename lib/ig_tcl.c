@@ -43,7 +43,7 @@
 # @brief Lowlevel database commands covered by C-library.
 */
 
-/* Tcl helper function for parsing lists in GSLists of char * */
+/* Tcl helper function for parsing lists in GLists of char * */
 static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, void *dest_ptr);
 
 static void ig_tclc_connection_parse (const char *input, GString *id, GString *net, bool *adapt, bool *inv);
@@ -97,16 +97,16 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_Export (interp, log_ns, "*", true);
 }
 
-/* Tcl helper function for parsing lists in GSLists */
+/* Tcl helper function for parsing lists in GLists */
 static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, void *dest_ptr)
 {
-    GSList **list_dest = (GSList **)dest_ptr;
+    GList **list_dest = (GList **)dest_ptr;
 
     if (dest_ptr == NULL) {
         return 1;
     }
 
-    GSList *result = NULL;
+    GList *result = NULL;
 
     if (obj == NULL) {
         return 1;
@@ -122,19 +122,19 @@ static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, 
         Tcl_Obj *lit;
         temp_result = Tcl_ListObjIndex (NULL, in_list, i, &lit);
         if (temp_result != TCL_OK) {
-            g_slist_free (result);
+            g_list_free (result);
             return -1;
         }
         if (lit == NULL) {
-            g_slist_free (result);
+            g_list_free (result);
             return -1;
         }
         char *lit_str = Tcl_GetString (lit);
 
-        result = g_slist_prepend (result, lit_str);
+        result = g_list_prepend (result, lit_str);
     }
 
-    *list_dest = g_slist_reverse (result);
+    *list_dest = g_list_reverse (result);
     return 1;
 }
 
@@ -452,7 +452,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
     char   *obj_name   = NULL;
     char   *attr_name  = NULL;
     char   *attr_value = NULL;
-    GSList *attr_list  = NULL;
+    GList *attr_list  = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-object",      NULL, (void *)&obj_name,   "object id", NULL},
@@ -470,7 +470,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     if (obj_name == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no object specified", -1));
-        g_slist_free (attr_list);
+        g_list_free (attr_list);
         return TCL_ERROR;
     }
 
@@ -481,7 +481,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     if ((attr_list != NULL) && (attr_name != NULL)) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to specify single attribute and attribute list", -1));
-        g_slist_free (attr_list);
+        g_list_free (attr_list);
         return TCL_ERROR;
     }
 
@@ -493,7 +493,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
     struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, obj_name);
     if (obj == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: unknown object", -1));
-        g_slist_free (attr_list);
+        g_list_free (attr_list);
         return TCL_ERROR;
     }
 
@@ -509,12 +509,12 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     if (!ig_obj_attr_set_from_gslist (obj, attr_list)) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not set attributes", -1));
-        g_slist_free (attr_list);
+        g_list_free (attr_list);
         return TCL_ERROR;
     }
 
     Tcl_SetObjResult (interp, Tcl_NewStringObj ("", -1));
-    g_slist_free (attr_list);
+    g_list_free (attr_list);
     return TCL_OK;
 }
 
@@ -542,12 +542,12 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
     char   *obj_name   = NULL;
     char   *attr_name  = NULL;
     char   *defaultval = NULL;
-    GSList *attr_list  = NULL;
+    GList *attr_list  = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING,   "-object",      NULL, (void *)&obj_name,   "object id", NULL},
-        {TCL_ARGV_STRING,   "-attribute",   NULL, (void *)&attr_name,  "attribute name", NULL},
-        {TCL_ARGV_STRING,   "-default",     NULL, (void *)&defaultval, "default value for single attribute if attribute does not exist", NULL},
+        {TCL_ARGV_STRING,   "-object",      NULL, (void *)&obj_name,    "object id", NULL},
+        {TCL_ARGV_STRING,   "-attribute",   NULL, (void *)&attr_name,   "attribute name", NULL},
+        {TCL_ARGV_STRING,   "-default",     NULL, (void *)&defaultval,  "default value for single attribute if attribute does not exist", NULL},
 
         {TCL_ARGV_FUNC,     "-attributes",  (void *)(Tcl_ArgvFuncProc *)ig_tclc_tcl_string_list_parse, (void *)&attr_list, "attributes as list of form <name1> <name2> ...", NULL},
 
@@ -560,26 +560,24 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     if (obj_name == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no object specified", -1));
-        g_slist_free (attr_list);
-        return TCL_ERROR;
-    }
-
-    if ((attr_list == NULL) && (attr_name == NULL)) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no attribute specified", -1));
+        g_list_free (attr_list);
         return TCL_ERROR;
     }
 
     if ((attr_list != NULL) && (attr_name != NULL)) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to specify single attribute and attribute list", -1));
-        g_slist_free (attr_list);
+        g_list_free (attr_list);
         return TCL_ERROR;
     }
 
     struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, obj_name);
     if (obj == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: unknown object", -1));
-        g_slist_free (attr_list);
+        g_list_free (attr_list);
         return TCL_ERROR;
+    }
+    if ((attr_list == NULL) && (attr_name == NULL)) {
+        attr_list = ig_obj_attr_get_keys (obj);
     }
 
     if (attr_name != NULL) {
@@ -598,10 +596,10 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
     }
 
     /* check */
-    for (GSList *li = attr_list; li != NULL; li = li->next) {
+    for (GList *li = attr_list; li != NULL; li = li->next) {
         char *attr = (char *)li->data;
         if (ig_obj_attr_get (obj, attr) == NULL) {
-            g_slist_free (attr_list);
+            g_list_free (attr_list);
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not get attribute", -1));
             return TCL_ERROR;
         }
@@ -609,7 +607,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     /* result list */
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
-    for (GSList *li = attr_list; li != NULL; li = li->next) {
+    for (GList *li = attr_list; li != NULL; li = li->next) {
         char       *attr = (char *)li->data;
         const char *val  = ig_obj_attr_get (obj, attr);
 
@@ -618,7 +616,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
     }
 
     Tcl_SetObjResult (interp, retval);
-    g_slist_free (attr_list);
+    g_list_free (attr_list);
 
     return TCL_OK;
 }
@@ -1008,8 +1006,8 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     char   *from    = NULL;
     char   *name    = NULL;
     char   *size    = NULL;
-    GSList *to_list = NULL;
-    GSList *bd_list = NULL;
+    GList *to_list = NULL;
+    GList *bd_list = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-signal-name", NULL,                                                      (void *)&name,    "signal (prefix) name", NULL},
@@ -1066,14 +1064,14 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         src->invert = inv;
     }
 
-    GSList                    *trg_orig_list = to_list;
+    GList                    *trg_orig_list = to_list;
     enum ig_lib_connection_dir trg_dir       = IG_LCDIR_DEFAULT;
     if (trg_orig_list == NULL) {
         trg_orig_list = bd_list;
         trg_dir       = IG_LCDIR_BIDIR;
     }
 
-    for (GSList *li = trg_orig_list; li != NULL; li = li->next) {
+    for (GList *li = trg_orig_list; li != NULL; li = li->next) {
         bool inv = false;
         ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_net, &t_adapt, &inv);
         struct ig_object *trg_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
@@ -1121,8 +1119,8 @@ l_ig_tclc_connect_exit_pre:
     g_string_free (tstr_net, true);
 
 l_ig_tclc_connect_exit:
-    g_slist_free (to_list);
-    g_slist_free (bd_list);
+    g_list_free (to_list);
+    g_list_free (bd_list);
 
     log_debug ("TCCon", "... freed results");
 
@@ -1168,7 +1166,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
 
     char   *name     = NULL;
     char   *value    = NULL;
-    GSList *ept_list = NULL;
+    GList *ept_list = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-name",        NULL,                                                      (void *)&name,     "parameter name", NULL},
@@ -1206,7 +1204,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
 
     enum ig_lib_connection_dir trg_dir = IG_LCDIR_DEFAULT;
 
-    for (GSList *li = ept_list; li != NULL; li = li->next) {
+    for (GList *li = ept_list; li != NULL; li = li->next) {
         ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_par, &t_adapt, NULL);
         struct ig_object *trg_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
         if (trg_obj == NULL) goto l_ig_tclc_parameter_nfexit;
@@ -1247,7 +1245,7 @@ l_ig_tclc_parameter_exit_pre:
     g_string_free (tstr_par, true);
 
 l_ig_tclc_parameter_exit:
-    g_slist_free (ept_list);
+    g_list_free (ept_list);
 
     return result;
 

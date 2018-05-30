@@ -702,10 +702,10 @@ void ig_lib_connection_info_free (struct ig_lib_connection_info *cinfo)
 
 static void ig_lib_htree_print (GNode *hier_tree)
 {
-    GSList *pr_stack  = NULL;
+    GList *pr_stack  = NULL;
     int     pr_indent = 0;
 
-    pr_stack = g_slist_prepend (pr_stack, hier_tree);
+    pr_stack = g_list_prepend (pr_stack, hier_tree);
 
     while (pr_stack != NULL) {
         GNode *i_node = (GNode *)pr_stack->data;
@@ -753,7 +753,7 @@ static void ig_lib_htree_print (GNode *hier_tree)
         if (g_node_first_child (i_node) != NULL) {
             log_debug ("LPHTr", "node has child...");
             pr_indent++;
-            pr_stack = g_slist_prepend (pr_stack, g_node_first_child (i_node));
+            pr_stack = g_list_prepend (pr_stack, g_node_first_child (i_node));
             continue;
         }
 
@@ -766,9 +766,9 @@ static void ig_lib_htree_print (GNode *hier_tree)
             }
             log_debug ("LPHTr", "node is last one in subhierarchy...");
             pr_indent--;
-            GSList *temp = pr_stack;
-            pr_stack = g_slist_remove_link (pr_stack, temp);
-            g_slist_free (temp);
+            GList *temp = pr_stack;
+            pr_stack = g_list_remove_link (pr_stack, temp);
+            g_list_free (temp);
         }
     }
 }

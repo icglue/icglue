@@ -179,6 +179,13 @@ const char *ig_obj_attr_get (struct ig_object *obj, const char *name)
     return value->value;
 }
 
+GList *ig_obj_attr_get_keys (struct ig_object *obj)
+{
+    if (obj == NULL) return NULL;
+
+    return g_hash_table_get_keys (obj->attributes);
+}
+
 static const char *ig_port_dir_name (enum ig_port_dir dir)
 {
     switch (dir) {

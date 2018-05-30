@@ -315,6 +315,13 @@ bool ig_obj_attr_set (struct ig_object *obj, const char *name, const char *value
 const char *ig_obj_attr_get (struct ig_object *obj, const char *name);
 
 /**
+ * @brief Get all available attributes of object.
+ * @param obj Object to the attribute list from.
+ * @return List with all available attributes
+ */
+GList *ig_obj_attr_get_keys (struct ig_object *obj);
+
+/**
  * @brief Create new port data struct.
  * @param name Name of port.
  * @param dir Port direction.

@@ -40,7 +40,7 @@ extern "C" {
  *
  * The list must contain attributes and values interleaved (so {attribute 1, value 1, attribute 2, value 2, ...}).
  */
-bool ig_obj_attr_set_from_gslist (struct ig_object *obj, GSList *list);
+bool ig_obj_attr_set_from_gslist (struct ig_object *obj, GList *list);
 
 #ifdef __cplusplus
 }
