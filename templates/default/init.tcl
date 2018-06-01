@@ -44,7 +44,7 @@ init::output_file $template {
         set parent_mod      [ig::db::get_attribute -object $object -attribute "parent"]
         set parent_mod_name [ig::db::get_attribute -object $parent_mod -attribute "name"]
         set module_unit     [ig::db::get_attribute -object $parent_mod -attribute "parentunit" -default $parent_mod_name]
-        return "$::env(ICPRO_DIR)/units/${module_unit}/doc/regfile/${object_name}.csv"
+        return "./units/${module_unit}/doc/regfile/${object_name}.csv"
     } else {
         ig::log -warning "no output file pattern specified for objects of type ${type}"
         return "/dev/null"
@@ -56,8 +56,8 @@ init::default_header $template {
     set result "
 /*
  * Module: [ig::db::get_attribute -object $object -attribute "name"]
- * Author: $::env(USER)
- * E-Mail: $::env(ICPRO_EMAIL)
+ * Author: 
+ * E-Mail: 
  */
 "
 
