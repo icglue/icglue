@@ -622,11 +622,13 @@ namespace eval ig {
         set regfilename ""
         set address     -1
         set regdef      {}
+        set handshake   {}
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list                                            \
-                { {^-(rf|regf(ile)?)(=)?} "string" regfilename "specify the regfile name" } \
-                { {^@}                    "string" address     "specify the address"}       \
+        set arguments [ig::aux::parse_opts [list                                                                                      \
+                { {^-(rf|regf(ile)?)($|=)} "string" regfilename "specify the regfile name" }                                          \
+                { {^@}                     "string" address     "specify the address"}                                                \
+                { {^-handshake($|=)}       "string" handshake   "specify signals and type for handshake {signal-out signal-in type}"} \
             ] -context "ENTRYNAME REGISTERTABLE" $args]
 
         set entryname [lindex $arguments 0]
@@ -680,7 +682,12 @@ namespace eval ig {
 
             # create entry
             set entry_id [ig::db::add_regfile -entry $entryname -to $regfile_id]
+            # set address
             ig::db::set_attribute -object $entry_id -attribute "address" -value $address
+            # set handshake
+            if {$handshake ne ""} {
+                ig::db::set_attribute -object $entry_id -attribute "handshake" -value $handshake
+            }
 
             # creating registers
             foreach i_reg $regdef {

@@ -703,7 +703,7 @@ void ig_lib_connection_info_free (struct ig_lib_connection_info *cinfo)
 static void ig_lib_htree_print (GNode *hier_tree)
 {
     GList *pr_stack  = NULL;
-    int     pr_indent = 0;
+    int    pr_indent = 0;
 
     pr_stack = g_list_prepend (pr_stack, hier_tree);
 

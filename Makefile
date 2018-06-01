@@ -38,7 +38,7 @@ BROWSER              ?= firefox
 SYNTAXDIR            := nagelfar
 SYNTAXFILE_LIB       := $(SYNTAXDIR)/ICGlue.nagelfar.db.tcl
 SYNTAXFILE_CNSTR     := $(SYNTAXDIR)/ICGlue_construct.nagelfar.db.tcl
-NAGELFAR_SYNTAXBUILD := /usr/lib/nagelfar/syntaxbuild.tcl
+NAGELFAR_SYNTAXBUILD := /home2/neumaerker/.nobackup/g-sysroot/usr/share/nagelfar-125/syntaxbuild.tcl
 SYNTAXGEN_LIB        := scripts/gen_nagelfar_db.tcl
 SYNTAXGEN_CNSTR      := scripts/gen_nagelfar_db_construct.tcl
 

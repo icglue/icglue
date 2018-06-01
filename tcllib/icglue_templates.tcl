@@ -289,11 +289,11 @@ namespace eval ig::templates {
                     ]
                 }
 
-                lappend entry_list [list \
+                set entry_attributes [ig::db::get_attribute -object $i_entry]
+                lappend entry_list [list                                                    \
                     "address" [ig::db::get_attribute -object $i_entry -attribute "address"] \
-                    "name"    [ig::db::get_attribute -object $i_entry -attribute "name"] \
-                    "object"  $i_entry \
-                    "regs"    $reg_list \
+                    {*}[dict remove $entry_attributes "address"]                            \
+                    "regs" $reg_list                                                        \
                 ]
             }
             set entry_list [lsort -integer -index 1 $entry_list]

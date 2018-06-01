@@ -449,9 +449,9 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
         return TCL_ERROR;
     }
 
-    char   *obj_name   = NULL;
-    char   *attr_name  = NULL;
-    char   *attr_value = NULL;
+    char  *obj_name   = NULL;
+    char  *attr_name  = NULL;
+    char  *attr_value = NULL;
     GList *attr_list  = NULL;
 
     Tcl_ArgvInfo arg_table [] = {
@@ -528,7 +528,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
 # [ -default \<default-value\>]<br>
 # | -attributes {\<name1\> \<name2\> ...})
 #
-# @return Value(s) of the specified attribute(s) or an error
+# @return Value(s) of the specified attribute(s) or if not argument is given a list with alle attribute names and values
 */
 static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
@@ -539,10 +539,11 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
         return TCL_ERROR;
     }
 
-    char   *obj_name   = NULL;
-    char   *attr_name  = NULL;
-    char   *defaultval = NULL;
-    GList *attr_list  = NULL;
+    char  *obj_name        = NULL;
+    char  *attr_name       = NULL;
+    char  *defaultval      = NULL;
+    GList *attr_list       = NULL;
+    bool   print_attr_name = false;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-object",      NULL, (void *)&obj_name,    "object id", NULL},
@@ -577,7 +578,8 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
         return TCL_ERROR;
     }
     if ((attr_list == NULL) && (attr_name == NULL)) {
-        attr_list = ig_obj_attr_get_keys (obj);
+        print_attr_name = true;
+        attr_list       = ig_obj_attr_get_keys (obj);
     }
 
     if (attr_name != NULL) {
@@ -612,6 +614,9 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
         const char *val  = ig_obj_attr_get (obj, attr);
 
         Tcl_Obj *val_obj = Tcl_NewStringObj (val, -1);
+        if (print_attr_name) {
+            Tcl_ListObjAppendElement (interp, retval, Tcl_NewStringObj (attr, -1));
+        }
         Tcl_ListObjAppendElement (interp, retval, val_obj);
     }
 
@@ -1003,9 +1008,9 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
 
-    char   *from    = NULL;
-    char   *name    = NULL;
-    char   *size    = NULL;
+    char  *from    = NULL;
+    char  *name    = NULL;
+    char  *size    = NULL;
     GList *to_list = NULL;
     GList *bd_list = NULL;
 
@@ -1064,7 +1069,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         src->invert = inv;
     }
 
-    GList                    *trg_orig_list = to_list;
+    GList                     *trg_orig_list = to_list;
     enum ig_lib_connection_dir trg_dir       = IG_LCDIR_DEFAULT;
     if (trg_orig_list == NULL) {
         trg_orig_list = bd_list;
@@ -1164,8 +1169,8 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
         return TCL_ERROR;
     }
 
-    char   *name     = NULL;
-    char   *value    = NULL;
+    char  *name     = NULL;
+    char  *value    = NULL;
     GList *ept_list = NULL;
 
     Tcl_ArgvInfo arg_table [] = {

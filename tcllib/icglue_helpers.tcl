@@ -253,6 +253,39 @@ namespace eval ig::aux {
 
     ## @brief Iterate over a list of arrays.
     #
+    # @param iter     Iterator variable.
+    # @param list     Elements for the interation
+    # @param preamble Preamble body to be execute, if list is not empty
+    # @param body     Code to run in each iteration.
+    proc foreach_preamble {iter lst preamble body} {
+        if {[llength $lst]} {
+            uplevel 1 $preamble
+            foreach __iter $lst {
+                uplevel 1 set $iter [list ${__iter}]
+                uplevel 1 $body
+            }
+        }
+    }
+
+    ## @brief Iterate over a list of arrays.
+    #
+    # @param iter     Iterator variable.
+    # @param list     Elements for the interation
+    # @param preamble Preamble body to be execute, if list is not empty
+    # @param body     Code to run in each iteration.
+    proc foreach_preamble_epilog {iter lst preamble body epilog} {
+        if {[llength $lst]} {
+            uplevel 1 $preamble
+            foreach __iter $lst {
+                uplevel 1 set $iter [list ${__iter}]
+                uplevel 1 $body
+            }
+            uplevel 1 $epilog
+        }
+    }
+
+    ## @brief Iterate over a list of arrays.
+    #
     # @param iter Iterator variable.
     # @param array_list List of arrays as list as obtained by [array get ...].
     # @param body Code to run in each iteration.
@@ -260,6 +293,20 @@ namespace eval ig::aux {
         foreach __iter $array_list {
             uplevel 1 array set $iter [list ${__iter}]
             uplevel 1 $body
+            uplevel 1 array unset $iter
+        }
+    }
+
+    ## @brief Iterate over a list of arrays.
+    #
+    # @param iter Iterator variable.
+    # @param array_list List of arrays as list as obtained by [array get ...].
+    # @param preamble Code that is execute if array is not empty
+    # @param body Code to run in each iteration.
+    proc foreach_array_preamble {iter array_list preamble body} {
+        if {[llength $array_list]} {
+            uplevel 1 $preamble
+            uplevel 1 foreach_array [list $iter] [list $array_list] [list $body]
         }
     }
 
@@ -274,6 +321,37 @@ namespace eval ig::aux {
             uplevel 1 array set $iter [list ${__iter}]
             uplevel 1 $body
             if {![is_last $array_list ${__iter}]} { uplevel 1 $joinbody }
+            uplevel 1 array unset $iter
+        }
+    }
+
+    ## @brief Iterate over a list of arrays and execute inbetween the joinbody.
+    #
+    # @param iter Iterator variable.
+    # @param array_list List of arrays as list as obtained by [array get ...].
+    # @param body Code to run in each iteration.
+    # @param preamble Code that is execute if array is not empty
+    # @param joinbody Code to run inbetween each iteration
+    proc foreach_array_preamble_join {iter array_list preamble body joinbody} {
+        if {[llength $array_list]} {
+            uplevel 1 $preamble
+            uplevel 1 foreach_array_join [list $iter] [list $array_list] [list $body] [list $joinbody]
+        }
+    }
+
+    ## @brief Iterate over a list of arrays and execute inbetween the joinbody.
+    #
+    # @param iter Iterator variable.
+    # @param array_list List of arrays as list as obtained by [array get ...].
+    # @param body Code to run in each iteration.
+    # @param preamble Code that is execute once before the iteration if the array is not empty
+    # @param joinbody Code to run inbetween each iteration
+    # @param epilog   Code that is execute  once after the iteration if the array is not empty
+    proc foreach_array_preamble_epilog_join {iter array_list preamble body joinbody epilog} {
+        if {[llength $array_list]} {
+            uplevel 1 $preamble
+            uplevel 1 foreach_array_join [list $iter] [list $array_list] [list $body] [list $joinbody]
+            uplevel 1 $epilog
         }
     }
 
@@ -281,13 +359,55 @@ namespace eval ig::aux {
     #
     # @param iter Iterator variable.
     # @param array_list List of arrays as list as obtained by [array get ...].
-    # @param condition Condition an array must meet (otherwise the loop will continue with the next array).
+    # @param condition Condition which must be met to execute body
     # @param body Code to run in each iteration.
     proc foreach_array_with {iter array_list condition body} {
         foreach __iter $array_list {
             uplevel 1 array set $iter [list ${__iter}]
             uplevel 1 if [list $condition] [list $body]
+            uplevel 1 array unset $iter
         }
+    }
+
+    ## @brief Iterate over a list of arrays meeting a condition.
+    #
+    # @param iter Iterator variable.
+    # @param array_list List of arrays as list as obtained by [array get ...].
+    # @param preamble Code that is execute if array is not empty
+    # @param condition Condition which must be met to execute body
+    # @param body Code to run in each iteration.
+    proc foreach_array_preamble_with {iter array_list preamble condition body} {
+        set do_preamble "false"
+
+        foreach __iter $array_list {
+            uplevel 1 array set $iter [list ${__iter}]
+            if {[uplevel 1 [list $condition]]} {
+                set do_preamble "true"
+                break
+            }
+        }
+        if {$do_preamble} {
+            uplevel 1 $preamble
+            uplevel 1 foreach_array_with [list $iter] [list $array_list] [list $condition] [list $body]
+        }
+    }
+
+    ## @brief Iterate over a list return true as soon as condition matches
+    #
+    # @param iter Iterator variable.
+    # @param array_list List of arrays as list as obtained by [array get ...].
+    # @param condition Condition which must be met
+    proc foreach_array_contains {iter array_list condition} {
+        foreach __iter $array_list {
+            uplevel 1 array set $iter [list ${__iter}]
+            set cond [uplevel 1 expr [list $condition]]
+            if {$cond} {
+                uplevel 1 array unset $iter
+                return true;
+            }
+            uplevel 1 array unset $iter
+        }
+        return false;
     }
 
     ## @brief Get maximum string length out of a list of data.

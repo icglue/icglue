@@ -143,7 +143,10 @@ syn keyword ICGTtclProcCommand      apply coroutine proc return tailcall yield y
 syn keyword ICGTtclConditional      if then else elseif switch contained
 syn keyword ICGTtclConditional      catch try throw finally contained
 syn keyword ICGTtclLabel            default contained
-syn keyword ICGTtclRepeat           while for foreach foreach_array foreach_array_with foreach_array_join break continue contained
+syn keyword ICGTtclRepeat           while for break continue contained
+syn keyword ICGTtclRepeat           foreach foreach_array foreach_array_with foreach_array_join contained
+syn keyword ICGTtclRepeat           foreach_preamble foreach_array_preamble foreach_array_preamble_with foreach_array_preamble_join contained
+syn keyword ICGTtclRepeat           foreach_preamble_epilog foreach_array_preamble_epilog foreach_array_preamble_epilog_with foreach_array_preamble_epilog_join contained
 
 " variable reference
         " ::optional::namespaces
