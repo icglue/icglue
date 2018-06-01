@@ -81,19 +81,19 @@ module <%=$mod_data(name)%> (
     ## </module port list>
     ###########################################
 %>
-<%-
+<%
     ###########################################
     ## <parameters>
-    foreach_array_preamble param $mod_data(parameters) { %><%="\n\n"%><% } { -%>
+    foreach_array_preamble param $mod_data(parameters) { %><%="\n"%><% } { -%>
     <%=[format "%-${param_data_maxlen_type}s %-${param_data_maxlen_name}s = %s;\n" $param(vlog.type) $param(name) $param(value)]%><% } -%>
     <%=[get_pragma_content $pragma_data "keep" "parameters"]%><%
     ## </parameters>
     ###########################################
 %>
-<%-
+<%
     ###########################################
     ## <port declaration>
-    foreach_array_preamble port $mod_data(ports) { -%><%="\n\n"%><% } { -%>
+    foreach_array_preamble port $mod_data(ports) { -%><%="\n"%><% } { -%>
     <%=[format "%-${port_data_maxlen_dir}s %${port_data_maxlen_range}s %s;\n" $port(vlog.direction) $port(vlog.bitrange) $port(name)]%><% }
     ## </port declaration>
     ###########################################
@@ -194,7 +194,7 @@ module <%=$mod_data(name)%> (
     reg          reg_<%=$handshake%>;
     reg          rdy_<%=$handshake%>;<% } %><%="\n"%><%
     foreach_array_preamble entry $entry_list { %>
-    // regfile registers / wires <% } { %>
+    // regfile registers / wires<% } { %>
     wire [31: 0] <%=[reg_val]%>;<%
         foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} { %>
     reg  [<%=[reg_range]%>] <%=[reg_name]%>;<% } %><%="\n"%><% } %>
