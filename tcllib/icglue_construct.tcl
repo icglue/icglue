@@ -301,6 +301,13 @@ namespace eval ig {
                 set fattributes $attributes
                 set fregfiles "false"
 
+                if {$moduleparent ne ""} {
+                    set ppunit [ig::db::get_attribute -object [ig::db::get_modules -name $moduleparent] -attribute "parentunit" -default ""]
+                    if {$ppunit ne ""} {
+                        set funit $ppunit
+                    }
+                }
+
                 # TODO
                 set funknown [ig::aux::parse_opts [list                                     \
                     { {^u(nit)?(=)?}                 "string"              funit       {} } \
