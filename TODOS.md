@@ -22,6 +22,7 @@
 ## tcllib
 - instances: expand multiple occurrences of ".."
 - add instance-only command or check in M if already exists: sane values, instances only?
+- inherit unit-name in tree module-instanciation
 
 ## templates
 - regfiles: support
@@ -32,6 +33,7 @@
 - allow multiple construction scripts?
 - add "nowriteout" function or similar? -> allows for construction with intermediate clean
 - tcl-stack-trace: suppress by default (just show error message) - enable per opt
+- add "prepare" (or similar) option to generate template construction-script
 
 ## vim
 - add alignment vim-script for signals usw. <(-)- -(-)>
