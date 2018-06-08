@@ -227,13 +227,12 @@ namespace eval ig {
                     }
                     if {[lindex $level_stack $keep] == $level} {
                         set level_stack [lrange $level_stack 0 $keep]
-                        set last_instance [lindex $parents_stack [expr {$keep+1}]]
                     } else {
                         set level_stack [lrange $level_stack 0 $keep]
                         lappend level_stack $level
-                        set last_instance $m_instance
                         incr keep 1
                     }
+                    set last_instance $m_instance
 
                     set parents_stack [lrange $parents_stack 0 $keep]
                     set cur_parent [lindex $parents_stack end]
@@ -279,7 +278,6 @@ namespace eval ig {
                     lappend modids [ig::db::create_module {*}$cf -name $module_name]
                 } else {
                     if {!$fres && !$finc} {
-                        puts "$moduleflags $fres $finc"
                         if {[lsearch $module_inc_list $module_name] == 0} {
                             log -error -abort "M (module = $module_name): exists multiple times and is neither resource nor included."
                         }
