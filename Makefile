@@ -106,7 +106,7 @@ $(SYNTAXFILE_CNSTR): $(PKGIDX) | $(SYNTAXDIR)
 
 #-------------------------------------------------------
 # build everything
-everything: all syntaxdb docs h2m
+everything: all syntaxdb docs man
 
 shell:
 	TCLLIBPATH=. eltclsh scripts/elinit.tcl
