@@ -254,8 +254,8 @@ namespace eval ig::aux {
     ## @brief Iterate over a list of arrays.
     #
     # @param iter     Iterator variable.
-    # @param list     Elements for the interation
-    # @param preamble Preamble body to be execute, if list is not empty
+    # @param lst      Elements for the interation
+    # @param preamble Preamble body to be executed if list is not empty
     # @param body     Code to run in each iteration.
     proc foreach_preamble {iter lst preamble body} {
         if {[llength $lst]} {
@@ -270,8 +270,9 @@ namespace eval ig::aux {
     ## @brief Iterate over a list of arrays.
     #
     # @param iter     Iterator variable.
-    # @param list     Elements for the interation
-    # @param preamble Preamble body to be execute, if list is not empty
+    # @param lst      Elements for the interation
+    # @param preamble Preamble body to be executed if list is not empty
+    # @param epilog   Epilog body to be executed after last iteration if list is not empty
     # @param body     Code to run in each iteration.
     proc foreach_preamble_epilog {iter lst preamble body epilog} {
         if {[llength $lst]} {
