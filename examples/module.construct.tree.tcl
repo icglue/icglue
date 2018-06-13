@@ -21,7 +21,7 @@ M -unit "rftest" -tree {
     .........test_mgmt5(rtl)
     ..........test_mgmt6(res)
     ..........test_mgmt7(res)
-    .........test_mgmt71(rtl,unit=test)
+    .........test_mgmt71(rtl,unit=test,attr={ clang => tcl}, attr={ compile = ncsim })
     ........test_mgmt8(res)
     .......test_mgmt9(res)
     .....core(rtl)

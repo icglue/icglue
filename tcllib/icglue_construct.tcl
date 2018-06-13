@@ -129,7 +129,7 @@ namespace eval ig {
     #      <tr><td><i> &ensp; &ensp; -(tb|testbench)           </i></td><td>  specify rtl attribute for module   <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -v(erilog)                </i></td><td>  output verilog language            <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -sv|-s(ystemverilog)      </i></td><td>  output systemverilog language      <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -v(dhl)                   </i></td><td>  output vhdl language               <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -vhd(l)                   </i></td><td>  output vhdl language               <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -(ilm|macro)              </i></td><td>  pass ilm attribute to icglue       <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -res(ource)               </i></td><td>  pass ressource attribute to icglue <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -(rf|(regf(ile)))(=)      </i></td><td>  pass regfile attribute to icglue   <br></td></tr>
@@ -161,7 +161,7 @@ namespace eval ig {
                                                                                                                                     \
                    { {^-v(erilog)?$}                  "const=verilog"       lang          "output verilog language"             }   \
                    { {^-sv|-s(ystemverilog)?$}        "const=systemverilog" lang          "output systemverilog language"       }   \
-                   { {^-v(dhl)?$}                     "const=vhdl"          lang          "output vhdl language"                }   \
+                   { {^-vhd(l)?$}                     "const=vhdl"          lang          "output vhdl language"                }   \
                                                                                                                                     \
                    { {^-(ilm|macro)$}                 "const=ilm"           ilm           "pass ilm attribute to icglue"        }   \
                    { {^-res(ource)?$}                 "const=true"          resource      "pass ressource attribute to icglue"  }   \
@@ -184,7 +184,18 @@ namespace eval ig {
             set last_instance {}
             set module_list {}
             set maxlen_modname 0
-            foreach inst $instance_tree {
+
+            while {[llength $instance_tree]} {
+                set def_idx [lsearch -start 1 -regexp $instance_tree {^\.}]
+                if {$def_idx == -1} {
+                    set inst $instance_tree
+                    set instance_tree {}
+                } else {
+                    set inst [lrange $instance_tree 0 [expr {$def_idx-1}]]
+                    set instance_tree [lrange $instance_tree $def_idx end]
+                }
+                # remove spaces of list
+                set inst [join $inst {}]
                 set m_level {}
                 set m_instance {}
                 set m_flags_full {}
@@ -197,7 +208,6 @@ namespace eval ig {
                     # Match flags
                     (\((.*)\))?
                 }  $inst m_whole m_level m_instance m_flags_full m_flags
-                set m_instance $m_instance
                 set level [string length $m_level]
                 set len_modname [string length $m_instance]
                 if {$len_modname > $maxlen_modname} {
@@ -219,36 +229,35 @@ namespace eval ig {
                 } elseif {$level < $cur_level} {
                     # pop levels down
                     set level_stack_size [llength $level_stack]
-                    for {set keep 0} {$keep<$level_stack_size} {incr keep} {
-                        if {[lindex $level_stack $keep] > $level} {
-                            incr keep -1
+                    for {set keep_idx 0} {$keep_idx<$level_stack_size} {incr keep_idx} {
+                        if {[lindex $level_stack $keep_idx] > $level} {
+                            incr keep_idx -1
                             break;
                         }
                     }
-                    if {[lindex $level_stack $keep] == $level} {
-                        set level_stack [lrange $level_stack 0 $keep]
-                    } else {
-                        set level_stack [lrange $level_stack 0 $keep]
+                    # reduce level
+                    set level_stack [lrange $level_stack 0 $keep_idx]
+
+                    # append new level if not matching
+                    if {[lindex $level_stack $keep_idx] != $level} {
                         lappend level_stack $level
-                        incr keep 1
+                        incr keep_idx 1
                     }
                     set last_instance $m_instance
 
-                    set parents_stack [lrange $parents_stack 0 $keep]
+                    set parents_stack [lrange $parents_stack 0 $keep_idx]
                     set cur_parent [lindex $parents_stack end]
                     set cur_level [lindex $level_stack end]
                 } else {
                     set last_instance $m_instance
                 }
 
-                lappend module_list [list $m_instance $cur_parent $m_flags]
+                lappend module_list $m_instance $cur_parent $m_flags
             }
             #logger -level D -id MTREE -linenumber
             set module_inc_list {}
-            foreach m $module_list {
-                set instance_name [lindex $m 0]
-                set moduleparent  [lindex $m 1]
-                set moduleflags   [lindex $m 2]
+
+            foreach {instance_name moduleparent moduleflags} $module_list {
                 set module_name   [lindex [split $instance_name <] 0]
                 set modids {}
                 log -id "MTREE" -debug [format "module: %-${maxlen_modname}s -- parent: %-${maxlen_modname}s -- Flags: %s" $instance_name $moduleparent $moduleflags]
@@ -285,18 +294,14 @@ namespace eval ig {
                 }
             }
 
-            foreach m $module_list {
-                set instance_name   [lindex $m 0]
-                set moduleparent [lindex $m 1]
-                set moduleflags  [lindex $m 2]
-
+            foreach {instance_name moduleparent moduleflags} $module_list {
                 set funit $unit
                 set film "false"
                 set fres "false"
                 set finc "false"
                 set fmode $mode
                 set flang $lang
-                set fattributes $attributes
+                set fattributes {}
                 set fregfiles "false"
 
                 if {$moduleparent ne ""} {
@@ -306,24 +311,23 @@ namespace eval ig {
                     }
                 }
 
-                # TODO
-                set funknown [ig::aux::parse_opts [list                                     \
-                    { {^u(nit)?(=)?}                 "string"              funit       {} } \
-                    { {^(ilm|macro)$}                "const=true"          film        {} } \
-                    { {^res(ource)?$}                "const=true"          fres        {} } \
-                                                                                            \
-                    { {^inc(lude)?$}                 "const=true"          finc        {} } \
-                    { {^rtl$}                        "const=rtl"           fmode       {} } \
-                    { {^beh(av(ioral|ioural)?)$}     "const=behavioral"    fmode       {} } \
-                    { {^(tb|testbench)$}             "const=tb"            fmode       {} } \
-                                                                                            \
-                    { {^v(erilog)?$}                 "const=verilog"       flang       {} } \
-                    { {^sv|-s(ystemverilog)?$}       "const=systemverilog" flang       {} } \
-                    { {^v(dhl)?$}                    "const=vhdl"          flang       {} } \
-                                                                                            \
-                    { {^(rf|(regf(ile)?)?)$}         "const=true"          fregfiles   {} } \
-                                                                                            \
-                    { {^attr(ibutes)?(=)?}           "string"              fattributes {} } \
+                set funknown [ig::aux::parse_opts [list                                      \
+                    { {^u(nit)?(=|$)}                "string"              funit       {} }  \
+                    { {^(ilm|macro)$}                "const=true"          film        {} }  \
+                    { {^res(ource)?$}                "const=true"          fres        {} }  \
+                                                                                             \
+                    { {^inc(lude)?$}                 "const=true"          finc        {} }  \
+                    { {^rtl$}                        "const=rtl"           fmode       {} }  \
+                    { {^beh(av(ioral|ioural)?)?$}    "const=behavioral"    fmode       {} }  \
+                    { {^(tb|testbench)$}             "const=tb"            fmode       {} }  \
+                                                                                             \
+                    { {^v(erilog)?$}                 "const=verilog"       flang       {} }  \
+                    { {^sv|-s(ystemverilog)?$}       "const=systemverilog" flang       {} }  \
+                    { {^vhd(l)?$}                    "const=vhdl"          flang       {} }  \
+                                                                                             \
+                    { {^(rf|(regf(ile)?)?)$}         "const=true"          fregfiles   {} }  \
+                                                                                             \
+                    { {^attr(ibutes)?(=|$)}          "list"                fattributes {} }  \
                     ] [split $moduleflags ","]]
 
                 if {[llength $funknown] != 0} {
@@ -344,6 +348,11 @@ namespace eval ig {
                     }
                     if {$fregfiles} {
                         ig::db::add_regfile -regfile $instance_name -to $modid
+                    }
+                    foreach attr $fattributes {
+                        set attr [string trim $attr {"{" "}"}]
+                        lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_key
+                        ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_key
                     }
                 }
 
@@ -386,6 +395,10 @@ namespace eval ig {
             ig::db::set_attribute -object $modid -attribute "language"   -value $lang
             ig::db::set_attribute -object $modid -attribute "mode"       -value $mode
             ig::db::set_attribute -object $modid -attribute "parentunit" -value $unit
+            foreach attr $attributes {
+                foreach n {attr_name attr_key} v [split $attr "="] {set $n $v}
+                ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_key
+            }
 
             # instances
             foreach i_inst [construct::expand_instances $instances] {
