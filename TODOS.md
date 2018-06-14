@@ -22,7 +22,6 @@
 ## tcllib
 - instances: expand multiple occurrences of ".."
 - add instance-only command or check in M if already exists: sane values, instances only?
-- S ... -v switch for assignment to signal at source
 
 ## templates
 - regfiles: support

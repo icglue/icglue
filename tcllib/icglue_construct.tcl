@@ -445,12 +445,14 @@ namespace eval ig {
         # defaults
         set name      ""
         set width     1
+        set value     ""
         set bidir     "false"
         set invert    "false"
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list                                                                \
                 { {^-w(idth)?(=)?}         "string"      width  "set signal width" }                            \
+                { {^-v(alue)?(=)?}         "string"      value  "assign value to signal" }                      \
                 { {^-b(idir(ectional)?)?$} "const=true"  bidir  "bidirectional connection"}                     \
                 { {^<->$}                  "const=true"  bidir  "bidirectional connection"}                     \
                 { {^-(-)?>$}               "const=false" invert "first element is interpreted as input source"} \
@@ -487,13 +489,20 @@ namespace eval ig {
 
         # actual module creation
         if {[catch {
-            set con_left  [construct::expand_instances $con_left  "true" "true"]
-            set con_right [construct::expand_instances $con_right "true" "true"]
+            set con_left_e  [construct::expand_instances $con_left  "true" "true"]
+            set con_right_e [construct::expand_instances $con_right "true" "true"]
 
             if {$bidir} {
-                set sigid [ig::db::connect -bidir $con_left -signal-name $name -signal-size $width]
+                set sigid [ig::db::connect -bidir $con_left_e -signal-name $name -signal-size $width]
             } else {
-                set sigid [ig::db::connect -from {*}$con_left -to $con_right -signal-name $name -signal-size $width]
+                set sigid [ig::db::connect -from {*}$con_left_e -to $con_right_e -signal-name $name -signal-size $width]
+            }
+
+            if {$value ne ""} {
+                set startmod [lindex [construct::expand_instances $con_left "true" "false"] 0 1]
+
+                set value_code [ig::db::add_codesection -parent-module $startmod -code "    assign ${name} = ${value};\n"]
+                ig::db::set_attribute -object $value_code -attribute "adapt" -value "true"
             }
         } emsg]} {
             log -error -abort "S (signal ${name}): error while creating signal:\n${emsg}"
