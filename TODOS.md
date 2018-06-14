@@ -6,9 +6,6 @@
     - how to write a template/template set
     - how to write a construct script
     - ...?
-- makefile
-  - improve install target?
-  - man target
 - add check (nagelfar shell script)
 - add manpage
 - add prepare[template]
@@ -17,7 +14,6 @@
 - regfile support
   - add get\_regfile -name (without -of option) possibility
 - add net/signal data type to retrieve signals?
-- signal-connect: add signal-invertsion feature at target ports
 
 ## tcllib
 - instances: expand multiple occurrences of ".."
