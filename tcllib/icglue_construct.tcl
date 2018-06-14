@@ -54,11 +54,25 @@ namespace eval ig {
                         lappend result [list $m_module $m_module $m_rem $m_inv]
                     } else {
                         foreach i_sfx [split $m_insts ","] {
-                            if {[regexp {^(\w*?)(\d+)\.\.(\d+)$} $i_sfx m_sfx m_prefix m_start m_stop]} {
-                                for {set i $m_start} {$i <= $m_stop} {incr i} {
-                                    lappend result [list "${m_module}_${m_prefix}${i}" $m_module $m_rem $m_inv]
+                            set expand_range "true"
+                            set insts [list [string trim $i_sfx]]
+                            while {$expand_range} {
+                                set insts_new {}
+                                set expand_range "false"
+                                foreach i_inst $insts {
+                                    if {[regexp {^(\w*?)(\d+)\.\.(\d+)([[:alnum:]_.]*?)$} $i_inst m_whole m_prefix m_start m_stop m_rem]} {
+                                        for {set i $m_start} {$i <= $m_stop} {incr i} {
+                                            lappend insts_new "${m_prefix}${i}${m_rem}"
+                                        }
+                                        set expand_range "true"
+                                    } else {
+                                        lappend insts_new $i_inst
+                                    }
                                 }
-                            } else {
+                                set insts $insts_new
+                            }
+
+                            foreach i_sfx $insts {
                                 lappend result [list "${m_module}_${i_sfx}" $m_module $m_rem $m_inv]
                             }
                         }

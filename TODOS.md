@@ -16,7 +16,6 @@
 - add net/signal data type to retrieve signals?
 
 ## tcllib
-- instances: expand multiple occurrences of ".."
 - add instance-only command or check in M if already exists: sane values, instances only?
 
 ## templates
