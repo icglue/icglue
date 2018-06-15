@@ -646,6 +646,70 @@ namespace eval ig::templates {
         return $code
     }
 
+    proc parse_template2 {txt} {
+        set code "set _res {}\n"
+
+        while {[regexp -expanded {
+                    ^
+                    (.*?)
+                    (\n)?
+                    <(%|\[)([-+]?)([i=]?)
+                    (.*?)
+                    ([i=]?)([-+]?)(%|\])>
+                    (\n)?
+                    (.*)
+                    $
+                } $txt m_whole \
+                m_txt_pre m_nl_pre m_delim_left m_chomp_left m_delim2_left \
+                m_code \
+                m_delim2_right m_chomp_right m_delim_right m_nl_post m_txt_post]} {
+
+            # remove newline at start tag
+            if {$m_chomp_left eq "-"} {
+                append code "append _res [list ${m_txt_pre}]\n"
+            } else {
+                append code "append _res [list ${m_txt_pre}${m_nl_pre}]\n"
+            }
+
+            # check
+            if {(([string index $m_delim_left 0] eq "%") != ([string index $m_delim_right end] eq "%"))
+                    || (($m_delim2_left eq "") && ($m_delim2_right ne ""))
+                    || (($m_delim2_left ne "") && ($m_delim2_right ne "") && ($m_delim2_right ne $m_delim2_left))} {
+                error "template tag mismatch - left: \"${m_delim_left}\", right: \"${m_delim_right}\""
+            }
+
+            # process tag
+            set txt {}
+            if {[string index $m_delim_left 0] eq "%"} {
+                if {$m_delim2_left eq "="} {
+                    append code "append _res ${m_code}\n"
+                } elseif {$m_delim2_left eq "i"} {
+                    set incfname [eval "file join \${current::template_dir} [string trim $m_code]"]
+                    set incfile [open $incfname "r"]
+                    set txt [read $incfile]
+                    close $incfile
+                } else {
+                    append code "${m_code}\n"
+                }
+            } else {
+                append code "append _res \[${m_code}\]\n"
+            }
+
+            # remove newline at end tag
+            if {$m_chomp_right eq "-"} {
+                append txt ${m_txt_post}
+            } else {
+                append txt ${m_nl_post}${m_txt_post}
+            }
+        }
+
+        # append remainder of verbatim/normal template content
+        if {$txt ne ""} {
+            append code "append _res [list $txt]\n"
+        }
+        return $code
+    }
+
     ## @brief Parse pragma comments of an existing output (file).
     # @param txt Existing generated output as single String.
     # @return List of parsed pragmas as sublists of form {\<maintype\> \<subtype\> \<content\>}.
