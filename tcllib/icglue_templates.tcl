@@ -562,45 +562,59 @@ namespace eval ig::templates {
     proc parse_template {txt} {
         set code "set _res {}\n"
 
-        # search <% delimiter
-        while {[set i [string first <% $txt]] != -1} {
+        # search  delimiter -- \x5b is open square bracket 
+        while {[regexp -indices {<(%|\x5b)([+-])?} $txt indices m_type m_chomp]} {
+            lassign $indices i_delim_start i_delim_end
+
             # include tag
             set incltag 0
 
+            set opening_char [string index $txt [lindex $m_type 0]]
+            if {$opening_char eq "%"} {
+                set closing_delim "%>"
+            } else {
+                # \x5d is close square bracket
+                set closing_delim "\x5d>"
+            }
+
             # check for right chomp
-            set right_i [expr {$i - 1}]
-            incr i 2
-            if {[string match {[-+]} [string index $txt $i]]} {
-                if {([string index $txt $i] eq "-") && ([string index $txt $right_i] eq "\n")} {
-                    incr right_i -1
-                }
-                incr i
+            set right_i [expr {$i_delim_start - 1}]
+
+
+            set i [expr {$i_delim_end + 1}]
+            if {([string index $txt [lindex $m_chomp 0]] eq "-") &&  ([string index $txt $right_i] eq "\n")} {
+                incr right_i -1
             }
 
             # append verbatim/normal template content (tcl-list)
             append code "append _res [list [string range $txt 0 $right_i]]\n"
             set txt [string range $txt $i end]
 
-            if {[string index $txt 0] eq "="} {
+            if {$closing_delim eq "%>"} {
+                if {[string index $txt 0] eq "="} {
                 # <%= will be be append, but evaluated as tcl-argument
-                append code "append _res "
-                set txt [string range $txt 1 end]
-            } elseif {[string index $txt 0] eq "i"} {
+                    append code "append _res "
+                    set txt [string range $txt 1 end]
+                } elseif {[string index $txt 0] eq "i"} {
                 # <%i will be be included here
-                set incltag 1
-                set txt [string range $txt 1 end]
-            } else {
+                    set incltag 1
+                    set txt [string range $txt 1 end]
+                } else {
                 # append as tcl code
+                }
+            } else {
+                # closing delimiter is closing square bracket
+                append code "append _res \[ "
+                set txt [string range $txt 1 end]
             }
 
-            # search %> delimiter
-            if {[set i [string first %> $txt]] == -1} {
-                error "No matching %>"
+            # search ${closing_delim} delimiter
+            if {[set i [string first $closing_delim $txt]] == -1} {
+                error "No matching $closing_delim"
             }
-
-            # check for left chomp
             set left_i [expr {$i + 2}]
             incr i -1
+            # check for left chomp
             if {[string match {[-+]} [string index $txt $i]]} {
                 if {([string index $txt $i] eq "-") && ([string index $txt $left_i] eq "\n")} {
                     incr left_i
@@ -615,7 +629,12 @@ namespace eval ig::templates {
                 set txt [string cat [read $incfile] [string range $txt $left_i end]]
                 close $incfile
             } else {
-                append code "[string range $txt 0 $i] \n"
+                if {$closing_delim eq "%>"} {
+                    append code "[string range $txt 0 $i] \n"
+                } else {
+                    # closing delimiter is closing square bracket
+                    append code "[string range $txt 0 $i] \]\n"
+                }
                 set txt [string range $txt $left_i end]
             }
         }

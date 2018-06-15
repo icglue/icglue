@@ -12,17 +12,30 @@
     set param_data_maxlen_type [max_array_entry_len $mod_data(parameters) vlog.type]
     set param_data_maxlen_name [max_array_entry_len $mod_data(parameters) name]
 
-    proc reset          {} { return "resetn_i"     }
-    proc clk            {} { return "clk_i"        }
-    proc rf_addr        {} { return "rf_addr_i";   }
-    proc rf_w_data      {} { return "rf_w_data_i"  }
-    proc rf_r_data_sig  {} { return "rf_r_data"    }
-    proc rf_r_data      {} { return "rf_r_data_o"  }
-    proc rf_r_en        {} { return "rf_r_en_i"    }
-    proc rf_prev_r_en   {} { return "rf_prev_r_en" }
-    proc rf_w_en        {} { return "rf_w_en_i"    }
-    proc rf_r_valid_sig {} { return "rf_r_valid"   }
-    proc rf_r_valid     {} { return "rf_r_valid_o" }
+    proc reset               {} { return "abp_resetn_i"        }
+    proc clk                 {} { return "abp_clk_i"           }
+    proc rf_addr             {} { return "abp_addr_i"          }
+    proc rf_prot             {} { return "abp_prot_i"          }
+    proc rf_sel              {} { return "abp_sel_i"           }
+    proc rf_enable           {} { return "abp_enable_i"        }
+    proc rf_write            {} { return "abp_write_i"         }
+
+    proc rf_w_data           {} { return "abp_wdata_i"         }
+    proc rf_bytesel          {} { return "abp_strb_i"          }
+
+    proc rf_ready            {} { return "abp_ready_o"         }
+    proc rf_r_data           {} { return "abp_rdata_o"         }
+    proc rf_r_data_sig       {} { return "abp_rf_r_data"       }
+    proc rf_pslverr          {} { return "abp_slverr"          }
+
+    proc rf_r_valid_sig      {} { return "rf_r_valid"          }
+    proc rf_r_valid          {} { return "rf_r_valid_o"        }
+
+    proc rf_w_sel            {} { return "rf_w_sel"            }
+    proc rf_r_sel            {} { return "rf_r_sel"            }
+    # TODO: change name -> write allowed
+    proc rf_ready2write      {} { return "rf_ready2write"      }
+    proc rf_next_ready2write {} { return "rf_next_ready2write" }
 
     proc rf_comment_block {blockname {pre "    "}} {
         return [string cat \
@@ -185,7 +198,9 @@ module <%=$mod_data(name)%> (
     ## <definition>
     %><%=[rf_comment_block "regfile signal definition"]-%>
     reg  [31: 0] <%=[rf_r_data_sig]%>;
-    reg  [31: 0] <%=[rf_prev_r_en]%>;<%="\n"%><%
+    wire         <%=[rf_w_sel]%>;
+    reg          <%=[rf_ready2write]%>;
+    reg          <%=[rf_next_ready2write]%>;<%="\n"%><%
     foreach_preamble s $sig_syncs { %>
     // common sync signals<% } { %>
     wire         <%=$s%>_sync;<% } %><%="\n"%><%
@@ -202,18 +217,6 @@ module <%=$mod_data(name)%> (
     ## </definition> ##
     ###########################################
 %>
-<%
-    ###########################################
-    ## <readedge> 
-    -%>
-
-    always @(posedge <%=[clk]%> or negedge <%=[reset]%>) begin
-        if (<%=[reset]%> == 1'b0) begin
-            <%=[rf_prev_r_en]%> <= 1'b0;
-        end else begin
-            <%=[rf_prev_r_en]%> <= <%=[rf_r_en]%>;
-        end
-    end
 
 <%
     ###########################################
@@ -239,7 +242,7 @@ module <%=$mod_data(name)%> (
             reg_<%=$handshake%> <= 1'b0;
             rdy_<%=$handshake%> <= 1'b1;<% } %>
         end else begin
-            if ({<%=[rf_prev_r_en]%>, <%=[rf_r_en]%>} == 2'b01) begin<% foreach handshake $handshake_list { %>
+            if (<%=[rf_r_sel]%> &&) begin<% foreach handshake $handshake_list { %>
                 if (<%=[join [dict get $handshake_cond_req $handshake] " || "]%>) begin
                     reg_<%=$handshake%> <= 1'b1;
                     rdy_<%=$handshake%> <= 1'b0;
@@ -269,7 +272,18 @@ module <%=$mod_data(name)%> (
 <%
     ###########################################
     ## <register-write>
-    %><%=[rf_comment_block "Regfile - registers (write-logic & read value assignmment)"]%><%
+    %><%=[rf_comment_block "Regfile - registers (write-logic & read value assignmment)"]%>
+    assign <%=[rf_r_sel]%> = ~<%=[rf_write]%> && <%=[rf_sel]%>;
+    assign <%=[rf_w_sel]%> =  <%=[rf_write]%> && <%=[rf_sel]%>;
+    always @(posedge <%=[clk]%> or negedge <%=[reset]%>) begin
+        if (<%=[reset]%> == 1'b0) begin
+            <%=[rf_ready2write]%> <= 1'b0;
+        end else begin
+            if ((<%=[rf_w_sel]%> == 1'b1) begin
+                <%=[rf_ready2write]%> <= <%=[rf_next_ready2write]%>;
+            end
+        end
+    end<%="\n"%><%
     foreach_array entry $entry_list {
         set maxlen_signame [max_array_entry_len $entry(regs) name]
         set maxlen_signalname [expr [max_array_entry_len $entry(regs) signal] + 2]
@@ -280,7 +294,7 @@ module <%=$mod_data(name)%> (
         if (<%=[reset]%> == 1'b0) begin<% foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} { %>
             <%=[reg_name]%> <= <%=$reg(reset)%>;<% } %>
         end else begin
-            if (<%=[rf_w_en]%> == 1'b1) begin
+            if ((<%=[rf_w_sel]%> == 1'b1 && <%=[rf_enable]%> == 1'b1) begin
                 if (<%=[rf_addr]%> == <%=[string trim [param]]%>) begin<% foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} { %>
                     <%=[reg_name]%> <= <%=[rf_w_data]%>[<%=[reg_entrybits]%>];<% } %>
                 end
@@ -305,10 +319,15 @@ module <%=$mod_data(name)%> (
     ## <output mux> ##
     %><%=[rf_comment_block "Regfile registers (read-logic)"] -%>
     always @(*) begin
+        <%=[rf_next_ready2write]%> = 0;
         case (<%=[rf_addr]%>)<% foreach_array entry $entry_list { %>
-            <%=[param]%>: <%=[rf_r_data_sig]%> = <%=[reg_val]%>;<% } %>
+            <%=[string trim [param]]%>: begin
+                <%=[rf_r_data_sig]%> = <%=[reg_val]%>;<% if {[foreach_array_contains reg $entry(regs) {$reg(type) eq "RW"}]} { %>
+                <%=[rf_next_ready2write]%> = 1;<% } %>
+            end<% } %>
             <%=[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-outputmux"] %>
-            <%=[format "%-${maxlen_name}s   " {default}]%>: <%=[rf_r_data_sig]%> = 32'h0000_0000;
+            <%=[format "%-${maxlen_name}s   " {default}]%>: begin
+                <%=[rf_r_data_sig]%> = 32'h0000_0000;
         endcase
     end
     assign <%=[rf_r_data]%> = <%=[rf_r_data_sig]%>;
