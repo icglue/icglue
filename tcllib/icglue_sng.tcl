@@ -79,7 +79,7 @@ namespace eval ig::sng {
         }
 
         if {[llength $nsp] > 1} {
-            return "${insp1}->[lindex $nsp 1]"
+            return "${insp1}:[lindex $nsp 1]"
         }
 
         return $insp1

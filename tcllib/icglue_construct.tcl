@@ -60,9 +60,9 @@ namespace eval ig {
                                 set insts_new {}
                                 set expand_range "false"
                                 foreach i_inst $insts {
-                                    if {[regexp {^(\w*?)(\d+)\.\.(\d+)([[:alnum:]_.]*?)$} $i_inst m_whole m_prefix m_start m_stop m_rem]} {
+                                    if {[regexp {^(\w*?)(\d+)\.\.(\d+)([[:alnum:]_.]*?)$} $i_inst m_whole m_prefix m_start m_stop m_suffix]} {
                                         for {set i $m_start} {$i <= $m_stop} {incr i} {
-                                            lappend insts_new "${m_prefix}${i}${m_rem}"
+                                            lappend insts_new "${m_prefix}${i}${m_suffix}"
                                         }
                                         set expand_range "true"
                                     } else {
