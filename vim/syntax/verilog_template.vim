@@ -283,6 +283,8 @@ hi def link ICGTtclVarRef            Identifier
 " template part
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 syn region  templateCode start="<%" end="%>" contains=ICGTtclCommand,ICGTtclVars,ICGTtclBoolean,ICGTtclProcCommand,ICGTtclConditional,ICGTtclLabel,ICGTtclRepeat,ICGTtclVarRef,ICGTtclExpand,ICGTtcltkCommand,ICGTtclString,ICGTtclLineContinue,ICGTtclNotLineContinue,ICGTtclNumber,ICGTtclComment
+
+syn region  templateCode start="<\[" end="\]>" contains=ICGTtclCommand,ICGTtclVars,ICGTtclBoolean,ICGTtclProcCommand,ICGTtclConditional,ICGTtclLabel,ICGTtclRepeat,ICGTtclVarRef,ICGTtclExpand,ICGTtcltkCommand,ICGTtclString,ICGTtclLineContinue,ICGTtclNotLineContinue,ICGTtclNumber,ICGTtclComment
 hi def link templateCode Comment
 
 "Modify the following as needed.  The trade-off is performance versus

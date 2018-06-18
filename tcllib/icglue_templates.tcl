@@ -605,7 +605,7 @@ namespace eval ig::templates {
             } else {
                 # closing delimiter is closing square bracket
                 append code "append _res \[ "
-                set txt [string range $txt 1 end]
+                set txt [string range $txt 0 end]
             }
 
             # search ${closing_delim} delimiter
