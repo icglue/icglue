@@ -565,8 +565,10 @@ namespace eval ig::templates {
     # when evaluated.
     proc parse_template {txt} {
         set code "set _res {}\n"
+        set code "set _linenr 1\n"
+        set linenr 0
 
-        # search  delimiter -- \x5b is open square bracket 
+        # search  delimiter -- \x5b is open square bracket
         while {[regexp -indices {<(%|\x5b)([+-])?} $txt indices m_type m_chomp]} {
             lassign $indices i_delim_start i_delim_end
 
@@ -591,6 +593,8 @@ namespace eval ig::templates {
             }
 
             # append verbatim/normal template content (tcl-list)
+            incr linenr [ig::aux::string_count_nl [string range $txt 0 [expr {$i-1}]]]
+            append code "set _linenr $linenr\n"
             append code "append _res [list [string range $txt 0 $right_i]]\n"
             set txt [string range $txt $i end]
 
@@ -609,7 +613,6 @@ namespace eval ig::templates {
             } else {
                 # closing delimiter is closing square bracket
                 append code "append _res \[ "
-                set txt [string range $txt 0 end]
             }
 
             # search ${closing_delim} delimiter
@@ -627,11 +630,15 @@ namespace eval ig::templates {
             }
 
             # include tag / code
+            incr linenr [ig::aux::string_count_nl [string range $txt 0 [expr {$left_i-1}]]]
+
             if {$incltag} {
                 set incfname [eval "file join \${current::template_dir} [string range $txt 0 $i]"]
                 set incfile [open $incfname "r"]
-                set txt [string cat [read $incfile] [string range $txt $left_i end]]
+                set inccontent [read $incfile]
                 close $incfile
+                incr linenr [expr {-[ig::aux::string_count_nl $inccontent]}]
+                set txt [string cat $inccontent [string range $txt $left_i end]]
             } else {
                 if {$closing_delim eq "%>"} {
                     append code "[string range $txt 0 $i] \n"
@@ -641,6 +648,7 @@ namespace eval ig::templates {
                 }
                 set txt [string range $txt $left_i end]
             }
+            append code "set _linenr $linenr\n"
         }
 
         # append remainder of verbatim/normal template content
@@ -829,13 +837,27 @@ namespace eval ig::templates {
             {    namespace import ::ig::templates::get_pragma_content} \
             "    variable pragma_data [list $pragma_data]" \
             {    variable _res {}} \
+            {    variable _linenr 1} \
+            {    variable _error {}} \
             "    variable obj_id [list $obj_id]" \
-            "    eval [list ${_tt_code}]" \
+            "    if {\[catch {" \
+            "        eval [list ${_tt_code}]" \
+            "        } _errorres\]} {" \
+            {        set _error $_errorres} \
+            "    }" \
             "\}" \
             ] "\n"]
 
-        set _res ${_template_run::_res}
+        set _res    ${_template_run::_res}
+        set _error  ${_template_run::_error}
+        set _linenr ${_template_run::_linenr}
         namespace delete _template_run
+
+        if {${_error} ne ""} {
+            ig::log -error "error while running template for object [ig::db::get_attribute -object ${obj_id} -attribute "name"] and output type ${type}"
+            ig::log -error "stacktrace:\n${_error}"
+            ig::log -error -abort "template ${_tt_name} somewhere after line ${_linenr}"
+        }
 
         file mkdir [file dirname ${_outf_name}]
         set _outf [open ${_outf_name} "w"]

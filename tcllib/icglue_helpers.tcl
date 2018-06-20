@@ -564,6 +564,17 @@ namespace eval ig::aux {
         return $signalname
     }
 
+
+    ## @brief Count amount of newlines in a string.
+    #
+    # @param str the string.
+    # @return number of newline characters in str.
+    #
+    # copied from: http://wiki.tcl.tk/4478
+    proc string_count_nl str {
+        return [expr {[string length $str]-[string length [string map {\n {}} $str]]}]
+    }
+
     namespace export *
 }
 
