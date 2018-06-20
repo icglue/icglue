@@ -377,19 +377,43 @@ namespace eval ig::aux {
     # @param preamble Code that is execute if array is not empty
     # @param condition Condition which must be met to execute body
     # @param body Code to run in each iteration.
-    proc foreach_array_preamble_with {iter array_list preamble condition body} {
-        set do_preamble "false"
+    proc foreach_array_preamble_with {iter array_list condition preamble body} {
+        set do_iter "false"
 
         foreach __iter $array_list {
             uplevel 1 array set $iter [list ${__iter}]
             if {[uplevel 1 [list $condition]]} {
-                set do_preamble "true"
+                set do_iter "true"
                 break
             }
         }
-        if {$do_preamble} {
+        if {$do_iter} {
             uplevel 1 $preamble
             uplevel 1 foreach_array_with [list $iter] [list $array_list] [list $condition] [list $body]
+        }
+    }
+
+    ## @brief Iterate over a list of arrays meeting a condition.
+    #
+    # @param iter Iterator variable.
+    # @param array_list List of arrays as list as obtained by [array get ...].
+    # @param preamble Code that is execute if array is not empty
+    # @param condition Condition which must be met to execute body
+    # @param body Code to run in each iteration.
+    proc foreach_array_preamble_epilog_with {iter array_list condition preamble body epilog} {
+        set do_iter "false"
+
+        foreach __iter $array_list {
+            uplevel 1 array set $iter [list ${__iter}]
+            if {[uplevel 1 expr [list $condition]]} {
+                set do_iter "true"
+                break
+            }
+        }
+        if {$do_iter} {
+            uplevel 1 $preamble
+            uplevel 1 foreach_array_with [list $iter] [list $array_list] [list $condition] [list $body]
+            uplevel 1 $epilog
         }
     }
 

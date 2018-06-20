@@ -213,7 +213,7 @@ namespace eval ig::templates {
                         } else {
                             set blist [split $entrybits ":"]
                             if {[llength $blist] == 1} {
-                                set width [expr {[lindex $blist 0] + 1}]
+                                set width 1
                             } else {
                                 set width [expr {[lindex $blist 0] - [lindex $blist 1] + 1}]
                             }
