@@ -205,6 +205,7 @@ namespace eval ig::templates {
                     set reset      [ig::db::get_attribute -object $i_reg -attribute "rf_reset"      -default "-"]
                     set signal     [ig::db::get_attribute -object $i_reg -attribute "rf_signal"     -default "-"]
                     set signalbits [ig::db::get_attribute -object $i_reg -attribute "rf_signalbits" -default ""]
+                    set comment    [ig::db::get_attribute -object $i_reg -attribute "rf_comment"    -default ""]
 
                     if {$width < 0} {
                         if {$entrybits eq ""} {
@@ -231,7 +232,7 @@ namespace eval ig::templates {
                     }
 
                     lappend reg_list [list \
-                        $name $bit_high $bit_low $width $entrybits $type $reset $signal $signalbits $i_reg \
+                        $name $bit_high $bit_low $width $entrybits $type $reset $signal $signalbits $comment $i_reg \
                     ]
                 }
                 set reg_list_raw [lsort -integer -index 2 $reg_list]
@@ -254,6 +255,7 @@ namespace eval ig::templates {
                             "reset"      "-" \
                             "signal"     "-" \
                             "signalbits" "" \
+                            "comment"    "" \
                             "object"     "" \
                         ]
                     }
@@ -267,7 +269,8 @@ namespace eval ig::templates {
                         "reset"      [lindex $i_reg 6] \
                         "signal"     [lindex $i_reg 7] \
                         "signalbits" [lindex $i_reg 8] \
-                        "object"     [lindex $i_reg 9] \
+                        "comment"    [lindex $i_reg 9] \
+                        "object"     [lindex $i_reg 10] \
                     ]
 
                     set idx_start $i_bit_high
@@ -285,6 +288,7 @@ namespace eval ig::templates {
                         "reset"      "-" \
                         "signal"     "-" \
                         "signalbits" "" \
+                        "comment"    "" \
                         "object"     "" \
                     ]
                 }

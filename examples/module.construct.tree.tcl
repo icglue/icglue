@@ -81,11 +81,11 @@ S config_test______2 -w 32 mgmt_regfile -> core
 S status_test        -w 16 mgmt_regfile <- core
 
 R -rf mgmt_regfile "config1" @0x0008 {
-    {name            entrybits type reset signal             signalbits}
-    {cfg_test_0      4:0       RW   5'h0  config_test0       4:0         }
-    {cfg_test___1    4:0       RW   5'h0  config_test___1    4:0         }
-    {cfg_test______2 4:0       RW   5'h0  config_test______2 4:0         }
-    {status_test     15:0      R    16'h0 status_test        16:0        }
+    {name            entrybits type reset signal             signalbits comment}
+    {cfg_test_0      4:0       RW   5'h0  config_test0       4:0        "abc"}
+    {cfg_test___1    4:0       RW   5'h0  config_test___1    4:0        "def"}
+    {cfg_test______2 4:0       RW   5'h0  config_test______2 4:0        "ghi"}
+    {status_test     15:0      R    16'h0 status_test        16:0       "jkl"}
 }
 
 # vim: set filetype=icglueconstructtcl syntax=tcl:

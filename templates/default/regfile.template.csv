@@ -1,4 +1,4 @@
-address;register;bits;size;value;type;signal;reset
+address;register;bits;size;value;type;signal;reset;comment
 <%+
 set entry_list [regfile_to_arraylist $obj_id]
 -%>
@@ -39,7 +39,9 @@ foreach i_entry $entry_list {
         }
 -%>
 ;
-<%-=    $reg(reset) +%>
+<%-=    $reg(reset) -%>
+;
+<%-=    $reg(comment) +%>
 <%+
     incr idx
     }

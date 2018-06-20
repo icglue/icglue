@@ -656,6 +656,7 @@ namespace eval ig {
     # @li reset = reset value of generated register.
     # @li signal = signal to drive from generated register.
     # @li signalbits = bits of signal to drive (default: whole signal).
+    # @li comment = comment
     #
     # <b>REGn</b>: Sublists containing the actual register-data.
     proc R args {
@@ -693,7 +694,7 @@ namespace eval ig {
         }
 
         # entry map
-        set entry_default_map {name width entrybits type reset signal signalbits}
+        set entry_default_map {name width entrybits type reset signal signalbits comment}
         set entry_map {}
         foreach i_entry [lindex $regdef 0] {
             set idx_def [lsearch -glob $entry_default_map "${i_entry}*"]
