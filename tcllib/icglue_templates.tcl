@@ -566,7 +566,7 @@ namespace eval ig::templates {
     proc parse_template {txt} {
         set code "set _res {}\n"
         set code "set _linenr 1\n"
-        set linenr 0
+        set linenr 1
 
         # search  delimiter -- \x5b is open square bracket
         while {[regexp -indices {<(%|\x5b)([+-])?} $txt indices m_type m_chomp]} {
