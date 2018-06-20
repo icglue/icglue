@@ -216,7 +216,7 @@ namespace eval ig {
                 set m_flags {}
                 regexp -expanded {
                     # Match level dots
-                    ^\s*([\.]+)\s*
+                    ^\s*([-\.+|\*]+)\s*
                     # Match instance_name
                     ([^(]+)\s*
                     # Match flags
@@ -410,7 +410,8 @@ namespace eval ig {
             ig::db::set_attribute -object $modid -attribute "mode"       -value $mode
             ig::db::set_attribute -object $modid -attribute "parentunit" -value $unit
             foreach attr $attributes {
-                foreach n {attr_name attr_key} v [split $attr "="] {set $n $v}
+                set attr [string trim $attr {"{" "}"}]
+                lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_key
                 ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_key
             }
 

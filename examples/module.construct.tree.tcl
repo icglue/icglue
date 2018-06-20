@@ -1,3 +1,4 @@
+#!/usr/bin/env icglue
 # modules
 M -unit "chungo" -tree {
     ...chungo(rtl)
@@ -7,24 +8,24 @@ M -unit "chungo" -tree {
 
 M -unit "rftest" -tree {
     ..tb_top(tb,v)
-    ....top(rtl)
-    ......mgmt(rtl)
-    .........mgmt_regfile(rf)
-    ..........common_sync<1..2,4,test>(res)
-    .........test_mgmt(res)
-    .........test_mgmt2(res)
-    ........test_mgmt3(res)
-    ........test_mgmt4(res)
-    .......chungo(inc)
-    .......mgmt_wrap0(rtl)
-    ........mgmt_wrap1(rtl)
-    .........test_mgmt5(rtl)
-    ..........test_mgmt6(res)
-    ..........test_mgmt7(res)
-    .........test_mgmt71(rtl,unit=test,attr={ clang => tcl}, attr={ compile = ncsim })
-    ........test_mgmt8(res)
-    .......test_mgmt9(res)
-    .....core(rtl)
+    ..+-top(rtl)
+    ....+-mgmt(rtl)
+    ....|.+--mgmt_regfile(rf)
+    ....|.|..+common_sync<1..2,4,test>(res)
+    ....|.+--test_mgmt(res)
+    ....|.+--test_mgmt2(res)
+    ....|.+-test_mgmt3(res)
+    ....|.+-test_mgmt4(res)
+    ....|.+chungo(inc)
+    ....|.+mgmt_wrap0(rtl)
+    ....|.|+mgmt_wrap1(rtl)
+    ....|.||+test_mgmt5(rtl)
+    ....|.|||+test_mgmt6(res)
+    ....|.|||+test_mgmt7(res)
+    ....|.||+test_mgmt71(rtl,unit=test,attr={ clang => tcl}, attr={ compile = ncsim })
+    ....|.|+test_mgmt8(res)
+    ....|.+test_mgmt9(res)
+    ....+core(rtl)
 }
 
 # connections
