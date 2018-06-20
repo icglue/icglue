@@ -33,6 +33,22 @@ namespace eval ig::vlog {
             } else {
                 return "\[[expr {$size-1}]:0\]"
             }
+        } elseif {[regexp {^(.*)([+-])([1-9]\d*)$} $size m_whole m_prefix m_op m_num]} {
+            if {$m_op eq "+"} {
+                incr m_num -1
+                if {$m_num < 0} {
+                    set m_num [expr {-$m_num}]
+                    set m_op "-"
+                }
+            } else {
+                incr m_num
+            }
+
+            if {$m_num == 0} {
+                return "\[${m_prefix}:0\]"
+            } else {
+                return "\[${m_prefix}${m_op}${m_num}:0\]"
+            }
         } else {
             return "\[$size-1:0\]"
         }
