@@ -11,7 +11,6 @@
     proc rf_bytesel              {} { return "abp_strb_i"              }
     proc rf_prot                 {} { return "abp_prot_i"              }
 
-    proc rf_base_addr            {} { return "RF_BASE_ADDR"            }
     proc rf_r_data               {} { return "abp_rdata_o"             }
     proc rf_ready                {} { return "abp_ready_o "            }
     proc rf_err                  {} { return "abp_slverr_o"            }
@@ -171,7 +170,7 @@
     ###########################################
     ## <localparams>
     %><[rf_comment_block "Regfile ADDRESS definition"]><% foreach_array entry $entry_list { -%>
-    localparam <[param]> = <[rf_base_addr]> + <[addr_vlog]>;<%="\n"%><% } -%>
+    localparam <[param]> = <[addr_vlog]>;<%="\n"%><% } -%>
     <[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-addresses"]><%
     ## </localparams> ##
     ###########################################

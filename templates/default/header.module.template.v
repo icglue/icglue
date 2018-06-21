@@ -78,16 +78,5 @@ module <%=$mod_data(name)%> (
     ## </code>
     ###########################################
 -%>
-<%
-    ###########################################
-    ## <regfile>
- %>
-<%I regfile.module.template.v %>
-<%
-    ## </regfile>
-    ###########################################
- %>
-
-endmodule
 
 <%- # vim: set filetype=verilog_template: -%>
