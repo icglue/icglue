@@ -260,10 +260,7 @@ namespace eval ig::aux {
     proc foreach_preamble {iter lst preamble body} {
         if {[llength $lst]} {
             uplevel 1 $preamble
-            foreach __iter $lst {
-                uplevel 1 set $iter [list ${__iter}]
-                uplevel 1 $body
-            }
+            uplevel 1 foreach [list $iter] [list $lst] [list $body]
         }
     }
 
@@ -277,10 +274,7 @@ namespace eval ig::aux {
     proc foreach_preamble_epilog {iter lst preamble body epilog} {
         if {[llength $lst]} {
             uplevel 1 $preamble
-            foreach __iter $lst {
-                uplevel 1 set $iter [list ${__iter}]
-                uplevel 1 $body
-            }
+            uplevel 1 foreach [list $iter] [list $lst] [list $body]
             uplevel 1 $epilog
         }
     }

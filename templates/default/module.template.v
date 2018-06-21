@@ -22,6 +22,7 @@
     proc rf_bytesel              {} { return "abp_strb_i"              }
     proc rf_prot                 {} { return "abp_prot_i"              }
 
+    proc rf_base_addr            {} { return "RF_BASE_ADDR"            }
     proc rf_r_data               {} { return "abp_rdata_o"             }
     proc rf_ready                {} { return "abp_ready_o "            }
     proc rf_err                  {} { return "abp_slverr_o"            }
@@ -224,7 +225,7 @@ module <%=$mod_data(name)%> (
 
         foreach_array entry $entry_list {
             foreach_array_with reg $entry(regs) {$reg(type) eq "RS"} {
-                lappend sig_syncs $reg(name);
+                lappend sig_syncs "$reg(signal)" "$reg(name)" "[reg_range]" "[signal_entrybits]"
             }
         }
         foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
@@ -234,7 +235,7 @@ module <%=$mod_data(name)%> (
                 lappend handshake_list $handshake_sig_out
                 dict set handshake_sig_in_from_out $handshake_sig_out $handshake_sig_in
                 # TODO: if {type == XXX} {...}
-                lappend sig_syncs $handshake_sig_in
+                lappend sig_syncs $handshake_sig_in $handshake_sig_in "       " {}
             } else {
                 if {[dict get $handshake_sig_in_from_out $handshake_sig_out] ne $handshake_sig_in} {
                     log -warn -id RFTP "Handshake signal $handshake_sig_out is used with different feedback signals -- " \
@@ -249,7 +250,7 @@ module <%=$mod_data(name)%> (
     ###########################################
     ## <localparams>
     %><[rf_comment_block "Regfile ADDRESS definition"]><% foreach_array entry $entry_list { -%>
-    localparam <[param]> = <[addr_vlog]>;<%="\n"%><% } -%>
+    localparam <[param]> = <[rf_base_addr]> + <[addr_vlog]>;<%="\n"%><% } -%>
     <[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-addresses"]><%
     ## </localparams> ##
     ###########################################
@@ -268,9 +269,9 @@ module <%=$mod_data(name)%> (
     reg          <[rf_next_write_permitted]>;
     reg          <[rf_read_permitted]>;
     reg          <[rf_next_read_permitted]>;<%="\n"%><%
-    foreach_preamble s $sig_syncs { %>
+    foreach_preamble {s r w sb} $sig_syncs { %>
     // common sync signals<% } { %>
-    wire         <%=$s%>_sync;<% } %><%="\n"%><%
+    wire <%=$w%> <%=$r%>_sync;<% } %><%="\n"%><%
     foreach_preamble handshake $handshake_list {%>
     // handshake register<%} { %>
     reg          reg_<%=$handshake%>;
@@ -288,13 +289,13 @@ module <%=$mod_data(name)%> (
 <%
     ###########################################
     ## <common-sync> 
-    foreach_preamble s $sig_syncs { #TODO: BUS INSTANCE + RS assign  reverse sort registers
+    foreach_preamble {s r w sb} $sig_syncs {
     %><[rf_comment_block "common sync's"]><% } { -%>
-    common_sync i_common_sync_<%=$s%> (
+    common_sync i_common_sync_<%=$s%><[string trim $w]> (
         .clk_i(<[clk]>),
         .reset_n_i(<[reset]>),
-        .data_i(<[adapt_signalname $s $obj_id]>),
-        .data_o(<%=$s%>_sync)
+        .data_i(<[adapt_signalname $s $obj_id]><%=$sb%>),
+        .data_o(<%=$r%>_sync)
     );<%="\n"%><% }  
     ## </common-sync>
     ###########################################
@@ -371,7 +372,7 @@ module <%=$mod_data(name)%> (
         if {$reg(type) eq "RW"} { %>
     assign <[reg_val]>[<[reg_entrybits]>] = <[string trim [reg_name]]>;<% } elseif {$reg(type) eq "R"} { %>
     assign <[reg_val]>[<[reg_entrybits]>] = <[string trim [signal_name]]><[signal_entrybits]>;<% } elseif {$reg(type) eq "RS"} { %>
-    assign <[reg_val]>[<[reg_entrybits]>] = <%=$reg(signal)_sync%><[signal_entrybits]>;<% } elseif {$reg(type) eq "-"} { %>
+    assign <[reg_val]>[<[reg_entrybits]>] = <%=$reg(name)%>_sync;<% } elseif {$reg(type) eq "-"} { %>
     assign <[reg_val]>[<[reg_entrybits]>] = <%=$reg(width)%>'h0;<% } } %><%="\n"%><% } %><%="\n"
     %><[rf_comment_block "apb ready/error generate"]>
     always @(*) begin
