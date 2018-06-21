@@ -7,7 +7,7 @@ init::output_types $template {
     if {$objtype eq "module"} {
         return {verilog}
     } elseif {$objtype eq "regfile"} {
-        return {csv html}
+        return {csv html h c}
     } else {
         ig::log -warning "no templates available for objects of type ${objtype}"
         return {}
@@ -28,6 +28,8 @@ init::template_file $template {
             return "${template_dir}/regfile.template.csv"
         } elseif {$type eq "html"} {
             return "${template_dir}/regfile.template.html"
+        } elseif {($type eq "c") || ($type eq "h")} {
+            return "${template_dir}/regfile.template.${type}"
         } else {
             ig::log -error -abort "no template available for objecttype/outputtype ${objtype}/${type}"
         }
@@ -39,9 +41,9 @@ init::template_file $template {
 # generate object output filename: arguments: {object type} (object-identifier, outputtype)
 init::output_file $template {
     #TODO: rework type vs objtype
-    set objtype [ig::db::get_attribute -object $object -attribute "type"]
+    set objtype     [ig::db::get_attribute -object $object -attribute "type"]
+    set object_name [ig::db::get_attribute -object $object -attribute "name"]
     if {$objtype eq "module"} {
-        set object_name [ig::db::get_attribute -object $object -attribute "name"]
         set parent_unit [ig::db::get_attribute -object $object -attribute "parentunit" -default $object_name]
         if {[string match "tb_*" $object_name]} {
             set mode [ig::db::get_attribute -object $object -attribute "mode" -default "tb"]
@@ -51,11 +53,15 @@ init::output_file $template {
         set lang [ig::db::get_attribute -object $object -attribute "language" -default "verilog"]
         return "./units/${parent_unit}/source/${mode}/${lang}/${object_name}.v"
     } elseif {$objtype eq "regfile"} {
-        set object_name     [ig::db::get_attribute -object $object -attribute "name"]
-        set parent_mod      [ig::db::get_attribute -object $object -attribute "parent"]
-        set parent_mod_name [ig::db::get_attribute -object $parent_mod -attribute "name"]
-        set module_unit     [ig::db::get_attribute -object $parent_mod -attribute "parentunit" -default $parent_mod_name]
-        return "./units/${module_unit}/doc/regfile/${object_name}.${type}"
+        if {($type eq "csv") || ($type eq "html")} {
+            set object_name     [ig::db::get_attribute -object $object -attribute "name"]
+            set parent_mod      [ig::db::get_attribute -object $object -attribute "parent"]
+            set parent_mod_name [ig::db::get_attribute -object $parent_mod -attribute "name"]
+            set module_unit     [ig::db::get_attribute -object $parent_mod -attribute "parentunit" -default $parent_mod_name]
+            return "./units/${module_unit}/doc/regfile/${object_name}.${type}"
+        } elseif {($type eq "c") || ($type eq "h")} {
+            return "./units/regfile_access/source/behavioral/lib/rf_${object_name}.${type}"
+        }
     } else {
         ig::log -warning "no output file pattern specified for objects of type ${objtype}"
         return "/dev/null"
