@@ -19,6 +19,9 @@ foreach_array entry $entry_list {
     set arguments_read  {}
     set arguments_write {}
 
+    set write_regs {}
+    set read_regs {}
+
     foreach_array reg $entry(regs) {
         if {[string is integer $reg(width)]} {
             if {$reg(width) <= 1} {
@@ -34,20 +37,39 @@ foreach_array entry $entry_list {
             set rtype "uint32_t"
         }
 
+        set reg_data [list name $reg(name) type $rtype]
+
         if {$reg(type) eq "RW"} {
             lappend arguments_write "${rtype} ${reg(name)}"
+            lappend write_regs $reg_data
         }
 
         if {$reg(type) ne "-"} {
             lappend arguments_read "${rtype} *${reg(name)}"
+            lappend read_regs $reg_data
         }
     }
 -%>
 
-bool <%="rf_${rf_name}_${entry(name)}"%>_read (<[join $arguments_read ", "]>);
+/* <%=${entry(name)}%> */
+bool <%="rf_${rf_name}_${entry(name)}"%>_read  (<[join $arguments_read ", "]>);
 bool <%="rf_${rf_name}_${entry(name)}"%>_write (<[join $arguments_write ", "]>);
 
-<%-
+bool <%="rf_${rf_name}_${entry(name)}"%>_wordread  (uint32_t *value);
+bool <%="rf_${rf_name}_${entry(name)}"%>_wordwrite (uint32_t value);
+
+<%+
+    foreach_array reg $read_regs {
+-%>
+bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_read (<%=$reg(type)%> *value);
+<%+ } +%>
+<%+
+    foreach_array reg $write_regs {
+-%>
+bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_write (<%=$reg(type)%> value);
+<%+ } -%>
+
+<%+
 }
 -%>
 

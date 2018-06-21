@@ -16,6 +16,8 @@ foreach_array entry $entry_list {
     set write_regs {}
     set read_regs {}
 
+    set address [format "0x%08x" $entry(address)]
+
     foreach_array reg $entry(regs) {
         if {[string is integer $reg(width)]} {
             if {$reg(width) <= 1} {
@@ -33,8 +35,7 @@ foreach_array entry $entry_list {
             set mask "((1 << $reg(width)) - 1)"
         }
 
-
-        set reg_data [list name $reg(name) width $reg(width) lsb $reg(bit_low) mask $mask]
+        set reg_data [list name $reg(name) width $reg(width) lsb $reg(bit_low) mask $mask type $rtype]
 
         if {$reg(type) eq "RW"} {
             lappend arguments_write "${rtype} ${reg(name)}"
@@ -48,10 +49,11 @@ foreach_array entry $entry_list {
     }
 -%>
 
+/* <%=${entry(name)}%> */
 bool <%="rf_${rf_name}_${entry(name)}"%>_read (<[join $arguments_read ", "]>)
 {
     uint32_t value = 0;
-    bool result = rf_<%=${rf_name}%>_read (<%=$entry(address)%>, &value);
+    bool result = rf_<%=${rf_name}%>_read (<%=$address%>, &value);
 
 <%+
     set maxlen_name [expr {[max_array_entry_len $read_regs name] + 1}]
@@ -59,7 +61,7 @@ bool <%="rf_${rf_name}_${entry(name)}"%>_read (<[join $arguments_read ", "]>)
 
     foreach_array reg $read_regs {
 -%>
-    <[format "%-${maxlen_name}s" "*${reg(name)}"]> = ((value >> <[format "%${maxlen_lsb}s" $reg(lsb)]>) & <%=$reg(mask)%>);
+    if (<[format "%-${maxlen_name}s" "${reg(name)}"]>!= NULL) <[format "%-${maxlen_name}s" "*${reg(name)}"]> = ((value >> <[format "%${maxlen_lsb}s" $reg(lsb)]>) & <%=$reg(mask)%>);
 <%+ } -%>
 
     return result;
@@ -75,12 +77,52 @@ bool <%="rf_${rf_name}_${entry(name)}"%>_write (<[join $arguments_write ", "]>)
 
     foreach_array reg $read_regs {
 -%>
-    value |= ((<[format "%-${maxlen_name}s" $reg(name)]> & <[format "%${maxlen_mask}s" $reg(mask)]>) << <%=$reg(lsb)%>);
+    value |= (((uint32_t) <[format "%-${maxlen_name}s" $reg(name)]> & <[format "%${maxlen_mask}s" $reg(mask)]>) << <%=$reg(lsb)%>);
 <%+ } -%>
 
-    bool result = rf_<%=${rf_name}%>_write (<%=$entry(address)%>, value);
+    bool result = rf_<%=${rf_name}%>_write (<%=$address%>, value);
     return result;
 }
+
+bool <%="rf_${rf_name}_${entry(name)}"%>_wordread  (uint32_t *value)
+{
+    return rf_<%=${rf_name}%>_read (<%=$address%>, value);
+}
+
+bool <%="rf_${rf_name}_${entry(name)}"%>_wordwrite (uint32_t value)
+{
+    return rf_<%=${rf_name}%>_write (<%=$address%>, value);
+}
+
+<%-
+    foreach_array reg $read_regs {
++%>
+bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_read (<%=$reg(type)%> *value)
+{
+    uint32_t value = 0;
+    bool result = rf_<%=${rf_name}%>_read (<%=$address%>, &value);
+
+    if (<%=$reg(name)%>!= NULL) <%=$reg(name)%> = ((value >> <%=$reg(lsb)%>) & <%=$reg(mask)%>);
+
+    return result;
+}
+<%+ } +%>
+<%-
+    foreach_array reg $write_regs {
++%>
+bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_write (<%=$reg(type)%> value)
+{
+    uint32_t value = 0;
+    bool result = rf_<%=${rf_name}%>_read (<%=$address%>, &value);
+
+    value &= ((~<%=$reg(mask)%>) << <%=$reg(lsb)%>);
+
+    value |= (((uint32_t) <%=$reg(name)%> & <%=$reg(mask)%>) << <%=$reg(lsb)%>);
+
+    result &= rf_<%=${rf_name}%>_write (<%=$address%>, value);
+    return result;
+}
+<%+ } -%>
 
 <%-
 }
