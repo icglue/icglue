@@ -40,7 +40,7 @@ module <%=$mod_data(name)%> (
     ###########################################
     ## <port declaration>
     foreach_array_preamble port $mod_data(ports) { -%><%="\n"%><% } { -%>
-    <[format "%-${port_data_maxlen_dir}s wire %${port_data_maxlen_range}s %s;\n" $port(vlog.direction) $port(vlog.bitrange) $port(name)]><% }
+    <[format "%-${port_data_maxlen_dir}s %${port_data_maxlen_range}s %s;\n" $port(vlog.direction) $port(vlog.bitrange) $port(name)]><% }
     ## </port declaration>
     ###########################################
 %>

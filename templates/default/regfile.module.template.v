@@ -349,6 +349,6 @@
     }
     ## </regfiles> ##
     ###########################################
-%>
+-%>
 
 <%- # vim: set filetype=verilog_template: -%>
