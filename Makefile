@@ -109,7 +109,7 @@ $(SYNTAXFILE_CNSTR): $(PKGIDX) | $(SYNTAXDIR)
 everything: all syntaxdb docs man
 
 shell:
-	TCLLIBPATH=. eltclsh scripts/elinit.tcl
+	@TCLLIBPATH=. eltclsh scripts/elinit.tcl
 
 memcheck:
 	TCLLIBPATH=. G_SLICE=always-malloc valgrind --leak-check=full eltclsh scripts/elinit.tcl
