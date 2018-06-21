@@ -1,6 +1,7 @@
 <%-
 set entry_list [regfile_to_arraylist $obj_id]
 set rf_name [object_name $obj_id]
+set userparams [ig::db::get_attribute -object $obj_id -attribute "rfparams" -default {}]
 set header_name "rf_${rf_name}"
 -%>
 #ifndef __<[string toupper ${header_name}]>_H__
@@ -16,8 +17,8 @@ extern "C" {
 <%-
 # iterate over entries sorted by address
 foreach_array entry $entry_list {
-    set arguments_read  {}
-    set arguments_write {}
+    set arguments_read  $userparams
+    set arguments_write $userparams
 
     set write_regs {}
     set read_regs {}
