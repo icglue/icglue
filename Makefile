@@ -87,8 +87,8 @@ showdocs:
 	$(BROWSER) $(DOCDIRLIB)/html/index.html $(DOCDIRTCL)/html/index.html > /dev/null 2> /dev/null &
 
 man:
-	-mkdir -p ./man/man1
-	-help2man -i ./h2m/icglue.h2m ./bin/icglue > ./man/man1/icglue.1
+	-mkdir -p share/man/man1
+	-help2man -i ./h2m/icglue.h2m ./bin/icglue > share/man/man1/icglue.1
 
 .PHONY: doctcl doclib docs man
 

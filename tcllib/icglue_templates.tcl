@@ -634,6 +634,7 @@ namespace eval ig::templates {
 
             if {$incltag} {
                 set incfname [eval "file join \${current::template_dir} [string range $txt 0 $i]"]
+                ig::log -info -id TPrs "...parsing included template $incfname"
                 set incfile [open $incfname "r"]
                 set inccontent [read $incfile]
                 close $incfile
@@ -828,7 +829,8 @@ namespace eval ig::templates {
 
         set _outf_name [current::get_output_file $obj_id $type]
 
-        ig::log -info -id GEN "Generating ${_outf_name} with template ${_tt_name}..."
+        ig::log -info -id Gen "Generating ${_outf_name}"
+        ig::log -info -id TPrs "Parsing template ${_tt_name}"
         set pragma_data [list]
         if {[file exists $_outf_name]} {
             set _outf [open ${_outf_name} "r"]

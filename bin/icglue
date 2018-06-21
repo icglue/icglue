@@ -36,6 +36,8 @@ proc printhelp {{exitcode 0} {doexit "true"}} {
     puts "    -t, --template=FILE      Set FILE to use as template"
     puts "    --template-dir=DIR       Add DIR to template path"
     puts ""
+    puts "    -l, --logger=TAG         Enable output log of TAG (format: LEVEL,IDENTIFIER)"
+    puts ""
     puts "    -q, --quiet              Show errors only"
     puts "    -v, --verbose            Be verbose"
     puts "    ---version               Show version"
@@ -72,8 +74,9 @@ proc main {} {
     set c_template      "default"
     set c_template_dirs {}
     set c_file          ""
+    set c_log           {}
 
-    ig::logger -level I -id GEN
+    ig::logger -level I -id Gen
     # arguments
     set filename [ig::aux::_parse_opts {} {} [list                   \
         {  {^(-h|--help)$}         "const=true" help            {} } \
@@ -87,6 +90,7 @@ proc main {} {
         {  {^--template-dir(=|$)}  "list"       c_template_dirs {} } \
         {  {^(-t|--template)(=|$)} "string"     c_template      {} } \
         {  {^(-f|--file)(=|$)}     "list"       c_file          {} } \
+        {  {^(-l|--logger)(=|$)}   "list"       c_log           {} } \
         ] $::argv]
 
     if {$help} {
@@ -102,6 +106,18 @@ proc main {} {
 
     if {$print_version} {
         printversion
+    }
+
+    if {[llength $c_log]} {
+        foreach l $c_log {
+            lassign [split $l ","] log_level log_id
+            if {$log_level eq "D" || $log_level eq "I" || $log_level eq "W"} {
+                ig::log -info -id LOG "Enable logging of $log_level,$log_id"
+                ig::logger -level $log_level -id $log_id
+            } else {
+                ig::log -error "Unknown loglevel $log_level ($log_level,$log_id)"
+            }
+        }
     }
 
     # environment
