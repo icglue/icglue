@@ -1,0 +1,111 @@
+<%
+##########################################################################################
+# print header
+%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+ 
+<html xmlns="http://www.w3.org/1999/xhtml"> 
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/> 
+   <title> noc_spi_rf register file contend overview </title> 
+
+   <style  type="text/css">
+   .tooltip {
+       position: relative;
+       display: inline-block;
+       border-bottom: 1px dotted black;
+   }
+   .tooltip .tooltiptext {
+       visibility: hidden;
+       background-color: #777;
+       color: #fff;
+       text-align: center;
+       border-radius: 6px;
+       padding: 5px 0;
+       position: absolute;
+       z-index: 1;
+       left: 50%;
+       margin-left: -60px;
+       opacity: 0;
+       transition: opacity 0.5s;
+       width: 220px;
+       top: 100%;
+   }
+   .tooltip:hover .tooltiptext {
+       visibility: visible;
+       opacity: 1;
+   }
+   
+   </style>
+</head> 
+<body> 
+   <div style="overflow-x:auto;">
+   <table frame="border" rules="all"> 
+   <tr bgcolor="#ffe0b3">
+     <th><div class="tooltip">RegisterName<span class="tooltiptext">name of the register</span></div></th>
+     <th><div class="tooltip">Address<span class="tooltiptext">local register address (hex)</span></div></th>
+     <th><div class="tooltip">Name<span class="tooltiptext">name of the subregister</span></div></th>
+     <th><div class="tooltip">Port<span class="tooltiptext">name of the according register file port</span></div></th>
+     <th><div class="tooltip">Width<span class="tooltiptext">width of the subregister</span></div></th>
+     <th><div class="tooltip">Access<span class="tooltiptext">type of possible register access<br />R: read only<br />RW: read and write<br />DEBUG: same as RW but port is not used</span></div></th>
+     <th><div class="tooltip">Align<span class="tooltiptext">position of subregister in register</span></div></th>
+     <th><div class="tooltip">Reset<span class="tooltiptext">reset value of subregister as defined in verilog file</span></div></th>
+     <th><div class="tooltip">Description<span class="tooltiptext">a hopefully useful decription of the subregister</span></div></th>
+   </tr>
+<%
+##########################################################################################
+set entry_list [regfile_to_arraylist $obj_id]
+
+##########################################################################################
+# iterate over entries sorted by address
+set reg_idx 0
+#register loop
+
+foreach i_entry $entry_list {
+    
+    array set entry $i_entry
+       
+    #sub register loop
+    set sreg_idx 0
+    # get number of subregs
+    set num_sregs [llength $entry(regs)]    
+    foreach i_reg $entry(regs) {
+        
+        array set reg $i_reg
+        
+        if { ($reg_idx % 2) ==  0 } {
+            if {$reg(type) ne "-"} {
+                %>   <tr bgcolor="#FFFFFF"><%="\n"%><%
+            } else {
+                %>   <tr bgcolor="#F5F5F5"><%="\n"%><%
+            }
+        } else {
+            if {$reg(type) ne "-"} {
+                %>   <tr bgcolor="#e6eeff"><%="\n"%><%
+            } else {
+                %>   <tr bgcolor="#F5F5F5"><%="\n"%><%
+            }
+        }
+        
+        if {$sreg_idx == 0} {
+            %>      <td rowspan="<%=$num_sregs %>"><b><%=$entry(name)                      %></b></td><%="\n"%><%
+            %>      <td rowspan="<%=$num_sregs %>"><b><%=[format "0x%08x" $entry(address)] %></b></td><%="\n"%><%
+        }
+        %>      <td><%=                   $reg(name)     %></td><%="\n"%><%
+        %>      <td><%=                   $reg(signal)   %></td><%="\n"%><%
+        %>      <td align="center"><%=    $reg(width)    %></td><%="\n"%><%
+        %>      <td align="center"><%=    $reg(type)     %></td><%="\n"%><%
+        %>      <td align="center"><%=    $reg(entrybits)%></td><%="\n"%><%
+        %>      <td align="center"><%=    $reg(reset)    %></td><%="\n"%><%
+        %>      <td align="center"><%=    $reg(comment)  %></td><%="\n"%><%
+        %>   </tr><%="\n"%><% 
+        incr sreg_idx
+    }
+    incr reg_idx
+}
+%>
+</table>
+</div>
+</body>
+</html>
