@@ -162,27 +162,29 @@ namespace eval ig {
         set instances     {}
         set regfiles      {}
         set attributes    {}
+        set rfattributes  {}
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set name [ig::aux::parse_opts [list                                                                                        \
-                   { {^-u(nit)?(=|$)}                 "string"              unit          "specify unit name \[directory\]"     }   \
-                   { {^-i(nst(ances|anciate)?)?(=|$)} "string"              instances     "specify Module to be instanciated"   }   \
-                   { {^-tree(=)?}                     "string"              instance_tree "specify module instance tree"        }   \
-                                                                                                                                    \
-                   { {^-rtl$}                         "const=rtl"           mode          "specify rtl attribute for module"    }   \
-                   { {^-beh(av(ioral|ioural)?)$}      "const=behavioral"    mode          "specify rtl attribute for module"    }   \
-                   { {^-(tb|testbench)$}              "const=tb"            mode          "specify rtl attribute for module"    }   \
-                                                                                                                                    \
-                   { {^-v(erilog)?$}                  "const=verilog"       lang          "output verilog language"             }   \
-                   { {^-sv|-s(ystemverilog)?$}        "const=systemverilog" lang          "output systemverilog language"       }   \
-                   { {^-vhd(l)?$}                     "const=vhdl"          lang          "output vhdl language"                }   \
-                                                                                                                                    \
-                   { {^-(ilm|macro)$}                 "const=ilm"           ilm           "pass ilm attribute to icglue"        }   \
-                   { {^-res(ource)?$}                 "const=true"          resource      "pass ressource attribute to icglue"  }   \
-                                                                                                                                    \
-                   { {^-(rf|(regf(ile)?))(=|$)}       "string"              regfiles      "pass regfile attribute to icglue"    }   \
-                                                                                                                                    \
-                   { {^-attr(ibutes)?(=|$)}           "string"              attributes    "pass an arribute dict to icglue"     }   \
+        set name [ig::aux::parse_opts [list                                                                                           \
+                   { {^-u(nit)?(=|$)}                 "string"              unit          "specify unit name \[directory\]"       }   \
+                   { {^-i(nst(ances|anciate)?)?(=|$)} "string"              instances     "specify Module to be instanciated"     }   \
+                   { {^-tree(=)?}                     "string"              instance_tree "specify module instance tree"          }   \
+                                                                                                                                      \
+                   { {^-rtl$}                         "const=rtl"           mode          "specify rtl attribute for module"      }   \
+                   { {^-beh(av(ioral|ioural)?)$}      "const=behavioral"    mode          "specify rtl attribute for module"      }   \
+                   { {^-(tb|testbench)$}              "const=tb"            mode          "specify rtl attribute for module"      }   \
+                                                                                                                                      \
+                   { {^-v(erilog)?$}                  "const=verilog"       lang          "output verilog language"               }   \
+                   { {^-sv|-s(ystemverilog)?$}        "const=systemverilog" lang          "output systemverilog language"         }   \
+                   { {^-vhd(l)?$}                     "const=vhdl"          lang          "output vhdl language"                  }   \
+                                                                                                                                      \
+                   { {^-(ilm|macro)$}                 "const=ilm"           ilm           "pass ilm attribute to icglue"          }   \
+                   { {^-res(ource)?$}                 "const=true"          resource      "pass ressource attribute to icglue"    }   \
+                                                                                                                                      \
+                   { {^-(rf|(regf(ile)?))(=|$)}       "string"              regfiles      "pass regfile attribute to icglue"      }   \
+                                                                                                                                      \
+                   { {^-attr(ibutes)?(=|$)}           "string"              attributes    "pass a module arribute dict to icglue" }   \
+                   { {^-rfattr(ibutes)?(=|$)}         "string"              rfattributes  "pass a regfile arribute dict to icglue"}   \
             ] -context "MODULENAME" $args]
 
         # argument checks
@@ -190,6 +192,7 @@ namespace eval ig {
             log -error -abort "M: too many arguments ($name)"
         }
 
+        set instance_tree [split $instance_tree "\n"]
         if {[llength $instance_tree] > 0} {
             set cur_parent {}
             set cur_level {}
@@ -199,17 +202,11 @@ namespace eval ig {
             set module_list {}
             set maxlen_modname 0
 
-            while {[llength $instance_tree]} {
-                set def_idx [lsearch -start 1 -regexp $instance_tree {^\.}]
-                if {$def_idx == -1} {
-                    set inst $instance_tree
-                    set instance_tree {}
-                } else {
-                    set inst [lrange $instance_tree 0 [expr {$def_idx-1}]]
-                    set instance_tree [lrange $instance_tree $def_idx end]
-                }
+            foreach inst $instance_tree {
+                set inst [string trim $inst]
+                if {$inst eq ""} {continue}
+
                 # remove spaces of list
-                set inst [join $inst {}]
                 set m_level {}
                 set m_instance {}
                 set m_flags_full {}
@@ -315,7 +312,8 @@ namespace eval ig {
                 set finc "false"
                 set fmode $mode
                 set flang $lang
-                set fattributes {}
+                set fattributes   {}
+                set frfattributes {}
                 set fregfiles "false"
 
                 if {$moduleparent ne ""} {
@@ -325,24 +323,26 @@ namespace eval ig {
                     }
                 }
 
-                set funknown [ig::aux::parse_opts [list                                      \
-                    { {^u(nit)?(=|$)}                "string"              funit       {} }  \
-                    { {^(ilm|macro)$}                "const=true"          film        {} }  \
-                    { {^res(ource)?$}                "const=true"          fres        {} }  \
-                                                                                             \
-                    { {^inc(lude)?$}                 "const=true"          finc        {} }  \
-                    { {^rtl$}                        "const=rtl"           fmode       {} }  \
-                    { {^beh(av(ioral|ioural)?)?$}    "const=behavioral"    fmode       {} }  \
-                    { {^(tb|testbench)$}             "const=tb"            fmode       {} }  \
-                                                                                             \
-                    { {^v(erilog)?$}                 "const=verilog"       flang       {} }  \
-                    { {^sv|-s(ystemverilog)?$}       "const=systemverilog" flang       {} }  \
-                    { {^vhd(l)?$}                    "const=vhdl"          flang       {} }  \
-                                                                                             \
-                    { {^(rf|(regf(ile)?)?)$}         "const=true"          fregfiles   {} }  \
-                                                                                             \
-                    { {^attr(ibutes)?(=|$)}          "list"                fattributes {} }  \
-                    ] [split $moduleflags ","]]
+                set moduleflags [regsub -all {([^\\]),\s*} $moduleflags "\\1\n"]
+                set funknown [ig::aux::parse_opts [list                                        \
+                    { {^u(nit)?(=|$)}                "string"              funit         {} }  \
+                    { {^(ilm|macro)$}                "const=true"          film          {} }  \
+                    { {^res(ource)?$}                "const=true"          fres          {} }  \
+                                                                                               \
+                    { {^inc(lude)?$}                 "const=true"          finc          {} }  \
+                    { {^rtl$}                        "const=rtl"           fmode         {} }  \
+                    { {^beh(av(ioral|ioural)?)?$}    "const=behavioral"    fmode         {} }  \
+                    { {^(tb|testbench)$}             "const=tb"            fmode         {} }  \
+                                                                                               \
+                    { {^v(erilog)?$}                 "const=verilog"       flang         {} }  \
+                    { {^sv|-s(ystemverilog)?$}       "const=systemverilog" flang         {} }  \
+                    { {^vhd(l)?$}                    "const=vhdl"          flang         {} }  \
+                                                                                               \
+                    { {^(rf|(regf(ile)?)?)$}         "const=true"          fregfiles     {} }  \
+                                                                                               \
+                    { {^attr(ibutes)?(=|$)}          "list"                fattributes   {} }  \
+                    { {^rfattr(ibutes)?(=|$)}        "list"                frfattributes {} }  \
+                    ] [split $moduleflags "\n"]]
 
                 if {[llength $funknown] != 0} {
                     log -warn -id MTREE "M (instance $instance_name): Unknown flag(s) - $funknown"
@@ -361,12 +361,19 @@ namespace eval ig {
                         ig::db::set_attribute -object $modid -attribute "language"   -value $flang
                     }
                     if {$fregfiles} {
-                        ig::db::add_regfile -regfile $instance_name -to $modid
+                        set rfid [ig::db::add_regfile -regfile $instance_name -to $modid]
+                        foreach attr $frfattributes {
+                            #set attr [string trim $attr {"{" "}"}]
+                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
+                            ig::db::set_attribute -object $rfid -attribute $attr_name -value $attr_val
+
+                            puts "\[$instance_name\]: setting regfile attribute \"$attr_name\" to \"$attr_val\""
+                        }
                     }
                     foreach attr $fattributes {
                         set attr [string trim $attr {"{" "}"}]
-                        lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_key
-                        ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_key
+                        lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
+                        ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_val
                     }
                 }
 
@@ -411,8 +418,8 @@ namespace eval ig {
             ig::db::set_attribute -object $modid -attribute "parentunit" -value $unit
             foreach attr $attributes {
                 set attr [string trim $attr {"{" "}"}]
-                lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_key
-                ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_key
+                lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
+                ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_val
             }
 
             # instances
@@ -430,7 +437,12 @@ namespace eval ig {
 
             # regfiles
             foreach i_rf $regfiles {
-                ig::db::add_regfile -regfile $i_rf -to $modid
+                set rfid [ig::db::add_regfile -regfile $i_rf -to $modid]
+                foreach attr $rfattributes {
+                    set attr [string trim $attr {"{" "}"}]
+                    lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
+                    ig::db::set_attribute -object $rfid -attribute $attr_name -value $attr_val
+                }
             }
         } emsg]} {
             log -error -abort "M (module ${name}): error while creating module:\n${emsg}"
