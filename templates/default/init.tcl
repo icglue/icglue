@@ -7,7 +7,7 @@ init::output_types $template {
     if {$objtype eq "module"} {
         return {verilog}
     } elseif {$objtype eq "regfile"} {
-        return {csv html h c}
+        return {csv md html h c}
     } else {
         ig::log -warning "no templates available for objects of type ${objtype}"
         return {}
@@ -24,11 +24,7 @@ init::template_file $template {
             ig::log -error -abort "no template available for objecttype/outputtype ${objtype}/${type}"
         }
     } elseif {$objtype eq "regfile"} {
-        if {$type eq "csv"} {
-            return "${template_dir}/regfile.template.csv"
-        } elseif {$type eq "html"} {
-            return "${template_dir}/regfile.template.html"
-        } elseif {($type eq "c") || ($type eq "h")} {
+        if {[file exist "${template_dir}/regfile.template.${type}"]} {
             return "${template_dir}/regfile.template.${type}"
         } else {
             ig::log -error -abort "no template available for objecttype/outputtype ${objtype}/${type}"
@@ -54,14 +50,14 @@ init::output_file $template {
         set lang [ig::db::get_attribute -object $object -attribute "language" -default "verilog"]
         return "${output_dir_root}/units/${parent_unit}/source/${mode}/${lang}/${object_name}.v"
     } elseif {$objtype eq "regfile"} {
-        if {($type eq "csv") || ($type eq "html")} {
+        if {($type eq "c") || ($type eq "h")} {
+            return "${output_dir_root}/units/regfile_access/source/behavioral/lib/rf_${object_name}.${type}"
+        } else {
             set object_name     [ig::db::get_attribute -object $object -attribute "name"]
             set parent_mod      [ig::db::get_attribute -object $object -attribute "parent"]
             set parent_mod_name [ig::db::get_attribute -object $parent_mod -attribute "name"]
             set module_unit     [ig::db::get_attribute -object $parent_mod -attribute "parentunit" -default $parent_mod_name]
             return "${output_dir_root}/units/${module_unit}/doc/regfile/${object_name}.${type}"
-        } elseif {($type eq "c") || ($type eq "h")} {
-            return "${output_dir_root}/units/regfile_access/source/behavioral/lib/rf_${object_name}.${type}"
         }
     } else {
         ig::log -warning "no output file pattern specified for objects of type ${objtype}"
