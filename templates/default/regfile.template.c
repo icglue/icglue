@@ -1,7 +1,7 @@
 <%-
 set entry_list [regfile_to_arraylist $obj_id]
 set rf_name [object_name $obj_id]
-set userparams [ig::db::get_attribute -object $obj_id -attribute "rfparams" -default {}]
+set userparams [ig::db::get_attribute -object $obj_id -attribute "accesscargs" -default {}]
 set userparamsft {}
 foreach i_param $userparams {
     append userparamsft "[lindex $i_param 1], "
@@ -53,6 +53,10 @@ foreach_array entry $entry_list {
             lappend read_regs $reg_data
         }
     }
+
+    set userparams_extra $userparams
+    lappend userparams_extra {}
+    set userparams_extra [join $userparams_extra ", "]
 -%>
 
 /* <%=${entry(name)}%> */
@@ -90,12 +94,12 @@ bool <%="rf_${rf_name}_${entry(name)}"%>_write (<[join $arguments_write ", "]>)
     return result;
 }
 
-bool <%="rf_${rf_name}_${entry(name)}"%>_wordread  (uint32_t *value)
+bool <%="rf_${rf_name}_${entry(name)}"%>_wordread (<%=$userparams_extra%>uint32_t *value)
 {
     return rf_<%=${rf_name}%>_read (<%=$userparamsft%><%=$address%>, value);
 }
 
-bool <%="rf_${rf_name}_${entry(name)}"%>_wordwrite (uint32_t value)
+bool <%="rf_${rf_name}_${entry(name)}"%>_wordwrite (<%=$userparams_extra%>uint32_t value)
 {
     return rf_<%=${rf_name}%>_write (<%=$userparamsft%><%=$address%>, value);
 }
@@ -103,7 +107,7 @@ bool <%="rf_${rf_name}_${entry(name)}"%>_wordwrite (uint32_t value)
 <%-
     foreach_array reg $read_regs {
 +%>
-bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_read (<%=$reg(type)%> *value)
+bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_read (<%=$userparams_extra%><%=$reg(type)%> *value)
 {
     uint32_t value = 0;
     bool result = rf_<%=${rf_name}%>_read (<%=$userparamsft%><%=$address%>, &value);
@@ -116,7 +120,7 @@ bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_read (<%=$reg(type)%> *val
 <%-
     foreach_array reg $write_regs {
 +%>
-bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_write (<%=$reg(type)%> value)
+bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_write (<%=$userparams_extra%><%=$reg(type)%> value)
 {
     uint32_t value = 0;
     bool result = rf_<%=${rf_name}%>_read (<%=$userparamsft%><%=$address%>, &value);
