@@ -265,13 +265,12 @@ namespace eval ig {
 
                 lappend module_list $m_instance $cur_parent $m_flags
             }
-            #logger -level D -id MTREE -linenumber
             set module_inc_list {}
 
             foreach {instance_name moduleparent moduleflags} $module_list {
                 set module_name   [lindex [split $instance_name <] 0]
                 set modids {}
-                log -id "MTREE" -debug [format "module: %-${maxlen_modname}s -- parent: %-${maxlen_modname}s -- Flags: %s" $instance_name $moduleparent $moduleflags]
+                log -id "MTree" -debug [format "module: %-${maxlen_modname}s -- parent: %-${maxlen_modname}s -- Flags: %s" $instance_name $moduleparent $moduleflags]
 
                 set film "false"
                 set fres "false"
@@ -294,7 +293,7 @@ namespace eval ig {
                 }
 
                 if {[catch {ig::db::get_modules -name $module_name}]} {
-                    log -debug -id MTREE "M (module = $module_name): creating..."
+                    log -debug -id MTree "M (module = $module_name): creating..."
                     lappend modids [ig::db::create_module {*}$cf -name $module_name]
                 } else {
                     if {!$fres && !$finc} {
@@ -345,7 +344,7 @@ namespace eval ig {
                     ] [split $moduleflags "\n"]]
 
                 if {[llength $funknown] != 0} {
-                    log -warn -id MTREE "M (instance $instance_name): Unknown flag(s) - $funknown"
+                    log -warn -id MTree "M (instance $instance_name): Unknown flag(s) - $funknown"
                 }
 
                 set module_name [lindex [split $instance_name <] 0]
@@ -382,7 +381,7 @@ namespace eval ig {
                         set i_name [lindex $i_inst 0]
                         set i_mod  [lindex $i_inst 1]
 
-                        log -debug -id MTREE "M (module = $instance_name): creating instance $i_name of module $moduleparent"
+                        log -debug -id MTree "M (module = $instance_name): creating instance $i_name of module $moduleparent"
 
                         ig::db::create_instance \
                             -name $i_name \
@@ -725,10 +724,12 @@ namespace eval ig {
         # actual regfile creation
         if {[catch {
             # get regfile
-            set regfile_id ""
+            set regfile_id {}
+            set rf_module_name {}
             foreach i_md [ig::db::get_modules -all] {
                 if {![catch {ig::db::get_regfiles -name $regfilename -of $i_md} i_id]} {
                     set regfile_id $i_id
+                    set rf_module_name [ig::db::get_attribute -obj $i_md -attribute "name"]
                 }
             }
             if {$regfile_id eq ""} {
@@ -753,11 +754,45 @@ namespace eval ig {
                 }
 
                 set reg_id [ig::db::add_regfile -reg $i_name -to $entry_id]
+                set s_signal {}
+                set s_width {}
+                set s_type {}
                 foreach i_attr [lrange $entry_default_map 1 end] {
                     # attributes except name
                     set i_val [lindex $i_reg [lsearch $entry_map $i_attr]]
                     if {$i_val ne ""} {
+                        if {$i_attr eq "signal"} {
+                            if {[llength $i_val] > 1} {
+                                set s_modules [lrange $i_val 1 end]
+                                set s_signal [lindex $i_val 0]
+                                set i_val $s_signal
+                            }
+                        }
+                        if {$i_attr eq "type"} {
+                            set s_type $i_val
+                        }
+                        if {$i_attr eq "signalbits"} {
+                            lassign [split $i_val ":"] s_high s_low
+                            if {[string is integer $s_high]} {
+                                set s_width [expr {$s_high+1}]
+                            } else {
+                                set s_width "$s_high+1"
+                            }
+                            if {$s_low eq ""} {
+                                set s_width 1
+                            }
+                        }
                         ig::db::set_attribute -object $reg_id -attribute "rf_${i_attr}" -value $i_val
+                    }
+                }
+
+                if {$s_signal ne ""} {
+                    if {[regexp {W} $s_type]} {
+                        S -w $s_width  $s_signal $rf_module_name --> $s_modules
+                        ig::log -info -id "RCon" "S -w $s_width  \"$s_signal\" $rf_module_name --> $s_modules"
+                    } elseif {[regexp {R} $s_type]} {
+                        S -w $s_width  $s_signal $rf_module_name <-- $s_modules
+                        ig::log -info -id "RCon" "S -w $s_width  \"$s_signal\" $rf_module_name <-- $s_modules"
                     }
                 }
             }

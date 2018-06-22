@@ -108,12 +108,18 @@ proc main {} {
         printversion
     }
 
+    if {$c_loglines} {
+        ig::logger -level ${c_loglevel} -linenumber
+    } else {
+        ig::logger -level ${c_loglevel} -nolinenumber
+    }
+
     if {[llength $c_log]} {
         foreach l $c_log {
             lassign [split $l ","] log_level log_id
             if {$log_level eq "D" || $log_level eq "I" || $log_level eq "W"} {
-                ig::log -info -id LOG "Enable logging of $log_level,$log_id"
                 ig::logger -level $log_level -id $log_id
+                ig::log -info -id Log "Enable logging of $log_level,$log_id"
             } else {
                 ig::log -error "Unknown loglevel $log_level ($log_level,$log_id)"
             }
@@ -145,12 +151,6 @@ proc main {} {
     if {![file isfile $c_file]} {
         ig::log -error "Cant open file \"${c_file}\" for reading"
         exit 1
-    }
-
-    if {$c_loglines} {
-        ig::logger -level ${c_loglevel} -linenumber
-    } else {
-        ig::logger -level ${c_loglevel} -nolinenumber
     }
 
     foreach i_tdir $c_template_dirs {
