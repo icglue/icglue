@@ -569,6 +569,14 @@ namespace eval ig::aux {
         return [expr {[string length $str]-[string length [string map {\n {}} $str]]}]
     }
 
+    proc max_set {varName value} {
+        if {[uplevel info exists $varName]} {
+            uplevel set $varName {[expr max( } "\$$varName," $value) {]}
+        } else {
+            uplevel set $varName $value
+        }
+    }
+
     namespace export *
 }
 

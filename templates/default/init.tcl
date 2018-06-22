@@ -7,7 +7,7 @@ init::output_types $template {
     if {$objtype eq "module"} {
         return {verilog}
     } elseif {$objtype eq "regfile"} {
-        return {csv md html h c}
+        return {csv txt html h c}
     } else {
         ig::log -warning "no templates available for objects of type ${objtype}"
         return {}

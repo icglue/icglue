@@ -8,28 +8,26 @@
     #----------------------------------------#
 %><%
     set register_list [regfile_to_arraylist $obj_id]
-    foreach i_register $register_list {
-        array set register $i_register
-        foreach i_sreg $register(regs) {
-            array set sreg $i_sreg
+    set header { "Register Name" "Address" "Name" "Port" "Width" "Access" "Align" "Reset" "Description" }
+    set collumn_width { 0 0 0 0 0 0 0 0 0 }
+    foreach_array register $register_list {
+        foreach_array sreg $register(regs) {
+
+            max_set len_max_data(0)   [max_array_entry_len $register_list name       ]
+            max_set len_max_data(1)   10
+            max_set len_max_data(2)   [max_array_entry_len $register(regs) name      ]
+            max_set len_max_data(3)   [max_array_entry_len $register(regs) signal    ]
+            max_set len_max_data(4)   [max_array_entry_len $register(regs) width     ]
+            max_set len_max_data(5)   [max_array_entry_len $register(regs) type      ]
+            max_set len_max_data(6)   [max_array_entry_len $register(regs) entrybits ]
+            max_set len_max_data(7)   [max_array_entry_len $register(regs) reset     ]
+            max_set len_max_data(8)   [max_array_entry_len $register(regs) comment   ]
+            max_set len_max_data(9) 0
+
         }
     }
 
     # define header text
-    set header { "Register Name" "Address" "Name" "Port" "Width" "Access" "Align" "Reset" "Description" }
-    set collumn_width { 0 0 0 0 0 0 0 0 0 }
-
-    set len_max_data(0)   [max_array_entry_len $register_list name      ]
-    set len_max_data(1)   10
-    set len_max_data(2)   [max_array_entry_len $register(regs) name      ]
-    set len_max_data(3)   [max_array_entry_len $register(regs) signal    ]
-    set len_max_data(4)   [max_array_entry_len $register(regs) width     ]
-    set len_max_data(5)   [max_array_entry_len $register(regs) type      ]
-    set len_max_data(6)   [max_array_entry_len $register(regs) entrybits ]
-    set len_max_data(7)   [max_array_entry_len $register(regs) reset     ]
-    set len_max_data(8)   [max_array_entry_len $register(regs) comment   ]
-    set len_max_data(9) 0
-
     proc get_padding_size { width string } {
         set string_length [string length $string]
         set padding       [expr {$width - $string_length} ]
@@ -63,25 +61,24 @@
     }
 %>
 <%
-    %>| <%
+    %>|<%
     # generate header separator
     foreach i_collumn $num_collumn {
         set width [expr { [lindex $collumn_width $i_collumn]} ]
+            %> <%
 
         for { set i 0} {$i < $width} {incr i} {
-            %>-<%
+            %>=<%
         }
-        %> | <%
+        %> |<%
     }
 %>
 <%
 # generate register list
-    foreach i_reg $register_list {
-        array set reg $i_reg
+    foreach_array reg $register_list {
 
         set sreg_idx 0
-        foreach i_sreg $reg(regs) {
-            array set sreg $i_sreg
+        foreach_array sreg $reg(regs) {
 
             #start of line
             %>| <%
@@ -139,29 +136,25 @@
                if {$i_collumn == 8} {
                    set width   [lindex $collumn_width $i_collumn]
                    set padding [get_padding_size $width $sreg(comment)]
-                  %><[format "%s%${padding}s | "  $sreg(comment)  "" ]><%
+                  %><[format "%s%${padding}s |"  $sreg(comment)  "" ]><%
                }
         }
         %><%="\n"%><%
         incr sreg_idx
     }
+
+    %>|<%
     # generate register separator line
-    %>| <%
     foreach i_collumn $num_collumn {
         set width [expr { [lindex $collumn_width $i_collumn]} ]
+            %> <%
 
         for { set i 0} {$i < $width} {incr i} {
             %>-<%
         }
-        %> | <%
+        %> |<%
     }
     %><%="\n"%><%
 %><%
 %><%    }
 %>
-
-
-
-
-
-
