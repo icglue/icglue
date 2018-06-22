@@ -40,6 +40,7 @@ init::template_file $template {
 
 # generate object output filename: arguments: {object type} (object-identifier, outputtype)
 init::output_file $template {
+    set output_dir_root "."
     #TODO: rework type vs objtype
     set objtype     [ig::db::get_attribute -object $object -attribute "type"]
     set object_name [ig::db::get_attribute -object $object -attribute "name"]
@@ -51,16 +52,16 @@ init::output_file $template {
             set mode [ig::db::get_attribute -object $object -attribute "mode" -default "rtl"]
         }
         set lang [ig::db::get_attribute -object $object -attribute "language" -default "verilog"]
-        return "./units/${parent_unit}/source/${mode}/${lang}/${object_name}.v"
+        return "${output_dir_root}/units/${parent_unit}/source/${mode}/${lang}/${object_name}.v"
     } elseif {$objtype eq "regfile"} {
         if {($type eq "csv") || ($type eq "html")} {
             set object_name     [ig::db::get_attribute -object $object -attribute "name"]
             set parent_mod      [ig::db::get_attribute -object $object -attribute "parent"]
             set parent_mod_name [ig::db::get_attribute -object $parent_mod -attribute "name"]
             set module_unit     [ig::db::get_attribute -object $parent_mod -attribute "parentunit" -default $parent_mod_name]
-            return "./units/${module_unit}/doc/regfile/${object_name}.${type}"
+            return "${output_dir_root}/units/${module_unit}/doc/regfile/${object_name}.${type}"
         } elseif {($type eq "c") || ($type eq "h")} {
-            return "./units/regfile_access/source/behavioral/lib/rf_${object_name}.${type}"
+            return "${output_dir_root}/units/regfile_access/source/behavioral/lib/rf_${object_name}.${type}"
         }
     } else {
         ig::log -warning "no output file pattern specified for objects of type ${objtype}"
