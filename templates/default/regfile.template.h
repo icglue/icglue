@@ -54,14 +54,33 @@ foreach_array entry $entry_list {
     set userparams_extra $userparams
     lappend userparams_extra {}
     set userparams_extra [join $userparams_extra ", "]
+
+    if {[llength $read_regs] > 0} {
+        set has_read 1
+    } else {
+        set has_read 0
+    }
+    if {[llength $write_regs] > 0} {
+        set has_write 1
+    } else {
+        set has_write 0
+    }
 -%>
 
 /* <%=${entry(name)}%> */
+<%+ if {$has_read} { -%>
 bool <%="rf_${rf_name}_${entry(name)}"%>_read  (<[join $arguments_read ", "]>);
+<%+ } -%>
+<%- if {$has_write} { -%>
 bool <%="rf_${rf_name}_${entry(name)}"%>_write (<[join $arguments_write ", "]>);
+<%+ } -%>
 
+<%+ if {$has_read} { -%>
 bool <%="rf_${rf_name}_${entry(name)}"%>_wordread  (<%=$userparams_extra%>uint32_t *value);
+<%+ } -%>
+<%- if {$has_write} { -%>
 bool <%="rf_${rf_name}_${entry(name)}"%>_wordwrite (<%=$userparams_extra%>uint32_t value);
+<%+ } -%>
 
 <%+
     foreach_array reg $read_regs {

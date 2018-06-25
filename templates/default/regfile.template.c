@@ -57,9 +57,21 @@ foreach_array entry $entry_list {
     set userparams_extra $userparams
     lappend userparams_extra {}
     set userparams_extra [join $userparams_extra ", "]
+
+    if {[llength $read_regs] > 0} {
+        set has_read 1
+    } else {
+        set has_read 0
+    }
+    if {[llength $write_regs] > 0} {
+        set has_write 1
+    } else {
+        set has_write 0
+    }
 -%>
 
 /* <%=${entry(name)}%> */
+<%- if {$has_read} { +%>
 bool <%="rf_${rf_name}_${entry(name)}"%>_read (<[join $arguments_read ", "]>)
 {
     uint32_t value = 0;
@@ -76,7 +88,8 @@ bool <%="rf_${rf_name}_${entry(name)}"%>_read (<[join $arguments_read ", "]>)
 
     return result;
 }
-
+<%+ } -%>
+<%- if {$has_write} { +%>
 bool <%="rf_${rf_name}_${entry(name)}"%>_write (<[join $arguments_write ", "]>)
 {
     uint32_t value = 0;
@@ -85,7 +98,7 @@ bool <%="rf_${rf_name}_${entry(name)}"%>_write (<[join $arguments_write ", "]>)
     set maxlen_name [max_array_entry_len $read_regs name]
     set maxlen_mask [max_array_entry_len $read_regs mask]
 
-    foreach_array reg $read_regs {
+    foreach_array reg $write_regs {
 -%>
     value |= (((uint32_t) <[format "%-${maxlen_name}s" $reg(name)]> & <[format "%${maxlen_mask}s" $reg(mask)]>) << <%=$reg(lsb)%>);
 <%+ } -%>
@@ -93,26 +106,29 @@ bool <%="rf_${rf_name}_${entry(name)}"%>_write (<[join $arguments_write ", "]>)
     bool result = rf_<%=${rf_name}%>_write (<%=$userparamsft%><%=$address%>, value);
     return result;
 }
-
+<%+ } -%>
+<%- if {$has_read} { +%>
 bool <%="rf_${rf_name}_${entry(name)}"%>_wordread (<%=$userparams_extra%>uint32_t *value)
 {
     return rf_<%=${rf_name}%>_read (<%=$userparamsft%><%=$address%>, value);
 }
-
+<%+ } -%>
+<%- if {$has_write} { +%>
 bool <%="rf_${rf_name}_${entry(name)}"%>_wordwrite (<%=$userparams_extra%>uint32_t value)
 {
     return rf_<%=${rf_name}%>_write (<%=$userparamsft%><%=$address%>, value);
 }
+<%+ } -%>
 
 <%-
     foreach_array reg $read_regs {
 +%>
 bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_read (<%=$userparams_extra%><%=$reg(type)%> *value)
 {
-    uint32_t value = 0;
-    bool result = rf_<%=${rf_name}%>_read (<%=$userparamsft%><%=$address%>, &value);
+    uint32_t rf_value = 0;
+    bool result = rf_<%=${rf_name}%>_read (<%=$userparamsft%><%=$address%>, &rf_value);
 
-    if (<%=$reg(name)%>!= NULL) <%=$reg(name)%> = ((value >> <%=$reg(lsb)%>) & <%=$reg(mask)%>);
+    if (value != NULL) *value = ((rf_value >> <%=$reg(lsb)%>) & <%=$reg(mask)%>);
 
     return result;
 }
@@ -122,14 +138,14 @@ bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_read (<%=$userparams_extra
 +%>
 bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_write (<%=$userparams_extra%><%=$reg(type)%> value)
 {
-    uint32_t value = 0;
-    bool result = rf_<%=${rf_name}%>_read (<%=$userparamsft%><%=$address%>, &value);
+    uint32_t rf_value = 0;
+    bool result = rf_<%=${rf_name}%>_read (<%=$userparamsft%><%=$address%>, &rf_value);
 
-    value &= ((~<%=$reg(mask)%>) << <%=$reg(lsb)%>);
+    rf_value &= ((~<%=$reg(mask)%>) << <%=$reg(lsb)%>);
 
-    value |= (((uint32_t) <%=$reg(name)%> & <%=$reg(mask)%>) << <%=$reg(lsb)%>);
+    rf_value |= (((uint32_t) value & <%=$reg(mask)%>) << <%=$reg(lsb)%>);
 
-    result &= rf_<%=${rf_name}%>_write (<%=$userparamsft%><%=$address%>, value);
+    result &= rf_<%=${rf_name}%>_write (<%=$userparamsft%><%=$address%>, rf_value);
     return result;
 }
 <%+ } -%>
