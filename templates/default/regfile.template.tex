@@ -70,8 +70,8 @@
     set rf_name [object_name $obj_id]
     # define table header text
     set header { "Name" "Bits" "R/W" "Function" }
-    set collumn_width { 0 0 0 0}
-    set num_collumn   { 0 1 2 3}
+    set column_width { 0 0 0 0}
+    set num_column   { 0 1 2 3}
 
     set len_max_data(0) 0
     set len_max_data(1) 0
@@ -80,40 +80,71 @@
 
 
     foreach_array register $register_list {
-            set len_max_tmp(0)  [max_array_entry_len_tex $register(regs) name      ]
-            set len_max_tmp(1)  [max_array_entry_len_tex $register(regs) entrybits ]
-            set len_max_tmp(2)  [max_array_entry_len_tex $register(regs) type      ]
-            set len_max_tmp(3)  [max_array_entry_len_tex $register(regs) comment   ]
+        set len_max_tmp(0)  [max_array_entry_len_tex $register(regs) name      ]
+        set len_max_tmp(1)  [max_array_entry_len_tex $register(regs) entrybits ]
+        set len_max_tmp(2)  [max_array_entry_len_tex $register(regs) type      ]
+        set len_max_tmp(3)  [max_array_entry_len_tex $register(regs) comment   ]
 
-            set len_max_data(0) [expr {max ($len_max_tmp(0), $len_max_data(0))}]
-            set len_max_data(1) [expr {max ($len_max_tmp(1), $len_max_data(1))}]
-            set len_max_data(2) [expr {max ($len_max_tmp(2), $len_max_data(2))}]
-            set len_max_data(3) [expr {max ($len_max_tmp(3), $len_max_data(3))}]
+        set len_max_data(0) [expr {max ($len_max_tmp(0), $len_max_data(0))}]
+        set len_max_data(1) [expr {max ($len_max_tmp(1), $len_max_data(1))}]
+        set len_max_data(2) [expr {max ($len_max_tmp(2), $len_max_data(2))}]
+        set len_max_data(3) [expr {max ($len_max_tmp(3), $len_max_data(3))}]
     }
 
-    foreach i_collumn $num_collumn {
-        set text    [lindex $header $i_collumn ]
+    foreach i_column $num_column {
+        set text    [lindex $header $i_column ]
         set text    [tex_escape $text ]
         set text    [concat "\\textbf\{" $text "\}"]
 
         set len_header [string length $text]
 
-        if {$len_header >  $len_max_data($i_collumn)} {
-            lset collumn_width $i_collumn $len_header
+        if {$len_header >  $len_max_data($i_column)} {
+            lset column_width $i_column $len_header
         } else {
-            lset collumn_width $i_collumn $len_max_data($i_collumn)
+            lset column_width $i_column $len_max_data($i_column)
         }
-        set debug [lindex $collumn_width $i_collumn]
+        set debug [lindex $column_width $i_column]
     }
 
 
 %><%
 ########################################################################
-%>
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% register file tex file %%%
 % the following package is required
-% \usepackage{xstring}
+% \usepackage{xstring}%
+%% include this file in main latex file
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% usage - print full register file
+% \begin{RfTable}                   % table header
+%   \getRegFILE{<%= $rf_name%>}
+% \end{RfTable}                     % table end
+
+%%% usage - print one register of register file
+% \begin{RfTable}                   % table header
+<%
+    foreach_array reg $register_list {
+        set regname $reg(name)
+    }
+
+%>%    \getRegFILE{<%= $rf_name : $regname%>}
+% \end{RfTable}                     % table end
+
+%%% usage - print one sub-register of register in register file
+% \begin{RfTable}                   % table header
+<%
+    set idx 0
+    foreach_array reg $register_list {
+        foreach_array sreg $reg(regs) {
+            set regname $reg(name)
+            set sregname $sreg(name)
+            if {$idx == 0} {
+                %>%    \getRegFILE{<%= $rf_name : $regname : $sregname%>}<%="\n"%><%
+            }
+        }
+        incr idx
+    }
+%>% \end{RfTable}                     % table end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \newenvironment {RfTable}{
@@ -125,18 +156,18 @@
     \hline%
     <%
     #generate table header
-    foreach i_collumn $num_collumn {
-        set text    [lindex $header $i_collumn ]
+    foreach i_column $num_column {
+        set text    [lindex $header $i_column ]
         set text    [tex_escape $text ]
         set textbf  "\\textbf\{"
         set end     "\}"
         set text    $textbf$text$end
-        set width   [lindex $collumn_width $i_collumn]
+        set width   [lindex $column_width $i_column]
         set padding [get_padding_size $width $text]
 
         %><[format "%s%${padding}s"  $text  "" ]><%
 
-        if {$i_collumn == 3} {
+        if {$i_column == 3} {
             %><%=\\\\\%%><%
         } else {
             %><%=" \& "%><%
@@ -151,67 +182,75 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%<%=\n%><%
 %>\newcommand {\getRegFILE}[1]{%
-    \IfEqCase{#1}{%
+    \IfStrEqCase{#1}{%
     % register list
-        {<%=$rf_name%>}{%
+    {<%=$rf_name%>}{%
 <%
     # generate register list
     foreach_array reg $register_list {
-        %>        \getRegFILE{<%= $rf_name ":" $reg(name)%>}%<%="\n"%><%
+        %>        \getReg{<%= $rf_name ":" $reg(name)%>}%<%="\n"%><%
     }
-    %><%="    }\n"%><%
-    %>    %subregister list <%="\n"%><%
+
+%>    }%
+    }
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%subregister list <%="\n"%>
+\newcommand {\getReg}[1]{%
+\IfStrEqCase{#1}{%
+<%
     foreach_array reg $register_list {
-        %>        {<%=$rf_name ":" $reg(name)%>}{%<%="\n"%><%
+        %>    %<%="\n"%><%
+        %>    {<%=$rf_name ":" $reg(name)%>}{%<%="\n"%><%
         foreach_array sreg $reg(regs) {
-            %>        \getRegFILE{<%="#1:" $sreg(name) %>}%<%="\n"%><%
+            %>        \getSubReg{<%= $rf_name ":" $reg(name) ":" $sreg(name) %>}%<%="\n"%><%
         }
         %>    }%<%="\n"%><%
-        }
-%>
+    }
+%>}
+}
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%<%=\n%><%
-%>    %subregister definition <%="\n"%><%
-
-    foreach_array reg $register_list {
+%>%subregister definition <%="\n"%>
+\newcommand {\getSubReg}[1]{%
+    \IfStrEqCase{#1}{%
+<%  foreach_array reg $register_list {
         foreach_array sreg $reg(regs) {
-            %>        {<%=$rf_name ":" $reg(name) ":" $sreg(name)%>}{%<%="\n"%><%
-            %>             <%
+            %>        {<%=$rf_name ":" $reg(name) ":" $sreg(name)%>}%
+        {<%
             #start of line
-            foreach i_collumn $num_collumn {
+            foreach i_column $num_column {
             # Name Width Bits Function
-                if {$i_collumn == 0} {
+                if {$i_column == 0} {
                     set text    [tex_escape $sreg(name)]
                 }
-                if {$i_collumn == 1} {
+                if {$i_column == 1} {
                     set text    [tex_escape $sreg(entrybits)]
                 }
-                if {$i_collumn == 2} {
+                if {$i_column == 2} {
                     set text    [tex_escape $sreg(type)]
                 }
-                if {$i_collumn == 3} {
+                if {$i_column == 3} {
                     set text    [tex_escape $sreg(comment)]
                 }
-                set width   [lindex $collumn_width $i_collumn]
+                set width   [lindex $column_width $i_column]
                 set padding [get_padding_size $width $text]
 
                 %><[format "%s%${padding}s"  $text  "" ]><%
 
-                if {$i_collumn < 3} {
+                if {$i_column < 3} {
                     %> & <%
                 }
             }
-            %><%="\\\\ \%\n"%><%
+            %><%="\\\\ \n"%><%
             %><%="        \}\%\n"%><%
-
         }
     }
-%>
-    }
+%>    }
 }
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register address
 \newcommand {\getRegADDR}[1]{%
-    \IfEqCase{#1}{%
+\IfStrEqCase{#1}{%
 <%
     foreach_array reg $register_list {
         %>        {<%=$rf_name ":" $reg(name)%>}{<[format "0x%08x" $reg(address)  ]>}%<%="\n"%><%
