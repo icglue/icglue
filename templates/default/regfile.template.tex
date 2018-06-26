@@ -1,0 +1,214 @@
+<%
+    #----------------------------------------#
+    #  ^..^                                  #
+    # ( oo )  )~                             #
+    #   ,,  ,,                               #
+    #----------------------------------------#
+    # register file latex template           #
+    #----------------------------------------#
+
+%><%
+########################################################################
+    proc get_padding_size { width string } {
+        set string_length [string length $string]
+        set padding       [expr {$width - $string_length} ]
+        return $padding
+    }
+
+    proc tex_escape {string_in} {
+        set string_out $string_in
+        set string_out [string map [list "\_" "\\_" ] $string_out]
+        set string_out [string map [list "\&" "\\&" ] $string_out]
+        set string_out [string map [list "\%" "\\%" ] $string_out]
+        set string_out [string map [list "\|" "\\|" ] $string_out]
+        set string_out [string map [list "\{" "\\\{"] $string_out]
+        set string_out [string map [list "\}" "\\\}"] $string_out]
+        set string_out [string map [list "\^" "\\^" ] $string_out]
+        set string_out [string map [list "\#" "\\#" ] $string_out]
+        set string_out [string map [list "\~" "\\~" ] $string_out]
+        return $string_out
+    }
+
+    proc tex_command_name {string_in} {
+        # manipulate tex command name (no numbers and special letters allowed)
+        set string_out $string_in
+        set string_out [string map [list "\_" "X"   ] $string_out]
+        set string_out [string map [list "0" "Zero" ] $string_out]
+        set string_out [string map [list "1" "One"  ] $string_out]
+        set string_out [string map [list "2" "Two"  ] $string_out]
+        set string_out [string map [list "3" "Three"] $string_out]
+        set string_out [string map [list "4" "Four" ] $string_out]
+        set string_out [string map [list "5" "Five" ] $string_out]
+        set string_out [string map [list "6" "Six"  ] $string_out]
+        set string_out [string map [list "7" "Seven"] $string_out]
+        set string_out [string map [list "8" "Eight"] $string_out]
+        set string_out [string map [list "9" "Nine" ] $string_out]
+        return $string_out
+    }
+
+
+    proc cnt_required_escapes {string_in} {
+        set cnt 0
+
+        set cnt [expr {[llength [split $string_in "\_"]]- 1 + $cnt}]
+        set cnt [expr {[llength [split $string_in "\&"]]- 1 + $cnt}]
+        set cnt [expr {[llength [split $string_in "\%"]]- 1 + $cnt}]
+        set cnt [expr {[llength [split $string_in "\|"]]- 1 + $cnt}]
+        set cnt [expr {[llength [split $string_in "\{"]]- 1 + $cnt}]
+        set cnt [expr {[llength [split $string_in "\}"]]- 1 + $cnt}]
+        set cnt [expr {[llength [split $string_in "\^"]]- 1 + $cnt}]
+        set cnt [expr {[llength [split $string_in "\#"]]- 1 + $cnt}]
+        set cnt [expr {[llength [split $string_in "\~"]]- 1 + $cnt}]
+        if {$cnt <0} {
+            set cnt 0
+        }
+        return $cnt
+    }
+
+    proc max_array_entry_len_tex {array_list array_entry} {
+        set len 0
+        foreach i_entry $array_list {
+            array set i_a $i_entry
+            set i_len [string length $i_a($array_entry)]
+            set escapes [cnt_required_escapes $i_a($array_entry)]
+            set i_len [expr {$i_len + $escapes}]
+            set len [expr {max ($len, $i_len)}]
+        }
+        return $len
+    }
+
+
+
+########################################################################
+    set register_list [regfile_to_arraylist $obj_id]
+    foreach i_register $register_list {
+        array set register $i_register
+        foreach i_sreg $register(regs) {
+            array set sreg $i_sreg
+        }
+    }
+
+    set register_list [regfile_to_arraylist $obj_id]
+    # define table header text
+    set header { "Name" "Bits" "R/W" "Function" }
+    set collumn_width { 0 0 0 0}
+    set num_collumn   { 0 1 2 3}
+
+    set len_max_data(0) 0
+    set len_max_data(1) 0
+    set len_max_data(2) 0
+    set len_max_data(3) 0
+
+    foreach_array register $register_list {
+            set len_max_tmp(0)  [max_array_entry_len_tex $register(regs) name      ]
+            set len_max_tmp(1)  [max_array_entry_len_tex $register(regs) entrybits ]
+            set len_max_tmp(2)  [max_array_entry_len_tex $register(regs) type      ]
+            set len_max_tmp(3)  [max_array_entry_len_tex $register(regs) comment   ]
+
+            set len_max_data(0) [expr {max ($len_max_tmp(0), $len_max_data(0))}]
+            set len_max_data(1) [expr {max ($len_max_tmp(1), $len_max_data(1))}]
+            set len_max_data(2) [expr {max ($len_max_tmp(2), $len_max_data(2))}]
+            set len_max_data(3) [expr {max ($len_max_tmp(3), $len_max_data(3))}]
+    }
+
+    foreach i_collumn $num_collumn {
+        set text    [lindex $header $i_collumn ]
+        set text    [tex_escape $text ]
+        set text    [concat "\\textbf\{" $text "\}"]
+
+        set len_header [string length $text]
+
+        if {$len_header >  $len_max_data($i_collumn)} {
+            lset collumn_width $i_collumn $len_header
+        } else {
+            lset collumn_width $i_collumn $len_max_data($i_collumn)
+        }
+        set debug [lindex $collumn_width $i_collumn]
+    }
+
+
+%><%
+########################################################################
+
+%>\newenvironment {RfTable}{
+    \noindent%
+    \center%
+    \def\tblc{green!15}%
+    \rowcolors {1}{}{ \tblc }%
+    \tabularx{\textwidth}{|  p{35mm} c c X |}%
+    \hline%
+    <%
+    #generate table header
+    foreach i_collumn $num_collumn {
+        set text    [lindex $header $i_collumn ]
+        set text    [tex_escape $text ]
+        set textbf  "\\textbf\{"
+        set end     "\}"
+        set text    $textbf$text$end
+        set width   [lindex $collumn_width $i_collumn]
+        set padding [get_padding_size $width $text]
+
+        %><[format "%s%${padding}s"  $text  "" ]><%
+
+        if {$i_collumn == 3} {
+            %><%=\\\\\%%><%
+        } else {
+            %><%=" \& "%><%
+        }
+    }
+%>
+}{
+    \hline%
+    \endtabularx%
+    \endcenter%
+}
+<%
+########################################################################
+# generate register list
+foreach i_reg $register_list {
+    array set reg $i_reg
+    %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%<%=\n%><%
+    %>%address for register <%=$reg(name) "\n"%><%
+    %>\newcommand {\RF<%=[tex_command_name $reg(name)]%>Address} {<%
+    %><[format "0x%08x" $reg(address)]><%=\}%\n\n%><%
+    %>%table for register <%=$reg(name) "\n"%><%
+    %>\newcommand {\RF<%= [tex_command_name $reg(name)]%>Table} {<%="%\n"%><%
+    set sreg_idx 0
+    foreach i_sreg $reg(regs) {
+        array set sreg $i_sreg
+        %>    <%
+        #start of line
+        foreach i_collumn $num_collumn {
+        # Name Width Bits Function
+            if {$i_collumn == 0} {
+                set text    [tex_escape $sreg(name)]
+            }
+            if {$i_collumn == 1} {
+                set text    [tex_escape $sreg(entrybits)]
+            }
+            if {$i_collumn == 2} {
+                set text    [tex_escape $sreg(type)]
+            }
+            if {$i_collumn == 3} {
+                set text    [tex_escape $sreg(comment)]
+            }
+            set width   [lindex $collumn_width $i_collumn]
+            set padding [get_padding_size $width $text]
+
+            %><[format "%s%${padding}s"  $text  "" ]><%
+
+            if {$i_collumn < 3} {
+                %> & <%
+            }
+        }
+        %><%="\\\\\%\n"%><%
+    incr sreg_idx
+    }
+%>}%
+<%
+
+}
+
+########################################################################
+%>
+
