@@ -22,6 +22,12 @@
 - regfiles: support
   - handshake read
   - trigger reg (different types: 1-0 trigger, toggle trigger, ...?)
+  - manual entry ( -> in docu custom always block)
+  - sanity checker
+
+- pragmas default content in template (if file not exists), comment sign / pragma-parser
+- testbench -> regs
+- testbench to outside dummy module (see nowriteout function ?)
 
 ## bin
 - allow multiple construction scripts?
