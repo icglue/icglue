@@ -29,24 +29,6 @@
         return $string_out
     }
 
-    proc tex_command_name {string_in} {
-        # manipulate tex command name (no numbers and special letters allowed)
-        set string_out $string_in
-        set string_out [string map [list "\_" "X"   ] $string_out]
-        set string_out [string map [list "0" "Zero" ] $string_out]
-        set string_out [string map [list "1" "One"  ] $string_out]
-        set string_out [string map [list "2" "Two"  ] $string_out]
-        set string_out [string map [list "3" "Three"] $string_out]
-        set string_out [string map [list "4" "Four" ] $string_out]
-        set string_out [string map [list "5" "Five" ] $string_out]
-        set string_out [string map [list "6" "Six"  ] $string_out]
-        set string_out [string map [list "7" "Seven"] $string_out]
-        set string_out [string map [list "8" "Eight"] $string_out]
-        set string_out [string map [list "9" "Nine" ] $string_out]
-        return $string_out
-    }
-
-
     proc cnt_required_escapes {string_in} {
         set cnt 0
 
@@ -77,8 +59,6 @@
         return $len
     }
 
-
-
 ########################################################################
     set register_list [regfile_to_arraylist $obj_id]
     foreach i_register $register_list {
@@ -87,8 +67,7 @@
             array set sreg $i_sreg
         }
     }
-
-    set register_list [regfile_to_arraylist $obj_id]
+    set rf_name [object_name $obj_id]
     # define table header text
     set header { "Name" "Bits" "R/W" "Function" }
     set collumn_width { 0 0 0 0}
@@ -98,6 +77,7 @@
     set len_max_data(1) 0
     set len_max_data(2) 0
     set len_max_data(3) 0
+
 
     foreach_array register $register_list {
             set len_max_tmp(0)  [max_array_entry_len_tex $register(regs) name      ]
@@ -129,13 +109,19 @@
 
 %><%
 ########################################################################
+%>
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% register file tex file %%%
+% the following package is required
+% \usepackage{xstring}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%>\newenvironment {RfTable}{
+\newenvironment {RfTable}{
     \noindent%
     \center%
     \def\tblc{green!15}%
     \rowcolors {1}{}{ \tblc }%
-    \tabularx{\textwidth}{|  p{35mm} c c X |}%
+    \tabularx{\textwidth}{|  l c c X |}%
     \hline%
     <%
     #generate table header
@@ -162,53 +148,74 @@
     \endtabularx%
     \endcenter%
 }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%<%=\n%><%
+%>\newcommand {\getRegFILE}[1]{%
+    \IfEqCase{#1}{%
+    % register list
+        {<%=$rf_name%>}{%
 <%
-########################################################################
-# generate register list
-foreach i_reg $register_list {
-    array set reg $i_reg
-    %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%<%=\n%><%
-    %>%address for register <%=$reg(name) "\n"%><%
-    %>\newcommand {\RF<%=[tex_command_name $reg(name)]%>Address} {<%
-    %><[format "0x%08x" $reg(address)]><%=\}%\n\n%><%
-    %>%table for register <%=$reg(name) "\n"%><%
-    %>\newcommand {\RF<%= [tex_command_name $reg(name)]%>Table} {<%="%\n"%><%
-    set sreg_idx 0
-    foreach i_sreg $reg(regs) {
-        array set sreg $i_sreg
-        %>    <%
-        #start of line
-        foreach i_collumn $num_collumn {
-        # Name Width Bits Function
-            if {$i_collumn == 0} {
-                set text    [tex_escape $sreg(name)]
-            }
-            if {$i_collumn == 1} {
-                set text    [tex_escape $sreg(entrybits)]
-            }
-            if {$i_collumn == 2} {
-                set text    [tex_escape $sreg(type)]
-            }
-            if {$i_collumn == 3} {
-                set text    [tex_escape $sreg(comment)]
-            }
-            set width   [lindex $collumn_width $i_collumn]
-            set padding [get_padding_size $width $text]
-
-            %><[format "%s%${padding}s"  $text  "" ]><%
-
-            if {$i_collumn < 3} {
-                %> & <%
-            }
-        }
-        %><%="\\\\\%\n"%><%
-    incr sreg_idx
+    # generate register list
+    foreach_array reg $register_list {
+        %>        \getRegFILE{<%= $rf_name ":" $reg(name)%>}%<%="\n"%><%
     }
-%>}%
-<%
-
-}
-
-########################################################################
+    %><%="    }\n"%><%
+    %>    %subregister list <%="\n"%><%
+    foreach_array reg $register_list {
+        %>        {<%=$rf_name ":" $reg(name)%>}{%<%="\n"%><%
+        foreach_array sreg $reg(regs) {
+            %>        \getRegFILE{<%="#1:" $sreg(name) %>}%<%="\n"%><%
+        }
+        %>    }%<%="\n"%><%
+        }
 %>
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%<%=\n%><%
+%>    %subregister definition <%="\n"%><%
 
+    foreach_array reg $register_list {
+        foreach_array sreg $reg(regs) {
+            %>        {<%=$rf_name ":" $reg(name) ":" $sreg(name)%>}{%<%="\n"%><%
+            %>             <%
+            #start of line
+            foreach i_collumn $num_collumn {
+            # Name Width Bits Function
+                if {$i_collumn == 0} {
+                    set text    [tex_escape $sreg(name)]
+                }
+                if {$i_collumn == 1} {
+                    set text    [tex_escape $sreg(entrybits)]
+                }
+                if {$i_collumn == 2} {
+                    set text    [tex_escape $sreg(type)]
+                }
+                if {$i_collumn == 3} {
+                    set text    [tex_escape $sreg(comment)]
+                }
+                set width   [lindex $collumn_width $i_collumn]
+                set padding [get_padding_size $width $text]
+
+                %><[format "%s%${padding}s"  $text  "" ]><%
+
+                if {$i_collumn < 3} {
+                    %> & <%
+                }
+            }
+            %><%="\\\\ \%\n"%><%
+            %><%="        \}\%\n"%><%
+
+        }
+    }
+%>
+    }
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% register address
+\newcommand {\getRegADDR}[1]{%
+    \IfEqCase{#1}{%
+<%
+    foreach_array reg $register_list {
+        %>        {<%=$rf_name ":" $reg(name)%>}{<[format "0x%08x" $reg(address)  ]>}%<%="\n"%><%
+    }
+%>    }
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
