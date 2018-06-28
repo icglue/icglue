@@ -194,8 +194,7 @@
     wire <%=$w%> <%=$r%>_sync;<% } %><%="\n"%><%
     foreach_preamble handshake $handshake_list {%>
     // handshake register<%} { %>
-    reg          reg_<%=$handshake%>;
-    wire         rdy_<%=$handshake%>;<% } %><%="\n"%><%
+    reg          reg_<%=$handshake%>;<% } %><%="\n"%><%
     foreach_array_preamble entry $entry_list { %>
     // regfile registers / wires<% } { %>
     wire [31: 0] <[reg_val]>;<%
@@ -228,21 +227,20 @@
     %><%=[rf_comment_block "handshake"]-%>
     always @(posedge <[clk]> or negedge <[reset]>) begin
         if (<[reset]> == 1'b0) begin<% foreach handshake $handshake_list { %>
-            reg_<%=$handshake%> <= 1'b1;<% } %>
+            reg_<%=$handshake%> <= 1'b0;<% } %>
         end else begin
-            if (<[rf_r_sel]> && <[rf_enable]>) begin<% foreach handshake $handshake_list { %>
+            if (<[rf_sel]> && <[rf_enable]>) begin<% foreach handshake $handshake_list { %>
                 if (<[join [dict get $handshake_cond_req $handshake] " || "]>) begin
                     reg_<%=$handshake%> <= 1'b1;
                 end<% } %>
             end<% foreach handshake $handshake_list { %>
-            if (rdy_<%=$handshake%> == 1'b1) begin
+            if (reg_<%=$handshake%> == 1'b1) begin
                 if (<[dict get $handshake_sig_in_from_out $handshake]>_sync == 1'b1) begin
                     reg_<%=$handshake%> <= 1'b0;
                 end
             end<% }  %>
         end
     end<% foreach handshake $handshake_list { %>
-    assign rdy_<%=$handshake%> = ~reg_<%=$handshake%>;
     assign <[adapt_signalname $handshake $obj_id]> = reg_<%=$handshake%>;<%="\n"%><% }
     } %><%="\n\n"%><%
     ## </handshake> 
@@ -302,7 +300,7 @@
         end<%
         foreach handshake $handshake_list { %>
         if (<[join [dict get $handshake_cond_req $handshake] " || "]>) begin
-            <[rf_ready_sig]> = rdy_<%=$handshake%>;
+            <[rf_ready_sig]> = <[dict get $handshake_sig_in_from_out $handshake]>_sync && reg_<%=$handshake%>;
         end<% } %>
         <[rf_err_sig]> = 1'b0;
         if (<[rf_w_sel]> && <[rf_enable]>) begin
