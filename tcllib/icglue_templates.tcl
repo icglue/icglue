@@ -561,7 +561,7 @@ namespace eval ig::templates {
 
 
             set i [expr {$i_delim_end + 1}]
-            if {([string index $txt [lindex $m_chomp 0]] eq "-") &&  ([string index $txt $right_i] eq "\n")} {
+            if {([string index $txt [lindex $m_chomp 0]] eq "-") && ([string index $txt $right_i] eq "\n")} {
                 incr right_i -1
             }
 
@@ -577,7 +577,7 @@ namespace eval ig::templates {
                     append code "append _res "
                     set txt [string range $txt 1 end]
                 } elseif {[string index $txt 0] eq "I"} {
-                # <%i will be be included here
+                # <%I will be included here
                     set incltag 1
                     set txt [string range $txt 1 end]
                 } else {
