@@ -394,6 +394,7 @@ namespace eval ig::aux {
     # @param preamble Code that is execute if array is not empty
     # @param condition Condition which must be met to execute body
     # @param body Code to run in each iteration.
+    # @param epilog Epilog body to be executed after last iteration if list is not empty
     proc foreach_array_preamble_epilog_with {iter array_list condition preamble body epilog} {
         set do_iter "false"
 
