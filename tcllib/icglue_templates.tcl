@@ -718,6 +718,9 @@ namespace eval ig::templates {
             .c      -
             .cpp    -
             .c++    -
+            .sv     -
+            .svh    -
+            .vh     -
             .v      {return [list "/* pragma " " */"]}
 
             .vhd    -
