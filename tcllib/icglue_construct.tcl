@@ -365,8 +365,6 @@ namespace eval ig {
                             #set attr [string trim $attr {"{" "}"}]
                             lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
                             ig::db::set_attribute -object $rfid -attribute $attr_name -value $attr_val
-
-                            puts "\[$instance_name\]: setting regfile attribute \"$attr_name\" to \"$attr_val\""
                         }
                     }
                     foreach attr $fattributes {
