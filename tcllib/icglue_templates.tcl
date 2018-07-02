@@ -27,7 +27,6 @@ namespace eval ig::templates {
         variable output_types_gen   {}
         variable template_path_gen  {}
         variable output_path_gen    {}
-        variable default_header_gen {}
     }
 
     ## @brief Functions to call from/with template init script
@@ -88,20 +87,6 @@ namespace eval ig::templates {
             ]
         }
 
-        ## @brief Set template callback for generating a default file header.
-        # @param template Name of template.
-        # @param body Proc body of callback.
-        #
-        # Proc callback body should match for argument list {object type}, where
-        # object is the Object-ID of the Object to generate output for and
-        # type is one of the types returned by the callback set via @ref output_types for
-        # the given object.
-        proc default_header {template body} {
-            lappend ig::templates::collection::default_header_gen [list \
-                $template $body \
-            ]
-        }
-
         namespace export *
     }
 
@@ -125,7 +110,7 @@ namespace eval ig::templates {
         # @param object Object-ID of the Object to generate output for.
         # @return A list of supported output types needed by
         # @ref get_template_file, @ref get_template_file_raw,
-        # @ref get_output_file and @ref get_default_header.
+        # @ref get_output_file.
         #
         # See also @ref ig::templates::init::output_types.
         proc get_output_types {object} {
@@ -150,16 +135,6 @@ namespace eval ig::templates {
         #
         # See also @ref ig::templates::init::output_file.
         proc get_output_file {object type} {
-            ig::log -error -abort "no template loaded"
-        }
-
-        ## @brief Callback to get a default header for object and given output type.
-        # @param object Object-ID of the Object to generate output for.
-        # @param type One of the types returned by @ref get_output_types for the given object.
-        # @return A default header for output type and given object.
-        #
-        # See also @ref ig::templates::init::default_header.
-        proc get_default_header {object type} {
             ig::log -error -abort "no template loaded"
         }
     }
@@ -539,9 +514,8 @@ namespace eval ig::templates {
         set type_idx [lsearch -index 0 $collection::output_types_gen   $template]
         set tmpl_idx [lsearch -index 0 $collection::template_path_gen  $template]
         set out_idx  [lsearch -index 0 $collection::output_path_gen    $template]
-        set hdr_idx  [lsearch -index 0 $collection::default_header_gen $template]
 
-        if {($dir_idx < 0) || ($type_idx < 0) || ($tmpl_idx < 0) || ($out_idx < 0) || ($hdr_idx < 0)} {
+        if {($dir_idx < 0) || ($type_idx < 0) || ($tmpl_idx < 0) || ($out_idx < 0)} {
             ig::log -error -abort "template $template not (fully) defined"
         }
 
@@ -551,7 +525,6 @@ namespace eval ig::templates {
         $procdef current::get_output_types      {object}                   [lindex $collection::output_types_gen   $type_idx 1]
         $procdef current::get_template_file_raw {object type template_dir} [lindex $collection::template_path_gen  $tmpl_idx 1]
         $procdef current::get_output_file       {object type}              [lindex $collection::output_path_gen    $out_idx  1]
-        $procdef current::get_default_header    {object type}              [lindex $collection::default_header_gen $hdr_idx  1]
     }
 
     ## @brief Parse a template.
@@ -734,8 +707,34 @@ namespace eval ig::templates {
         return $code
     }
 
+    ## @brief Return pragma comment begin/end for given filetype
+    # @param filesuffix Suffix for filetype
+    # @return List with two elements: begin of pragma comment and end of pragma comment, e.g. {"/* pragma " " */"}
+    proc pragma_begin_end {filesuffix} {
+        switch -exact -- [string tolower $filesuffix] {
+            .h      -
+            .hpp    -
+            .h++    -
+            .c      -
+            .cpp    -
+            .c++    -
+            .v      {return [list "/* pragma " " */"]}
+
+            .vhd    -
+            .vhdl   {return [list "-- pragma " "\n"]}
+
+            .htm    -
+            .html   {return [list "<!-- "      " -->"]}
+
+            .tex    {return [list "% "         "\n"]}
+
+            default {return [list "# "         "\n"]}
+        }
+    }
+
     ## @brief Parse pragma comments of an existing output (file).
     # @param txt Existing generated output as single String.
+    # @param filesuffix Suffix of filetype of file pragmas are parsed in
     # @return List of parsed pragmas as sublists of form {\<maintype\> \<subtype\> \<content\>}.
     #
     # The pragmas parsed are of the form @code{.v}
@@ -745,17 +744,19 @@ namespace eval ig::templates {
     #
     # Currently only @c keep is supported as maintype.
     # Subtypes depend on the template used.
-    proc parse_pragmas {txt} {
+    proc parse_pragmas {txt {filesuffix ".v"}} {
         set result [list]
-        while {[set i [string first "/* pragma icglue keep begin " $txt]] >= 0} {
+        lassign [pragma_begin_end $filesuffix] pstart pend
+
+        while {[set i [string first "${pstart}icglue keep begin " $txt]] >= 0} {
             incr i 28
-            if {[set j [string first " */" $txt $i]] < 0} {
+            if {[set j [string first "${pend}" $txt $i]] < 0} {
                 error "No end of pragma comment"
             }
             set type [string range $txt $i [expr {$j - 1}]]
             set txt [string range $txt [expr {$j + 3}] end]
 
-            if {[set i [string first "/* pragma icglue keep end */" $txt]] < 0} {
+            if {[set i [string first "${pstart}icglue keep end${pend}" $txt]] < 0} {
                 error "No end pragma after begin pragma"
             }
             set value [string range $txt 0 [expr {$i-1}]]
@@ -766,30 +767,25 @@ namespace eval ig::templates {
         return $result
     }
 
-    ## @brief Generate default header to pragma data if no header is contained.
-    # @param pragma_data Pragma data as generated by @ref parse_pragmas.
-    # @param obj_id Object-ID of object to generate header for.
-    # @param type Type of template as delivered by @ref ig::templates::current::get_output_types.
-    # @return Modified version of pragma_data in case no header was included.
-    proc add_pragma_default_header {pragma_data obj_id type} {
-        if {[lsearch -inline -all -index 1 [lsearch -inline -all -index 0 $pragma_data "keep"] "head"] < 0} {
-            lappend pragma_data [list "keep" "head" [current::get_default_header $obj_id $type]]
-        }
-        return $pragma_data
-    }
-
     ## @brief Get content of specific pargma.
     # @param pragma_data Pragma data as generated by @ref parse_pragmas.
     # @param pragma_entry Pragma main type to look up.
     # @param pragma_subentry Pragma sub type to look up.
+    # @param filesuffix Suffix of filetype for generated pragma comments.
+    # @param default_content Default pragma content if nothing else is specified
     # @return Content of specified pragma block previously parsed.
-    proc get_pragma_content {pragma_data pragma_entry pragma_subentry} {
+    proc get_pragma_content {pragma_data pragma_entry pragma_subentry {filesuffix ".v"} {default_content {}}} {
         set result {}
-        append result "/* pragma icglue ${pragma_entry} begin ${pragma_subentry} */"
-        foreach i_entry [lsearch -inline -all -index 1 [lsearch -inline -all -index 0 $pragma_data $pragma_entry] $pragma_subentry] {
-            append result [lindex $i_entry 2]
+        lassign [pragma_begin_end $filesuffix] pstart pend
+
+        append result "${pstart}icglue ${pragma_entry} begin ${pragma_subentry}${pend}"
+        set idx [lsearch -index 1 [lsearch -inline -all -index 0 $pragma_data $pragma_entry] $pragma_subentry]
+        if {$idx >= 0} {
+            append result [lindex $pragma_data $idx 2]
+        } else {
+            append result ${default_content}
         }
-        append result "/* pragma icglue ${pragma_entry} end */"
+        append result "${pstart}icglue ${pragma_entry} end${pend}"
     }
 
     # template parse cache
@@ -832,13 +828,12 @@ namespace eval ig::templates {
         ig::log -info -id Gen "Generating ${_outf_name}"
         ig::log -info -id TPrs "Parsing template ${_tt_name}"
         set pragma_data [list]
-        if {[file exists $_outf_name]} {
+        if {[file exists ${_outf_name}]} {
             set _outf [open ${_outf_name} "r"]
             set _old [read ${_outf}]
             close ${_outf}
-            set pragma_data [parse_pragmas ${_old}]
+            set pragma_data [parse_pragmas ${_old} [file extension ${_outf_name}]]
         }
-        set pragma_data [add_pragma_default_header $pragma_data $obj_id $type]
 
         set _tt_code [get_template_script ${_tt_name}]
 

@@ -65,16 +65,3 @@ init::output_file $template {
     }
 }
 
-# generate object default header: arguments: {object type} (object-identifier, outputtype)
-init::default_header $template {
-    set result "
-/*
- * Module: [ig::db::get_attribute -object $object -attribute "name"]
- * Author: 
- * E-Mail: 
- */
-"
-
-    return $result
-}
-

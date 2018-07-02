@@ -15,7 +15,13 @@
 
 -%>
 
-<%-= [get_pragma_content $pragma_data "keep" "head"] -%>
+<%-= [get_pragma_content $pragma_data "keep" "head" ".v" "
+/*
+ * Module: $mod_data(name)
+ * Author:
+ * E-Mail:
+ */
+"] -%>
 
 module <%=$mod_data(name)%> (
 <%-
