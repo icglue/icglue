@@ -72,8 +72,8 @@
     #set header { "Name" "Bits" "R/W" "Function" }
     set header { "Register Name" "Address" "Name" "Width" "Access" "Align" "Reset" "Description"}
 
-    set column_width { 0 0 0 0 0 0 0 0}
-    set num_column   { 0 1 2 3 4 5 6 7}
+    set column_width { 0 0 0 0 0 0 0 0 }
+    set num_column   { 0 1 2 3 4 5 6 7 }
 
     set len_max_data(0) 0
     set len_max_data(1) 0
@@ -121,98 +121,52 @@
         set debug [lindex $column_width $i_column]
     }
 
-%>
+
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% !!! do not modify this file unless you know what you are doing !!!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\newcommand {\getRegHeader}{Register Name & Address & Name & Width & Access & Align & Reset & Description \\}%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\newcommand {\getReg}[1]{%
+%\IfStrEqCase{#1}{%
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register file
-\begin{filecontents}{<%=$rf_name ":register.all"%>}
-    \input{<%=$rf_name ":reg.header"%>}
+{<%=$rf_name%>}{%
 <%  foreach_array reg $register_list {
-        %>    \input{<%=$rf_name "." $reg(name) "\}\n"%><%
+    %>    \getReg{<%=$rf_name ":" $reg(name) "\}\%\n" %><%
     }
-%>\end{filecontents}
-
+%>}%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% register header
-\begin{filecontents}{<%=$rf_name ":reg.header" %>}
-   Register Name,Address,Name,Width,Access,Align,Reset,Description
-\end{filecontents}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% register (without header)
-<%
-    # "Register Name" "Address" "Name" "Width" "Access" "Align" "Reset" "Description"
-
-    foreach_array reg $register_list {
-        %>\begin{filecontents}{<%=$rf_name "." $reg(name)%>}<%="\n"%><%
-        set i_sreg 0
+% register
+<%  foreach_array reg $register_list {
+        %><%= "\{" $rf_name  ":" $reg(name) "\}\{\%\n"%><%
         foreach_array sreg $reg(regs) {
-            if {$i_sreg == 0} {
-                %><%=$reg(name) " , "%><%
-            } else {%><%=" , "%><%}
-            if {$i_sreg == 0} {
-                %><%=$reg(name) " , \n      "%><%
-            } else {%><%=" , "%><%}
-
-            %> \input{<%=$rf_name "." $reg(name) "." $sreg(name) "\}\n"%><%
-            incr i_sreg
+        %>    \getReg{<%=$rf_name ":" $reg(name) ":"  $sreg(name) "\}\%\n" %><%
         }
-        %>\end{filecontents}<%="\n\n"%><%
+        %><%="\}\%\n"%><%
     }
-
-%>
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% subregister header
-\begin{filecontents}{<%=$rf_name ":subreg.header" %>}
-    Name,Width,Access,Align,Reset,Description
-\end{filecontents}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% subregister
-<%
-   #  "Name" "Width" "Access" "Align" "Reset" "Description"
-    foreach_array reg $register_list {
-        foreach_array sreg $reg(regs) {
-        %>\begin{filecontents}{<%=$rf_name "." $reg(name) "." $sreg(name)%>}<%="\n"%><%
-            foreach i_column $num_column {
-            # Name Width Bits Function
-                if {$i_column == 2} {
-                    set text    [tex_escape $sreg(name)]
-                }
-                if {$i_column == 3} {
-                    set text    [tex_escape $sreg(width)]
-                }
-                if {$i_column == 4} {
-                    set text    [tex_escape $sreg(type)]
-                }
-                if {$i_column == 5} {
-                    set text    [tex_escape $sreg(entrybits)]
-                }
-                if {$i_column == 6} {
-                    set text    [tex_escape $sreg(reset)]
-                }
-                if {$i_column == 7} {
-                    set text    [tex_escape $sreg(comment)]
-                }
-
-                if {$i_column >1} {
-                    set width   [lindex $column_width $i_column]
-                    set padding [get_padding_size $width $text]
-                    %><[format "%s%${padding}s"  $text  "" ]><%
-                }
-                if {$i_column >1 && $i_column < 7} {
-                    %>,<%
-                }
-            }
-            %><%="\n"%><%
-            %>\end{filecontents}<%="\n\n"%><%
-        }
-    }
-%>
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register address
-<%
-    foreach_array reg $register_list {
-        %>\begin{filecontents}{<%=$rf_name "." $reg(name)%>:reg.address}<%="\n"%><[format "0x%08x" $reg(address)]><%="\n"%>\end{filecontents}<%="\n"%><%
+<%  foreach_array reg $register_list {
+        %><%= "\{" $rf_name  ":" $reg(name) ".addr\}\{"%><[format "0x%08x" $reg(address)]><%= "\}\%\n"%><%
     }
-%>
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% register content
+<%
+foreach_array reg $register_list {
+    set i_sreg 0
+    foreach_array sreg $reg(regs) {
+        %><%= "\{" $rf_name  ":" $reg(name) ":" $sreg(name) "\}\{" %><%
+        if {$i_sreg == 0} {
+            %><%= [tex_escape $reg(name)] " \& \\getReg\{" $rf_name  ":" $reg(name) ".addr\} \& "%><%
+        } else {
+            %>& & <%
+        }
+        %><%= [tex_escape $sreg(name)] " \& " [tex_escape $sreg(width)] " \& " [tex_escape $sreg(type)] " \& " [tex_escape $sreg(entrybits)] " \& " [tex_escape $sreg(reset)] " \& " [tex_escape $sreg(comment)] "\\\\\}\%\n" %><%
+        incr i_sreg
+    }
+}
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%    }
+%}
