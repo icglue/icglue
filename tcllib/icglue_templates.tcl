@@ -179,7 +179,7 @@ namespace eval ig::templates {
                     set type       [ig::db::get_attribute -object $i_reg -attribute "rf_type"       -default "RW"]
                     set reset      [ig::db::get_attribute -object $i_reg -attribute "rf_reset"      -default "-"]
                     set signal     [ig::db::get_attribute -object $i_reg -attribute "rf_signal"     -default "-"]
-                    set signalbits [ig::db::get_attribute -object $i_reg -attribute "rf_signalbits" -default ""]
+                    set signalbits [ig::db::get_attribute -object $i_reg -attribute "rf_signalbits" -default "-"]
                     set comment    [ig::db::get_attribute -object $i_reg -attribute "rf_comment"    -default ""]
 
                     if {$width < 0} {
@@ -229,7 +229,7 @@ namespace eval ig::templates {
                             "type"       "-" \
                             "reset"      "-" \
                             "signal"     "-" \
-                            "signalbits" "" \
+                            "signalbits" "-" \
                             "comment"    "" \
                             "object"     "" \
                         ]
@@ -262,7 +262,7 @@ namespace eval ig::templates {
                         "type"       "-" \
                         "reset"      "-" \
                         "signal"     "-" \
-                        "signalbits" "" \
+                        "signalbits" "-" \
                         "comment"    "" \
                         "object"     "" \
                     ]

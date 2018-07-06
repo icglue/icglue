@@ -313,7 +313,8 @@ namespace eval ig {
                 set flang $lang
                 set fattributes   {}
                 set frfattributes {}
-                set fregfiles "false"
+                set fregfile      "false"
+                set fregfilename  {}
 
                 if {$moduleparent ne ""} {
                     set ppunit [ig::db::get_attribute -object [ig::db::get_modules -name $moduleparent] -attribute "parentunit" -default ""]
@@ -337,7 +338,8 @@ namespace eval ig {
                     { {^sv|-s(ystemverilog)?$}       "const=systemverilog" flang         {} }  \
                     { {^vhd(l)?$}                    "const=vhdl"          flang         {} }  \
                                                                                                \
-                    { {^(rf|(regf(ile)?)?)$}         "const=true"          fregfiles     {} }  \
+                    { {^(rf|(regf(ile)?)?)$}         "const=true"          fregfile      {} }  \
+                    { {^(rf|(regf(ile)?)?)=}         "string"              fregfilename  {} }  \
                                                                                                \
                     { {^attr(ibutes)?(=|$)}          "list"                fattributes   {} }  \
                     { {^rfattr(ibutes)?(=|$)}        "list"                frfattributes {} }  \
@@ -359,8 +361,11 @@ namespace eval ig {
                     if {$flang ne ""} {
                         ig::db::set_attribute -object $modid -attribute "language"   -value $flang
                     }
-                    if {$fregfiles} {
-                        set rfid [ig::db::add_regfile -regfile $instance_name -to $modid]
+                    if {$fregfile || ($fregfilename ne "")} {
+                        if {$fregfilename eq ""} {
+                            set fregfilename $module_name
+                        }
+                        set rfid [ig::db::add_regfile -regfile $fregfilename -to $modid]
                         foreach attr $frfattributes {
                             #set attr [string trim $attr {"{" "}"}]
                             lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
@@ -769,7 +774,7 @@ namespace eval ig {
                         if {$i_attr eq "type"} {
                             set s_type $i_val
                         }
-                        if {$i_attr eq "signalbits"} {
+                        if {$i_attr eq "entrybits"} {
                             lassign [split $i_val ":"] s_high s_low
                             if {[string is integer $s_high]} {
                                 set s_width [expr {$s_high+1}]
