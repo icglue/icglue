@@ -745,7 +745,21 @@ namespace eval ig {
             ig::db::set_attribute -object $entry_id -attribute "address" -value $address
             # set handshake
             if {$handshake ne ""} {
-                ig::db::set_attribute -object $entry_id -attribute "handshake" -value $handshake
+                set handshakelist {}
+                set handshake_sig_in  [lindex $handshake 0]
+                set handshake_sig_out [lindex $handshake 1]
+
+                foreach handshake_sig [list $handshake_sig_in $handshake_sig_out] {
+                    if {[llength $handshake_sig] > 1} {
+                        set s_signal  [lindex $handshake_sig 0]
+                        set s_modules [lindex $handshake_sig 1]
+                        S $s_signal $rf_module_name --> $s_modules
+                        ig::log -info -id "RCon" "S \"$s_signal\" $rf_module_name --> $s_modules"
+                    }
+                }
+                set handshakelist [list [lindex $handshake_sig_in 0] [lindex $handshake_sig_out 0] [lrange $handshake 2 end]]
+
+                ig::db::set_attribute -object $entry_id -attribute "handshake" -value $handshakelist
             }
 
             # creating registers
