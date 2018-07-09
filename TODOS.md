@@ -35,5 +35,9 @@
 - tcl-stack-trace: suppress by default (just show error message) - enable per opt
 - add "prepare" (or similar) option to generate template construction-script
 
+## docu
+- regfile / handshake direct connect
+-
+-
 ## vim
 - add alignment vim-script for signals usw. <(-)- -(-)>
