@@ -230,14 +230,12 @@
             reg_<%=$handshake%> <= 1'b0;<% } %>
         end else begin
             if (<[rf_sel]> && <[rf_enable]>) begin<% foreach handshake $handshake_list { %>
-                if (<[join [dict get $handshake_cond_req $handshake] " || "]>) begin
+                if ((<[join [dict get $handshake_cond_req $handshake] " || "]>) && (<[dict get $handshake_sig_in_from_out $handshake]>_sync == 1'b0)) begin
                     reg_<%=$handshake%> <= 1'b1;
                 end<% } %>
             end<% foreach handshake $handshake_list { %>
-            if (reg_<%=$handshake%> == 1'b1) begin
-                if (<[dict get $handshake_sig_in_from_out $handshake]>_sync == 1'b1) begin
-                    reg_<%=$handshake%> <= 1'b0;
-                end
+            if ((reg_<%=$handshake%> == 1'b1) && (<[dict get $handshake_sig_in_from_out $handshake]>_sync == 1'b1)) begin
+                reg_<%=$handshake%> <= 1'b0;
             end<% }  %>
         end
     end<% foreach handshake $handshake_list { %>
@@ -250,8 +248,8 @@
     ###########################################
     ## <register-write>
     %><[rf_comment_block "Regfile - registers (write-logic & read value assignmment)"]>
-    assign <[rf_r_sel]> = ~<[rf_write]> && <[rf_sel]>;
-    assign <[rf_w_sel]> =  <[rf_write]> && <[rf_sel]>;
+    assign <[rf_r_sel]> = ~<[rf_write]> & <[rf_sel]>;
+    assign <[rf_w_sel]> =  <[rf_write]> & <[rf_sel]>;
     always @(posedge <[clk]> or negedge <[reset]>) begin
         if (<[reset]> == 1'b0) begin
             <[rf_write_permitted]> <= 1'b0;
@@ -273,7 +271,7 @@
         if (<[reset]> == 1'b0) begin<% foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} { %>
             <[reg_name]> <= <%=$reg(reset)%>;<% } %>
         end else begin
-            if (<[rf_w_sel]> == 1'b1 && <[rf_enable]> == 1'b1) begin
+            if (<[rf_w_sel]> && <[rf_enable]>) begin
                 if (<[rf_addr]> == <[string trim [param]]>) begin<%
                     for {set byte 0} {$byte < 4} {incr byte} { 
                         foreach_array_preamble_epilog_with reg $entry(regs) {$reg(type) eq "RW" && [reg_entrybits_in_bytesel $byte]} { %>
@@ -300,7 +298,7 @@
         end<%
         foreach handshake $handshake_list { %>
         if (<[join [dict get $handshake_cond_req $handshake] " || "]>) begin
-            <[rf_ready_sig]> = <[dict get $handshake_sig_in_from_out $handshake]>_sync && reg_<%=$handshake%>;
+            <[rf_ready_sig]> = <[dict get $handshake_sig_in_from_out $handshake]>_sync & reg_<%=$handshake%>;
         end<% } %>
         <[rf_err_sig]> = 1'b0;
         if (<[rf_w_sel]> && <[rf_enable]>) begin
