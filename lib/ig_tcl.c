@@ -47,6 +47,7 @@
 static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, void *dest_ptr);
 
 static void ig_tclc_connection_parse (const char *input, GString *id, GString *net, bool *adapt, bool *inv);
+static void ig_tclc_check_name_and_warn (const char *name);
 
 /* tcl proc declarations */
 static int ig_tclc_create_module    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
@@ -186,6 +187,7 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no name specified", -1));
         return TCL_ERROR;
     }
+    ig_tclc_check_name_and_warn (name);
 
     struct ig_module *module = ig_lib_add_module (db, name, ilm, resource);
 
@@ -239,6 +241,8 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no name specified", -1));
         return TCL_ERROR;
     }
+    ig_tclc_check_name_and_warn (name);
+
     if (of_module == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no module specified", -1));
         return TCL_ERROR;
@@ -390,6 +394,10 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: need exactly one of -regfile, -entry, -reg", -1));
         return TCL_ERROR;
     }
+
+    ig_tclc_check_name_and_warn (regfile_name);
+    ig_tclc_check_name_and_warn (entry_name);
+    ig_tclc_check_name_and_warn (reg_name);
 
     struct ig_object *to_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, to_id);
     if ((to_obj == NULL)
@@ -982,6 +990,22 @@ static void ig_tclc_connection_parse (const char *input, GString *id, GString *n
         *adapt = false;
         log_debug ("TCnPr", "got object + net + force: %s -> %s", id->str, net->str);
     }
+
+    /* checks */
+    ig_tclc_check_name_and_warn (id->str);
+    ig_tclc_check_name_and_warn (net->str);
+}
+
+static void ig_tclc_check_name_and_warn (const char *name)
+{
+    if (name == NULL) return;
+
+    const char unwanted[] = {'"', '\'', '!', ':', '$', ' ', '{', '}', '[', ']', '<', '>', '(', ')', 0};
+    for (const char *cp = &(unwanted[0]); *cp != 0; cp++) {
+        if (strchr (name, *cp) != NULL) {
+            log_warn ("TChkN", "Got identifier \"%s\" containing probably unwanted character \"%c\".", name, *cp);
+        }
+    }
 }
 
 /* TCLDOC
@@ -1194,6 +1218,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter name is required", -1));
         result = TCL_ERROR;
     }
+    ig_tclc_check_name_and_warn (name);
     if (value == NULL) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter value is required", -1));
         result = TCL_ERROR;
