@@ -78,7 +78,7 @@ namespace eval ig {
                         }
                     }
                 } else {
-                    error "could not parse $i_entry"
+                    error "ig::expand_instances: could not parse $i_entry (arg \$inst_list =  $inst_list)"
                 }
             }
 
@@ -771,31 +771,53 @@ namespace eval ig {
                 }
 
                 set reg_id [ig::db::add_regfile -reg $i_name -to $entry_id]
-                set s_signal {}
-                set s_width {}
-                set s_type {}
+                set s_modules {}
+                set s_signal  {}
+                set s_width   {}
+                set s_type    {}
                 foreach i_attr [lrange $entry_default_map 1 end] {
                     # attributes except name
                     set i_val [lindex $i_reg [lsearch $entry_map $i_attr]]
                     if {$i_val ne ""} {
+                        if {$i_attr eq "name"} {
+                            set s_fieldname $i_val
+                        }
                         if {$i_attr eq "signal"} {
                             if {[llength $i_val] > 1} {
                                 set s_modules [lrange $i_val 1 end]
                                 set s_signal [lindex $i_val 0]
+
+                                # special '=' means  signalname = fieldname
+                                if {$s_signal eq "="} {
+                                    set s_signal $i_name
+                                }
                                 set i_val $s_signal
                             }
+                            # implicit - auto connect if : is in signalname
+                            if {[string first ":" $i_val] ne -1} {
+                                lassign [split $i_val ":"] s_implicit_mod s_port
+                                # special '=' means  signalname = fieldname
+                                if {$s_port eq "="} {
+                                    set s_modules [concat [list "${s_implicit_mod}:${i_name}!"] $s_modules]
+                                } else {
+                                    set s_modules [concat [list ${s_implicit_mod}:${s_port}] $s_modules]
+                                }
+                                set s_signal $i_name
+                                set i_val $s_signal
+                           }
                         }
                         if {$i_attr eq "type"} {
                             set s_type $i_val
                         }
                         if {$i_attr eq "entrybits"} {
                             lassign [split $i_val ":"] s_high s_low
-                            if {[string is integer $s_high]} {
-                                set s_width [expr {$s_high+1}]
+                            if {$s_low ne ""} {
+                                if {[string is integer $s_high]} {
+                                    set s_width [expr {$s_high+1-$s_low}]
+                                } else {
+                                    set s_width "$s_high+1-$s_low"
+                                }
                             } else {
-                                set s_width "$s_high+1"
-                            }
-                            if {$s_low eq ""} {
                                 set s_width 1
                             }
                         }
