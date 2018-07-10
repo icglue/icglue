@@ -17,6 +17,8 @@
 
 ## tcllib
 - add instance-only command or check in M if already exists: sane values, instances only?
+- squash regfile
+- regfile R command with module
 
 ## templates
 - regfiles: support
@@ -37,7 +39,7 @@
 
 ## docu
 - regfile / handshake direct connect
--
--
+
+
 ## vim
 - add alignment vim-script for signals usw. <(-)- -(-)>
