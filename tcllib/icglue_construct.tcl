@@ -494,7 +494,7 @@ namespace eval ig {
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list                                                                \
                 { {^-w(idth)?(=)?}         "string"      width  "set signal width" }                            \
-                { {^-v(alue)?(=)?}         "string"      value  "assign value to signal" }                      \
+                { {^(-v(alue)?(=|$)|=$)}   "string"      value  "assign value to signal" }                      \
                 { {^-b(idir(ectional)?)?$} "const=true"  bidir  "bidirectional connection"}                     \
                 { {^<->$}                  "const=true"  bidir  "bidirectional connection"}                     \
                 { {^-(-)?>$}               "const=false" invert "first element is interpreted as input source"} \
@@ -502,32 +502,42 @@ namespace eval ig {
             ] -context "SIGNALNAME CONNECTIONPORTS..." $args]
 
         set name      [lindex $arguments 0]
-        set con_left  [lindex $arguments 1]
-
-        set con_right {}
-        foreach cr [lrange $arguments 2 end] {
-            if {[llength $cr] > 1} {
-                lappend con_right {*}$cr
-            } else {
-                lappend con_right $cr
-            }
-        }
-
         # argument checks
         if {$name eq ""} {
             log -error -abort "S: no signal name specified"
         }
 
-        # adaption
-        if {$invert} {
-            set temp      $con_left
-            set con_left  $con_right
-            set con_right $temp
-        }
-        if {$bidir} {
+
+        if {!$invert && !$bidir} {
+            set con_left  [lindex $arguments 1]
+
+            set con_right {}
+            foreach cr [lrange $arguments 2 end] {
+                if {[llength $cr] > 1} {
+                    lappend con_right {*}$cr
+                } else {
+                    lappend con_right $cr
+                }
+            }
+        } elseif {$invert} {
+            set con_left  [lindex $arguments end]
+
+            set con_right {}
+            foreach cr [lrange $arguments 1 end-1] {
+                if {[llength $cr] > 1} {
+                    lappend con_right {*}$cr
+                } else {
+                    lappend con_right $cr
+                }
+            }
+
+        } elseif {$bidir} {
             set con_left  [concat $con_left $con_right]
             set con_right {}
+        } else {
+            log -error -abort "S: no connection direction specified"
         }
+
 
         # actual module creation
         if {[catch {
@@ -819,7 +829,7 @@ namespace eval ig {
                                 if {$s_signal eq "="} {
                                     set s_signal $i_name
                                 }
-                                set i_val $s_signal
+                                set i_val "$s_signal"
                             }
                             # implicit - auto connect if : is in signalname
                             if {[string first ":" $i_val] ne -1} {
@@ -831,7 +841,7 @@ namespace eval ig {
                                     set s_modules [concat [list ${s_implicit_mod}:${s_port}] $s_modules]
                                 }
                                 set s_signal $i_name
-                                set i_val $s_signal
+                                set i_val "$s_signal"
                            }
                         }
                         if {$i_attr eq "type"} {
@@ -855,12 +865,13 @@ namespace eval ig {
 
                 if {$s_signal ne ""} {
                     if {[regexp {W} $s_type]} {
-                        S -w $s_width  $s_signal $rf_module_name --> $s_modules
-                        ig::log -info -id "RCon" "S -w $s_width  \"$s_signal\" $rf_module_name --> $s_modules"
+                        set conn "-->"
                     } elseif {[regexp {R} $s_type]} {
-                        S -w $s_width  $s_signal $rf_module_name <-- $s_modules
-                        ig::log -info -id "RCon" "S -w $s_width  \"$s_signal\" $rf_module_name <-- $s_modules"
+                        set conn "<--"
                     }
+                    set connect_cmd "S -w $s_width  \"${s_signal}\" $rf_module_name:$s_signal $conn $s_modules"
+                    eval $connect_cmd
+                    ig::log -info -id "RCon" "$connect_cmd"
                 }
             }
         } emsg]} {
