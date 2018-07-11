@@ -94,7 +94,7 @@ struct ig_module *ig_lib_add_module (struct ig_lib_db *db, const char *name, boo
     struct ig_module *mod = ig_module_new (name, ilm, resource, db->str_chunks);
 
     if (g_hash_table_contains (db->objects_by_id, mod->object->id)) {
-        log_error ("EAExi", "object %s already exists", mod->object->id);
+        log_errorint ("EAExi", "object %s already exists", mod->object->id);
         ig_module_free (mod);
         return NULL;
     }
@@ -850,7 +850,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
         struct ig_pin *inst_pin = ig_pin_new (pin_name, conn_name, inst, db->str_chunks);
         ig_obj_attr_set (inst_pin->object, "invert", (cinfo->invert ? "true" : "false"), false);
         if (g_hash_table_contains (db->objects_by_id, inst_pin->object->id)) {
-            log_error ("HTrPS", "Already declared pin %s", inst_pin->object->id);
+            log_errorint ("HTrPS", "Already declared pin %s", inst_pin->object->id);
         }
         g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, inst_pin->object->id), inst_pin->object);
         pdata->gen_objs = g_list_prepend (pdata->gen_objs, inst_pin->object);
@@ -875,7 +875,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
             /* create a declaration */
             struct ig_decl *mod_decl = ig_decl_new (signal_name, NULL, true, mod, db->str_chunks);
             if (g_hash_table_contains (db->objects_by_id, mod_decl->object->id)) {
-                log_error ("HTrPS", "Already declared declaration %s", mod_decl->object->id);
+                log_errorint ("HTrPS", "Already declared declaration %s", mod_decl->object->id);
             }
             g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_decl->object->id), mod_decl->object);
             pdata->gen_objs = g_list_prepend (pdata->gen_objs, mod_decl->object);
@@ -897,7 +897,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
             /* create a port */
             struct ig_port *mod_port = ig_port_new (signal_name, pdir, mod, db->str_chunks);
             if (g_hash_table_contains (db->objects_by_id, mod_port->object->id)) {
-                log_error ("HTrPS", "Already declared port %s", mod_port->object->id);
+                log_errorint ("HTrPS", "Already declared port %s", mod_port->object->id);
             }
             g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_port->object->id), mod_port->object);
             pdata->gen_objs = g_list_prepend (pdata->gen_objs, mod_port->object);
@@ -961,7 +961,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
         /* create an adjustment */
         struct ig_adjustment *inst_adj = ig_adjustment_new (par_name, adj_name, inst, db->str_chunks);
         if (g_hash_table_contains (db->objects_by_id, inst_adj->object->id)) {
-            log_error ("HTrPP", "Already declared parameter adjustment %s", inst_adj->object->id);
+            log_errorint ("HTrPP", "Already declared parameter adjustment %s", inst_adj->object->id);
         }
         g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, inst_adj->object->id), inst_adj->object);
         pdata->gen_objs = g_list_prepend (pdata->gen_objs, inst_adj->object);
@@ -982,7 +982,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
             /* create a local parameter */
             struct ig_param *mod_param = ig_param_new (par_name, defvalue, true, mod, db->str_chunks);
             if (g_hash_table_contains (db->objects_by_id, mod_param->object->id)) {
-                log_error ("HTrPP", "Already declared parameter %s", mod_param->object->id);
+                log_errorint ("HTrPP", "Already declared parameter %s", mod_param->object->id);
             }
             g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_param->object->id), mod_param->object);
             pdata->gen_objs = g_list_prepend (pdata->gen_objs, mod_param->object);
@@ -1002,7 +1002,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
             /* create a parameter */
             struct ig_param *mod_param = ig_param_new (par_name, defvalue, false, mod, db->str_chunks);
             if (g_hash_table_contains (db->objects_by_id, mod_param->object->id)) {
-                log_error ("HTrPP", "Already declared parameter %s", mod_param->object->id);
+                log_errorint ("HTrPP", "Already declared parameter %s", mod_param->object->id);
             }
             g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, mod_param->object->id), mod_param->object);
             pdata->gen_objs = g_list_prepend (pdata->gen_objs, mod_param->object);
