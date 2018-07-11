@@ -38,6 +38,8 @@ proc printhelp {{exitcode 0} {doexit "true"}} {
     puts ""
     puts "    -l, --logger=TAG         Enable output log of TAG (format: LEVEL,IDENTIFIER)"
     puts ""
+    puts {    -a, --args=K[=V]         Set K to V before running icglue construction script}
+    puts ""
     puts "    -q, --quiet              Show errors only"
     puts "    -v, --verbose            Be verbose"
     puts "    ---version               Show version"
@@ -66,15 +68,16 @@ proc main {} {
     # flags
     set help            "false"
     set help_invalid    "false"
-    set c_loglevel      "W"
     set debugdebug      "false"
     set print_version   "false"
 
     # flags with mandatory arguments
+    set c_loglevel      "W"
     set c_template      "default"
     set c_template_dirs {}
     set c_file          ""
     set c_log           {}
+    set c_scriptargs    {}
 
     ig::logger -level I -id Gen
     # arguments
@@ -91,6 +94,7 @@ proc main {} {
         {  {^(-t|--template)(=|$)} "string"     c_template      {} } \
         {  {^(-f|--file)(=|$)}     "list"       c_file          {} } \
         {  {^(-l|--logger)(=|$)}   "list"       c_log           {} } \
+        {  {^(-a|--args)(=|$)}     "list"       c_scriptargs    {} } \
         ] $::argv]
 
     if {$help} {
@@ -153,6 +157,23 @@ proc main {} {
         exit 1
     }
 
+    # script args
+    set scriptargs {}
+    foreach s_arg $c_scriptargs {
+        foreach arg [split $s_arg ","] {
+            set arg_spl [split $arg "="]
+            if {[llength $arg_spl] > 1} {
+                set k [lindex $arg_spl 0]
+                set v [join [lrange $arg_spl 1 end] "="]
+                lappend scriptargs [list $k $v]
+            } elseif {[llength $arg_spl] == 1} {
+                # true
+                lappend scriptargs [list $arg 1]
+            }
+        }
+    }
+
+    # template dirs
     foreach i_tdir $c_template_dirs {
         if {[file isdirectory $i_tdir]} {
             ig::templates::add_template_dir $i_tdir
@@ -168,7 +189,7 @@ proc main {} {
     if {[regexp "\.(ic)?sng$" $c_file]} {
         ig::sng::parse_file $c_file
     } elseif {[regexp ".(tcl|(ic)?glue)$" $c_file]} {
-        ig::construct::run_script $c_file
+        ig::construct::run_script $c_file $scriptargs
     } else {
         ig::log -error "Unknown input file suffix for \"$c_file\""
         exit 1

@@ -111,17 +111,30 @@ namespace eval ig {
         ## @brief Run a construction script in encapsulated namespace.
         #
         # @param filename Path to script.
-        proc run_script {filename} {
-            eval [join [list \
+        # @param sargs List of key-value pairs for variables to set before execution
+        proc run_script {filename {sargs {}}} {
+            set script [list \
                 "namespace eval _construct_run \{" \
                 "    namespace import ::ig::*" \
-                "    if {\[catch {source [list $filename]}\]} \{" \
+                "    if {\[catch {" \
+            ]
+
+            foreach i_arg $sargs {
+                lassign $i_arg k v
+                lappend script "        set $k $v"
+            }
+
+            set script [concat $script [list \
+                "        source [list $filename]" \
+                "    }\]} \{" \
                 "        ig::errinf::print_st_line [list $filename]" \
                 "        ig::log -error \"Error while parsing source \\\"[list $filename]\\\"\"" \
                 "        exit 1" \
                 "    \}" \
                 "\}" \
-                ] "\n"]
+            ]]
+
+            eval [join $script "\n"]
 
             namespace delete _construct_run
         }
