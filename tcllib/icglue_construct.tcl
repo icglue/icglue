@@ -684,16 +684,23 @@ namespace eval ig {
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list                                                                                      \
                 { {^-(rf|regf(ile)?)($|=)} "string" regfilename "specify the regfile name" }                                          \
-                { {^@}                     "string" address     "specify the address"}                                                \
+                { {^(@|-addr($|=))}        "string" address     "specify the address"}                                                \
                 { {^-handshake($|=)}       "string" handshake   "specify signals and type for handshake {signal-out signal-in type}"} \
-            ] -context "ENTRYNAME REGISTERTABLE" $args]
+            ] -context "REGFILE-MODULE ENTRYNAME REGISTERTABLE" $args]
 
-        set entryname [lindex $arguments 0]
-        set regdef    [lindex $arguments 1]
+        if {$regfilename ne ""} {
+            set entryname [lindex $arguments 0]
+            set regdef    [lindex $arguments 1]
+        } else {
+            set regfilename [lindex $arguments 0]
+            set entryname   [lindex $arguments 1]
+            set regdef      [lindex $arguments 2]
+        }
+
 
         if {[llength $arguments] < 2} {
             log -error -abort "R : not enough arguments"
-        } elseif {[llength $arguments] > 2} {
+        } elseif {[llength $arguments] > 3} {
             log -error -abort "R (regfile-entry ${entryname}): too many arguments"
         }
 
@@ -733,6 +740,14 @@ namespace eval ig {
                 if {![catch {ig::db::get_regfiles -name $regfilename -of $i_md} i_id]} {
                     set regfile_id $i_id
                     set rf_module_name [ig::db::get_attribute -obj $i_md -attribute "name"]
+                    break
+                } elseif {$regfilename eq [ig::db::get_attribute -obj $i_md -attribute "name"]} {
+                    set regfiles [ig::db::get_regfiles -of $i_md]
+                    if {[llength $regfiles] > 0} {
+                        set regfile_id [lindex $regfiles 0]
+                        set rf_module_name [ig::db::get_attribute -obj $i_md -attribute "name"]
+                        break
+                    }
                 }
             }
             if {$regfile_id eq ""} {
