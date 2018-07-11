@@ -255,9 +255,11 @@
             <[rf_write_permitted]> <= 1'b0;
             <[rf_read_permitted]>  <= 1'b0;
         end else begin
+            if (<[rf_r_sel]> == 1'b1) begin
+                <[rf_read_permitted]>  <= <[rf_next_read_permitted]>;
+            end
             if (<[rf_w_sel]> == 1'b1) begin
                 <[rf_write_permitted]> <= <[rf_next_write_permitted]>;
-                <[rf_read_permitted]>  <= <[rf_next_read_permitted]>;
             end
         end
     end<%="\n"%><%
@@ -302,10 +304,10 @@
         end<% } %>
         <[rf_err_sig]> = 1'b0;
         if (<[rf_w_sel]> && <[rf_enable]>) begin
-            <[rf_err_sig]> = <[rf_write_permitted]>;
+            <[rf_err_sig]> = ~<[rf_write_permitted]>;
         end
-        if (<[rf_w_sel]> && <[rf_enable]>) begin
-            <[rf_err_sig]> = <[rf_read_permitted]>;
+        if (<[rf_r_sel]> && <[rf_enable]>) begin
+            <[rf_err_sig]> = ~<[rf_read_permitted]>;
         end
         <[get_pragma_content $pragma_data "keep" "generate-apb-ready-error"]>
     end
