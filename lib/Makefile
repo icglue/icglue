@@ -69,7 +69,7 @@ USE_LTO         ?= NO
 WARNFLAGS       ?= -Wall
 OPTFLAGS        ?= -O2 -fdata-sections -ffunction-sections
 ARCHFLAGS       ?= -mtune=native -march=native
-CFLAGS          ?= -std=gnu99
+CFLAGS          ?= -std=gnu99 -g
 CXXFLAGS        ?=
 CPPFLAGS        := $(addprefix -D, $(DEFS) $(PREDEFS)) $(addprefix -I, $(INC_DIR))
 LDFLAGS         ?= -Wl,-O1 -Wl,--gc-sections

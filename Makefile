@@ -123,7 +123,7 @@ install: install_bin install_doc install_helpers
 install_bin:
 	install -m755 -d $(INSTDIR)/lib/icglue/$(PKGDIR)
 	install -m644    $(PKGDIR)/*.tcl -t          $(INSTDIR)/lib/icglue/$(PKGDIR)
-	install -m755    $(PKGDIR)/*.so -t           $(INSTDIR)/lib/icglue/$(PKGDIR)
+	install -m755 -s $(PKGDIR)/*.so -t           $(INSTDIR)/lib/icglue/$(PKGDIR)
 	install -m755 -D ./bin/icglue -T             $(INSTDIR)/lib/icglue/icglue
 	install -m755 -d $(INSTDIR)/bin
 	ln -sf           $(PREFIX)/lib/icglue/icglue $(INSTDIR)/bin/icglue

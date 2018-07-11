@@ -20,6 +20,7 @@
 #include "logger.h"
 
 #include <glib/gprintf.h>
+#include <stdlib.h>
 #include "color.h"
 
 static gboolean    log_linenumbers   = FALSE;
@@ -117,6 +118,9 @@ void log_basev (const log_level_t level, const gchar *id, const gchar *sfile, gi
         g_fprintf (stderr, "%s\n", log_formated->str);
     }
     g_string_free (log_formated, TRUE);
+    if (level == LOGLEVEL_ERRORINT) {
+        exit (1);
+    }
 }
 
 void log_dump_settings ()

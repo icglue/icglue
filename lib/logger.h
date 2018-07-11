@@ -27,6 +27,7 @@
 
 #include <stdarg.h>
 #include <glib.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,7 +94,7 @@ extern gchar *loglevel_label[LOGLEVEL_COUNT];
  * @param format Printf-like format string.
  * @param ... Optinal printf-like variadic arguments.
  */
-#define log_errorint(id, format, ...) log_base (LOGLEVEL_ERRORINT, id, __FILE__, __LINE__, format, ## __VA_ARGS__)
+#define log_errorint(id, format, ...) log_base (LOGLEVEL_ERRORINT, id, __FILE__, __LINE__, format, ## __VA_ARGS__);
 
 /**
  * @brief Basic log function.
