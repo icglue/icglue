@@ -47,6 +47,11 @@ PREFIX               ?= $(CURDIR)/install
 DESTDIR              ?=
 INSTDIR              := $(DESTDIR)$(PREFIX)
 
+LOCTOOL              ?= cloc
+LOCSOURCES           := $(wildcard tcllib/*.tcl bin/* lib/*.c lib/*.h)
+LOCTEMPLATES         := $(wildcard templates/*/*)
+LOCEXTRA             := $(wildcard scripts/* vim/*/*.vim vim/*/*/*.vim) Makefile lib/Makefile
+
 #-------------------------------------------------------
 # Tcl Package
 all: prebuild
@@ -143,6 +148,16 @@ install_helpers:
 	-cp -r           $(SYNTAXDIR)             $(INSTDIR)/share/icglue     # nagelfar
 
 .PHONY: install install_bin install_doc install_helpers
+
+#-------------------------------------------------------
+# LoC
+loc:
+	@$(LOCTOOL) $(LOCSOURCES)
+
+locall:
+	@$(LOCTOOL) $(LOCSOURCES) $(LOCEXTRA) $(LOCTEMPLATES)
+
+.PHONY: loc locall
 
 #-------------------------------------------------------
 # directories
