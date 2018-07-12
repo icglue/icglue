@@ -669,37 +669,6 @@ namespace eval ig {
         return $cid
     }
 
-    proc getRmodidbyname {regfilename} {
-        set regfile_id {}
-        foreach i_md [ig::db::get_modules -all] {
-            if {![catch {ig::db::get_regfiles -name $regfilename -of $i_md} i_id] || \
-                ($regfilename eq [ig::db::get_attribute -obj $i_md -attribute "name"])} {
-                break
-            }
-        }
-        if {$i_md eq ""} {
-            log -error -abort "getRmodidbyname: Unable to get regfile by name $regfilename"
-        }
-        return $i_md
-    }
-
-    proc Raddr {rfmodid args} {
-        if {[llength $args] > 1} {
-            log -error -abort "Raddr takes maximal two arguments."
-        }
-
-        if {[llength $args] == 1} {
-            ig::db::set_attribute -obj $rfmodid -attribute "_save_reg_addr" -value [lindex $args 0]
-        }
-
-        if {![catch {ig::db::get_attribute -obj $rfmodid -attribute "_save_reg_addr"} addr]} {
-            return $addr
-        } else {
-            return "0x0000"
-        }
-    }
-
-
     ## @brief Create a new regfile-entry.
     #
     # @param args <b> [OPTION]... ENTRYNAME REGISTERTABLE</b><br>
@@ -737,10 +706,10 @@ namespace eval ig {
         set handshake   {}
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list                                                                                      \
-                { {^-(rf|regf(ile)?)($|=)} "string" regfilename "specify the regfile name" }                                          \
-                { {^(@|-addr($|=))}        "string" address     "specify the address"}                                                \
-                { {^-handshake($|=)}       "string" handshake   "specify signals and type for handshake {signal-out signal-in type}"} \
+        set arguments [ig::aux::parse_opts [list                                                                                             \
+                { {^-(rf|regf(ile)?)($|=)} "string" regfilename "DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument " } \
+                { {^(@|-addr($|=))}        "string" address     "specify the address"}                                                       \
+                { {^-handshake($|=)}       "string" handshake   "specify signals and type for handshake {signal-out signal-in type}"}        \
             ] -context "REGFILE-MODULE ENTRYNAME REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -789,7 +758,7 @@ namespace eval ig {
             # get regfile
             set regfile_id {}
             set rf_module_name {}
-            set i_md [getRmodidbyname $regfilename]
+            set i_md [ig::aux::get_regfile_modid $regfilename]
 
             set regfiles [ig::db::get_regfiles -of $i_md]
             if {[llength $regfiles] > 0} {
@@ -807,7 +776,7 @@ namespace eval ig {
             set entry_id [ig::db::add_regfile -entry $entryname -to $regfile_id]
             # set address
             if {$address eq ""} {
-                set address [Raddr $i_md]
+                set address [ig::aux::regfile_next_addr $i_md]
             }
             if {(![string is integer $address]) || ($address < 0)} {
                 log -error -abort "R (regfile-entry ${entryname}): no/invalid address"
@@ -906,7 +875,7 @@ namespace eval ig {
                     ig::log -info -id "RCon" "$connect_cmd"
                 }
             }
-            Raddr $i_md [format "0x%04X" [expr {$address+4}]]
+            ig::aux::regfile_next_addr $i_md [format "0x%04X" [expr {$address+4}]]
         } emsg]} {
             log -error -abort "R (regfile-entry ${entryname}): error while creating regfile-entry:\n${emsg}"
         }
