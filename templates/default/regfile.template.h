@@ -10,7 +10,7 @@ set header_name "rf_${rf_name}"
 #include <stdbool.h>
 #include <stdint.h>
 
-#ifdef __cplusplis
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -97,7 +97,7 @@ bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_write (<%=$userparams_extr
 }
 -%>
 
-#ifdef __cplusplis
+#ifdef __cplusplus
 }
 #endif
 
