@@ -920,7 +920,10 @@ namespace eval ig {
     #    <table style="border:0px; border-spacing:40px 0px;">
     #      <tr><td><b> REGISTERTABLE </b></td><td> specification of the register table </td></tr>
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))(=)  </i></td><td>  specify the regfile name <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))(=)  </i></td><td>  specify the regfile name       <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -csv$               </i></td><td>  specify entries as csv         <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -csvfile(=)         </i></td><td>  specify entries as csvfile     <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -csvsep(arator)(=)  </i></td><td>  specify separator for csvfiles <br></td></tr>
     #    </table>
     #
     # <b>REGISTERTABLE</b> is a list of the form {<b>HEADER REG1 REG2</b> ...}.
@@ -942,11 +945,17 @@ namespace eval ig {
     proc RT args {
         # defaults
         set regfilename ""
-        set regtable {}
+        set regtable    {}
+        set csv         "false"
+        set csvfile     {}
+        set csvsep      {;}
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list                                                                                      \
-                { {^-(rf|regf(ile)?)($|=)} "string" regfilename "specify the regfile name" }                                          \
+        set arguments [ig::aux::parse_opts [list                                                      \
+                { {^-(rf|regf(ile)?)($|=)} "string"     regfilename "specify the regfile name"      } \
+                { {^-csv$}                 "const=true" csv         "specify entries as csv"        } \
+                { {^-csvfile($|=)}         "string"     csvfile     "specify entries as csvfile"    } \
+                { {^-csvsep(arator)?($|=)} "string"     csvsep      "specify separator for csvfiles"} \
             ] -context "REGFILE-MODULE REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -956,7 +965,7 @@ namespace eval ig {
             set regtable    [lindex $arguments 1]
         }
 
-        if {[llength $arguments] < 1} {
+        if {([llength $arguments] < 1) && ($csvfile eq "")} {
             log -error -abort "RT : not enough arguments"
         } elseif {[llength $arguments] > 2} {
             log -error -abort "RT (regfile ${regfilename}): too many arguments"
@@ -964,7 +973,28 @@ namespace eval ig {
 
         if {$regfilename eq ""} {
             log -error -abort "RT (regfile ${regfilename}): no regfile name specified"
-        } elseif {[llength $regtable] <= 1} {
+        }
+
+        if {$csvfile ne ""} {
+            set csv "true"
+            set f [open ${csvfile} "r"]
+            set regtable [read $f]
+            close $f
+        }
+
+        if {$csv} {
+            set t $regtable
+            set regtable {}
+            foreach l [split $t "\n"] {
+                set line {}
+                foreach c [split $l $csvsep] {
+                    lappend line [string trim $c]
+                }
+                lappend regtable $line
+            }
+        }
+
+        if {[llength $regtable] <= 1} {
             log -error -abort "RT (regfile ${regfilename}): no registers specified"
         }
 
