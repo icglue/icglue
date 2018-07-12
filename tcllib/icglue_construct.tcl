@@ -671,13 +671,15 @@ namespace eval ig {
 
     ## @brief Create a new regfile-entry.
     #
-    # @param args <b> [OPTION]... ENTRYNAME REGISTERTABLE</b><br>
+    # @param args <b> [OPTION]... REGFILE-MODULE ENTRYNAME REGISTERTABLE</b><br>
     #    <table style="border:0px; border-spacing:40px 0px;">
+    #      <tr><td><b> REGFILE-MODULE </b></td><td> regfile module name</td></tr>
     #      <tr><td><b> ENTRYNAME </b></td><td> unique name for the register entry </td></tr>
     #      <tr><td><b> REGISTERTABLE </b></td><td> specification of the register table </td></tr>
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))(=)  </i></td><td>  specify the regfile name ( deprecated ) <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; @                   </i></td><td>  specifies the address    <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))($|=)  </i></td><td>  DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; (@|-addr($|=))        </i></td><td>  specify the address                                                      <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -handshake($|=)       </i></td><td>  specify signals and type for handshake {signal-out signal-in type}       <br></td></tr>
     #    </table>
     #
     # @return Object-ID of the newly created regfile-entry.
@@ -691,7 +693,7 @@ namespace eval ig {
     # @li entrybits = bitrange (\<high\>:\<low\>) inside the generated regfile-entry.
     # @li type = type of generated register. Can be one of "R","RW".
     # @li reset = reset value of generated register.
-    # @li signal = signal to drive from generated register.
+    # @li signal = signal to drive from generated register (MODNAME:SIGNAL -> creates signal connection as well, use MODNAME:= .
     # @li signalbits = bits of signal to drive (default: whole signal).
     # @li comment = comment
     #
