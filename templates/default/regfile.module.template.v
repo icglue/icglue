@@ -1,27 +1,27 @@
 <%
     ##  icglue - template regfile
 
-    proc clk                     {} { return "abp_clk_i"               }
-    proc reset                   {} { return "abp_resetn_i"            }
-    proc rf_addr                 {} { return "abp_addr_i"              }
-    proc rf_sel                  {} { return "abp_sel_i"               }
-    proc rf_enable               {} { return "abp_enable_i"            }
-    proc rf_write                {} { return "abp_write_i"             }
-    proc rf_w_data               {} { return "abp_wdata_i"             }
-    proc rf_bytesel              {} { return "abp_strb_i"              }
-    proc rf_prot                 {} { return "abp_prot_i"              }
-
-    proc rf_r_data               {} { return "abp_rdata_o"             }
-    proc rf_ready                {} { return "abp_ready_o "            }
-    proc rf_err                  {} { return "abp_slverr_o"            }
-
-    proc rf_r_data_sig           {} { return "abp_rf_r_data"           }
+    proc clk                     {} { return "apb_clk_i"               }
+    proc reset                   {} { return "apb_resetn_i"            }
+    proc rf_addr                 {} { return "apb_addr_i"              }
+    proc rf_sel                  {} { return "apb_sel_i"               }
+    proc rf_enable               {} { return "apb_enable_i"            }
+    proc rf_write                {} { return "apb_write_i"             }
+    proc rf_w_data               {} { return "apb_wdata_i"             }
+    proc rf_bytesel              {} { return "apb_strb_i"              }
+    proc rf_prot                 {} { return "apb_prot_i"              }
+                                                 
+    proc rf_r_data               {} { return "apb_rdata_o"             }
+    proc rf_ready                {} { return "apb_ready_o "            }
+    proc rf_err                  {} { return "apb_slverr_o"            }
+                                                 
+    proc rf_r_data_sig           {} { return "apb_rf_r_data"           }
 
     proc rf_w_sel                {} { return "rf_w_sel"                }
     proc rf_r_sel                {} { return "rf_r_sel"                }
 
-    proc rf_ready_sig            {} { return "abp_ready"               }
-    proc rf_err_sig              {} { return "abp_slverr"              }
+    proc rf_ready_sig            {} { return "apb_ready"               }
+    proc rf_err_sig              {} { return "apb_slverr"              }
     proc rf_write_permitted      {} { return "rf_write_permitted"      }
     proc rf_next_write_permitted {} { return "rf_next_write_permitted" }
     proc rf_read_permitted       {} { return "rf_read_permitted"       }
