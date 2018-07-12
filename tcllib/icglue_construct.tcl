@@ -669,6 +669,37 @@ namespace eval ig {
         return $cid
     }
 
+    proc getRmodidbyname {regfilename} {
+        set regfile_id {}
+        foreach i_md [ig::db::get_modules -all] {
+            if {![catch {ig::db::get_regfiles -name $regfilename -of $i_md} i_id] || \
+                ($regfilename eq [ig::db::get_attribute -obj $i_md -attribute "name"])} {
+                break
+            }
+        }
+        if {$i_md eq ""} {
+            log -error -abort "getRmodidbyname: Unable to get regfile by name $regfilename"
+        }
+        return $i_md
+    }
+
+    proc Raddr {rfmodid args} {
+        if {[llength $args] > 1} {
+            log -error -abort "Raddr takes maximal two arguments."
+        }
+
+        if {[llength $args] == 1} {
+            ig::db::set_attribute -obj $rfmodid -attribute "_save_reg_addr" -value [lindex $args 0]
+        }
+
+        if {![catch {ig::db::get_attribute -obj $rfmodid -attribute "_save_reg_addr"} addr]} {
+            return $addr
+        } else {
+            return "0x0000"
+        }
+    }
+
+
     ## @brief Create a new regfile-entry.
     #
     # @param args <b> [OPTION]... ENTRYNAME REGISTERTABLE</b><br>
@@ -676,7 +707,7 @@ namespace eval ig {
     #      <tr><td><b> ENTRYNAME </b></td><td> unique name for the register entry </td></tr>
     #      <tr><td><b> REGISTERTABLE </b></td><td> specification of the register table </td></tr>
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))(=)  </i></td><td>  specify the regfile name <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))(=)  </i></td><td>  specify the regfile name ( deprecated ) <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; @                   </i></td><td>  specifies the address    <br></td></tr>
     #    </table>
     #
@@ -697,10 +728,11 @@ namespace eval ig {
     #
     # <b>REGn</b>: Sublists containing the actual register-data.
     proc R args {
+        # TODO: update doxygen help
         # defaults
         set entryname   ""
         set regfilename ""
-        set address     -1
+        set address     {}
         set regdef      {}
         set handshake   {}
 
@@ -731,8 +763,6 @@ namespace eval ig {
             log -error -abort "R: no regfile-entry name specified"
         } elseif {$regfilename eq ""} {
             log -error -abort "R (regfile-entry ${entryname}): no regfile name specified"
-        } elseif {(![string is integer $address]) || ($address < 0)} {
-            log -error -abort "R (regfile-entry ${entryname}): no/invalid address"
         } elseif {[llength $regdef] <= 1} {
             log -error -abort "R (regfile-entry ${entryname}): no registers specified"
         }
@@ -759,20 +789,16 @@ namespace eval ig {
             # get regfile
             set regfile_id {}
             set rf_module_name {}
-            foreach i_md [ig::db::get_modules -all] {
-                if {![catch {ig::db::get_regfiles -name $regfilename -of $i_md} i_id]} {
-                    set regfile_id $i_id
-                    set rf_module_name [ig::db::get_attribute -obj $i_md -attribute "name"]
-                    break
-                } elseif {$regfilename eq [ig::db::get_attribute -obj $i_md -attribute "name"]} {
-                    set regfiles [ig::db::get_regfiles -of $i_md]
-                    if {[llength $regfiles] > 0} {
-                        set regfile_id [lindex $regfiles 0]
-                        set rf_module_name [ig::db::get_attribute -obj $i_md -attribute "name"]
-                        break
-                    }
-                }
+            set i_md [getRmodidbyname $regfilename]
+
+            set regfiles [ig::db::get_regfiles -of $i_md]
+            if {[llength $regfiles] > 0} {
+                set regfile_id [lindex $regfiles 0]
+                set rf_module_name [ig::db::get_attribute -obj $i_md -attribute "name"]
+            } else {
+                log -error -abort "R (name $regfilename): unable to get regfile_id"
             }
+
             if {$regfile_id eq ""} {
                 log -error -abort "R (regfile-entry ${entryname}): invalid regfile name specified: ${regfilename}"
             }
@@ -780,6 +806,12 @@ namespace eval ig {
             # create entry
             set entry_id [ig::db::add_regfile -entry $entryname -to $regfile_id]
             # set address
+            if {$address eq ""} {
+                set address [Raddr $i_md]
+            }
+            if {(![string is integer $address]) || ($address < 0)} {
+                log -error -abort "R (regfile-entry ${entryname}): no/invalid address"
+            }
             ig::db::set_attribute -object $entry_id -attribute "address" -value $address
             # set handshake
             if {$handshake ne ""} {
@@ -874,6 +906,7 @@ namespace eval ig {
                     ig::log -info -id "RCon" "$connect_cmd"
                 }
             }
+            Raddr $i_md [format "0x%04X" [expr {$address+4}]]
         } emsg]} {
             log -error -abort "R (regfile-entry ${entryname}): error while creating regfile-entry:\n${emsg}"
         }
