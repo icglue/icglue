@@ -14,6 +14,12 @@
 - regfile support
   - add get\_regfile -name (without -of option) possibility
 - add net/signal data type to retrieve signals?
+- library cleanup
+  - move pointer functionality from new/free functions to lib-functions
+  - make object struct part of data structs (instead of pointer)
+  - proper removal of child-objects from parents
+  - merge similar data-structs
+  - only one regfile per module
 
 ## tcllib
 - add instance-only command or check in M if already exists: sane values, instances only?
@@ -26,8 +32,6 @@
   - trigger reg (different types: 1-0 trigger, toggle trigger, ...?)
   - manual entry ( -> in docu custom always block)
   - sanity checker
-
-- pragmas default content in template (if file not exists), comment sign / pragma-parser
 - testbench -> regs
 - testbench to outside dummy module (see nowriteout function ?)
 
@@ -39,7 +43,6 @@
 
 ## docu
 - regfile / handshake direct connect
-
 
 ## vim
 - add alignment vim-script for signals usw. <(-)- -(-)>
