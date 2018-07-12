@@ -914,6 +914,134 @@ namespace eval ig {
         return $entry_id
     }
 
+    ## @brief Create new regfile-entries based on table.
+    #
+    # @param args <b> [OPTION]... REGFILE-MODULE REGISTERTABLE</b><br>
+    #    <table style="border:0px; border-spacing:40px 0px;">
+    #      <tr><td><b> REGISTERTABLE </b></td><td> specification of the register table </td></tr>
+    #      <tr><td><b> OPTION </b></td><td><br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))(=)  </i></td><td>  specify the regfile name <br></td></tr>
+    #    </table>
+    #
+    # <b>REGISTERTABLE</b> is a list of the form {<b>HEADER REG1 REG2</b> ...}.
+    #
+    # <b>HEADER</b> is the register-table header and specifies the order of register-info block
+    # in the following register sublists. It must contain at least "entryname" "name", can contain:
+    # @li entryname = name of the generated regfile-entry. If empty, the entryname of the previous line is used.
+    # @li address = address of the generated regfile-entry.
+    # @li name = name of the generated register.
+    # @li width = bitwidth of the generated register.
+    # @li entrybits = bitrange (\<high\>:\<low\>) inside the generated regfile-entry.
+    # @li type = type of generated register. Can be one of "R","RW".
+    # @li reset = reset value of generated register.
+    # @li signal = signal to drive from generated register.
+    # @li signalbits = bits of signal to drive (default: whole signal).
+    # @li comment = comment
+    #
+    # <b>REGn</b>: Sublists containing the actual register-data.
+    proc RT args {
+        # defaults
+        set regfilename ""
+        set regtable {}
+
+        # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
+        set arguments [ig::aux::parse_opts [list                                                                                      \
+                { {^-(rf|regf(ile)?)($|=)} "string" regfilename "specify the regfile name" }                                          \
+            ] -context "REGFILE-MODULE REGISTERTABLE" $args]
+
+        if {$regfilename ne ""} {
+            set regtable    [lindex $arguments 0]
+        } else {
+            set regfilename [lindex $arguments 0]
+            set regtable    [lindex $arguments 1]
+        }
+
+        if {[llength $arguments] < 1} {
+            log -error -abort "RT : not enough arguments"
+        } elseif {[llength $arguments] > 2} {
+            log -error -abort "RT (regfile ${regfilename}): too many arguments"
+        }
+
+        if {$regfilename eq ""} {
+            log -error -abort "RT (regfile ${regfilename}): no regfile name specified"
+        } elseif {[llength $regtable] <= 1} {
+            log -error -abort "RT (regfile ${regfilename}): no registers specified"
+        }
+
+        #order: {entryname ?address? ...}
+        set r_head [lindex $regtable 0]
+        set regtable [lrange $regtable 1 end]
+
+        set idx_entry   [lsearch $r_head "entryname"]
+        set idx_addr    [lsearch $r_head "address"]
+
+        set e_head      {}
+        foreach i_h $r_head {
+            if {$i_h eq "entryname"} {continue}
+            if {$i_h eq "address"}   {continue}
+            lappend e_head $i_h
+        }
+
+        set e_dict      {}
+        set e_last_name {}
+        set e_last_addr {}
+        set e_table     {}
+
+        foreach i_row $regtable {
+            if {[llength $i_row] < [llength $r_head]} {
+                if {[llength $i_row] > 0} {
+                    log -warn "register table row \"${i_row}\" contains too few columns"
+                }
+                continue
+            }
+
+            set e_row  {}
+            set e_name {}
+            set e_addr {}
+
+            for {set i 0} {$i < [llength $i_row]} {incr i} {
+                if {($i == $idx_entry)} {
+                    set e_name [lindex $i_row $i]
+                } elseif {($i == $idx_addr)} {
+                    set e_addr [lindex $i_row $i]
+                } else {
+                    lappend e_row [lindex $i_row $i]
+                }
+            }
+
+            if {$e_name eq ""} {set e_name $e_last_name}
+            if {$e_name eq ""} {
+                log -warn "register table row \"${i_row}\" has no entry name"
+            }
+            if {($e_addr eq "") && ($e_name eq $e_last_name)} {set e_addr $e_last_addr}
+
+            dict set e_dict $e_name addr $e_addr
+            if {$e_name ne $e_last_name} {
+                dict set e_dict $e_name table [list $e_head]
+            }
+
+            dict with e_dict $e_name {
+                lappend table $e_row
+            }
+
+            set e_last_name $e_name
+            set e_last_addr $e_addr
+        }
+
+        # create
+        dict for {e_name e_data} $e_dict {
+            set e_addr  [dict get $e_data "addr"]
+            set e_table [dict get $e_data "table"]
+
+            set opts {}
+            if {$e_addr ne ""} {
+                lappend opts "@${e_addr}"
+            }
+
+            R {*}${opts} $regfilename $e_name $e_table
+        }
+    }
+
     namespace export *
 }
 
