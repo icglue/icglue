@@ -32,7 +32,7 @@ proc printhelp {{exitcode 0} {doexit "true"}} {
     puts "Mandatory arguments to long options are mandatory for short options too."
     puts "    -h, --help               Show help"
     puts ""
-    puts "    -f, --file=FILE          Set input FILE to use"
+    puts "    -f, --file=FILE          DEPRECATED: set input FILE to use (FILE argument is omitted)"
     puts "    -t, --template=FILE      Set FILE to use as template"
     puts "    --template-dir=DIR       Add DIR to template path"
     puts ""

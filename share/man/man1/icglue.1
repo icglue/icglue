@@ -14,7 +14,7 @@ Mandatory arguments to long options are mandatory for short options too.
 Show help
 .TP
 \fB\-f\fR, \fB\-\-file\fR=\fI\,FILE\/\fR
-Set input FILE to use
+DEPRECATED: set input FILE to use (FILE argument is omitted)
 .TP
 \fB\-t\fR, \fB\-\-template\fR=\fI\,FILE\/\fR
 Set FILE to use as template
@@ -24,6 +24,9 @@ Add DIR to template path
 .TP
 \fB\-l\fR, \fB\-\-logger\fR=\fI\,TAG\/\fR
 Enable output log of TAG (format: LEVEL,IDENTIFIER)
+.TP
+\fB\-a\fR, \fB\-\-args=K\fR[=\fI\,V\/\fR]
+Set K to V before running icglue construction script
 .TP
 \fB\-q\fR, \fB\-\-quiet\fR
 Show errors only
