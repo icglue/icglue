@@ -263,7 +263,7 @@ struct ig_instance {
  * Functions
  *******************************************************/
 
-#define IG_OBJECT(x) (&(x->object))
+#define IG_OBJECT(x) (&((x)->object))
 
 /**
  * @brief Initialize new object.
