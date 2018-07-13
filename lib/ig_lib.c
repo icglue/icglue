@@ -93,18 +93,18 @@ struct ig_module *ig_lib_add_module (struct ig_lib_db *db, const char *name, boo
 
     struct ig_module *mod = ig_module_new (name, ilm, resource, db->str_chunks);
 
-    if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(mod)->id)) {
-        log_errorint ("EAExi", "object %s already exists", IG_OBJECT(mod)->id);
+    if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod)->id)) {
+        log_errorint ("EAExi", "object %s already exists", IG_OBJECT (mod)->id);
         ig_module_free (mod);
         return NULL;
     }
 
     char *l_name = g_string_chunk_insert_const (db->str_chunks, mod->name);
-    char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(mod)->id);
+    char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod)->id);
 
     g_hash_table_insert (db->modules_by_name, l_name, mod);
     g_hash_table_insert (db->modules_by_id,   l_id,   mod);
-    g_hash_table_insert (db->objects_by_id,   l_id,   IG_OBJECT(mod));
+    g_hash_table_insert (db->objects_by_id,   l_id,   IG_OBJECT (mod));
 
     return mod;
 }
@@ -116,14 +116,14 @@ static bool ig_lib_check_cycle (struct ig_lib_db *db, struct ig_instance *child,
     if (child == NULL) return false;
     if (parent == NULL) return false;
 
-    struct ig_lib_connection_info *start = ig_lib_connection_info_new (db->str_chunks, IG_OBJECT(parent), NULL, IG_LCDIR_DEFAULT);
+    struct ig_lib_connection_info *start = ig_lib_connection_info_new (db->str_chunks, IG_OBJECT (parent), NULL, IG_LCDIR_DEFAULT);
     GList                         *hlist = ig_lib_gen_hierarchy (db, start);
 
     if (hlist == NULL) return false;
 
     struct ig_object *root = ((struct ig_lib_connection_info *)hlist->data)->obj;
 
-    if (strcmp (root->id, IG_OBJECT(child)->id) == 0) {
+    if (strcmp (root->id, IG_OBJECT (child)->id) == 0) {
         result = true;
     }
 
@@ -172,7 +172,7 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
         }
 
         inst->parent = parent;
-        ig_obj_attr_set (IG_OBJECT(inst), "parent", IG_OBJECT(parent)->id, true);
+        ig_obj_attr_set (IG_OBJECT (inst), "parent", IG_OBJECT (parent)->id, true);
         g_queue_push_tail (parent->child_instances, inst);
     } else {
         inst = ig_instance_new (name, type, parent, db->str_chunks);
@@ -182,11 +182,11 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
     }
 
     char *l_name = g_string_chunk_insert_const (db->str_chunks, inst->name);
-    char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(inst)->id);
+    char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (inst)->id);
 
     g_hash_table_insert (db->instances_by_name, l_name, inst);
     g_hash_table_insert (db->instances_by_id,   l_id,   inst);
-    g_hash_table_insert (db->objects_by_id,     l_id,   IG_OBJECT(inst));
+    g_hash_table_insert (db->objects_by_id,     l_id,   IG_OBJECT (inst));
 
     return inst;
 }
@@ -205,11 +205,11 @@ struct ig_code *ig_lib_add_codesection (struct ig_lib_db *db, const char *name, 
         return NULL;
     }
 
-    char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(cs)->id);
+    char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (cs)->id);
 
     g_queue_push_tail (parent->code, cs);
 
-    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT(cs));
+    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (cs));
     log_debug ("LACSc", "...added codesection for module %s", parent->name);
 
     return cs;
@@ -229,11 +229,11 @@ struct ig_rf_regfile *ig_lib_add_regfile (struct ig_lib_db *db, const char *name
         return NULL;
     }
 
-    char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(rf)->id);
+    char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (rf)->id);
 
     g_queue_push_tail (parent->regfiles, rf);
 
-    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT(rf));
+    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (rf));
     log_debug ("LARgf", "...added regfile %s for module %s", name, parent->name);
 
     return rf;
@@ -253,11 +253,11 @@ struct ig_rf_entry *ig_lib_add_regfile_entry (struct ig_lib_db *db, const char *
         return NULL;
     }
 
-    char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(entry)->id);
+    char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (entry)->id);
 
     g_queue_push_tail (parent->entries, entry);
 
-    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT(entry));
+    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (entry));
     log_debug ("LARfE", "...added entry %s for regfile %s", name, parent->name);
 
     return entry;
@@ -277,11 +277,11 @@ struct ig_rf_reg *ig_lib_add_regfile_reg (struct ig_lib_db *db, const char *name
         return NULL;
     }
 
-    char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(reg)->id);
+    char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (reg)->id);
 
     g_queue_push_tail (parent->regs, reg);
 
-    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT(reg));
+    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (reg));
     log_debug ("LARfR", "...added reg %s for regfile-entry %s", name, parent->name);
 
     return reg;
@@ -598,7 +598,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
         struct ig_module   *mod  = inst->module;
 
         if (!mod->resource) {
-            cinfo->obj = IG_OBJECT(mod);
+            cinfo->obj = IG_OBJECT (mod);
             copy_first = true;
         } else {
             explicit_next = true;
@@ -620,7 +620,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
             result = g_list_prepend (result, cinfo);
             struct ig_instance *inst = (struct ig_instance *)cinfo->obj;
             if (inst->parent == NULL) return result;
-            cinfo = ig_lib_connection_info_new (db->str_chunks, IG_OBJECT(inst->parent), NULL, cinfo->dir);
+            cinfo = ig_lib_connection_info_new (db->str_chunks, IG_OBJECT (inst->parent), NULL, cinfo->dir);
             if (explicit_next) {
                 cinfo->is_explicit = true;
                 explicit_next      = false;
@@ -633,12 +633,12 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
             if (copy_first) {
                 bool force_name = cinfo->force_name;
                 bool invert     = cinfo->invert;
-                cinfo             = ig_lib_connection_info_new (db->str_chunks, IG_OBJECT(mod->default_instance), cinfo->local_name, cinfo->dir);
+                cinfo             = ig_lib_connection_info_new (db->str_chunks, IG_OBJECT (mod->default_instance), cinfo->local_name, cinfo->dir);
                 cinfo->force_name = force_name;
                 cinfo->invert     = invert;
                 copy_first        = false;
             } else {
-                cinfo = ig_lib_connection_info_new (db->str_chunks, IG_OBJECT(mod->default_instance), NULL, cinfo->dir);
+                cinfo = ig_lib_connection_info_new (db->str_chunks, IG_OBJECT (mod->default_instance), NULL, cinfo->dir);
             }
             continue;
         } else {
@@ -859,15 +859,15 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
 
         /* create a pin */
         struct ig_pin *inst_pin = ig_pin_new (pin_name, conn_name, inst, db->str_chunks);
-        ig_obj_attr_set (IG_OBJECT(inst_pin), "invert", (cinfo->invert ? "true" : "false"), false);
-        if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(inst_pin)->id)) {
-            log_error ("HTrPS", "Already declared pin %s", IG_OBJECT(inst_pin)->id);
+        ig_obj_attr_set (IG_OBJECT (inst_pin), "invert", (cinfo->invert ? "true" : "false"), false);
+        if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (inst_pin)->id)) {
+            log_error ("HTrPS", "Already declared pin %s", IG_OBJECT (inst_pin)->id);
             ig_pin_free (inst_pin);
         } else {
-            g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(inst_pin)->id), IG_OBJECT(inst_pin));
+            g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (inst_pin)->id), IG_OBJECT (inst_pin));
             g_queue_push_tail (inst->pins, inst_pin);
-            pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT(inst_pin));
-            log_debug ("HTrPS", "Created pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, IG_OBJECT(inst)->id, conn_name);
+            pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT (inst_pin));
+            log_debug ("HTrPS", "Created pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, IG_OBJECT (inst)->id, conn_name);
         }
         for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
             struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *)in->data;
@@ -887,14 +887,14 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
 
             /* create a declaration */
             struct ig_decl *mod_decl = ig_decl_new (signal_name, NULL, true, mod, db->str_chunks);
-            if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(mod_decl)->id)) {
-                log_error ("HTrPS", "Already declared declaration %s", IG_OBJECT(mod_decl)->id);
+            if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod_decl)->id)) {
+                log_error ("HTrPS", "Already declared declaration %s", IG_OBJECT (mod_decl)->id);
                 ig_decl_free (mod_decl);
             } else {
-                g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(mod_decl)->id), IG_OBJECT(mod_decl));
+                g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod_decl)->id), IG_OBJECT (mod_decl));
                 g_queue_push_tail (mod->decls, mod_decl);
-                pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT(mod_decl));
-                log_debug ("HTrPS", "Created declaration \"%s\" in module \"%s\"", signal_name, IG_OBJECT(mod)->id);
+                pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT (mod_decl));
+                log_debug ("HTrPS", "Created declaration \"%s\" in module \"%s\"", signal_name, IG_OBJECT (mod)->id);
             }
         } else {
             signal_name = parent_name;
@@ -911,14 +911,14 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
             }
             /* create a port */
             struct ig_port *mod_port = ig_port_new (signal_name, pdir, mod, db->str_chunks);
-            if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(mod_port)->id)) {
-                log_error ("HTrPS", "Already declared port %s", IG_OBJECT(mod_port)->id);
+            if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod_port)->id)) {
+                log_error ("HTrPS", "Already declared port %s", IG_OBJECT (mod_port)->id);
                 ig_port_free (mod_port);
             } else {
                 g_queue_push_tail (mod->ports, mod_port);
-                g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(mod_port)->id), IG_OBJECT(mod_port));
-                pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT(mod_port));
-                log_debug ("HTrPS", "Created port \"%s\" in module \"%s\"", signal_name, IG_OBJECT(mod)->id);
+                g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod_port)->id), IG_OBJECT (mod_port));
+                pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT (mod_port));
+                log_debug ("HTrPS", "Created port \"%s\" in module \"%s\"", signal_name, IG_OBJECT (mod)->id);
             }
         }
 
@@ -977,14 +977,14 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
 
         /* create an adjustment */
         struct ig_adjustment *inst_adj = ig_adjustment_new (par_name, adj_name, inst, db->str_chunks);
-        if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(inst_adj)->id)) {
-            log_error ("HTrPP", "Already declared parameter adjustment %s", IG_OBJECT(inst_adj)->id);
+        if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (inst_adj)->id)) {
+            log_error ("HTrPP", "Already declared parameter adjustment %s", IG_OBJECT (inst_adj)->id);
             ig_adjustment_free (inst_adj);
         } else {
-            g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(inst_adj)->id), IG_OBJECT(inst_adj));
+            g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (inst_adj)->id), IG_OBJECT (inst_adj));
             g_queue_push_tail (inst->adjustments, inst_adj);
-            pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT(inst_adj));
-            log_debug ("HTrPP", "Created adjustment of parameter \"%s\" in instance \"%s\" to value \"%s\"", par_name, IG_OBJECT(inst)->id, adj_name);
+            pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT (inst_adj));
+            log_debug ("HTrPP", "Created adjustment of parameter \"%s\" in instance \"%s\" to value \"%s\"", par_name, IG_OBJECT (inst)->id, adj_name);
         }
         for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
             struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *)in->data;
@@ -1000,14 +1000,14 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
 
             /* create a local parameter */
             struct ig_param *mod_param = ig_param_new (par_name, defvalue, true, mod, db->str_chunks);
-            if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(mod_param)->id)) {
-                log_error ("HTrPP", "Already declared parameter %s", IG_OBJECT(mod_param)->id);
+            if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod_param)->id)) {
+                log_error ("HTrPP", "Already declared parameter %s", IG_OBJECT (mod_param)->id);
                 ig_param_free (mod_param);
             } else {
-                g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(mod_param)->id), IG_OBJECT(mod_param));
+                g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod_param)->id), IG_OBJECT (mod_param));
                 g_queue_push_tail (mod->params, mod_param);
-                pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT(mod_param));
-                log_debug ("HTrPP", "Created local parameter \"%s\" in module \"%s\"", par_name, IG_OBJECT(mod)->id);
+                pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT (mod_param));
+                log_debug ("HTrPP", "Created local parameter \"%s\" in module \"%s\"", par_name, IG_OBJECT (mod)->id);
             }
         } else {
             if (G_NODE_IS_ROOT (node)) {
@@ -1022,14 +1022,14 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
 
             /* create a parameter */
             struct ig_param *mod_param = ig_param_new (par_name, defvalue, false, mod, db->str_chunks);
-            if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(mod_param)->id)) {
-                log_error ("HTrPP", "Already declared parameter %s", IG_OBJECT(mod_param)->id);
+            if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod_param)->id)) {
+                log_error ("HTrPP", "Already declared parameter %s", IG_OBJECT (mod_param)->id);
                 ig_param_free (mod_param);
             } else {
-                g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(mod_param)->id), IG_OBJECT(mod_param));
+                g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod_param)->id), IG_OBJECT (mod_param));
                 g_queue_push_tail (mod->params, mod_param);
-                pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT(mod_param));
-                log_debug ("HTrPP", "Created parameter \"%s\" in module \"%s\"", par_name, IG_OBJECT(mod)->id);
+                pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT (mod_param));
+                log_debug ("HTrPP", "Created parameter \"%s\" in module \"%s\"", par_name, IG_OBJECT (mod)->id);
             }
         }
 

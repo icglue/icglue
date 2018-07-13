@@ -225,12 +225,12 @@ struct ig_port *ig_port_new (const char *name, enum ig_port_dir dir, struct ig_m
     if (name == NULL) return NULL;
     if (parent == NULL) return NULL;
 
-    struct ig_port   *port = g_slice_new (struct ig_port);
-    ig_obj_init (IG_OBJ_PORT, name, IG_OBJECT(parent), IG_OBJECT(port), storage);
+    struct ig_port *port = g_slice_new (struct ig_port);
+    ig_obj_init (IG_OBJ_PORT, name, IG_OBJECT (parent), IG_OBJECT (port), storage);
 
-    ig_obj_attr_set (IG_OBJECT(port), "direction", ig_port_dir_name (dir), true);
+    ig_obj_attr_set (IG_OBJECT (port), "direction", ig_port_dir_name (dir), true);
 
-    port->name   = ig_obj_attr_get (IG_OBJECT(port), "name");
+    port->name   = ig_obj_attr_get (IG_OBJECT (port), "name");
     port->dir    = dir;
     port->parent = parent;
 
@@ -242,7 +242,7 @@ void ig_port_free (struct ig_port *port)
 {
     if (port == NULL) return;
 
-    ig_obj_free (IG_OBJECT(port));
+    ig_obj_free (IG_OBJECT (port));
     g_slice_free (struct ig_port, port);
 }
 
@@ -256,14 +256,14 @@ struct ig_param *ig_param_new (const char *name, const char *value, bool local, 
     if (parent == NULL) return NULL;
     if (value == NULL) return NULL;
 
-    struct ig_param  *param = g_slice_new (struct ig_param);
-    ig_obj_init (IG_OBJ_PARAMETER, name, IG_OBJECT(parent), IG_OBJECT(param), storage);
+    struct ig_param *param = g_slice_new (struct ig_param);
+    ig_obj_init (IG_OBJ_PARAMETER, name, IG_OBJECT (parent), IG_OBJECT (param), storage);
 
-    ig_obj_attr_set (IG_OBJECT(param), "value",  value, true);
-    ig_obj_attr_set (IG_OBJECT(param), "local",  (local ? "true" : "false"), true);
+    ig_obj_attr_set (IG_OBJECT (param), "value",  value, true);
+    ig_obj_attr_set (IG_OBJECT (param), "local",  (local ? "true" : "false"), true);
 
-    param->name   = ig_obj_attr_get (IG_OBJECT(param), "name");
-    param->value  = ig_obj_attr_get (IG_OBJECT(param), "value");
+    param->name   = ig_obj_attr_get (IG_OBJECT (param), "name");
+    param->value  = ig_obj_attr_get (IG_OBJECT (param), "value");
     param->local  = local;
     param->parent = parent;
 
@@ -274,7 +274,7 @@ void ig_param_free (struct ig_param *param)
 {
     if (param == NULL) return;
 
-    ig_obj_free (IG_OBJECT(param));
+    ig_obj_free (IG_OBJECT (param));
     g_slice_free (struct ig_param, param);
 }
 
@@ -288,14 +288,14 @@ struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_
     if (name == NULL) return NULL;
     if (parent == NULL) return NULL;
 
-    struct ig_decl   *decl = g_slice_new (struct ig_decl);
-    ig_obj_init (IG_OBJ_DECLARATION, name, IG_OBJECT(parent), IG_OBJECT(decl), storage);
+    struct ig_decl *decl = g_slice_new (struct ig_decl);
+    ig_obj_init (IG_OBJ_DECLARATION, name, IG_OBJECT (parent), IG_OBJECT (decl), storage);
 
-    ig_obj_attr_set (IG_OBJECT(decl), "default_type", (default_type ? "true" : "false"), true);
-    if (assign != NULL) ig_obj_attr_set (IG_OBJECT(decl), "assign", assign, true);
+    ig_obj_attr_set (IG_OBJECT (decl), "default_type", (default_type ? "true" : "false"), true);
+    if (assign != NULL) ig_obj_attr_set (IG_OBJECT (decl), "assign", assign, true);
 
-    decl->name               = ig_obj_attr_get (IG_OBJECT(decl), "name");
-    decl->default_assignment = ig_obj_attr_get (IG_OBJECT(decl), "assign");
+    decl->name               = ig_obj_attr_get (IG_OBJECT (decl), "name");
+    decl->default_assignment = ig_obj_attr_get (IG_OBJECT (decl), "assign");
     decl->default_type       = default_type;
     decl->parent             = parent;
 
@@ -306,7 +306,7 @@ void ig_decl_free (struct ig_decl *decl)
 {
     if (decl == NULL) return;
 
-    ig_obj_free (IG_OBJECT(decl));
+    ig_obj_free (IG_OBJECT (decl));
     g_slice_free (struct ig_decl, decl);
 }
 
@@ -330,13 +330,13 @@ struct ig_code *ig_code_new (const char *name, const char *codesection, struct i
         s_name = g_string_append (s_name, name);
     }
 
-    struct ig_code   *code = g_slice_new (struct ig_code);
-    ig_obj_init (IG_OBJ_CODESECTION, s_name->str, IG_OBJECT(parent), IG_OBJECT(code), storage);
+    struct ig_code *code = g_slice_new (struct ig_code);
+    ig_obj_init (IG_OBJ_CODESECTION, s_name->str, IG_OBJECT (parent), IG_OBJECT (code), storage);
 
-    ig_obj_attr_set (IG_OBJECT(code), "code",   codesection,        true);
+    ig_obj_attr_set (IG_OBJECT (code), "code",   codesection,        true);
 
-    code->name   = ig_obj_attr_get (IG_OBJECT(code), "name");
-    code->code   = ig_obj_attr_get (IG_OBJECT(code), "code");
+    code->name   = ig_obj_attr_get (IG_OBJECT (code), "name");
+    code->code   = ig_obj_attr_get (IG_OBJECT (code), "code");
     code->parent = parent;
 
     g_string_free (s_name, true);
@@ -348,7 +348,7 @@ void ig_code_free (struct ig_code *code)
 {
     if (code == NULL) return;
 
-    ig_obj_free (IG_OBJECT(code));
+    ig_obj_free (IG_OBJECT (code));
     g_slice_free (struct ig_code, code);
 }
 
@@ -362,9 +362,9 @@ struct ig_rf_reg *ig_rf_reg_new (const char *name, struct ig_rf_entry *parent, G
     if (parent == NULL) return NULL;
 
     struct ig_rf_reg *reg = g_slice_new (struct ig_rf_reg);
-    ig_obj_init (IG_OBJ_REGFILE_REG, name, IG_OBJECT(parent), IG_OBJECT(reg), storage);
+    ig_obj_init (IG_OBJ_REGFILE_REG, name, IG_OBJECT (parent), IG_OBJECT (reg), storage);
 
-    reg->name   = ig_obj_attr_get (IG_OBJECT(reg), "name");
+    reg->name   = ig_obj_attr_get (IG_OBJECT (reg), "name");
     reg->parent = parent;
 
     return reg;
@@ -374,7 +374,7 @@ void ig_rf_reg_free (struct ig_rf_reg *reg)
 {
     if (reg == NULL) return;
 
-    ig_obj_free (IG_OBJECT(reg));
+    ig_obj_free (IG_OBJECT (reg));
     g_slice_free (struct ig_rf_reg, reg);
 }
 
@@ -384,9 +384,9 @@ struct ig_rf_entry *ig_rf_entry_new (const char *name, struct ig_rf_regfile *par
     if (parent == NULL) return NULL;
 
     struct ig_rf_entry *entry = g_slice_new (struct ig_rf_entry);
-    ig_obj_init (IG_OBJ_REGFILE_ENTRY, name, IG_OBJECT(parent), IG_OBJECT(entry), storage);
+    ig_obj_init (IG_OBJ_REGFILE_ENTRY, name, IG_OBJECT (parent), IG_OBJECT (entry), storage);
 
-    entry->name   = ig_obj_attr_get (IG_OBJECT(entry), "name");
+    entry->name   = ig_obj_attr_get (IG_OBJECT (entry), "name");
     entry->parent = parent;
     entry->regs   = g_queue_new ();
 
@@ -397,7 +397,7 @@ void ig_rf_entry_free (struct ig_rf_entry *entry)
 {
     if (entry == NULL) return;
 
-    ig_obj_free (IG_OBJECT(entry));
+    ig_obj_free (IG_OBJECT (entry));
 
     if (entry->regs != NULL) g_queue_free (entry->regs);
 
@@ -414,9 +414,9 @@ struct ig_rf_regfile *ig_rf_regfile_new (const char *name, struct ig_module *par
     }
 
     struct ig_rf_regfile *regfile = g_slice_new (struct ig_rf_regfile);
-    ig_obj_init (IG_OBJ_REGFILE, name, IG_OBJECT(parent), IG_OBJECT(regfile), storage);
+    ig_obj_init (IG_OBJ_REGFILE, name, IG_OBJECT (parent), IG_OBJECT (regfile), storage);
 
-    regfile->name    = ig_obj_attr_get (IG_OBJECT(regfile), "name");
+    regfile->name    = ig_obj_attr_get (IG_OBJECT (regfile), "name");
     regfile->parent  = parent;
     regfile->entries = g_queue_new ();
 
@@ -427,7 +427,7 @@ void ig_rf_regfile_free (struct ig_rf_regfile *regfile)
 {
     if (regfile == NULL) return;
 
-    ig_obj_free (IG_OBJECT(regfile));
+    ig_obj_free (IG_OBJECT (regfile));
 
     if (regfile->entries != NULL) g_queue_free (regfile->entries);
 
@@ -444,12 +444,12 @@ struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStr
     log_debug ("DMNew", "Generating module %s", name);
 
     struct ig_module *module = g_slice_new (struct ig_module);
-    ig_obj_init (IG_OBJ_MODULE, name, NULL, IG_OBJECT(module), storage);
+    ig_obj_init (IG_OBJ_MODULE, name, NULL, IG_OBJECT (module), storage);
 
-    ig_obj_attr_set (IG_OBJECT(module), "ilm",      (ilm      ? "true" : "false"), true);
-    ig_obj_attr_set (IG_OBJECT(module), "resource", (resource ? "true" : "false"), true);
+    ig_obj_attr_set (IG_OBJECT (module), "ilm",      (ilm      ? "true" : "false"), true);
+    ig_obj_attr_set (IG_OBJECT (module), "resource", (resource ? "true" : "false"), true);
 
-    module->name     = ig_obj_attr_get (IG_OBJECT(module), "name");
+    module->name     = ig_obj_attr_get (IG_OBJECT (module), "name");
     module->ilm      = ilm;
     module->resource = resource;
 
@@ -488,7 +488,7 @@ void ig_module_free (struct ig_module *module)
         }
     }
 
-    ig_obj_free (IG_OBJECT(module));
+    ig_obj_free (IG_OBJECT (module));
 
     if (module->params          != NULL) g_queue_free (module->params);
     if (module->ports           != NULL) g_queue_free (module->ports);
@@ -512,13 +512,13 @@ struct ig_pin *ig_pin_new (const char *name, const char *connection, struct ig_i
     if (connection == NULL) return NULL;
     if (parent == NULL) return NULL;
 
-    struct ig_pin    *pin = g_slice_new (struct ig_pin);
-    ig_obj_init (IG_OBJ_PIN, name, IG_OBJECT(parent), IG_OBJECT(pin), storage);
+    struct ig_pin *pin = g_slice_new (struct ig_pin);
+    ig_obj_init (IG_OBJ_PIN, name, IG_OBJECT (parent), IG_OBJECT (pin), storage);
 
-    ig_obj_attr_set (IG_OBJECT(pin), "connection", connection, true);
+    ig_obj_attr_set (IG_OBJECT (pin), "connection", connection, true);
 
-    pin->name       = ig_obj_attr_get (IG_OBJECT(pin), "name");
-    pin->connection = ig_obj_attr_get (IG_OBJECT(pin), "connection");
+    pin->name       = ig_obj_attr_get (IG_OBJECT (pin), "name");
+    pin->connection = ig_obj_attr_get (IG_OBJECT (pin), "connection");
     pin->parent     = parent;
 
     return pin;
@@ -528,7 +528,7 @@ void ig_pin_free (struct ig_pin *pin)
 {
     if (pin == NULL) return;
 
-    ig_obj_free (IG_OBJECT(pin));
+    ig_obj_free (IG_OBJECT (pin));
     g_slice_free (struct ig_pin, pin);
 }
 
@@ -544,12 +544,12 @@ struct ig_adjustment *ig_adjustment_new (const char *name, const char *value, st
     if (value == NULL) return NULL;
 
     struct ig_adjustment *adjustment = g_slice_new (struct ig_adjustment);
-    ig_obj_init (IG_OBJ_ADJUSTMENT, name, IG_OBJECT(parent), IG_OBJECT(adjustment), storage);
+    ig_obj_init (IG_OBJ_ADJUSTMENT, name, IG_OBJECT (parent), IG_OBJECT (adjustment), storage);
 
-    ig_obj_attr_set (IG_OBJECT(adjustment), "value",  value, true);
+    ig_obj_attr_set (IG_OBJECT (adjustment), "value",  value, true);
 
-    adjustment->name   = ig_obj_attr_get (IG_OBJECT(adjustment), "name");
-    adjustment->value  = ig_obj_attr_get (IG_OBJECT(adjustment), "value");
+    adjustment->name   = ig_obj_attr_get (IG_OBJECT (adjustment), "name");
+    adjustment->value  = ig_obj_attr_get (IG_OBJECT (adjustment), "value");
     adjustment->parent = parent;
 
     return adjustment;
@@ -559,7 +559,7 @@ void ig_adjustment_free (struct ig_adjustment *adjustment)
 {
     if (adjustment == NULL) return;
 
-    ig_obj_free (IG_OBJECT(adjustment));
+    ig_obj_free (IG_OBJECT (adjustment));
     g_slice_free (struct ig_adjustment, adjustment);
 }
 
@@ -580,11 +580,11 @@ struct ig_instance *ig_instance_new (const char *name, struct ig_module *module,
     }
 
     struct ig_instance *instance = g_slice_new (struct ig_instance);
-    ig_obj_init (IG_OBJ_INSTANCE, name, (parent == NULL ? NULL : IG_OBJECT(parent)), IG_OBJECT(instance), storage);
+    ig_obj_init (IG_OBJ_INSTANCE, name, (parent == NULL ? NULL : IG_OBJECT (parent)), IG_OBJECT (instance), storage);
 
-    ig_obj_attr_set (IG_OBJECT(instance), "module", IG_OBJECT(module)->id, true);
+    ig_obj_attr_set (IG_OBJECT (instance), "module", IG_OBJECT (module)->id, true);
 
-    instance->name   = ig_obj_attr_get (IG_OBJECT(instance), "name");
+    instance->name   = ig_obj_attr_get (IG_OBJECT (instance), "name");
     instance->module = module;
     instance->parent = parent;
 
@@ -598,7 +598,7 @@ void ig_instance_free (struct ig_instance *instance)
 {
     if (instance == NULL) return;
 
-    ig_obj_free (IG_OBJECT(instance));
+    ig_obj_free (IG_OBJECT (instance));
 
     if (instance->adjustments != NULL) g_queue_free (instance->adjustments);
     if (instance->pins        != NULL) g_queue_free (instance->pins);

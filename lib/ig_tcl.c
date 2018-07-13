@@ -195,7 +195,7 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
         return TCL_ERROR;
     }
 
-    Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT(module)->id, -1));
+    Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT (module)->id, -1));
 
     return TCL_OK;
 }
@@ -272,7 +272,7 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
         return TCL_ERROR;
     }
 
-    Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT(inst)->id, -1));
+    Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT (inst)->id, -1));
 
     return TCL_OK;
 }
@@ -336,7 +336,7 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
         return TCL_ERROR;
     }
 
-    Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT(cs)->id, -1));
+    Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT (cs)->id, -1));
 
     return TCL_OK;
 }
@@ -414,21 +414,21 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create regfile", -1));
             return TCL_ERROR;
         }
-        result_str = IG_OBJECT(regfile)->id;
+        result_str = IG_OBJECT (regfile)->id;
     } else if (entry_name != NULL) {
         struct ig_rf_entry *entry = ig_lib_add_regfile_entry (db, entry_name, (struct ig_rf_regfile *)to_obj);
         if (entry == NULL) {
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create entry", -1));
             return TCL_ERROR;
         }
-        result_str = IG_OBJECT(entry)->id;
+        result_str = IG_OBJECT (entry)->id;
     } else {
         struct ig_rf_reg *reg = ig_lib_add_regfile_reg (db, reg_name, (struct ig_rf_entry *)to_obj);
         if (reg == NULL) {
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create reg", -1));
             return TCL_ERROR;
         }
-        result_str = IG_OBJECT(reg)->id;
+        result_str = IG_OBJECT (reg)->id;
     }
 
     Tcl_SetObjResult (interp, Tcl_NewStringObj (result_str, -1));
@@ -866,47 +866,47 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         if (version == IG_TOOOV_PINS) {
             struct ig_pin *pin = (struct ig_pin *)li->data;
             i_name = pin->name;
-            i_obj  = IG_OBJECT(pin);
+            i_obj  = IG_OBJECT (pin);
         } else if (version == IG_TOOOV_ADJ) {
             struct ig_adjustment *adjustment = (struct ig_adjustment *)li->data;
             i_name = adjustment->name;
-            i_obj  = IG_OBJECT(adjustment);
+            i_obj  = IG_OBJECT (adjustment);
         } else if (version == IG_TOOOV_PORTS) {
             struct ig_port *port = (struct ig_port *)li->data;
             i_name = port->name;
-            i_obj  = IG_OBJECT(port);
+            i_obj  = IG_OBJECT (port);
         } else if (version == IG_TOOOV_PARAMS) {
             struct ig_param *param = (struct ig_param *)li->data;
             i_name = param->name;
-            i_obj  = IG_OBJECT(param);
+            i_obj  = IG_OBJECT (param);
         } else if (version == IG_TOOOV_DECLS) {
             struct ig_decl *decl = (struct ig_decl *)li->data;
             i_name = decl->name;
-            i_obj  = IG_OBJECT(decl);
+            i_obj  = IG_OBJECT (decl);
         } else if (version == IG_TOOOV_CODE) {
             struct ig_code *code = (struct ig_code *)li->data;
             i_name = code->name;
-            i_obj  = IG_OBJECT(code);
+            i_obj  = IG_OBJECT (code);
         } else if (version == IG_TOOOV_MODULES) {
             struct ig_module *module = (struct ig_module *)li->data;
             i_name = module->name;
-            i_obj  = IG_OBJECT(module);
+            i_obj  = IG_OBJECT (module);
         } else if (version == IG_TOOOV_INSTANCES) {
             struct ig_instance *instance = (struct ig_instance *)li->data;
             i_name = instance->name;
-            i_obj  = IG_OBJECT(instance);
+            i_obj  = IG_OBJECT (instance);
         } else if (version == IG_TOOOV_REGFILES) {
             struct ig_rf_regfile *rf_regfile = (struct ig_rf_regfile *)li->data;
             i_name = rf_regfile->name;
-            i_obj  = IG_OBJECT(rf_regfile);
+            i_obj  = IG_OBJECT (rf_regfile);
         } else if (version == IG_TOOOV_RF_ENTRIES) {
             struct ig_rf_entry *rf_entry = (struct ig_rf_entry *)li->data;
             i_name = rf_entry->name;
-            i_obj  = IG_OBJECT(rf_entry);
+            i_obj  = IG_OBJECT (rf_entry);
         } else if (version == IG_TOOOV_RF_REGS) {
             struct ig_rf_reg *rf_reg = (struct ig_rf_reg *)li->data;
             i_name = rf_reg->name;
-            i_obj  = IG_OBJECT(rf_reg);
+            i_obj  = IG_OBJECT (rf_reg);
         }
 
         if (all) {

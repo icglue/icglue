@@ -118,9 +118,9 @@ struct ig_param {
  * For memory allocation/free see @ref ig_decl_new and @ref ig_decl_free.
  */
 struct ig_decl {
-    struct ig_object object;        /**< @brief Related Object. */
+    struct ig_object object;  /**< @brief Related Object. */
 
-    const char *name;               /**< @brief Name of declaration. */
+    const char *name;         /**< @brief Name of declaration. */
     bool        default_type;       /**< @brief Set if declaration is of default type (language dependant). */
 
     const char *default_assignment; /**< @brief Default assignment to declared variable or @c NULL if unassigned. */
@@ -263,7 +263,7 @@ struct ig_instance {
  * Functions
  *******************************************************/
 
-#define IG_OBJECT(x) (& (x->object))
+#define IG_OBJECT(x) (&(x->object))
 
 /**
  * @brief Initialize new object.
