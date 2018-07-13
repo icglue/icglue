@@ -63,14 +63,14 @@ struct ig_attribute {
 /**
  * @brief Common object data type.
  *
- * For memory allocation/free see @ref ig_obj_new and @ref ig_obj_free.
+ * For initialization/memory free see @ref ig_obj_init, @ref ig_obj_free and @ref ig_obj_free_full.
  */
 struct ig_object {
     const char          *id;           /**< @brief Unique Object-ID */
-    enum  ig_object_type type;         /**< @brief Type of Object stored in @c obj */
+    enum  ig_object_type type;         /**< @brief Type of Object stored in inheriting struct */
 
     GHashTable   *attributes;          /**< @brief Attributes. Key: (const char *), value: (struct @ref ig_attribute *). */
-    GStringChunk *string_storage;      /**< @brief Strings used here, in @ref attributes and @ref obj. */
+    GStringChunk *string_storage;      /**< @brief Strings used here, in @ref attributes and inheriting struct. */
     bool          string_storage_free; /**< @brief Free @ref string_storage when freeing object. */
 };
 
@@ -89,7 +89,7 @@ enum ig_port_dir {
  * For memory allocation/free see @ref ig_port_new and @ref ig_port_free.
  */
 struct ig_port {
-    struct ig_object object;  /**< @brief Related Object. */
+    struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
     const char      *name;    /**< @brief Name of port. */
     enum ig_port_dir dir;     /**< @brief Direction of port. */
@@ -103,7 +103,7 @@ struct ig_port {
  * For memory allocation/free see @ref ig_param_new and @ref ig_param_free.
  */
 struct ig_param {
-    struct ig_object object;  /**< @brief Related Object. */
+    struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
     const char *name;         /**< @brief Name of parameter. */
     const char *value;        /**< @brief Default value of parameter. */
@@ -118,7 +118,7 @@ struct ig_param {
  * For memory allocation/free see @ref ig_decl_new and @ref ig_decl_free.
  */
 struct ig_decl {
-    struct ig_object object;  /**< @brief Related Object. */
+    struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
     const char *name;         /**< @brief Name of declaration. */
     bool        default_type;       /**< @brief Set if declaration is of default type (language dependant). */
@@ -134,7 +134,7 @@ struct ig_decl {
  * For memory allocation/free see @ref ig_code_new and @ref ig_code_free.
  */
 struct ig_code {
-    struct ig_object object;  /**< @brief Related Object. */
+    struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
     const char *name;         /**< @brief Name of codesection. */
     const char *code;         /**< @brief Actual code. */
@@ -148,7 +148,7 @@ struct ig_code {
  * For memory allocation/free see @ref ig_rf_reg_new and @ref ig_rf_reg_free.
  */
 struct ig_rf_reg {
-    struct ig_object object;    /**< @brief Related Object. */
+    struct ig_object object;    /**< @brief Inherited @ref ig_object struct. */
 
     const char *name;           /**< @brief Name of register. */
 
@@ -161,7 +161,7 @@ struct ig_rf_reg {
  * For memory allocation/free see @ref ig_rf_entry_new and @ref ig_rf_entry_free.
  */
 struct ig_rf_entry {
-    struct ig_object object;      /**< @brief Related Object. */
+    struct ig_object object;      /**< @brief Inherited @ref ig_object struct. */
 
     const char *name;             /**< @brief Name of entry. */
 
@@ -176,7 +176,7 @@ struct ig_rf_entry {
  * For memory allocation/free see @ref ig_rf_regfile_new and @ref ig_rf_regfile_free.
  */
 struct ig_rf_regfile {
-    struct ig_object object;  /**< @brief Related Object. */
+    struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
     const char *name;         /**< @brief Name of regfile. */
 
@@ -191,7 +191,7 @@ struct ig_rf_regfile {
  * For memory allocation/free see @ref ig_module_new and @ref ig_module_free.
  */
 struct ig_module {
-    struct ig_object object;  /**< @brief Related Object. */
+    struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
     const char *name;         /**< @brief Name of module. */
     bool        ilm;          /**< @brief ILM property. */
@@ -217,7 +217,7 @@ struct ig_module {
  * For memory allocation/free see @ref ig_pin_new and @ref ig_pin_free.
  */
 struct ig_pin {
-    struct ig_object object;    /**< @brief Related Object. */
+    struct ig_object object;    /**< @brief Inherited @ref ig_object struct. */
 
     const char *name;           /**< @brief Name of pin */
     const char *connection;     /**< @brief Value/signal connected to pin. */
@@ -231,7 +231,7 @@ struct ig_pin {
  * For memory allocation/free see @ref ig_adjustment_new and @ref ig_adjustment_free.
  */
 struct ig_adjustment {
-    struct ig_object object;    /**< @brief Related Object. */
+    struct ig_object object;    /**< @brief Inherited @ref ig_object struct. */
 
     const char *name;           /**< @brief Name of parameter. */
     const char *value;          /**< @brief Adjusted value. */
@@ -245,7 +245,7 @@ struct ig_adjustment {
  * For memory allocation/free see @ref ig_instance_new and @ref ig_instance_free.
  */
 struct ig_instance {
-    struct ig_object object;  /**< @brief Related Object. */
+    struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
     const char       *name;   /**< @brief Name of instance. */
     struct ig_module *module; /**< @brief Module instanciated. */
