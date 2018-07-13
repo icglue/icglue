@@ -861,7 +861,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
         struct ig_pin *inst_pin = ig_pin_new (pin_name, conn_name, inst, db->str_chunks);
         ig_obj_attr_set (IG_OBJECT(inst_pin), "invert", (cinfo->invert ? "true" : "false"), false);
         if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(inst_pin)->id)) {
-            log_errorint ("HTrPS", "Already declared pin %s", IG_OBJECT(inst_pin)->id);
+            log_error ("HTrPS", "Already declared pin %s", IG_OBJECT(inst_pin)->id);
             ig_pin_free (inst_pin);
         } else {
             g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(inst_pin)->id), IG_OBJECT(inst_pin));
@@ -888,7 +888,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
             /* create a declaration */
             struct ig_decl *mod_decl = ig_decl_new (signal_name, NULL, true, mod, db->str_chunks);
             if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(mod_decl)->id)) {
-                log_errorint ("HTrPS", "Already declared declaration %s", IG_OBJECT(mod_decl)->id);
+                log_error ("HTrPS", "Already declared declaration %s", IG_OBJECT(mod_decl)->id);
                 ig_decl_free (mod_decl);
             } else {
                 g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(mod_decl)->id), IG_OBJECT(mod_decl));
@@ -912,7 +912,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
             /* create a port */
             struct ig_port *mod_port = ig_port_new (signal_name, pdir, mod, db->str_chunks);
             if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(mod_port)->id)) {
-                log_errorint ("HTrPS", "Already declared port %s", IG_OBJECT(mod_port)->id);
+                log_error ("HTrPS", "Already declared port %s", IG_OBJECT(mod_port)->id);
                 ig_port_free (mod_port);
             } else {
                 g_queue_push_tail (mod->ports, mod_port);
@@ -978,7 +978,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
         /* create an adjustment */
         struct ig_adjustment *inst_adj = ig_adjustment_new (par_name, adj_name, inst, db->str_chunks);
         if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(inst_adj)->id)) {
-            log_errorint ("HTrPP", "Already declared parameter adjustment %s", IG_OBJECT(inst_adj)->id);
+            log_error ("HTrPP", "Already declared parameter adjustment %s", IG_OBJECT(inst_adj)->id);
             ig_adjustment_free (inst_adj);
         } else {
             g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(inst_adj)->id), IG_OBJECT(inst_adj));
@@ -1001,7 +1001,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
             /* create a local parameter */
             struct ig_param *mod_param = ig_param_new (par_name, defvalue, true, mod, db->str_chunks);
             if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(mod_param)->id)) {
-                log_errorint ("HTrPP", "Already declared parameter %s", IG_OBJECT(mod_param)->id);
+                log_error ("HTrPP", "Already declared parameter %s", IG_OBJECT(mod_param)->id);
                 ig_param_free (mod_param);
             } else {
                 g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(mod_param)->id), IG_OBJECT(mod_param));
@@ -1023,7 +1023,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
             /* create a parameter */
             struct ig_param *mod_param = ig_param_new (par_name, defvalue, false, mod, db->str_chunks);
             if (g_hash_table_contains (db->objects_by_id, IG_OBJECT(mod_param)->id)) {
-                log_errorint ("HTrPP", "Already declared parameter %s", IG_OBJECT(mod_param)->id);
+                log_error ("HTrPP", "Already declared parameter %s", IG_OBJECT(mod_param)->id);
                 ig_param_free (mod_param);
             } else {
                 g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT(mod_param)->id), IG_OBJECT(mod_param));
