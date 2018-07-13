@@ -186,6 +186,31 @@ GList *ig_obj_attr_get_keys (struct ig_object *obj)
     return g_hash_table_get_keys (obj->attributes);
 }
 
+bool ig_obj_attr_set_from_gslist (struct ig_object *obj, GList *list)
+{
+    if (obj == NULL) return false;
+
+    bool result = true;
+
+    if (g_list_length (list) % 2 == 1) {
+        log_error ("OStAt", "need a value for every attribute in attribute list");
+        return false;
+    }
+
+    for (GList *li = list; li != NULL; li = li->next) {
+        char *name = (char *)li->data;
+        li = li->next;
+        char *val = (char *)li->data;
+
+        if (!ig_obj_attr_set (obj, name, val, false)) {
+            log_error ("OStAt", "could not set attribute %s", name);
+            result = false;
+        }
+    }
+
+    return result;
+}
+
 static const char *ig_port_dir_name (enum ig_port_dir dir)
 {
     switch (dir) {
@@ -196,7 +221,6 @@ static const char *ig_port_dir_name (enum ig_port_dir dir)
 
     return "UNKNOWN";
 }
-
 
 /*******************************************************
  * port data

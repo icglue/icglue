@@ -18,7 +18,6 @@
  */
 
 #include "ig_data.h"
-#include "ig_data_helpers.h"
 #include "ig_lib.h"
 #include "ig_tcl.h"
 #include "logger.h"

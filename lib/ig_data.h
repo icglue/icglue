@@ -322,6 +322,16 @@ const char *ig_obj_attr_get (struct ig_object *obj, const char *name);
 GList *ig_obj_attr_get_keys (struct ig_object *obj);
 
 /**
+ * @brief Set multiple object attributes at once.
+ * @param obj Object where attributes are to be set.
+ * @param list of attributes and values, list data: @c (char*).
+ * @return @c true on success or @c false if one or more attributes could not be set.
+ *
+ * The list must contain attributes and values interleaved (so {attribute 1, value 1, attribute 2, value 2, ...}).
+ */
+bool ig_obj_attr_set_from_gslist (struct ig_object *obj, GList *list);
+
+/**
  * @brief Create new port data struct.
  * @param name Name of port.
  * @param dir Port direction.
