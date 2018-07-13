@@ -195,7 +195,7 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
         return TCL_ERROR;
     }
 
-    Tcl_SetObjResult (interp, Tcl_NewStringObj (module->object->id, -1));
+    Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT(module)->id, -1));
 
     return TCL_OK;
 }
@@ -272,7 +272,7 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
         return TCL_ERROR;
     }
 
-    Tcl_SetObjResult (interp, Tcl_NewStringObj (inst->object->id, -1));
+    Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT(inst)->id, -1));
 
     return TCL_OK;
 }
@@ -336,7 +336,7 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
         return TCL_ERROR;
     }
 
-    Tcl_SetObjResult (interp, Tcl_NewStringObj (cs->object->id, -1));
+    Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT(cs)->id, -1));
 
     return TCL_OK;
 }
@@ -400,7 +400,7 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
 
     struct ig_object *to_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, to_id);
     if ((to_obj == NULL)
-        || ((regfile_name != NULL) && ((to_obj->type != IG_OBJ_MODULE) || (((struct ig_module *)to_obj->obj)->resource)))
+        || ((regfile_name != NULL) && ((to_obj->type != IG_OBJ_MODULE) || (((struct ig_module *)to_obj)->resource)))
         || ((entry_name != NULL) && (to_obj->type != IG_OBJ_REGFILE))
         || ((reg_name != NULL) && (to_obj->type != IG_OBJ_REGFILE_ENTRY))) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -to object specified", -1));
@@ -409,26 +409,26 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
 
     const char *result_str = "";
     if (regfile_name != NULL) {
-        struct ig_rf_regfile *regfile = ig_lib_add_regfile (db, regfile_name, (struct ig_module *)to_obj->obj);
+        struct ig_rf_regfile *regfile = ig_lib_add_regfile (db, regfile_name, (struct ig_module *)to_obj);
         if (regfile == NULL) {
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create regfile", -1));
             return TCL_ERROR;
         }
-        result_str = regfile->object->id;
+        result_str = IG_OBJECT(regfile)->id;
     } else if (entry_name != NULL) {
-        struct ig_rf_entry *entry = ig_lib_add_regfile_entry (db, entry_name, (struct ig_rf_regfile *)to_obj->obj);
+        struct ig_rf_entry *entry = ig_lib_add_regfile_entry (db, entry_name, (struct ig_rf_regfile *)to_obj);
         if (entry == NULL) {
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create entry", -1));
             return TCL_ERROR;
         }
-        result_str = entry->object->id;
+        result_str = IG_OBJECT(entry)->id;
     } else {
-        struct ig_rf_reg *reg = ig_lib_add_regfile_reg (db, reg_name, (struct ig_rf_entry *)to_obj->obj);
+        struct ig_rf_reg *reg = ig_lib_add_regfile_reg (db, reg_name, (struct ig_rf_entry *)to_obj);
         if (reg == NULL) {
             Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create reg", -1));
             return TCL_ERROR;
         }
-        result_str = reg->object->id;
+        result_str = IG_OBJECT(reg)->id;
     }
 
     Tcl_SetObjResult (interp, Tcl_NewStringObj (result_str, -1));
@@ -839,7 +839,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             return TCL_ERROR;
         }
 
-        struct ig_rf_regfile *regfile = (struct ig_rf_regfile *)obj->obj;
+        struct ig_rf_regfile *regfile = (struct ig_rf_regfile *)obj;
         child_list = regfile->entries->head;
     } else if (version == IG_TOOOV_RF_REGS) {
         struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, parent_name);
@@ -849,7 +849,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             return TCL_ERROR;
         }
 
-        struct ig_rf_entry *entry = (struct ig_rf_entry *)obj->obj;
+        struct ig_rf_entry *entry = (struct ig_rf_entry *)obj;
         child_list = entry->regs->head;
     }
 
@@ -866,47 +866,47 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         if (version == IG_TOOOV_PINS) {
             struct ig_pin *pin = (struct ig_pin *)li->data;
             i_name = pin->name;
-            i_obj  = pin->object;
+            i_obj  = IG_OBJECT(pin);
         } else if (version == IG_TOOOV_ADJ) {
             struct ig_adjustment *adjustment = (struct ig_adjustment *)li->data;
             i_name = adjustment->name;
-            i_obj  = adjustment->object;
+            i_obj  = IG_OBJECT(adjustment);
         } else if (version == IG_TOOOV_PORTS) {
             struct ig_port *port = (struct ig_port *)li->data;
             i_name = port->name;
-            i_obj  = port->object;
+            i_obj  = IG_OBJECT(port);
         } else if (version == IG_TOOOV_PARAMS) {
             struct ig_param *param = (struct ig_param *)li->data;
             i_name = param->name;
-            i_obj  = param->object;
+            i_obj  = IG_OBJECT(param);
         } else if (version == IG_TOOOV_DECLS) {
             struct ig_decl *decl = (struct ig_decl *)li->data;
             i_name = decl->name;
-            i_obj  = decl->object;
+            i_obj  = IG_OBJECT(decl);
         } else if (version == IG_TOOOV_CODE) {
             struct ig_code *code = (struct ig_code *)li->data;
             i_name = code->name;
-            i_obj  = code->object;
+            i_obj  = IG_OBJECT(code);
         } else if (version == IG_TOOOV_MODULES) {
             struct ig_module *module = (struct ig_module *)li->data;
             i_name = module->name;
-            i_obj  = module->object;
+            i_obj  = IG_OBJECT(module);
         } else if (version == IG_TOOOV_INSTANCES) {
             struct ig_instance *instance = (struct ig_instance *)li->data;
             i_name = instance->name;
-            i_obj  = instance->object;
+            i_obj  = IG_OBJECT(instance);
         } else if (version == IG_TOOOV_REGFILES) {
             struct ig_rf_regfile *rf_regfile = (struct ig_rf_regfile *)li->data;
             i_name = rf_regfile->name;
-            i_obj  = rf_regfile->object;
+            i_obj  = IG_OBJECT(rf_regfile);
         } else if (version == IG_TOOOV_RF_ENTRIES) {
             struct ig_rf_entry *rf_entry = (struct ig_rf_entry *)li->data;
             i_name = rf_entry->name;
-            i_obj  = rf_entry->object;
+            i_obj  = IG_OBJECT(rf_entry);
         } else if (version == IG_TOOOV_RF_REGS) {
             struct ig_rf_reg *rf_reg = (struct ig_rf_reg *)li->data;
             i_name = rf_reg->name;
-            i_obj  = rf_reg->object;
+            i_obj  = IG_OBJECT(rf_reg);
         }
 
         if (all) {

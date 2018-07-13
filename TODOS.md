@@ -16,7 +16,6 @@
 - add net/signal data type to retrieve signals?
 - library cleanup
   - move pointer functionality from new/free functions to lib-functions
-  - make object struct part of data structs (instead of pointer)
   - proper removal of child-objects from parents
   - merge similar data-structs
   - only one regfile per module
