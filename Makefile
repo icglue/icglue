@@ -177,7 +177,7 @@ cleandoc:
 cleansyntax:
 	rm -rf $(SYNTAXDIR)
 
-cleanall: clean cleandoc cleansyntax
+mrproper cleanall: clean cleandoc cleansyntax
 	@$(MAKE) -C $(LIBDIR) clean
 
-.PHONY: clean cleanall cleandoc cleansyntax
+.PHONY: mrproper cleanall clean cleandoc cleansyntax
