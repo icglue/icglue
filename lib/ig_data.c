@@ -234,7 +234,6 @@ struct ig_port *ig_port_new (const char *name, enum ig_port_dir dir, struct ig_m
     port->dir    = dir;
     port->parent = parent;
 
-    g_queue_push_tail (parent->ports, port);
 
     return port;
 }
@@ -268,8 +267,6 @@ struct ig_param *ig_param_new (const char *name, const char *value, bool local, 
     param->local  = local;
     param->parent = parent;
 
-    g_queue_push_tail (parent->params, param);
-
     return param;
 }
 
@@ -301,8 +298,6 @@ struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_
     decl->default_assignment = ig_obj_attr_get (IG_OBJECT(decl), "assign");
     decl->default_type       = default_type;
     decl->parent             = parent;
-
-    g_queue_push_tail (parent->decls, decl);
 
     return decl;
 }
@@ -346,8 +341,6 @@ struct ig_code *ig_code_new (const char *name, const char *codesection, struct i
 
     g_string_free (s_name, true);
 
-    g_queue_push_tail (parent->code, code);
-
     return code;
 }
 
@@ -374,8 +367,6 @@ struct ig_rf_reg *ig_rf_reg_new (const char *name, struct ig_rf_entry *parent, G
     reg->name   = ig_obj_attr_get (IG_OBJECT(reg), "name");
     reg->parent = parent;
 
-    g_queue_push_tail (parent->regs, reg);
-
     return reg;
 }
 
@@ -398,8 +389,6 @@ struct ig_rf_entry *ig_rf_entry_new (const char *name, struct ig_rf_regfile *par
     entry->name   = ig_obj_attr_get (IG_OBJECT(entry), "name");
     entry->parent = parent;
     entry->regs   = g_queue_new ();
-
-    g_queue_push_tail (parent->entries, entry);
 
     return entry;
 }
@@ -430,8 +419,6 @@ struct ig_rf_regfile *ig_rf_regfile_new (const char *name, struct ig_module *par
     regfile->name    = ig_obj_attr_get (IG_OBJECT(regfile), "name");
     regfile->parent  = parent;
     regfile->entries = g_queue_new ();
-
-    g_queue_push_tail (parent->regfiles, regfile);
 
     return regfile;
 }
@@ -482,6 +469,8 @@ struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStr
         module->child_instances  = g_queue_new ();
         module->regfiles         = g_queue_new ();
         module->default_instance = ig_instance_new (name, module, NULL, storage);
+
+        g_queue_push_tail (module->mod_instances, module->default_instance);
     }
 
     return module;
@@ -532,8 +521,6 @@ struct ig_pin *ig_pin_new (const char *name, const char *connection, struct ig_i
     pin->connection = ig_obj_attr_get (IG_OBJECT(pin), "connection");
     pin->parent     = parent;
 
-    g_queue_push_tail (parent->pins, pin);
-
     return pin;
 }
 
@@ -564,8 +551,6 @@ struct ig_adjustment *ig_adjustment_new (const char *name, const char *value, st
     adjustment->name   = ig_obj_attr_get (IG_OBJECT(adjustment), "name");
     adjustment->value  = ig_obj_attr_get (IG_OBJECT(adjustment), "value");
     adjustment->parent = parent;
-
-    g_queue_push_tail (parent->adjustments, adjustment);
 
     return adjustment;
 }
@@ -598,10 +583,6 @@ struct ig_instance *ig_instance_new (const char *name, struct ig_module *module,
     ig_obj_init (IG_OBJ_INSTANCE, name, (parent == NULL ? NULL : IG_OBJECT(parent)), IG_OBJECT(instance), storage);
 
     ig_obj_attr_set (IG_OBJECT(instance), "module", IG_OBJECT(module)->id, true);
-    if (parent != NULL) {
-        g_queue_push_tail (parent->child_instances, instance);
-    }
-    g_queue_push_tail (module->mod_instances, instance);
 
     instance->name   = ig_obj_attr_get (IG_OBJECT(instance), "name");
     instance->module = module;
