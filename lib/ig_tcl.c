@@ -183,6 +183,7 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
     if (result != TCL_OK) return result;
 
     if (name == NULL) {
+        log_error ("TCMod", "No name specified for module");
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no name specified", -1));
         return TCL_ERROR;
     }
@@ -191,6 +192,7 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
     struct ig_module *module = ig_lib_add_module (db, name, ilm, resource);
 
     if (module == NULL) {
+        log_error ("TCMod", "Module \"%s\": error while trying to create module", name);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create module", -1));
         return TCL_ERROR;
     }
@@ -237,16 +239,19 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
     if (result != TCL_OK) return result;
 
     if (name == NULL) {
+        log_error ("TCIns", "No name specified for instance");
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no name specified", -1));
         return TCL_ERROR;
     }
     ig_tclc_check_name_and_warn (name);
 
     if (of_module == NULL) {
+        log_error ("TCIns", "Instance \"%s\": no module specified for instance", name);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no module specified", -1));
         return TCL_ERROR;
     }
     if (parent_module == NULL) {
+        log_error ("TCIns", "Instance \"%s\": no parent module specified for instance", name);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no parent module specified", -1));
         return TCL_ERROR;
     }
@@ -257,10 +262,12 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
     if (pa_mod == NULL) pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_name, parent_module);
 
     if (of_module == NULL) {
+        log_error ("TCIns", "Instance \"%s\": module \"%s\" is invalid.", name, of_module);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid of-module", -1));
         return TCL_ERROR;
     }
     if (parent_module == NULL) {
+        log_error ("TCIns", "Instance \"%s\": parent module \"%s\" is invalid.", name, of_module);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid parent module", -1));
         return TCL_ERROR;
     }
@@ -268,6 +275,7 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
     struct ig_instance *inst = ig_lib_add_instance (db, name, of_mod, pa_mod);
 
     if (inst == NULL) {
+        log_error ("TCIns", "Instance \"%s\": error while trying to create instance.", name);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create instance", -1));
         return TCL_ERROR;
     }
@@ -314,11 +322,13 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
     if (result != TCL_OK) return result;
 
     if (code == NULL) {
+        log_error ("TCCod", "No code specified for codesection");
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no code specified", -1));
         return TCL_ERROR;
     }
     if (parent_module == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no parent module specified", -1));
+        log_error ("TCCod", "No parent module specified for codesection");
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no parent module specified for codesection", -1));
         return TCL_ERROR;
     }
 
@@ -326,12 +336,14 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
     if (pa_mod == NULL) pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_name, parent_module);
 
     if (pa_mod == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid parent module", -1));
+        log_error ("TCCod", "\"%s\" is invalid parent module", parent_module);
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid parent module for codesection", -1));
         return TCL_ERROR;
     }
     struct ig_code *cs = ig_lib_add_codesection (db, name, code, pa_mod);
 
     if (cs == NULL) {
+        log_error ("TCCod", "error while trying to create codesection for module \"%s\"", pa_mod->name);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create codesection", -1));
         return TCL_ERROR;
     }
@@ -1057,14 +1069,17 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     if (result != TCL_OK) goto l_ig_tclc_connect_exit;
 
     if (name == NULL) {
+        log_error ("TCCon", "No signal name specified");
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: signal name is required", -1));
         result = TCL_ERROR;
     }
     if ((from == NULL) && (bd_list == NULL)) {
+        log_error ("TCCon", "Signal \"%s\": unidirectional signal needs a start point.", name);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: signal start (-from) is required for unidirectional signals", -1));
         result = TCL_ERROR;
     }
     if ((bd_list != NULL) && ((from != NULL) || (to_list != NULL))) {
+        log_error ("TCCon", "Signal \"%s\": combining bidirectional and unidirectional is invalid.", name);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to mix bidirectional and unidirectional signal", -1));
         result = TCL_ERROR;
     }
@@ -1086,7 +1101,10 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         bool inv = false;
         ig_tclc_connection_parse (from, tstr_id, tstr_net, &t_adapt, &inv);
         struct ig_object *src_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
-        if (src_obj == NULL) goto l_ig_tclc_connect_nfexit;
+        if (src_obj == NULL) {
+            log_error ("TCCon", "Signal \"%s\": could not find object for id \"%s\"", name, tstr_id->str);
+            goto l_ig_tclc_connect_nfexit;
+        }
 
         if (tstr_net->len > 0) {
             src             = ig_lib_connection_info_new (db->str_chunks, src_obj, tstr_net->str, IG_LCDIR_UP);
@@ -1108,7 +1126,10 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
         bool inv = false;
         ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_net, &t_adapt, &inv);
         struct ig_object *trg_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
-        if (trg_obj == NULL) goto l_ig_tclc_connect_nfexit;
+        if (trg_obj == NULL) {
+            log_error ("TCCon", "Signal \"%s\": could not find object for id \"%s\"", name, tstr_id->str);
+            goto l_ig_tclc_connect_nfexit;
+        }
 
         struct ig_lib_connection_info *trg = NULL;
         if (tstr_net->len > 0) {
@@ -1127,6 +1148,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
     if (!ig_lib_connection (db, name, src, trg_list, &gen_objs)) {
         g_list_free (gen_objs);
+        log_error ("TCCon", "Signal \"%s\", error while trying to create connection", name);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not generate connection...", -1));
         result = TCL_ERROR;
     }
@@ -1214,15 +1236,18 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
     if (result != TCL_OK) goto l_ig_tclc_parameter_exit;
 
     if (name == NULL) {
+        log_error ("TCPar", "No parameter name specified");
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter name is required", -1));
         result = TCL_ERROR;
     }
     ig_tclc_check_name_and_warn (name);
     if (value == NULL) {
+        log_error ("TCPar", "Parameter \"%s\": parameter needs a value", name);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter value is required", -1));
         result = TCL_ERROR;
     }
     if (ept_list == NULL) {
+        log_error ("TCPar", "Parameter \"%s\": parameter needs a list of endpoints", name);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: endpoint list is required for parameters", -1));
         result = TCL_ERROR;
     }
@@ -1241,7 +1266,10 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
     for (GList *li = ept_list; li != NULL; li = li->next) {
         ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_par, &t_adapt, NULL);
         struct ig_object *trg_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
-        if (trg_obj == NULL) goto l_ig_tclc_parameter_nfexit;
+        if (trg_obj == NULL) {
+            log_error ("TCPar", "Parameter \"%s\": could not find object for id \"%s\"", name, tstr_id->str);
+            goto l_ig_tclc_parameter_nfexit;
+        }
 
         struct ig_lib_connection_info *trg = NULL;
         if (tstr_par->len > 0) {
@@ -1259,6 +1287,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
 
     if (!ig_lib_parameter (db, name, value, trg_list, &gen_objs)) {
         g_list_free (gen_objs);
+        log_error ("TCPar", "Parameter \"%s\", error while trying to create parameter", name);
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not generate parameter...", -1));
         result = TCL_ERROR;
     }
