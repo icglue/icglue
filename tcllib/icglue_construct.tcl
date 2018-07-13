@@ -532,7 +532,7 @@ namespace eval ig {
             }
 
         } elseif {$bidir} {
-            set con_left  [concat $con_left $con_right]
+            set con_left  [lrange $arguments 1 end]
             set con_right {}
         } else {
             log -error -abort "S: no connection direction specified"
@@ -542,11 +542,11 @@ namespace eval ig {
         # actual module creation
         if {[catch {
             set con_left_e  [construct::expand_instances $con_left  "true" "true"]
-            set con_right_e [construct::expand_instances $con_right "true" "true"]
 
             if {$bidir} {
                 set sigid [ig::db::connect -bidir $con_left_e -signal-name $name -signal-size $width]
             } else {
+                set con_right_e [construct::expand_instances $con_right "true" "true"]
                 set sigid [ig::db::connect -from {*}$con_left_e -to $con_right_e -signal-name $name -signal-size $width]
             }
 
@@ -699,7 +699,6 @@ namespace eval ig {
     #
     # <b>REGn</b>: Sublists containing the actual register-data.
     proc R args {
-        # TODO: update doxygen help
         # defaults
         set entryname   ""
         set regfilename ""
