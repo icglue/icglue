@@ -587,9 +587,14 @@ namespace eval ig::aux {
         # TODO: move to lib / adapt lib query functions
         set regfile_id {}
         foreach i_md [ig::db::get_modules -all] {
-            if {![catch {ig::db::get_regfiles -name $regfilename -of $i_md} i_id] || \
-                ($regfilename eq [ig::db::get_attribute -obj $i_md -attribute "name"])} {
+            if {![catch {ig::db::get_regfiles -name $regfilename -of $i_md} i_id]} {
                 break
+            }
+            if {($regfilename eq [ig::db::get_attribute -obj $i_md -attribute "name"])} {
+                set regfiles [ig::db::get_regfiles -of $i_md]
+                if  {[llength $regfiles] > 0} {
+                    break
+                }
             }
         }
         if {$i_md eq ""} {
