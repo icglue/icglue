@@ -205,6 +205,7 @@ namespace eval ig {
             log -error -abort "M: too many arguments ($name)"
         }
 
+        set instance_tree [regsub -lineanchor {^\s*#.*$} $instance_tree {}]
         set instance_tree [split $instance_tree "\n"]
         if {[llength $instance_tree] > 0} {
             set cur_parent {}
