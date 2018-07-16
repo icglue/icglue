@@ -131,18 +131,44 @@ C submod_wrap {
 .EE
 .PP
 
-Regfile code can be create via the \fIR\fR command. Inline connections are possible (config_submod --> component:config_i).
+Regfile code can be create via the \fIR\fR command. Inline connections are possible.
+The adresse-flag (@) is optional.
 .br
 See the \fIR\fR command in \fBig(10i)\fR for further details.
 .PP
 .in +4n
 .EX
-S -w 16 "status_submod" component_regfile --> component
+R component_regfile "entry_name" @0x0008 {
+    { "name"       "entrybits" "type"   "reset"  "signal"              "comment"             }
+    {  s_cfg        4:0         RW        5'h0    component:config_i   "Configure component" }
+    {  s_status     15:0        R        16'h0    component:status     "Component status"    }
 .br
-R -rf=component_regfile "entry_name" @0x0008 {
-    { name       entrybits type   reset  signal                              signalbits  comment              }
-    { s_cfg        4:0       RW    5'h0  {config_submod component:config_i}  4:0        "Configure component" }
-    { s_status     15:0      R    16'h0  status_submod                       15:0       "Component status"    }
+}
+.br
+Same without inline connection:
+.br
+S -w  5 "s_cfg"    component_regfile --> component
+.br
+S -w 16 "s_status" component         --> component_regfile
+.br
+R component_regfile "entry_name" @0x0008 {
+    { "name"       "entrybits" "type"   "reset"  "signal"   "comment"             }
+    {  s_cfg        4:0         RW        5'h0    s_cfg     "Configure component" }
+    {  s_status     15:0        R        16'h0    s_status  "Component status"    }
+.br
+}
+The extra-column "signalbit can be used to split wire e.g.
+.br
+S -w 40 "s_cfg_large"    component_regfile --> component
+.br
+R component_regfile "entry_name" @0x0008 {
+    { "name"       "entrybits" "type"   "reset"  "signal" "signalbits"   "comment"                    }
+    {  s_cfg        31:0         RW      31'h0    s_cfg    31:0          "Configure component part 0" }
+.br
+}
+R component_regfile "entry_name" @0x0008 {
+    { "name"       "entrybits" "type"   "reset"  "signal" "signalbits"   "comment"                     }
+    {  s_cfg        7:0          RW      8'h0     s_cfg    39:32          "Configure component part 1" }
 .br
 }
 .EE
