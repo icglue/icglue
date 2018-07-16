@@ -18,6 +18,9 @@
     set seperator_h_head   "="
     set crossing           "+"
 
+    for {set i 0} {$i<9} {incr i} {
+        set len_max_data($i)   [lindex $register_list $i]
+    }
 
     foreach_array register $register_list {
         foreach_array sreg $register(regs) {
