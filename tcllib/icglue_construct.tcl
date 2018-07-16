@@ -814,7 +814,7 @@ namespace eval ig {
                 set reg_id [ig::db::add_regfile -reg $i_name -to $entry_id]
                 set s_modules {}
                 set s_signal  {}
-                set s_width   {}
+                set s_width   0
                 set s_type    {}
                 foreach i_attr [lrange $entry_default_map 1 end] {
                     # attributes except name
@@ -861,6 +861,9 @@ namespace eval ig {
                             } else {
                                 set s_width 1
                             }
+                        }
+                        if {$i_attr eq "width"} {
+                            set s_width $i_val
                         }
                         ig::db::set_attribute -object $reg_id -attribute "rf_${i_attr}" -value $i_val
                     }
