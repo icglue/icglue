@@ -14,6 +14,8 @@ set header_name "rf_${rf_name}"
 extern "C" {
 #endif
 
+<[get_pragma_content $pragma_data "keep" "custom" ".h"]>
+
 <%-
 # iterate over entries sorted by address
 foreach_array entry $entry_list {

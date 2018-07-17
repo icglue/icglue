@@ -10,8 +10,15 @@ foreach i_param $userparams {
 set header_name "rf_${rf_name}"
 -%>
 
-#include "rf_base.h"
-#include "rf_<%=${rf_name}%>.h"
+
+<[get_pragma_content $pragma_data "keep" "include" ".c" "
+#ifndef RF_DIRECT_INC
+#include \"rf_base.h\"
+#include \"rf_${rf_name}.h\"
+#endif
+"]>
+
+<[get_pragma_content $pragma_data "keep" "custom" ".c"]>
 
 <%-
 # iterate over entries sorted by address
@@ -141,7 +148,7 @@ bool <%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_write (<%=$userparams_extr
     uint32_t rf_value = 0;
     bool result = rf_<%=${rf_name}%>_read (<%=$userparamsft%><%=$address%>, &rf_value);
 
-    rf_value &= ((~<%=$reg(mask)%>) << <%=$reg(lsb)%>);
+    rf_value &= ~(<%=$reg(mask)%> << <%=$reg(lsb)%>);
 
     rf_value |= (((uint32_t) value & <%=$reg(mask)%>) << <%=$reg(lsb)%>);
 
