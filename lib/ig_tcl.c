@@ -63,6 +63,9 @@ static int ig_tclc_reset            (ClientData clientdata, Tcl_Interp *interp, 
 static int ig_tclc_logger           (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_log              (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
+static int tcl_error_msg (Tcl_Interp *interp, const gchar *format, ...) __attribute__((format (printf, 2, 0)));
+static int tcl_verror_msg (Tcl_Interp *interp, const char *format, va_list args);
+
 void ig_add_tcl_commands (Tcl_Interp *interp)
 {
     if (interp == NULL) return;
@@ -156,10 +159,7 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
+    if (db == NULL) return tcl_error_msg (interp, "Database is NULL");
 
     int int_true  = true;
     int int_false = false;
@@ -185,18 +185,14 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
     if (result != TCL_OK) return result;
 
     if (name == NULL) {
-        log_error ("TCMod", "No name specified for module");
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no name specified", -1));
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "No module name specified");
     }
     ig_tclc_check_name_and_warn (name);
 
     struct ig_module *module = ig_lib_add_module (db, name, ilm, resource);
 
     if (module == NULL) {
-        log_error ("TCMod", "Module \"%s\": error while trying to create module", name);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create module", -1));
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Unable to create module \"%s\"", name);
     }
 
     Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT (module)->id, -1));
@@ -219,10 +215,7 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
+    if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
     char *name          = NULL;
     char *of_module     = NULL;
@@ -240,47 +233,23 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
     if (result != TCL_OK) return result;
 
-    if (name == NULL) {
-        log_error ("TCIns", "No name specified for instance");
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no name specified", -1));
-        return TCL_ERROR;
-    }
+    if (name == NULL) return tcl_error_msg (interp, "No name specified for instance");
     ig_tclc_check_name_and_warn (name);
 
-    if (of_module == NULL) {
-        log_error ("TCIns", "Instance \"%s\": no module specified for instance", name);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no module specified", -1));
-        return TCL_ERROR;
-    }
-    if (parent_module == NULL) {
-        log_error ("TCIns", "Instance \"%s\": no parent module specified for instance", name);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no parent module specified", -1));
-        return TCL_ERROR;
-    }
+    if (of_module == NULL) return tcl_error_msg (interp, "No module specified for instance \"%s\"", name);
+    if (parent_module == NULL) return tcl_error_msg (interp, " No parent module specified for instance \"%s\"", name);
 
-    struct ig_module *of_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id,   of_module);
+    struct ig_module *of_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id, of_module);
     if (of_mod == NULL) of_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_name, of_module);
-    struct ig_module *pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id,   parent_module);
+    struct ig_module *pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id, parent_module);
     if (pa_mod == NULL) pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_name, parent_module);
 
-    if (of_module == NULL) {
-        log_error ("TCIns", "Instance \"%s\": module \"%s\" is invalid.", name, of_module);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid of-module", -1));
-        return TCL_ERROR;
-    }
-    if (parent_module == NULL) {
-        log_error ("TCIns", "Instance \"%s\": parent module \"%s\" is invalid.", name, of_module);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid parent module", -1));
-        return TCL_ERROR;
-    }
+    if (of_module == NULL) return tcl_error_msg (interp, "Unable to find module \"%s\" in database", of_module);
+    if (parent_module == NULL) return tcl_error_msg (interp, "Unable to find parent-module \"%s\" in database", parent_module);
 
     struct ig_instance *inst = ig_lib_add_instance (db, name, of_mod, pa_mod);
 
-    if (inst == NULL) {
-        log_error ("TCIns", "Instance \"%s\": error while trying to create instance.", name);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create instance", -1));
-        return TCL_ERROR;
-    }
+    if (inst == NULL) return tcl_error_msg (interp, "Unable to create instance \"%s\"", name);
 
     Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT (inst)->id, -1));
 
@@ -302,10 +271,7 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
+    if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
     char *name          = NULL;
     char *code          = NULL;
@@ -323,33 +289,16 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
     if (result != TCL_OK) return result;
 
-    if (code == NULL) {
-        log_error ("TCCod", "No code specified for codesection");
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no code specified", -1));
-        return TCL_ERROR;
-    }
-    if (parent_module == NULL) {
-        log_error ("TCCod", "No parent module specified for codesection");
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no parent module specified for codesection", -1));
-        return TCL_ERROR;
-    }
+    if (code == NULL) return tcl_error_msg (interp, "No code specified for codesection");
+    if (parent_module == NULL) return tcl_error_msg (interp,  "No parent module specified for codesection");
 
-    struct ig_module *pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id,   parent_module);
+    struct ig_module *pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id, parent_module);
     if (pa_mod == NULL) pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_name, parent_module);
 
-    if (pa_mod == NULL) {
-        log_error ("TCCod", "\"%s\" is invalid parent module", parent_module);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid parent module for codesection", -1));
-        return TCL_ERROR;
-    }
+    if (pa_mod == NULL) return tcl_error_msg (interp, "Unable to find parent module \"%s\" in database", parent_module);
     struct ig_code *cs = ig_lib_add_codesection (db, name, code, pa_mod);
 
-    if (cs == NULL) {
-        log_error ("TCCod", "error while trying to create codesection for module \"%s\"", pa_mod->name);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create codesection", -1));
-        return TCL_ERROR;
-    }
-
+    if (cs == NULL) return tcl_error_msg (interp, "Unable to create codesection for module \"%s\"", pa_mod->name);
     Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT (cs)->id, -1));
 
     return TCL_OK;
@@ -375,10 +324,7 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
+    if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
     char *regfile_name = NULL;
     char *entry_name   = NULL;
@@ -398,14 +344,10 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
     if (result != TCL_OK) return result;
 
-    if (to_id == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no -to object specified", -1));
-        return TCL_ERROR;
-    }
+    if (to_id == NULL) return tcl_error_msg (interp, "Error: no -to object specified");
 
     if ((regfile_name != NULL ? 1 : 0) + (entry_name != NULL ? 1 : 0) + (reg_name != NULL ? 1 : 0) != 1) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: need exactly one of -regfile, -entry, -reg", -1));
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Need exactly one flag of {-regfile -entry -reg}");
     }
 
     ig_tclc_check_name_and_warn (regfile_name);
@@ -417,31 +359,22 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
         || ((regfile_name != NULL) && ((to_obj->type != IG_OBJ_MODULE) || (((struct ig_module *)to_obj)->resource)))
         || ((entry_name != NULL) && (to_obj->type != IG_OBJ_REGFILE))
         || ((reg_name != NULL) && (to_obj->type != IG_OBJ_REGFILE_ENTRY))) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -to object specified", -1));
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Error: invalid -to object (%s) specified", to_id);
     }
 
     const char *result_str = "";
     if (regfile_name != NULL) {
         struct ig_rf_regfile *regfile = ig_lib_add_regfile (db, regfile_name, (struct ig_module *)to_obj);
-        if (regfile == NULL) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create regfile", -1));
-            return TCL_ERROR;
-        }
+        if (regfile == NULL) return tcl_error_msg (interp, "Unable to create regfile \"%s\"", regfile_name);
+
         result_str = IG_OBJECT (regfile)->id;
     } else if (entry_name != NULL) {
         struct ig_rf_entry *entry = ig_lib_add_regfile_entry (db, entry_name, (struct ig_rf_regfile *)to_obj);
-        if (entry == NULL) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create entry", -1));
-            return TCL_ERROR;
-        }
+        if (entry == NULL) return tcl_error_msg (interp, "Unable to create entry \"%s\" in regfile \"%s\"",  entry_name, regfile_name);
         result_str = IG_OBJECT (entry)->id;
     } else {
         struct ig_rf_reg *reg = ig_lib_add_regfile_reg (db, reg_name, (struct ig_rf_entry *)to_obj);
-        if (reg == NULL) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not create reg", -1));
-            return TCL_ERROR;
-        }
+        if (reg == NULL) return tcl_error_msg (interp, "Unable to create register \"%s\" in regfile \"%s\"",  reg_name, regfile_name);
         result_str = IG_OBJECT (reg)->id;
     }
 
@@ -465,10 +398,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
+    if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
     char  *obj_name   = NULL;
     char  *attr_name  = NULL;
@@ -490,38 +420,28 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
     if (result != TCL_OK) return result;
 
     if (obj_name == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no object specified", -1));
         g_list_free (attr_list);
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "No object specified");
     }
-
-    if ((attr_list == NULL) && (attr_name == NULL)) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no attribute specified", -1));
-        return TCL_ERROR;
-    }
-
+    if ((attr_list == NULL) && (attr_name == NULL)) return tcl_error_msg (interp, "No attribute specified");
     if ((attr_list != NULL) && (attr_name != NULL)) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to specify single attribute and attribute list", -1));
         g_list_free (attr_list);
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Invalid to specify single attribute and attribute list");
     }
 
     if ((attr_name != NULL) && (attr_value == NULL)) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: single attribute without value", -1));
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Single attribute without value");
     }
 
     struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, obj_name);
     if (obj == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: unknown object", -1));
         g_list_free (attr_list);
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Unknown object \"%s\"", obj_name);
     }
 
     if (attr_name != NULL) {
         if (!ig_obj_attr_set (obj, attr_name, attr_value, false)) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not set attribute", -1));
-            return TCL_ERROR;
+            return tcl_error_msg (interp, "Unable to attribute \"%s\"(=\"%s\") for object \"%s\"", attr_name, attr_value, obj_name);
         }
 
         Tcl_SetObjResult (interp, Tcl_NewStringObj (attr_value, -1));
@@ -529,9 +449,8 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
     }
 
     if (!ig_obj_attr_set_from_gslist (obj, attr_list)) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not set attributes", -1));
         g_list_free (attr_list);
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Unable to attribute list for object \"%s\"", attr_list);
     }
 
     Tcl_SetObjResult (interp, Tcl_NewStringObj ("", -1));
@@ -555,10 +474,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
+    if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
     char  *obj_name        = NULL;
     char  *attr_name       = NULL;
@@ -581,22 +497,19 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
     if (result != TCL_OK) return result;
 
     if (obj_name == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: no object specified", -1));
         g_list_free (attr_list);
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "No object specified");
     }
 
     if ((attr_list != NULL) && (attr_name != NULL)) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to specify single attribute and attribute list", -1));
         g_list_free (attr_list);
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Specifying single attribute and attribute list is not supported");
     }
 
     struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, obj_name);
     if (obj == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: unknown object", -1));
         g_list_free (attr_list);
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Unknown object \"%s\"", obj_name);
     }
     if ((attr_list == NULL) && (attr_name == NULL)) {
         print_attr_name = true;
@@ -609,8 +522,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
             if (defaultval != NULL) {
                 val = defaultval;
             } else {
-                Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not get attribute", -1));
-                return TCL_ERROR;
+                return tcl_error_msg (interp, "Could not get attribute \"%s\" of object \"%s\"", attr_name, obj_name);
             }
         }
 
@@ -623,8 +535,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
         char *attr = (char *)li->data;
         if (ig_obj_attr_get (obj, attr) == NULL) {
             g_list_free (attr_list);
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not get attribute", -1));
-            return TCL_ERROR;
+            return tcl_error_msg (interp, "Could not get attribute \"%s\" of object \"%s\"", attr, obj_name);
         }
     }
 
@@ -712,19 +623,13 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
+    if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
     /* command version */
     const char                          *cmdname = Tcl_GetString (objv[0]);
     enum ig_tclc_get_objs_of_obj_version version = ig_tclc_get_objs_of_obj_version_from_cmd (cmdname);
 
-    if (version == IG_TOOOV_INVALID) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: Invalid command version generated", -1));
-        return TCL_ERROR;
-    }
+    if (version == IG_TOOOV_INVALID) return tcl_error_msg (interp, "Internal Error - Invalid command version generated (%s:%d)", __FILE__, __LINE__);
 
     /* arg parsing */
     int int_true  = true;
@@ -749,28 +654,22 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     /* sanity checks */
     if (parent_name == NULL) {
         if ((version == IG_TOOOV_DECLS) || (version == IG_TOOOV_PORTS) || (version == IG_TOOOV_PARAMS) || (version == IG_TOOOV_CODE) || (version == IG_TOOOV_REGFILES)) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: -of <module> needs to be specified", -1));
-            return TCL_ERROR;
+            return tcl_error_msg (interp, "Flag -of <module> needs to be specified");
         } else if ((version == IG_TOOOV_PINS) || (version == IG_TOOOV_ADJ)) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: -of <instance> needs to be specified", -1));
-            return TCL_ERROR;
+            return tcl_error_msg (interp, "Flag -of <instance> needs to be specified");
         } else if (version == IG_TOOOV_RF_ENTRIES) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: -of <regfile> needs to be specified", -1));
-            return TCL_ERROR;
+            return tcl_error_msg (interp, "Flag -of <regfile> needs to be specified");
         } else if (version == IG_TOOOV_RF_REGS) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: -of <regfile-entry> needs to be specified", -1));
-            return TCL_ERROR;
+            return tcl_error_msg (interp, "Flag -of <regfile-entry> needs to be specified");
         }
     }
 
     if ((version == IG_TOOOV_CODE) && (child_name != NULL)) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to specify name and for code sections", -1));
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Invalid to specify name and for code sections");
     }
 
     if (all && (child_name != NULL)) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to specify name and -all", -1));
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Invalid to specify name and -all");
     }
 
     if (child_name == NULL) {
@@ -803,17 +702,13 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
                || (version == IG_TOOOV_CODE) || (version == IG_TOOOV_INSTANCES) || (version == IG_TOOOV_REGFILES)) {
         struct ig_module *mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id, parent_name);
         if (mod == NULL) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -of <module>", -1));
-            return TCL_ERROR;
+            return tcl_error_msg (interp, "Unable to find \"%s\" in database", parent_name);
         }
 
         if (mod->resource) {
             if ((version == IG_TOOOV_DECLS) || (version == IG_TOOOV_CODE)
                 || (version == IG_TOOOV_INSTANCES) || (version == IG_TOOOV_REGFILES)) {
-
-                log_debug ("LTGet", "%s: -of <module> is resource", cmdname);
-                Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -of <module>", -1));
-                return TCL_ERROR;
+                return tcl_error_msg (interp, "Command is not applicable to a resource (\"%s\")", parent_name);
             }
         }
 
@@ -832,10 +727,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         }
     } else if ((version == IG_TOOOV_PINS) || (version == IG_TOOOV_ADJ) || (version == IG_TOOOV_MODULES)) {
         struct ig_instance *inst = (struct ig_instance *)g_hash_table_lookup (db->instances_by_id, parent_name);
-        if (inst == NULL) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -of <instance>", -1));
-            return TCL_ERROR;
-        }
+        if (inst == NULL) return tcl_error_msg (interp, "Unable to find instance-id \"%s\"", parent_name);
 
         if (version == IG_TOOOV_PINS) {
             child_list = inst->pins->head;
@@ -849,8 +741,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, parent_name);
 
         if ((obj == NULL) || (obj->type != IG_OBJ_REGFILE)) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -of <regfile>", -1));
-            return TCL_ERROR;
+            return tcl_error_msg (interp, "Unable to get regfile \"%s\" from database", parent_name);
         }
 
         struct ig_rf_regfile *regfile = (struct ig_rf_regfile *)obj;
@@ -859,8 +750,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, parent_name);
 
         if ((obj == NULL) || (obj->type != IG_OBJ_REGFILE_ENTRY)) {
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid -of <regfile-entry>", -1));
-            return TCL_ERROR;
+            return tcl_error_msg (interp, "Unable to get regfile-entry \"%s\" from database", parent_name);
         }
 
         struct ig_rf_entry *entry = (struct ig_rf_entry *)obj;
@@ -941,20 +831,9 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     }
 
     if (!all) {
-        Tcl_Obj *result = Tcl_NewStringObj ("Error: nothing found", -1);
-        if (child_name != NULL) {
-            log_debug ("LTGet", "%s: nothing found for %s", cmdname, child_name);
-            Tcl_AppendToObj (result, " for ", -1);
-            Tcl_AppendToObj (result, child_name, -1);
-        } else if (parent_name != NULL) {
-            log_debug ("LTGet", "%s: nothing found for %s", cmdname, parent_name);
-            Tcl_AppendToObj (result, " for ", -1);
-            Tcl_AppendToObj (result, parent_name, -1);
-        } else {
-            log_debug ("LTGet", "%s: nothing found", cmdname);
-        }
-        Tcl_SetObjResult (interp, result);
-        return TCL_ERROR;
+        if (child_name != NULL) return tcl_error_msg (interp, "Nothing found for \"%s\"", child_name);
+        if (parent_name != NULL) return tcl_error_msg (interp, "Nothing found for \"\%s\"", parent_name);
+        return tcl_error_msg (interp, "Nothing found");
     } else {
         Tcl_SetObjResult (interp, retval);
     }
@@ -1045,10 +924,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
+    if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
     char  *from    = NULL;
     char  *name    = NULL;
@@ -1071,19 +947,13 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     if (result != TCL_OK) goto l_ig_tclc_connect_exit;
 
     if (name == NULL) {
-        log_error ("TCCon", "No signal name specified");
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: signal name is required", -1));
-        result = TCL_ERROR;
+        result = tcl_error_msg (interp, "Signal name is required");
     }
     if ((from == NULL) && (bd_list == NULL)) {
-        log_error ("TCCon", "Signal \"%s\": unidirectional signal needs a start point.", name);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: signal start (-from) is required for unidirectional signals", -1));
-        result = TCL_ERROR;
+        result = tcl_error_msg (interp, "Signal \"%s\": -from is required for unidirectional signals", name);
     }
     if ((bd_list != NULL) && ((from != NULL) || (to_list != NULL))) {
-        log_error ("TCCon", "Signal \"%s\": combining bidirectional and unidirectional is invalid.", name);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: invalid to mix bidirectional and unidirectional signal", -1));
-        result = TCL_ERROR;
+        result = tcl_error_msg (interp, "Signal \"%s\": combining bidirectional and unidirectional is invalid.", name);
     }
     if (size == NULL) {
         size = "1";
@@ -1150,9 +1020,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
     if (!ig_lib_connection (db, name, src, trg_list, &gen_objs)) {
         g_list_free (gen_objs);
-        log_error ("TCCon", "Signal \"%s\", error while trying to create connection", name);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not generate connection...", -1));
-        result = TCL_ERROR;
+        result = tcl_error_msg (interp, "Signal \"%s\", error while trying to create connection", name);
     }
     log_debug ("TCCon", "... finished connection");
 
@@ -1191,8 +1059,7 @@ l_ig_tclc_connect_nfexit:
         struct ig_lib_connection_info *trg = (struct ig_lib_connection_info *)li->data;
         ig_lib_connection_info_free (trg);
     }
-    result = TCL_ERROR;
-    Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not find object", -1));
+    result = tcl_error_msg (interp, "Error: could not find object");
     goto l_ig_tclc_connect_exit_pre;
 }
 
@@ -1216,10 +1083,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
+    if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
     char  *name     = NULL;
     char  *value    = NULL;
@@ -1237,22 +1101,10 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
     if (result != TCL_OK) goto l_ig_tclc_parameter_exit;
 
-    if (name == NULL) {
-        log_error ("TCPar", "No parameter name specified");
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter name is required", -1));
-        result = TCL_ERROR;
-    }
+    if (name == NULL) result = tcl_error_msg (interp, "No parameter name specified");
     ig_tclc_check_name_and_warn (name);
-    if (value == NULL) {
-        log_error ("TCPar", "Parameter \"%s\": parameter needs a value", name);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter value is required", -1));
-        result = TCL_ERROR;
-    }
-    if (ept_list == NULL) {
-        log_error ("TCPar", "Parameter \"%s\": parameter needs a list of endpoints", name);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: endpoint list is required for parameters", -1));
-        result = TCL_ERROR;
-    }
+    if (value == NULL) result = tcl_error_msg (interp, "Parameter \"%s\": parameter needs a value", name);
+    if (ept_list == NULL) result = tcl_error_msg (interp, "Parameter \"%s\": parameter needs a list of endpoints", name);
 
     if (result != TCL_OK) goto l_ig_tclc_parameter_exit;
 
@@ -1269,7 +1121,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
         ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_par, &t_adapt, NULL);
         struct ig_object *trg_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
         if (trg_obj == NULL) {
-            log_error ("TCPar", "Parameter \"%s\": could not find object for id \"%s\"", name, tstr_id->str);
+            result = tcl_error_msg (interp, "Parameter \"%s\": could not find object for id \"%s\"", name, tstr_id->str);
             goto l_ig_tclc_parameter_nfexit;
         }
 
@@ -1289,9 +1141,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
 
     if (!ig_lib_parameter (db, name, value, trg_list, &gen_objs)) {
         g_list_free (gen_objs);
-        log_error ("TCPar", "Parameter \"%s\", error while trying to create parameter", name);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not generate parameter...", -1));
-        result = TCL_ERROR;
+        result = tcl_error_msg (interp, "Parameter \"%s\", error while trying to create parameter", name);
     }
 
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
@@ -1319,8 +1169,6 @@ l_ig_tclc_parameter_nfexit:
         struct ig_lib_connection_info *trg = (struct ig_lib_connection_info *)li->data;
         ig_lib_connection_info_free (trg);
     }
-    result = TCL_ERROR;
-    Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: could not find object", -1));
     goto l_ig_tclc_parameter_exit_pre;
 }
 
@@ -1339,10 +1187,7 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
+    if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
     char *instname = NULL;
     char *pinname  = NULL;
@@ -1363,28 +1208,18 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
     }
 
     if (instname == NULL) {
-        log_error ("TCPar", "No instance name specified");
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter name is required", -1));
-        result = TCL_ERROR;
+        result = tcl_error_msg (interp, "No instance name specified");
     }
     if (pinname == NULL) {
-        log_error ("TCPar", "No pin name specified");
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter name is required", -1));
-        result = TCL_ERROR;
+        result = tcl_error_msg (interp, "No pin name specified");
     }
 
     struct ig_instance *inst = (struct ig_instance *)g_hash_table_lookup (db->instances_by_name, instname);
     if (inst == NULL) {
-        gchar *error_msg = g_strdup_printf ("Error (create pin): Could not found instance %s\n", instname);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj (error_msg, -1));
-        g_free (error_msg);
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Could not found instance \"%s\"\n", instname);
     }
     if (!inst->module->resource) {
-        gchar *error_msg = g_strdup_printf ("Error (create pin): Instance %s is not a resource\n", instname);
-        Tcl_SetObjResult (interp, Tcl_NewStringObj (error_msg, -1));
-        g_free (error_msg);
-        return TCL_ERROR;
+        return tcl_error_msg (interp, "Unable to add pin - instance \"%s\" is not a resource.", instname);
     }
     ig_lib_add_pin (db, inst, pinname, value, "false");
 
@@ -1402,10 +1237,7 @@ static int ig_tclc_reset (ClientData clientdata, Tcl_Interp *interp, int objc, T
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
-    if (db == NULL) {
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
-        return TCL_ERROR;
-    }
+    if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
     ig_lib_db_clear (db);
 
@@ -1495,10 +1327,7 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
             }
         } else {
             // level does not exists:
-            gchar *msg = g_strdup_printf ("Error: loglevel %s does not exist - try `-help` for a list of available loglevels", loglevel);
-            Tcl_SetObjResult (interp, Tcl_NewStringObj ((char *)msg, -1));
-            g_free (msg);
-            return TCL_ERROR;
+            return tcl_error_msg (interp, "Loglevel %s does not exist - try `-help` for a list of available loglevels", loglevel);
         }
     }
 
@@ -1562,5 +1391,31 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
 
     if (abort) return TCL_ERROR;
     return TCL_OK;
+}
+
+static int tcl_error_msg (Tcl_Interp *interp, const char *format, ...)
+{
+    int     result;
+    va_list args;
+
+    va_start (args, format);
+    result = tcl_verror_msg (interp, format, args);
+    va_end (args);
+    return result;
+}
+
+static int tcl_verror_msg (Tcl_Interp *interp, const char *format, va_list args)
+{
+    const char *scriptFile = NULL;
+
+    if (Tcl_Eval (interp, "lindex [dict get [info frame -1] cmd] 0") == TCL_OK) {
+        scriptFile = Tcl_GetString (Tcl_GetObjResult (interp));
+    }
+    gchar *user_msg  = g_strdup_vprintf (format, args);
+    gchar *error_msg = g_strdup_printf ("ERROR(%s): %s", scriptFile, user_msg);
+    Tcl_SetObjResult (interp, Tcl_NewStringObj (error_msg, -1));
+    g_free (user_msg);
+    g_free (error_msg);
+    return TCL_ERROR;
 }
 

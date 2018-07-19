@@ -486,28 +486,44 @@ namespace eval ig {
     # and multi-instance-expressions e.g. module\<1,4..9,a,b\>.
     proc S args {
         # defaults
-        set name      ""
-        set width     1
-        set value     ""
-        set bidir     "false"
-        set invert    "false"
+        set name         ""
+        set width        1
+        set value        ""
+        set bidir        "false"
+        set invert       "false"
+        set resource_pin "false"
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list                                                                \
-                { {^-w(idth)?(=)?}         "string"      width  "set signal width" }                            \
-                { {^(-v(alue)?(=|$)|=$)}   "string"      value  "assign value to signal" }                      \
-                { {^-b(idir(ectional)?)?$} "const=true"  bidir  "bidirectional connection"}                     \
-                { {^<->$}                  "const=true"  bidir  "bidirectional connection"}                     \
-                { {^-(-)?>$}               "const=false" invert "first element is interpreted as input source"} \
-                { {^<(-)?-$}               "const=true"  invert "last element is interpreted as input source"}  \
+        set arguments [ig::aux::parse_opts [list                                                                      \
+                { {^-w(idth)?(=)?}         "string"      width        "set signal width" }                            \
+                { {^(-v(alue)?(=|$)|=$)}   "string"      value        "assign value to signal" }                      \
+                { {^-b(idir(ectional)?)?$} "const=true"  bidir        "bidirectional connection"}                     \
+                { {^<->$}                  "const=true"  bidir        "bidirectional connection"}                     \
+                { {^-(-)?>$}               "const=false" invert       "first element is interpreted as input source"} \
+                { {^<(-)?-$}               "const=true"  invert       "last element is interpreted as input source"}  \
+                { {^-p(in)?$}              "const=true"  resource_pin "add a pin to a resource module"}               \
             ] -context "SIGNALNAME CONNECTIONPORTS..." $args]
 
-        set name      [lindex $arguments 0]
+        set name [lindex $arguments 0]
         # argument checks
         if {$name eq ""} {
             log -error -abort "S: no signal name specified"
         }
 
+        if {$resource_pin} {
+            set instance_names [lrange $arguments 1 end]
+            if {[llength $instance_names] == 0} {
+                log -error -abort "S: no instance names specified"
+            }
+            foreach inst [construct::expand_instances $instance_names] {
+                set instname [lindex $inst 0]
+
+                if {[catch {ig::db::create_pin -instname $instname -pinname $name -value $value} emsg]} {
+                    log -error -abort "${emsg}"
+                }
+            }
+            return {};
+        }
 
         if {!$invert && !$bidir} {
             set con_left  [lindex $arguments 1]

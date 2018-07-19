@@ -26,7 +26,13 @@ M -unit "rftest" -tree {
     ....|.|+test_mgmt8(res)
     ....|.+test_mgmt9(res)
     ....+core(rtl)
+    .....common_sync<a,b1..4>(res)
+    .....common_sync_pedge(res)
 }
+
+# connections
+S -pin "testmode_i" = "1'b0" common_sync<a,b1..4>
+S -pin "testmode_i" = "1'b0" common_sync_pedge
 
 # connections
 S clk                mgmt         --> top core:clk!
