@@ -58,6 +58,7 @@ static int ig_tclc_get_attribute    (ClientData clientdata, Tcl_Interp *interp, 
 static int ig_tclc_get_objs_of_obj  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_connect          (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_parameter        (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_create_pin       (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_reset            (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_logger           (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_log              (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
@@ -88,6 +89,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_regs",    ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "connect",             ig_tclc_connect,         lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "parameter",           ig_tclc_parameter,       lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_pin",          ig_tclc_create_pin,      lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "reset",               ig_tclc_reset,           lib_db, NULL);
     Tcl_Export (interp, db_ns, "*", true);
 
@@ -1322,6 +1324,72 @@ l_ig_tclc_parameter_nfexit:
     goto l_ig_tclc_parameter_exit_pre;
 }
 
+
+/* TCLDOC
+##
+# @brief Create a pin for a instances.
+#
+# @param args Parsed command arguments:<br>
+# -instname \<instance name\><br>
+# -pinname \<pin name\><br>
+# -value \<signalname/value assigned to the the pin\><br>
+#
+*/
+static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
+
+    if (db == NULL) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Internal Error: database is NULL", -1));
+        return TCL_ERROR;
+    }
+
+    char *instname = NULL;
+    char *pinname  = NULL;
+    char *value    = NULL;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_STRING, "-instname", NULL, (void *)&instname,  "instance name", NULL},
+        {TCL_ARGV_STRING, "-pinname",  NULL, (void *)&pinname,   "pin name", NULL},
+        {TCL_ARGV_STRING, "-value",    NULL, (void *)&value,     "signalname/value assigned to the pin", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) {
+        return result;
+    }
+
+    if (instname == NULL) {
+        log_error ("TCPar", "No instance name specified");
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter name is required", -1));
+        result = TCL_ERROR;
+    }
+    if (pinname == NULL) {
+        log_error ("TCPar", "No pin name specified");
+        Tcl_SetObjResult (interp, Tcl_NewStringObj ("Error: parameter name is required", -1));
+        result = TCL_ERROR;
+    }
+
+    struct ig_instance *inst = (struct ig_instance *)g_hash_table_lookup (db->instances_by_name, instname);
+    if (inst == NULL) {
+        gchar *error_msg = g_strdup_printf ("Error (create pin): Could not found instance %s\n", instname);
+        Tcl_SetObjResult (interp, Tcl_NewStringObj (error_msg, -1));
+        g_free (error_msg);
+        return TCL_ERROR;
+    }
+    if (!inst->module->resource) {
+        gchar *error_msg = g_strdup_printf ("Error (create pin): Instance %s is not a resource\n", instname);
+        Tcl_SetObjResult (interp, Tcl_NewStringObj (error_msg, -1));
+        g_free (error_msg);
+        return TCL_ERROR;
+    }
+    ig_lib_add_pin (db, inst, pinname, value, "false");
+
+    return TCL_OK;
+}
 /* TCLDOC
 ##
 # @brief Clear database of all objects.

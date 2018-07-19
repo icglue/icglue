@@ -105,6 +105,16 @@ void ig_lib_db_free (struct ig_lib_db *db);
 struct ig_module *ig_lib_add_module      (struct ig_lib_db *db, const char *name, bool ilm, bool resource);
 
 /**
+ * @brief Add a new pin to a given instance.
+ * @param db Database to modify.
+ * @param inst Pointer to instance data.
+ * @param pin_name Name of the pin
+ * @param conn_name Name of the connection signal
+ * @param invert_attr Value of the invert attribute (should be either "true" or "false")
+ * @return The newly created pin data or @c NULL if pin already exists.
+ */
+struct ig_pin *ig_lib_add_pin (struct ig_lib_db *db, struct ig_instance *inst, const char *pin_name, const char *conn_name, const char *invert_attr);
+/**
  * @brief Add a new module instance to the database.
  * @param db Database to modify.
  * @param name Name of the instance.

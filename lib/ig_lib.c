@@ -109,6 +109,23 @@ struct ig_module *ig_lib_add_module (struct ig_lib_db *db, const char *name, boo
     return mod;
 }
 
+struct ig_pin *ig_lib_add_pin (struct ig_lib_db *db, struct ig_instance *inst, const char *pin_name, const char *conn_name, const char *invert_attr)
+{
+    /* create a pin */
+    struct ig_pin *inst_pin = ig_pin_new (pin_name, conn_name, inst, db->str_chunks);
+
+    ig_obj_attr_set (IG_OBJECT (inst_pin), "invert", invert_attr, false);
+    if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (inst_pin)->id)) {
+        log_error ("CPin", "Already declared pin %s", IG_OBJECT (inst_pin)->id);
+        ig_pin_free (inst_pin);
+        inst_pin = NULL;
+    } else {
+        g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (inst_pin)->id), IG_OBJECT (inst_pin));
+        g_queue_push_tail (inst->pins, inst_pin);
+    }
+    return inst_pin;
+}
+
 static bool ig_lib_check_cycle (struct ig_lib_db *db, struct ig_instance *child, struct ig_module *parent)
 {
     bool result = false;
@@ -858,17 +875,13 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
         }
 
         /* create a pin */
-        struct ig_pin *inst_pin = ig_pin_new (pin_name, conn_name, inst, db->str_chunks);
-        ig_obj_attr_set (IG_OBJECT (inst_pin), "invert", (cinfo->invert ? "true" : "false"), false);
-        if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (inst_pin)->id)) {
-            log_error ("HTrPS", "Already declared pin %s", IG_OBJECT (inst_pin)->id);
-            ig_pin_free (inst_pin);
-        } else {
-            g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (inst_pin)->id), IG_OBJECT (inst_pin));
-            g_queue_push_tail (inst->pins, inst_pin);
+        struct ig_pin *inst_pin = ig_lib_add_pin (db, inst, pin_name, conn_name, (cinfo->invert ? "true" : "false"));
+        /* connecting the pin */
+        if (inst_pin) {
             pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT (inst_pin));
-            log_debug ("HTrPS", "Created pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, IG_OBJECT (inst)->id, conn_name);
+            log_debug ("CPin", "Created pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, IG_OBJECT (inst)->id, conn_name);
         }
+
         for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
             struct ig_lib_connection_info *i_cinfo = (struct ig_lib_connection_info *)in->data;
             i_cinfo->parent_name = pin_name;
