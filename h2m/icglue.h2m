@@ -140,7 +140,7 @@ R component_regfile "entry_name" @0x0008 {
 [reporting bugs]
 E-mail bug reports to \fBandreas.dixius@tu-dresden.de\fR, \fBfelix.neumaerker@tu-dresden.de\fR.
 .br
-Also, please include the output  of  ``icglue --version'' in the body of your report if at all possible.
+Also, please include the output of ``icglue --version'' in the body of your report if at all possible.
 
 [see also]
 \fBig(10i)\fR - Scripting commands manpage

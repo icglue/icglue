@@ -478,6 +478,7 @@ namespace eval ig {
     #      <tr><td><i> &ensp; &ensp; <->                 </i></td><td>  bidirectional connection                     <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -(-)>               </i></td><td>  first element is interpreted as input source <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; <(-)-               </i></td><td>  last element is interpreted as input source  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -p(in)              </i></td><td>  add a pin to a resource module               <br></td></tr>
     #
     # @return Object-IDs of the newly created objects of newly created signal.
     #
@@ -554,7 +555,6 @@ namespace eval ig {
         } else {
             log -error -abort "S: no connection direction specified"
         }
-
 
         # actual module creation
         if {[catch {
@@ -891,7 +891,7 @@ namespace eval ig {
                     } elseif {[regexp {R} $s_type]} {
                         set conn "<--"
                     }
-                    set connect_cmd "S -w $s_width  \"${s_signal}\" $rf_module_name:$s_signal $conn $s_modules"
+                    set connect_cmd "S -w $s_width \"${s_signal}\" $rf_module_name:${s_signal}! $conn $s_modules"
                     eval $connect_cmd
                     ig::log -info -id "RCon" "$connect_cmd"
                 }

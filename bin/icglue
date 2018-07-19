@@ -26,24 +26,26 @@ lappend auto_path [file normalize [file dirname [file normalize $binpath]]/..]
 package require ICGlue
 
 proc printhelp {{exitcode 0} {doexit "true"}} {
-    puts "Usage: [file tail $::argv0] \[OPTION\]... FILE"
-    puts ""
-    puts "Options:"
-    puts "Mandatory arguments to long options are mandatory for short options too."
-    puts "    -h, --help               Show help"
-    puts ""
-    puts "    -f, --file=FILE          DEPRECATED: set input FILE to use (FILE argument is omitted)"
-    puts "    -t, --template=FILE      Set FILE to use as template"
-    puts "    --template-dir=DIR       Add DIR to template path"
-    puts ""
-    puts "    -l, --logger=TAG         Enable output log of TAG (format: LEVEL,IDENTIFIER)"
-    puts ""
-    puts {    -a, --args=K[=V]         Set K to V before running icglue construction script}
-    puts ""
-    puts "    -q, --quiet              Show errors only"
-    puts "    -v, --verbose            Be verbose"
-    puts "    ---version               Show version"
-    puts "    -d, --debug              Show debug output"
+    puts [format \
+{Usage: %s [OPTION]... FILE
+
+Options:
+Mandatory arguments to long options are mandatory for short options too.
+    -h, --help               Show help
+
+    -f, --file=FILE          DEPRECATED: set input FILE to use (FILE argument is omitted)
+    -t, --template=FILE      Set FILE to use as template
+    --template-dir=DIR       Add DIR to template path
+
+    -l, --logger=TAG         Enable output log of TAG (format: LEVEL,IDENTIFIER)
+
+    -a, --args=K[=V]         Set K to V before running icglue construction script
+
+    -q, --quiet              Show errors only
+    -v, --verbose            Be verbose
+    --version                Show version
+    -d, --debug              Show debug output
+} [file tail $::argv0]]
 
     if {$doexit} {
         exit $exitcode
@@ -51,14 +53,16 @@ proc printhelp {{exitcode 0} {doexit "true"}} {
 }
 
 proc printversion {} {
-    puts "ICGlue 1.0a1"
-    puts "Copyright (C) 2017 Andreas Dixius, Felix Neumaerker"
-    puts ""
-    puts "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>."
-    puts "This is free software: you are free to change and redistribute it."
-    puts "There is NO WARRANTY, to the extent permitted by law."
-    puts ""
-    puts "Written by Andreas Dixius, Felix Neumaerker"
+    puts \
+{ICGlue 1.0a1
+Copyright (C) 2017 Andreas Dixius, Felix Neumaerker
+
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Written by Andreas Dixius, Felix Neumaerker}
+
     exit 0
 }
 
