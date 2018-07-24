@@ -83,7 +83,6 @@ proc main {} {
     set c_log           {}
     set c_scriptargs    {}
 
-    ig::logger -level I -id Gen
     # arguments
     set filename [ig::aux::_parse_opts {} {} [list                   \
         {  {^(-h|--help)$}         "const=true" help            {} } \
@@ -104,9 +103,13 @@ proc main {} {
     if {$help} {
         printhelp 0
     }
-    if {$help_invalid} {
+    set c_file [concat $c_file $filename]
+    if {$help_invalid || ([llength $c_file] == 0)} {
         printhelp 1
     }
+
+    ig::logger -level I -id Gen
+
     set c_loglines "false"
     if {$debugdebug} {
         set c_loglines "true"
@@ -150,12 +153,7 @@ proc main {} {
     lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../templates"]
     lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../../share/icglue/templates"]
 
-    set c_file [concat $c_file $filename]
     # argument evaluation
-    if {[llength $c_file] == 0} {
-        ig::log -error "Not enough arguments"
-        printhelp 1
-    }
     if {![file isfile $c_file]} {
         ig::log -error "Cant open file \"${c_file}\" for reading"
         exit 1
