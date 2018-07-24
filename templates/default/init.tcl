@@ -37,6 +37,9 @@ init::template_file $template {
 # generate object output filename: arguments: {object type} (object-identifier, outputtype)
 init::output_file $template {
     set output_dir_root "."
+    if {[info exists ::env(ICPRO_DIR)]} {
+        set output_dir_root "$::env(ICPRO_DIR)"
+    }
     #TODO: rework type vs objtype
     set objtype     [ig::db::get_attribute -object $object -attribute "type"]
     set object_name [ig::db::get_attribute -object $object -attribute "name"]
