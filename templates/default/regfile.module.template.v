@@ -213,7 +213,7 @@
     common_sync i_common_sync_<%=$s%><[string trim $w]> (
         .clk_i(<[clk]>),
         .reset_n_i(<[reset]>),
-        .data_i(<[adapt_signalname $s $obj_id]><%=$sb%>),
+        .data_i(<[adapt_signalname $s $obj_id]><[string trim $sb]>),
         .data_o(<%=$r%>_sync)
     );<%="\n"%><% }  
     ## </common-sync>
@@ -289,7 +289,7 @@
     foreach_array reg $entry(regs) {
         if {$reg(type) eq "RW"} { %>
     assign <[reg_val]>[<[reg_entrybits]>] = <[string trim [reg_name]]>;<% } elseif {$reg(type) eq "R"} { %>
-    assign <[reg_val]>[<[reg_entrybits]>] = <[string trim [signal_name]]><[signal_entrybits]>;<% } elseif {$reg(type) eq "RS"} { %>
+    assign <[reg_val]>[<[reg_entrybits]>] = <[string trim "[signal_name][signal_entrybits]"]>;<% } elseif {$reg(type) eq "RS"} { %>
     assign <[reg_val]>[<[reg_entrybits]>] = <%=$reg(name)%>_sync;<% } elseif {$reg(type) eq "-"} { %>
     assign <[reg_val]>[<[reg_entrybits]>] = <%=$reg(width)%>'h0;<% } } %><%="\n"%><% } %><%="\n"
     %><[rf_comment_block "apb ready/error generate"]>
