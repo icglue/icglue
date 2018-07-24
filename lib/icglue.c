@@ -19,17 +19,18 @@
 
 #include <tcl.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "ig_tcl.h"
 #include "ig_logo.h"
 #include "logger.h"
 #include "color.h"
-
 /* for normal interpreters */
 int Icglue_Init (Tcl_Interp *interp)
 {
 
-    colors_on ();
+    if (isatty (STDOUT_FILENO))
+        colors_on ();
 
     ig_print_logo (stderr);
 
