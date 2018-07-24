@@ -23,5 +23,6 @@ if {$::argc != 1} {
     exit 1
 }
 
-pkg_mkIndex -lazy [lindex $::argv 0] *.tcl *.so
+#pkg_mkIndex -lazy [lindex $::argv 0] *.tcl *.so
+pkg_mkIndex [lindex $::argv 0] *.tcl *.so
 
