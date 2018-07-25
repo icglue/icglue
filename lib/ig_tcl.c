@@ -21,6 +21,7 @@
 #include "ig_lib.h"
 #include "ig_tcl.h"
 #include "logger.h"
+#include "ig_logo.h"
 
 #include <string.h>
 
@@ -62,6 +63,7 @@ static int ig_tclc_create_pin       (ClientData clientdata, Tcl_Interp *interp, 
 static int ig_tclc_reset            (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_logger           (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_log              (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_print_logo       (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 static int tcl_error_msg (Tcl_Interp *interp, const gchar *format, ...) __attribute__((format (printf, 2, 0)));
 static int tcl_verror_msg (Tcl_Interp *interp, const char *format, va_list args);
@@ -99,6 +101,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_Namespace *log_ns = Tcl_CreateNamespace (interp, ICGLUE_LOG_NAMESPACE, NULL, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "logger",              ig_tclc_logger,          lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log",                 ig_tclc_log,             lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "print_logo",          ig_tclc_print_logo,      lib_db, NULL);
     Tcl_Export (interp, log_ns, "*", true);
 }
 
@@ -1393,6 +1396,16 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
     return TCL_OK;
 }
 
+/* TCLDOC
+##
+# @brief print the icglue logo
+#
+*/
+static int ig_tclc_print_logo (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    ig_print_logo (stderr);
+    return TCL_OK;
+}
 static int tcl_error_msg (Tcl_Interp *interp, const char *format, ...)
 {
     int     result;

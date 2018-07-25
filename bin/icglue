@@ -23,10 +23,12 @@ set binpath $::argv0
 # in case script is a relative symlink, get to absolute path of script
 catch {set binpath [file normalize [file join [file dirname $binpath] [file readlink $binpath]]]}
 lappend auto_path [file normalize [file dirname [file normalize $binpath]]/..]
+
+set icglue_silent_load "true"
 package require ICGlue
 
-proc printhelp {{exitcode 0} {doexit "true"}} {
-    puts [format \
+proc printhelp {{exitcode 0} {channel stdout} {doexit "true"}} {
+    puts $channel [format \
 {Usage: %s [OPTION]... FILE
 
 Options:
@@ -44,7 +46,11 @@ Mandatory arguments to long options are mandatory for short options too.
     -q, --quiet              Show errors only
     -v, --verbose            Be verbose
     --version                Show version
+    --nocopyright            Do not print the ICGlue copyright, version and logo upon start to stderr
     -d, --debug              Show debug output
+
+If the FILE has the extention .sng or .icng, it will try to parse the input as icsng syntax and translate them to corresponding icglue commands.
+Otherwise the FILE is interpreted as TCL-Script which supports the icglue extension for hardware description.
 } [file tail $::argv0]]
 
     if {$doexit} {
@@ -74,6 +80,7 @@ proc main {} {
     set help_invalid    "false"
     set debugdebug      "false"
     set print_version   "false"
+    set nologo          "false"
 
     # flags with mandatory arguments
     set c_loglevel      "W"
@@ -98,14 +105,23 @@ proc main {} {
         {  {^(-f|--file)(=|$)}     "list"       c_file          {} } \
         {  {^(-l|--logger)(=|$)}   "list"       c_log           {} } \
         {  {^(-a|--args)(=|$)}     "list"       c_scriptargs    {} } \
+        {  {^(--nocopyright)$}     "const=true" nologo          {} } \
+        {  {^(--nologo)$}          "const=true" nologo          {} } \
         ] $::argv]
 
     if {$help} {
         printhelp 0
     }
+    if {!$nologo} {
+        ig::print_logo
+    }
+    if {$print_version} {
+        printversion
+    }
+
     set c_file [concat $c_file $filename]
     if {$help_invalid || ([llength $c_file] == 0)} {
-        printhelp 1
+        printhelp 1 stderr
     }
 
     ig::logger -level I -id Gen
@@ -113,10 +129,6 @@ proc main {} {
     set c_loglines "false"
     if {$debugdebug} {
         set c_loglines "true"
-    }
-
-    if {$print_version} {
-        printversion
     }
 
     if {$c_loglines} {
@@ -155,7 +167,11 @@ proc main {} {
 
     # argument evaluation
     if {![file isfile $c_file]} {
-        ig::log -error "Cant open file \"${c_file}\" for reading"
+        if {[regexp {^-} $c_file]} {
+            puts stderr [format {%s: unrecognized option '%s'} [file tail $::argv0] ${c_file}]
+        } else {
+            puts stderr [format {%s: cant read file '%s'} [file tail $::argv0] ${c_file}]
+        }
         exit 1
     }
 
@@ -183,18 +199,16 @@ proc main {} {
     }
 
     if {[catch {ig::templates::load_template $c_template}]} {
-        ig::log -error "failed to load template \"${c_template}\""
+        ig::log -error "Failed to load template \"${c_template}\""
         exit 1
     }
 
     # construct hierarchy from input file
     if {[regexp "\.(ic)?sng$" $c_file]} {
+        # teat (ic)sng files seperately (sng syntax)
         ig::sng::parse_file $c_file
-    } elseif {[regexp ".(tcl|(ic)?glue)$" $c_file]} {
-        ig::construct::run_script $c_file $scriptargs
     } else {
-        ig::log -error "Unknown input file suffix for \"$c_file\""
-        exit 1
+        ig::construct::run_script $c_file $scriptargs
     }
 
     # generate modules with template

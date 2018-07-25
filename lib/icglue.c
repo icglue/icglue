@@ -20,6 +20,7 @@
 #include <tcl.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "ig_tcl.h"
 #include "ig_logo.h"
@@ -32,12 +33,19 @@ int Icglue_Init (Tcl_Interp *interp)
     if (isatty (STDOUT_FILENO))
         colors_on ();
 
-    ig_print_logo (stderr);
+    const char *icglue_silent_load = Tcl_GetVar(interp, "icglue_silent_load", TCL_GLOBAL_ONLY);
+    // expr compatible treatement
+    if ((icglue_silent_load == NULL) || (
+        (strcmp (icglue_silent_load, "1")    != 0) &&
+        (strcmp (icglue_silent_load, "true") != 0) &&
+        (strcmp (icglue_silent_load, "yes")  != 0))) {
+        ig_print_logo (stderr);
+        log_info ("PLoad", "ICGlue v1.0a1 loaded");
+    }
 
     ig_add_tcl_commands (interp);
 
     Tcl_PkgProvide (interp, "ICGlue", "1.0a1");
-    log_info ("PLoad", "ICGlue v1.0a1 loaded");
 
     return TCL_OK;
 }

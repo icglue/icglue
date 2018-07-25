@@ -93,7 +93,7 @@ showdocs:
 
 man:
 	-mkdir -p share/man/man1
-	-help2man -i ./h2m/icglue.h2m ./bin/icglue > share/man/man1/icglue.1
+	-help2man -N -i ./h2m/icglue.h2m ./bin/icglue > share/man/man1/icglue.1
 
 .PHONY: doctcl doclib docs man
 

@@ -34,11 +34,17 @@ Show errors only
 \fB\-v\fR, \fB\-\-verbose\fR
 Be verbose
 .TP
-\fB\-\-\-version\fR
+\fB\-\-version\fR
 Show version
+.TP
+\fB\-\-nocopyright\fR
+Do not print the ICGlue copyright, version and logo upon start to stderr
 .TP
 \fB\-d\fR, \fB\-\-debug\fR
 Show debug output
+.PP
+If the FILE has the extention .sng or .icng, it will try to parse the input as icsng syntax and translate them to corresponding icglue commands.
+Otherwise the FILE is interpreted as TCL\-Script which supports the icglue extension for hardware description.
 .SH ENVIROMENT
 Environment variables are additional to the options passed to \fBicglue\fR.
 Options specfied take precedence over enviroment variables.
@@ -191,15 +197,3 @@ There is NO WARRANTY, to the extent permitted by law.
 .PP
 HTML documentation of the Tcl-library at \fB%DOCDIRTCL%/html/index.html\fR
 \" vim: ft=nroff
-.PP
-The full documentation for
-.B ICGlue
-is maintained as a Texinfo manual.  If the
-.B info
-and
-.B ICGlue
-programs are properly installed at your site, the command
-.IP
-.B info ICGlue
-.PP
-should give you access to the complete manual.
