@@ -10,11 +10,11 @@
     proc rf_w_data               {} { return "apb_wdata_i"             }
     proc rf_bytesel              {} { return "apb_strb_i"              }
     proc rf_prot                 {} { return "apb_prot_i"              }
-                                                 
+
     proc rf_r_data               {} { return "apb_rdata_o"             }
     proc rf_ready                {} { return "apb_ready_o "            }
     proc rf_err                  {} { return "apb_slverr_o"            }
-                                                 
+
     proc rf_r_data_sig           {} { return "apb_rf_r_data"           }
 
     proc rf_w_sel                {} { return "rf_w_sel"                }
@@ -130,6 +130,18 @@
             return [format "\[%5d\]" $bits]
         }
     }
+    proc custom_reg {} {
+        return [uplevel 1 {regexp -nocase {C} $reg(type)}]
+    }
+    proc read_reg_sync {} {
+        return [uplevel 1 {regexp -nocase {RS} $reg(type)}]
+    }
+    proc read_reg {} {
+        return [uplevel 1 {regexp -nocase {^[^-W]*$} $reg(type)}]
+    }
+    proc write_reg {} {
+        return [uplevel 1 {regexp -nocase {W} $reg(type)}]
+    }
     ###########################################
     ## <regfiles> ##
     foreach_array rf $mod_data(regfiles) {
@@ -144,13 +156,18 @@
         set handshake_sig_in_from_out {}
 
         foreach_array entry $entry_list {
-            foreach_array_with reg $entry(regs) {$reg(type) eq "RS"} {
+            foreach_array_with reg $entry(regs) {[read_reg_sync]} {
                 lappend sig_syncs "$reg(signal)" "$reg(name)" "[reg_range]" "[signal_entrybits]"
             }
         }
         foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
             set handshake_sig_out [lindex $entry(handshake) 0]
             set handshake_sig_in  [lindex $entry(handshake) 1]
+            foreach {handshake_sig_varname handshake_sig} [list handshake_sig_in $handshake_sig_in handshake_sig_out $handshake_sig_out] {
+                if {[string first ":" $handshake_sig] > -1} {
+                    set $handshake_sig_varname [lindex [split $handshake_sig ":"] 1]
+                }
+            }
             if {[lsearch $handshake_list $handshake_sig_out] < 0} {
                 lappend handshake_list $handshake_sig_out
                 dict set handshake_sig_in_from_out $handshake_sig_out $handshake_sig_in
@@ -198,7 +215,7 @@
     foreach_array_preamble entry $entry_list { %>
     // regfile registers / wires<% } { %>
     wire [31: 0] <[reg_val]>;<%
-        foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} { %>
+        foreach_array_with reg $entry(regs) {[write_reg]} { %>
     reg  <[reg_range]> <[reg_name]>;<% } %><%="\n"%><% } %>
     <%=[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-declaration"] %><%
     ## </definition> ##
@@ -207,7 +224,7 @@
 
 <%
     ###########################################
-    ## <common-sync> 
+    ## <common-sync>
     foreach_preamble {s r w sb} $sig_syncs {
     %><[rf_comment_block "common sync's"]><% } { -%>
     common_sync i_common_sync_<%=$s%><[string trim $w]> (
@@ -215,7 +232,7 @@
         .reset_n_i(<[reset]>),
         .data_i(<[adapt_signalname $s $obj_id]><[string trim $sb]>),
         .data_o(<%=$r%>_sync)
-    );<%="\n"%><% }  
+    );<%="\n"%><% }
     ## </common-sync>
     ###########################################
 %>
@@ -241,7 +258,7 @@
     end<% foreach handshake $handshake_list { %>
     assign <[adapt_signalname $handshake $obj_id]> = reg_<%=$handshake%>;<%="\n"%><% }
     } %><%="\n\n"%><%
-    ## </handshake> 
+    ## </handshake>
     ###########################################
 -%>
 <%
@@ -267,37 +284,70 @@
         set maxlen_signame [max_array_entry_len $entry(regs) name]
         set maxlen_signalname [expr [max_array_entry_len $entry(regs) signal] + 2]
     %>
-    <[format "// %s @ %s" $entry(name)  $entry(address)]><% if {[info exists entry(handshake)]} { %><[format " (%s)" $entry(handshake)]><% }
-    if {[foreach_array_contains reg $entry(regs) {$reg(type) eq "RW"}]} { %>
+    <[format "// %s @ %s" $entry(name)  $entry(address)]><% if {[info exists entry(handshake)]} { %><[format " (%s)" [regsub -all {\m\S+:} $entry(handshake) {}]]><% }
+    if {[foreach_array_contains reg $entry(regs) {[write_reg]}]} {%>
     always @(posedge <[clk]> or negedge <[reset]>) begin
-        if (<[reset]> == 1'b0) begin<% foreach_array_with reg $entry(regs) {$reg(type) eq "RW"} { %>
-            <[reg_name]> <= <%=$reg(reset)%>;<% } %>
+        if (<[reset]> == 1'b0) begin<% foreach_array_with reg $entry(regs) {[write_reg]} { %>
+            <[reg_name]> <= <%=$reg(reset)%>;<% }
+        if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
+            <[get_pragma_content $pragma_data "keep" "custom_reset_${entry(name)}"]><% } %>
         end else begin
             if (<[rf_w_sel]> && <[rf_enable]>) begin
                 if (<[rf_addr]> == <[string trim [param]]>) begin<%
-                    for {set byte 0} {$byte < 4} {incr byte} { 
-                        foreach_array_preamble_epilog_with reg $entry(regs) {$reg(type) eq "RW" && [reg_entrybits_in_bytesel $byte]} { %>
-                    if (<[rf_bytesel]>[<%=$byte%>] == 1'b1) begin<% } { %>
-                        <[reg_name]><[reg_range_bytesel $byte]> <= <[rf_w_data]>[<[reg_entrybits_bytesel $byte]>];<% } { %>
+                    for {set byte 0} {$byte < 4} {incr byte} {
+                        foreach_array_preamble_epilog_with reg $entry(regs) {[write_reg] && [reg_entrybits_in_bytesel $byte]} { %>
+                    if (<[rf_bytesel]>[<%=$byte%>] == 1'b1) begin<% } { %><%
+                        if {![custom_reg]} {%>
+                        <[reg_name]><[reg_range_bytesel $byte]> <= <[rf_w_data]>[<[reg_entrybits_bytesel $byte]>];<%
+                        } else { %>
+                        <[get_pragma_content $pragma_data "keep" "custom_assign_$reg(name)" ".v" "
+                        // TODO: [reg_name][reg_range_bytesel $byte] <= [rf_w_data]\[[reg_entrybits_bytesel $byte]\];
+                        "]><% } } { %>
                     end<% } } %>
                 end
-            end
+            end<%
+            if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
+            <[get_pragma_content $pragma_data "keep" "custom_code_${entry(name)}"]><% } %>
         end
-    end<% foreach_array_with reg $entry(regs) {($reg(type) eq "RW") && ($reg(signal) ne "-")} { %>
+    end<% foreach_array_with reg $entry(regs) {[write_reg] && ($reg(signal) ne "-")} { %>
     assign <[signal_name]><[signal_entrybits]> = <[string trim [reg_name]]>;<% } %><%="\n"%><%
     }
     foreach_array reg $entry(regs) {
-        if {$reg(type) eq "RW"} { %>
-    assign <[reg_val]>[<[reg_entrybits]>] = <[string trim [reg_name]]>;<% } elseif {$reg(type) eq "R"} { %>
-    assign <[reg_val]>[<[reg_entrybits]>] = <[string trim "[signal_name][signal_entrybits]"]>;<% } elseif {$reg(type) eq "RS"} { %>
-    assign <[reg_val]>[<[reg_entrybits]>] = <%=$reg(name)%>_sync;<% } elseif {$reg(type) eq "-"} { %>
-    assign <[reg_val]>[<[reg_entrybits]>] = <%=$reg(width)%>'h0;<% } } %><%="\n"%><% } %><%="\n"
+        if {[write_reg]} {
+            set _reg_val_output "[string trim [reg_name]]"
+        } elseif {[read_reg_sync]} {
+            set _reg_val_output "$reg(name)_sync"
+        } elseif {[read_reg]} {
+            set _reg_val_output "[string trim [signal_name][signal_entrybits]]"
+        } elseif {$reg(type) eq "-"} {
+            set _reg_val_output "$reg(width)'h0"
+        } else {
+            log -warn -id RFOUT "Unkown regfile type for $entry(name) - $reg(name)-- set to zero"
+            set _reg_val_output "$reg(width)'h0"
+        }
+        if {![custom_reg]} {%>
+    assign <[reg_val]>[<[reg_entrybits]>] = <%=$_reg_val_output%>;<%
+        } else { %>
+    <[get_pragma_content $pragma_data "keep" "custom_read_output_$reg(name)" ".v" "
+    // TODO: assign [reg_val]\[[reg_entrybits]\] = ${_reg_val_output};
+    "]><% } } %><%="\n"%><% } %><%="\n"
     %><[rf_comment_block "apb ready/error generate"]>
     always @(*) begin
         <[rf_ready_sig]> = 1'b0;
         if (<[rf_enable]> == 1'b1) begin
             <[rf_ready_sig]> = 1'b1;
         end<%
+        foreach_array entry $entry_list {
+            if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
+                <[get_pragma_content $pragma_data "keep" "custom_ready_$entry(name)" ".v" "
+                // TODO: generate ready for custom entry $entry(name)
+                //if ([rf_addr] == [string trim [param]]) begin
+                //    [rf_ready_sig] = CONDITION;
+                //end
+                "
+                ]><%
+            }
+        }
         foreach handshake $handshake_list { %>
         if (<[join [dict get $handshake_cond_req $handshake] " || "]>) begin
             <[rf_ready_sig]> = <[dict get $handshake_sig_in_from_out $handshake]>_sync & reg_<%=$handshake%>;
@@ -328,7 +378,7 @@
         <[rf_next_read_permitted]> = 1;
         case (<[rf_addr]>)<% foreach_array entry $entry_list { %>
             <[string trim [param]]>: begin
-                <[rf_r_data_sig]> = <[reg_val]>;<% if {[foreach_array_contains reg $entry(regs) {$reg(type) eq "RW"}]} { %>
+                <[rf_r_data_sig]> = <[reg_val]>;<% if {[foreach_array_contains reg $entry(regs) {[write_reg]}]} { %>
                 <[rf_next_write_permitted]> = 1;<% } %>
             end<% } %>
             <%=[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-outputmux"] %>

@@ -807,9 +807,14 @@ namespace eval ig {
                 set handshake_sig_out [lindex $handshake 1]
 
                 foreach {handshake_sig conn} [list $handshake_sig_in --> $handshake_sig_out <--] {
+                    set s_signal {}
                     if {[llength $handshake_sig] > 1} {
                         set s_signal  [lindex $handshake_sig 0]
                         set s_modules [lindex $handshake_sig 1]
+                    } elseif {[string first : $handshake_sig] != -1} {
+                        lassign [split $handshake_sig ":"] s_modules s_signal
+                    }
+                    if {$s_signal ne ""} {
                         S $s_signal $rf_module_name $conn $s_modules
                         ig::log -info -id "RCon" "S \"$s_signal\" $rf_module_name $conn $s_modules"
                     }
