@@ -170,6 +170,7 @@ namespace eval ig::templates {
             foreach i_entry $entries {
                 set reg_list {}
                 set regs [ig::db::get_regfile_regs -all -of $i_entry]
+                set next_bit 0
 
                 #entry_default_map {name width entrybits type reset signal signalbits}
                 foreach i_reg $regs {
@@ -195,11 +196,12 @@ namespace eval ig::templates {
                             }
                         }
                     } elseif {$entrybits eq ""} {
-                        set entrybits "[expr {$width - 1}]:0"
+                        set entrybits "[expr {$width + $next_bit - 1}]:$next_bit"
                     }
 
                     set blist [split $entrybits ":"]
                     set bit_high [lindex $blist 0]
+                    set next_bit [expr {$bit_high+1}]
                     if {[llength $blist] == 2} {
                         set bit_low  [lindex $blist 1]
                     } else {
