@@ -700,6 +700,7 @@ namespace eval ig {
     #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))($|=)  </i></td><td>  DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument  <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; (@|-addr($|=))        </i></td><td>  specify the address                                                      <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -handshake($|=)       </i></td><td>  specify signals and type for handshake {signal-out signal-in type}       <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -nosubst              </i></td><td>  do not perform Tcl substition in REGISTERTABLE argument                  <br></td></tr>
     #    </table>
     #
     # @return Object-ID of the newly created regfile-entry.
@@ -725,12 +726,14 @@ namespace eval ig {
         set address     {}
         set regdef      {}
         set handshake   {}
+        set do_subst    "true"
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list                                                                                             \
-                { {^-(rf|regf(ile)?)($|=)} "string" regfilename "DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument " } \
-                { {^(@|-addr($|=))}        "string" address     "specify the address"}                                                       \
-                { {^-handshake($|=)}       "string" handshake   "specify signals and type for handshake {signal-out signal-in type}"}        \
+        set arguments [ig::aux::parse_opts [list                                                                                                         \
+                { {^-(rf|regf(ile)?)($|=)} "string"             regfilename "DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument " } \
+                { {^(@|-addr($|=))}        "string"             address     "specify the address"}                                                       \
+                { {^-handshake($|=)}       "string"             handshake   "specify signals and type for handshake {signal-out signal-in type}"}        \
+                { {^-nosubst$}             "const=false"        do_subst    "do not perform Tcl substition in REGISTERTABLE argument"}                   \
             ] -context "REGFILE-MODULE ENTRYNAME REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -742,6 +745,9 @@ namespace eval ig {
             set regdef      [lindex $arguments 2]
         }
 
+        if {$do_subst} {
+            set regdef [uplevel 1 subst [list $regdef]]
+        }
 
         if {[llength $arguments] < 2} {
             log -error -abort "R : not enough arguments"
@@ -918,10 +924,11 @@ namespace eval ig {
     #    <table style="border:0px; border-spacing:40px 0px;">
     #      <tr><td><b> REGISTERTABLE </b></td><td> specification of the register table </td></tr>
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))(=)  </i></td><td>  specify the regfile name       <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -csv$               </i></td><td>  specify entries as csv         <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -csvfile(=)         </i></td><td>  specify entries as csvfile     <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -csvsep(arator)(=)  </i></td><td>  specify separator for csvfiles <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))(=)  </i></td><td>  specify the regfile name                                <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -csv$               </i></td><td>  specify entries as csv                                  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -csvfile(=)         </i></td><td>  specify entries as csvfile                              <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -csvsep(arator)(=)  </i></td><td>  specify separator for csvfiles                          <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -nosubst            </i></td><td>  do not perform Tcl substition in REGISTERTABLE argument <br></td></tr>
     #    </table>
     #
     # <b>REGISTERTABLE</b> is a list of the form {<b>HEADER REG1 REG2</b> ...}.
@@ -947,13 +954,15 @@ namespace eval ig {
         set csv         "false"
         set csvfile     {}
         set csvsep      {;}
+        set nosubst_opt ""
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list                                                      \
-                { {^-(rf|regf(ile)?)($|=)} "string"     regfilename "specify the regfile name"      } \
-                { {^-csv$}                 "const=true" csv         "specify entries as csv"        } \
-                { {^-csvfile($|=)}         "string"     csvfile     "specify entries as csvfile"    } \
-                { {^-csvsep(arator)?($|=)} "string"     csvsep      "specify separator for csvfiles"} \
+        set arguments [ig::aux::parse_opts [list                                                                                    \
+                { {^-(rf|regf(ile)?)($|=)} "string"         regfilename "specify the regfile name"                                } \
+                { {^-csv$}                 "const=true"     csv         "specify entries as csv"                                  } \
+                { {^-csvfile($|=)}         "string"         csvfile     "specify entries as csvfile"                              } \
+                { {^-csvsep(arator)?($|=)} "string"         csvsep      "specify separator for csvfiles"                          } \
+                { {^-nosubst$}             "const=-nosubst" nosubst_opt "do not perform Tcl substition in REGISTERTABLE argument" } \
             ] -context "REGFILE-MODULE REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -1064,6 +1073,9 @@ namespace eval ig {
             set opts {}
             if {$e_addr ne ""} {
                 lappend opts "@${e_addr}"
+            }
+            if {$nosubst_opt ne ""} {
+                lappend opts $nosubst_opt
             }
 
             R {*}${opts} $regfilename $e_name $e_table
