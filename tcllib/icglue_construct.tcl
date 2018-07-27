@@ -205,7 +205,8 @@ namespace eval ig {
             log -error -abort "M: too many arguments ($name)"
         }
 
-        set instance_tree [regsub -lineanchor {^\s*#.*$} $instance_tree {}]
+        set instance_tree [regsub -all -lineanchor -linestop {#.*$} $instance_tree {}]
+        set instance_tree [uplevel subst [list $instance_tree]]
         set instance_tree [split $instance_tree "\n"]
         if {[llength $instance_tree] > 0} {
             set cur_parent {}
@@ -217,9 +218,6 @@ namespace eval ig {
             set maxlen_modname 0
 
             foreach inst $instance_tree {
-                set inst [string trim $inst]
-                if {$inst eq ""} {continue}
-
                 # remove spaces of list
                 set m_level {}
                 set m_instance {}
@@ -227,12 +225,15 @@ namespace eval ig {
                 set m_flags {}
                 regexp -expanded {
                     # Match level dots
-                    ^\s*([-\.+|\*]+)\s*
+                    ^([^a-zA-Z]*)
                     # Match instance_name
-                    ([^(]+)\s*
+                    ([^(]*)\s*
                     # Match flags
                     (\((.*)\))?
                 }  $inst m_whole m_level m_instance m_flags_full m_flags
+
+                if {$m_instance eq ""} {continue}
+
                 set level [string length $m_level]
                 if {[string first "#" $m_instance] == 0 } {continue}
                 set m_instance [string trim $m_instance]
