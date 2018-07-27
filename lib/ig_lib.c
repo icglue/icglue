@@ -123,6 +123,7 @@ struct ig_pin *ig_lib_add_pin (struct ig_lib_db *db, struct ig_instance *inst, c
         g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (inst_pin)->id), IG_OBJECT (inst_pin));
         g_queue_push_tail (inst->pins, inst_pin);
     }
+
     return inst_pin;
 }
 
@@ -248,10 +249,17 @@ struct ig_rf_regfile *ig_lib_add_regfile (struct ig_lib_db *db, const char *name
 
     char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (rf)->id);
 
-    g_queue_push_tail (parent->regfiles, rf);
+    if (g_hash_table_contains (db->objects_by_id, l_id)) {
+        log_error ("LARgf", "Regfile %s already exists", rf->name);
+        ig_rf_regfile_free (rf);
 
-    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (rf));
-    log_debug ("LARgf", "...added regfile %s for module %s", name, parent->name);
+        rf = NULL;
+    } else {
+        g_queue_push_tail (parent->regfiles, rf);
+
+        g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (rf));
+        log_debug ("LARgf", "...added regfile %s for module %s", name, parent->name);
+    }
 
     return rf;
 }
@@ -272,10 +280,17 @@ struct ig_rf_entry *ig_lib_add_regfile_entry (struct ig_lib_db *db, const char *
 
     char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (entry)->id);
 
-    g_queue_push_tail (parent->entries, entry);
+    if (g_hash_table_contains (db->objects_by_id, l_id)) {
+        log_error ("LARfE", "Regfile-Entry %s already exists in regfile %s", entry->name, parent->name);
+        ig_rf_entry_free (entry);
 
-    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (entry));
-    log_debug ("LARfE", "...added entry %s for regfile %s", name, parent->name);
+        entry = NULL;
+    } else {
+        g_queue_push_tail (parent->entries, entry);
+
+        g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (entry));
+        log_debug ("LARfE", "...added entry %s for regfile %s", name, parent->name);
+    }
 
     return entry;
 }
@@ -296,10 +311,17 @@ struct ig_rf_reg *ig_lib_add_regfile_reg (struct ig_lib_db *db, const char *name
 
     char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (reg)->id);
 
-    g_queue_push_tail (parent->regs, reg);
+    if (g_hash_table_contains (db->objects_by_id, l_id)) {
+        log_error ("LARfR", "Regfile-reg %s already exists in regfile-entry %s", reg->name, parent->name);
+        ig_rf_reg_free (reg);
 
-    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (reg));
-    log_debug ("LARfR", "...added reg %s for regfile-entry %s", name, parent->name);
+        reg = NULL;
+    } else {
+        g_queue_push_tail (parent->regs, reg);
+
+        g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (reg));
+        log_debug ("LARfR", "...added reg %s for regfile-entry %s", name, parent->name);
+    }
 
     return reg;
 }
