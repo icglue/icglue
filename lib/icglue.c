@@ -33,12 +33,12 @@ int Icglue_Init (Tcl_Interp *interp)
     if (isatty (STDOUT_FILENO))
         colors_on ();
 
-    const char *icglue_silent_load = Tcl_GetVar(interp, "icglue_silent_load", TCL_GLOBAL_ONLY);
+    const char *icglue_silent_load = Tcl_GetVar (interp, "icglue_silent_load", TCL_GLOBAL_ONLY);
     // expr compatible treatement
     if ((icglue_silent_load == NULL) || (
-        (strcmp (icglue_silent_load, "1")    != 0) &&
-        (strcmp (icglue_silent_load, "true") != 0) &&
-        (strcmp (icglue_silent_load, "yes")  != 0))) {
+            (strcmp (icglue_silent_load, "1")    != 0) &&
+            (strcmp (icglue_silent_load, "true") != 0) &&
+            (strcmp (icglue_silent_load, "yes")  != 0))) {
         ig_print_logo (stderr);
         log_info ("PLoad", "ICGlue v1.0a1 loaded");
     }
