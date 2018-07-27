@@ -26,6 +26,9 @@ if { ([module-info mode load] || [module-info mode switch2]) } {
         puts stderr "\nERROR: package ${tool_name} v${tool_version} is not installed!"
         exit 1
     }
+    if {[module-info shell] eq "zsh"} {
+        puts "compdef _gnu_generic $tool_name"
+    }
 }
 
 #------------------------------------------------------------------------
