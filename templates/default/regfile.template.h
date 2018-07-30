@@ -3,6 +3,13 @@ set entry_list [regfile_to_arraylist $obj_id]
 set rf_name [object_name $obj_id]
 set userparams [ig::db::get_attribute -object $obj_id -attribute "accesscargs" -default {}]
 set header_name "rf_${rf_name}"
+
+proc read_reg {} {
+    return [uplevel 1 {regexp -nocase {^[^-W]*$} $reg(type)}]
+}
+proc write_reg {} {
+    return [uplevel 1 {regexp -nocase {W} $reg(type)}]
+}
 -%>
 #ifndef __<[string toupper ${header_name}]>_H__
 #define __<[string toupper ${header_name}]>_H__
@@ -42,7 +49,7 @@ foreach_array entry $entry_list {
 
         set reg_data [list name $reg(name) type $rtype]
 
-        if {$reg(type) eq "RW"} {
+        if {[write_reg]} {
             lappend arguments_write "${rtype} ${reg(name)}"
             lappend write_regs $reg_data
         }

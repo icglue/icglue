@@ -8,6 +8,14 @@ foreach i_param $userparams {
 }
 
 set header_name "rf_${rf_name}"
+
+proc read_reg {} {
+    return [uplevel 1 {regexp -nocase {^[^-W]*$} $reg(type)}]
+}
+proc write_reg {} {
+    return [uplevel 1 {regexp -nocase {W} $reg(type)}]
+}
+
 -%>
 
 
@@ -50,7 +58,7 @@ foreach_array entry $entry_list {
 
         set reg_data [list name $reg(name) width $reg(width) lsb $reg(bit_low) mask $mask type $rtype]
 
-        if {$reg(type) eq "RW"} {
+        if {[write_reg]} {
             lappend arguments_write "${rtype} ${reg(name)}"
             lappend write_regs $reg_data
         }
