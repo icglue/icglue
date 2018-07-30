@@ -23,6 +23,7 @@
 #include "logger.h"
 #include "ig_logo.h"
 
+#include <libgen.h>
 #include <string.h>
 
 #ifndef ICGLUE_LIB_NAMESPACE
@@ -63,6 +64,7 @@ static int ig_tclc_create_pin       (ClientData clientdata, Tcl_Interp *interp, 
 static int ig_tclc_reset            (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_logger           (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_log              (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_log_stat         (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_print_logo       (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 static int tcl_error_msg (Tcl_Interp *interp, const gchar *format, ...) __attribute__((format (printf, 2, 0)));
@@ -101,6 +103,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_Namespace *log_ns = Tcl_CreateNamespace (interp, ICGLUE_LOG_NAMESPACE, NULL, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "logger",              ig_tclc_logger,          lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log",                 ig_tclc_log,             lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log_stat",            ig_tclc_log_stat,        lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "print_logo",          ig_tclc_print_logo,      lib_db, NULL);
     Tcl_Export (interp, log_ns, "*", true);
 }
@@ -1383,7 +1386,21 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
     if (objc > 0) {
         for (int i = 1; i < objc; i++) {
             char *msg = Tcl_GetString (remObjv[i]);
-            log_base (loglevel, log_id, "TCL", 0, "%s", msg);
+            char *file = "";
+            int linenumber = 0;
+
+            if (Tcl_Eval (interp, "info frame -1") == TCL_OK) {
+                Tcl_Obj *info_frame = Tcl_GetObjResult (interp);
+
+                Tcl_Obj *file_obj = NULL;
+                Tcl_DictObjGet (interp, info_frame, Tcl_NewStringObj ("file", -1), &file_obj);
+                file = Tcl_GetString (file_obj);
+
+                Tcl_Obj *linenumber_obj = NULL;
+                Tcl_DictObjGet (interp, info_frame, Tcl_NewStringObj ("line", -1), &linenumber_obj);
+                Tcl_GetIntFromObj (interp, linenumber_obj , &linenumber);
+            }
+            log_base (loglevel, log_id, basename(file), linenumber, "%s", msg);
             if (abort) {
                 Tcl_SetObjResult (interp, Tcl_NewStringObj (msg, -1));
             }
@@ -1393,6 +1410,66 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
     if (objc != 0) ckfree (remObjv);
 
     if (abort) return TCL_ERROR;
+    return TCL_OK;
+}
+
+/* TCLDOC
+##
+# @brief Control log message verbosity.
+#
+# @param args <b> [OPTION]</b><br>
+#    <table style="border:0px; border-spacing:40px 0px;">
+#      <tr><td><b> OPTION </b></td><td><br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -level  </i></td><td>  specify the loglevel  <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -suppress  </i></td><td>  get number of suppressed log messages  <br></td></tr>
+#    </table>
+#
+*/
+static int ig_tclc_log_stat (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    gchar *loglevel   = NULL;
+    gint  suppress   = 0;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_STRING,   "-level",    NULL,                (void *)&loglevel, "log level",                                    NULL},
+        {TCL_ARGV_CONSTANT, "-suppress", GINT_TO_POINTER (1), (void *)&suppress, "return the log message as tcl error", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
+    if (result != TCL_OK) {
+        return result;
+    }
+
+    Tcl_Obj *retval = NULL;
+    if (loglevel == NULL) {
+        retval = Tcl_NewListObj (0, NULL);
+        for (int i=0; i<LOGLEVEL_COUNT; i++) {
+            Tcl_ListObjAppendElement (interp, retval, Tcl_NewStringObj (loglevel_label[i], -1));
+            Tcl_Obj *log_count = Tcl_NewIntObj( suppress ? get_log_count_suppressed (i) : get_log_count_print (i));
+            Tcl_ListObjAppendElement (interp, retval, log_count);
+        }
+    } else if (loglevel != NULL) {
+        gboolean found_level = false;
+        int      i           = 0;
+        for (i = 0; i < LOGLEVEL_COUNT; i++) {
+            if (g_strcmp0 (loglevel, loglevel_label[i]) == 0) {
+                found_level = true;
+                break;
+            }
+        }
+        if (found_level) {
+            retval = Tcl_NewIntObj( suppress ? get_log_count_suppressed (i) : get_log_count_print (i));
+        } else {
+            // level does not exists:
+            return tcl_error_msg (interp, "Loglevel %s does not exist - try `-help` for a list of available loglevels", loglevel);
+        }
+    }
+
+    Tcl_SetObjResult (interp, retval);
     return TCL_OK;
 }
 

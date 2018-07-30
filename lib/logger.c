@@ -27,6 +27,9 @@ static gboolean    log_linenumbers   = FALSE;
 static log_level_t default_log_level = LOGLEVEL_INFO;
 static GHashTable *log_property      = NULL;
 
+static guint log_count_print[LOGLEVEL_COUNT];
+static guint log_count_suppressed[LOGLEVEL_COUNT];
+
 gchar *loglevel_label[LOGLEVEL_COUNT] = {
     "D",
     "I",
@@ -34,6 +37,25 @@ gchar *loglevel_label[LOGLEVEL_COUNT] = {
     "E",
     "INTERNAL ERROR",
 };
+
+guint get_log_count_print (log_level_t log_level)
+{
+    if ((log_level > -1) && (log_level < LOGLEVEL_COUNT)) {
+        return log_count_print[log_level];
+    } else {
+        return -1;
+    }
+}
+
+guint get_log_count_suppressed (log_level_t log_level)
+{
+    if ((log_level > -1) && (log_level < LOGLEVEL_COUNT)) {
+        return log_count_suppressed[log_level];
+    } else {
+        return -1;
+    }
+}
+
 
 void set_default_log_level (log_level_t log_level)
 {
@@ -85,6 +107,7 @@ gboolean log_suppress (const log_level_t level, const gchar *id)
 void log_basev (const log_level_t level, const gchar *id, const gchar *sfile, gint sline, const gchar *format, va_list arg_list)
 {
     if (log_suppress (level, id)) {
+        log_count_suppressed[level]++;
         return;
     }
 
@@ -110,6 +133,7 @@ void log_basev (const log_level_t level, const gchar *id, const gchar *sfile, gi
     g_string_vprintf (log_string, format, arg_list);
     g_string_printf (log_formated, "%s%s,%-5s%s    %s", log_header_color, loglevel_label[level], id, color_reset, log_string->str);
     g_string_free (log_string, TRUE);
+    log_count_print[level]++;
     g_free (log_header_color);
 
     if (log_linenumbers) {

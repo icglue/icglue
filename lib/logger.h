@@ -149,10 +149,21 @@ void log_particular_level (const gchar *id, const log_level_t level);
  */
 gboolean log_suppress (const log_level_t level, const gchar *id);
 
+
 /**
  * @brief Print current log level settings to stderr.
  */
 void log_dump_settings ();
+
+/**
+ * @brief Returns the number of printed log messages
+ */
+guint get_log_count_print (log_level_t log_level);
+
+/**
+ * @brief Returns the number of suppressed log messages
+ */
+guint get_log_count_suppressed (log_level_t log_level);
 
 #ifdef __cplusplus
 }
