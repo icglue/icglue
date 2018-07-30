@@ -20,6 +20,7 @@
 
 # set package path and load ICGlue package
 lappend auto_path [file normalize [file dirname [file normalize $::argv0]]/..]
+set icglue_silent_load "true"
 package require ICGlue
 
 # import namespace ig (syntaxdb for *.icglue files)

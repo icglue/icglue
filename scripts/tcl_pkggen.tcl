@@ -23,5 +23,6 @@ if {$::argc != 1} {
     exit 1
 }
 
+set icglue_silent_load "true"
 pkg_mkIndex [lindex $::argv 0] *.tcl *.so
 

@@ -128,6 +128,7 @@ proc main {} {
 
     set c_loglines "false"
     if {$debugdebug} {
+        set c_loglevel "D"
         set c_loglines "true"
     }
 
@@ -224,8 +225,32 @@ proc main {} {
             }
         }
     }
+
+    set exitcode 0
+
+    set msg {}
+    set loglevel_list {D I W E}
+    foreach {stat_opt stat_fmt} {
+        {}        "  %s: %6d messages generated."
+        -suppress "  %s: %6d messages have been explicitly disabled."} {
+        foreach level [lrange $loglevel_list [lsearch $loglevel_list $c_loglevel] end] {
+            set log_count [ig::log_stat {*}$stat_opt -level $level]
+            if {$log_count > 0} {
+                lappend msg [format $stat_fmt $level $log_count]
+
+                if {($stat_opt eq "") && (($level eq "W") || ($level eq "E"))} {
+                    set exitcode 1
+                }
+            }
+        }
+    }
+
+    if {[llength $msg]} {
+        puts "\nSummary:\n[join $msg "\n"]"
+    }
+    exit $exitcode
 }
 
 main
 
-# vim: set filetype=icgluetcl syntax=tcl:
+    # vim: set filetype=icgluetcl syntax=tcl:
