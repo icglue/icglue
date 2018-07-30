@@ -236,7 +236,7 @@ namespace eval ig {
 
                 set level [string length $m_level]
                 if {[string first "#" $m_instance] == 0 } {continue}
-                set m_instance [string trim $m_instance]
+                set m_instance [string trim $m_instance " \t."]
                 set len_modname [string length $m_instance]
                 if {$len_modname > $maxlen_modname} {
                     set maxlen_modname $len_modname
