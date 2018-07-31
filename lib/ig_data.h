@@ -66,8 +66,10 @@ struct ig_attribute {
  * For initialization/memory free see @ref ig_obj_init, @ref ig_obj_free and @ref ig_obj_free_full.
  */
 struct ig_object {
-    const char          *id;           /**< @brief Unique Object-ID */
-    enum  ig_object_type type;         /**< @brief Type of Object stored in inheriting struct */
+    const char          *id;           /**< @brief Unique Object-ID. */
+    enum  ig_object_type type;         /**< @brief Type of Object stored in inheriting struct. */
+
+    int refcount;                      /**< @brief Reference count for memory management. */
 
     GHashTable   *attributes;          /**< @brief Attributes. Key: (const char *), value: (struct @ref ig_attribute *). */
     GStringChunk *string_storage;      /**< @brief Strings used here, in @ref attributes and inheriting struct. */
@@ -295,6 +297,24 @@ void ig_obj_free (struct ig_object *obj);
  * It calls the free function of the data struct pointed to by @c obj->obj.
  */
 void ig_obj_free_full (struct ig_object *obj);
+
+/**
+ * @brief Increment objects reference count.
+ * @param obj Pointer to object.
+ *
+ * This increments the objects reference count.
+ */
+void ig_obj_ref (struct ig_object *obj);
+
+/**
+ * @brief Decrement objects reference count.
+ * @param obj Pointer to object.
+ *
+ * This decrements the objects reference count.
+ * If the reference count reaches a value <= 0 the object is freed using
+ * @ref ig_obj_free_full.
+ */
+void ig_obj_unref (struct ig_object *obj);
 
 
 /**

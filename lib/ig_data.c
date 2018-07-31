@@ -77,7 +77,8 @@ void ig_obj_init (enum ig_object_type type, const char *name, struct ig_object *
 
     log_debug ("DONew", "Creating object of type %s, name %s, parent %s", ig_obj_type_name (type), name, (parent != NULL ? parent->id : "<none>"));
 
-    obj->type = type;
+    obj->type     = type;
+    obj->refcount = 0;
 
     if (storage == NULL) {
         obj->string_storage      = g_string_chunk_new (256);
@@ -140,6 +141,23 @@ void ig_obj_free_full (struct ig_object *obj)
         case IG_OBJ_REGFILE_REG:   ig_rf_reg_free     ((struct ig_rf_reg     *)obj); break;
         case IG_OBJ_REGFILE_ENTRY: ig_rf_entry_free   ((struct ig_rf_entry   *)obj); break;
         case IG_OBJ_REGFILE:       ig_rf_regfile_free ((struct ig_rf_regfile *)obj); break;
+    }
+}
+
+void ig_obj_ref (struct ig_object *obj)
+{
+    if (obj == NULL) return;
+
+    obj->refcount++;
+}
+
+void ig_obj_unref (struct ig_object *obj)
+{
+    if (obj == NULL) return;
+
+    obj->refcount--;
+    if (obj->refcount <= 0) {
+        ig_obj_free_full (obj);
     }
 }
 
