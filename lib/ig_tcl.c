@@ -1386,19 +1386,29 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
     if (objc > 0) {
         for (int i = 1; i < objc; i++) {
             char *msg = Tcl_GetString (remObjv[i]);
-            char *file = "";
+            char *file = "TCL";
             int linenumber = 0;
 
             if (Tcl_Eval (interp, "info frame -1") == TCL_OK) {
                 Tcl_Obj *info_frame = Tcl_GetObjResult (interp);
 
+                Tcl_Obj *dict_lookup_file = Tcl_NewStringObj ("file", -1);
+                Tcl_IncrRefCount (dict_lookup_file);
+
                 Tcl_Obj *file_obj = NULL;
-                Tcl_DictObjGet (interp, info_frame, Tcl_NewStringObj ("file", -1), &file_obj);
-                file = Tcl_GetString (file_obj);
+                if ((Tcl_DictObjGet (interp, info_frame, dict_lookup_file, &file_obj) == TCL_OK) && (file_obj != NULL)) {
+                    file = Tcl_GetString (file_obj);
+                }
+                Tcl_DecrRefCount (dict_lookup_file);
+
+                Tcl_Obj *dict_lookup_linenumber = Tcl_NewStringObj ("line", -1);
+                Tcl_IncrRefCount (dict_lookup_linenumber);
 
                 Tcl_Obj *linenumber_obj = NULL;
-                Tcl_DictObjGet (interp, info_frame, Tcl_NewStringObj ("line", -1), &linenumber_obj);
-                Tcl_GetIntFromObj (interp, linenumber_obj , &linenumber);
+                if ((Tcl_DictObjGet (interp, info_frame, dict_lookup_linenumber, &linenumber_obj) == TCL_OK) && (linenumber_obj != NULL)) {
+                    Tcl_GetIntFromObj (interp, linenumber_obj , &linenumber);
+                }
+                Tcl_DecrRefCount (dict_lookup_linenumber);
             }
             log_base (loglevel, log_id, basename(file), linenumber, "%s", msg);
             if (abort) {
