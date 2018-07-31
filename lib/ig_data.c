@@ -27,6 +27,18 @@ static void                 ig_attribute_free_gpointer (gpointer attr);
 static const char          *ig_obj_type_name (enum ig_object_type type);
 static const char          *ig_port_dir_name (enum ig_port_dir dir);
 
+#define IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE(PARENTPTR, QUEUE, CHILDTYPE, CHILDTOPARENT) do { \
+        if (PARENTPTR->QUEUE != NULL) { \
+            for (GList *li = PARENTPTR->QUEUE->head; li != NULL; li = li->next) { \
+                CHILDTYPE *child = (CHILDTYPE *)li->data; \
+                if (child->CHILDTOPARENT == PARENTPTR) child->CHILDTOPARENT = NULL; \
+                ig_obj_unref (IG_OBJECT (child)); \
+            } \
+            g_queue_free (PARENTPTR->QUEUE); \
+        } \
+} while (false)
+
+
 /*******************************************************
  * object data
  *******************************************************/
@@ -157,6 +169,7 @@ void ig_obj_unref (struct ig_object *obj)
 
     obj->refcount--;
     if (obj->refcount <= 0) {
+        log_debug ("DOUrf", "Freeing object %s of type %s after unref", obj->id, ig_obj_type_name (obj->type));
         ig_obj_free_full (obj);
     }
 }
@@ -251,7 +264,6 @@ struct ig_port *ig_port_new (const char *name, enum ig_port_dir dir, struct ig_m
     port->name   = ig_obj_attr_get (IG_OBJECT (port), "name");
     port->dir    = dir;
     port->parent = parent;
-
 
     return port;
 }
@@ -417,7 +429,7 @@ void ig_rf_entry_free (struct ig_rf_entry *entry)
 
     ig_obj_free (IG_OBJECT (entry));
 
-    if (entry->regs != NULL) g_queue_free (entry->regs);
+    IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (entry, regs, struct ig_rf_reg, parent);
 
     g_slice_free (struct ig_rf_entry, entry);
 }
@@ -447,7 +459,7 @@ void ig_rf_regfile_free (struct ig_rf_regfile *regfile)
 
     ig_obj_free (IG_OBJECT (regfile));
 
-    if (regfile->entries != NULL) g_queue_free (regfile->entries);
+    IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (regfile, entries, struct ig_rf_entry, parent);
 
     g_slice_free (struct ig_rf_regfile, regfile);
 }
@@ -489,6 +501,7 @@ struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStr
         module->default_instance = ig_instance_new (name, module, NULL, storage);
 
         g_queue_push_tail (module->mod_instances, module->default_instance);
+        ig_obj_ref (IG_OBJECT (module->default_instance));
     }
 
     return module;
@@ -501,20 +514,20 @@ void ig_module_free (struct ig_module *module)
     if (!module->resource) {
         if (module->default_instance != NULL) {
             if (module->default_instance->parent == NULL) {
-                ig_instance_free (module->default_instance);
+                module->default_instance->parent = NULL;
             }
         }
     }
 
     ig_obj_free (IG_OBJECT (module));
 
-    if (module->params          != NULL) g_queue_free (module->params);
-    if (module->ports           != NULL) g_queue_free (module->ports);
-    if (module->mod_instances   != NULL) g_queue_free (module->mod_instances);
-    if (module->decls           != NULL) g_queue_free (module->decls);
-    if (module->code            != NULL) g_queue_free (module->code);
-    if (module->child_instances != NULL) g_queue_free (module->child_instances);
-    if (module->regfiles        != NULL) g_queue_free (module->regfiles);
+    IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (module, params,          struct ig_param,      parent);
+    IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (module, ports,           struct ig_port,       parent);
+    IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (module, mod_instances,   struct ig_instance,   module);
+    IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (module, decls,           struct ig_decl,       parent);
+    IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (module, code,            struct ig_code,       parent);
+    IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (module, child_instances, struct ig_instance,   parent);
+    IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (module, regfiles,        struct ig_rf_regfile, parent);
 
     g_slice_free (struct ig_module, module);
 }
@@ -618,8 +631,8 @@ void ig_instance_free (struct ig_instance *instance)
 
     ig_obj_free (IG_OBJECT (instance));
 
-    if (instance->adjustments != NULL) g_queue_free (instance->adjustments);
-    if (instance->pins        != NULL) g_queue_free (instance->pins);
+    IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (instance, adjustments, struct ig_adjustment, parent);
+    IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (instance, pins,        struct ig_pin,        parent);
 
     g_slice_free (struct ig_instance, instance);
 }
