@@ -113,29 +113,35 @@ namespace eval ig {
         # @param filename Path to script.
         # @param sargs List of key-value pairs for variables to set before execution
         proc run_script {filename {sargs {}}} {
-            set script [list \
-                "namespace eval _construct_run \{" \
-                "    namespace import ::ig::*" \
-                "    if {\[catch {" \
-            ]
+            namespace eval _construct_run [subst {
+                # running in subst mode!! (import local proc args)
+                set filename [list $filename]
+                set sargs    [list $sargs]
+            }]
+            namespace eval _construct_run {
+                namespace import ::ig::*
 
-            foreach i_arg $sargs {
-                lassign $i_arg k v
-                lappend script "        set $k $v"
+                foreach i_arg $sargs {
+                    lassign $i_arg k v
+                    set $k $v
+                }
+
+                #  Slurp up the data file
+                set fp [open $filename r]
+                set script [read $fp]
+                close $fp
+
+                set source_cmd {source $filename}
+                if {[catch $source_cmd emsg eopts]} {
+                    set error_list [split $::errorInfo "\n"]
+
+                    regexp {line\s(\d+)} [lindex $error_list end-2] unused_match line
+
+                    set sep "\n           "
+                    ig::log -error "${filename}:${line} -- [join [lrange $error_list 0 end-4] $sep]"
+                    exit 1;
+                }
             }
-
-            set script [concat $script [list \
-                "        source [list $filename]" \
-                "    }\]} \{" \
-                "        ig::errinf::print_st_line [list $filename]" \
-                "        ig::log -error \"Error while parsing source \\\"[list $filename]\\\"\"" \
-                "        exit 1" \
-                "    \}" \
-                "\}" \
-            ]]
-
-            eval [join $script "\n"]
-
             namespace delete _construct_run
         }
     }
