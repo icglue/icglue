@@ -555,9 +555,13 @@ namespace eval ig {
                     lappend con_right {*}$cr
                 }
             }
-
         } elseif {$bidir} {
-            set con_left  [lrange $arguments 1 end]
+            set con_left  {}
+            foreach cl [lrange $arguments 1 end] {
+                if {[llength $cl] > 0} {
+                    lappend con_left {*}$cl
+                }
+            }
             set con_right {}
         } else {
             log -error -abort "S: no connection direction specified"
