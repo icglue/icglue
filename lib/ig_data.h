@@ -304,7 +304,7 @@ const char *ig_obj_type_name (enum ig_object_type type);
  * @brief Initialize new object.
  * @param type Type of object to create.
  * @param name Name of object (depending on type this has to be unique).
- * @param parent Parent-Object in hierarchy or @c NULL.
+ * @param plist NULL-Terminated list of Parent-Objects in hierarchy.
  * @param obj object data structure.
  * @param storage GStringChunk string storage for shared string storage or @c NULL to create local string storage.
  * @return The newly created object struct or @c NULL in case of an error.
@@ -312,7 +312,7 @@ const char *ig_obj_type_name (enum ig_object_type type);
  * This function should be called within the allocation function of the actual data struct pointed to by @c obj.
  * The initial reference count is set to 0 (see @ref ig_obj_ref and @ref ig_obj_unref).
  */
-void ig_obj_init (enum ig_object_type type, const char *name, struct ig_object *parent, struct ig_object *obj, GStringChunk *storage);
+void ig_obj_init (enum ig_object_type type, const char *name, struct ig_object *plist[], struct ig_object *obj, GStringChunk *storage);
 
 /**
  * @brief Free object data.
