@@ -48,8 +48,22 @@ M -unit "rftest" -tree {
 }
 
 # connections
+set mod_reset_clk_core {
+    common_sync<a,b1..4> reset_n_i clk_i
+    common_sync_pedge    reset_n_i clk_i
+}
+
+foreach {mod reset_port clk_port} $mod_reset_clk_core {
+    lappend reset_core_list $mod:$reset_port
+    lappend clk_core_list   $mod:$clk_port
+}
+
+S "resetn"   tb_top --> $reset_core_list
+S "clk_core" tb_top --> $clk_core_list
+
 S -pin "testmode_i" = "1'b0" common_sync<a,b1..4>
 S -pin "testmode_i" = "1'b0" common_sync_pedge
+S -pin "data_o"              common_sync_pedge
 
 # connections
 S clk                mgmt         --> top core:clk!
