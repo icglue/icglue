@@ -66,6 +66,10 @@ void set_loglinenumbers (gboolean value)
 {
     log_linenumbers = value;
 }
+gboolean get_loglinenumbers (void)
+{
+    return log_linenumbers;
+}
 
 void log_particular_level (const gchar *id, const log_level_t level)
 {

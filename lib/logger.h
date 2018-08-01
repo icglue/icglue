@@ -133,6 +133,11 @@ void set_default_log_level (log_level_t log_level);
 void set_loglinenumbers (gboolean value);
 
 /**
+ * @brief Check whether logging of linenumbers is enable/disable.
+ */
+gboolean get_loglinenumbers (void);
+
+/**
  * @brief Specify identifier-based specific log level.
  * @param id Identifier.
  * @param level Log level.
@@ -148,7 +153,6 @@ void log_particular_level (const gchar *id, const log_level_t level);
  * @return @c true if message is to be suppressed, false if message is to be printed.
  */
 gboolean log_suppress (const log_level_t level, const gchar *id);
-
 
 /**
  * @brief Print current log level settings to stderr.

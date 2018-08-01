@@ -138,7 +138,7 @@ namespace eval ig {
                     regexp {line\s(\d+)} [lindex $error_list end-2] unused_match line
 
                     set sep "\n           "
-                    ig::log -error "${filename}:${line} -- [join [lrange $error_list 0 end-4] $sep]"
+                    ig::log -error "${filename}:${line} -- [join [lrange $error_list 0 end-3] $sep]"
                     exit 1;
                 }
             }

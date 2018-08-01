@@ -67,8 +67,11 @@ static int ig_tclc_log              (ClientData clientdata, Tcl_Interp *interp, 
 static int ig_tclc_log_stat         (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_print_logo       (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
-static int tcl_error_msg (Tcl_Interp *interp, const gchar *format, ...) __attribute__((format (printf, 2, 0)));
+static int tcl_error_msg (Tcl_Interp *interp, const char *format, ...) __attribute__((format (printf, 2, 0)));
 static int tcl_verror_msg (Tcl_Interp *interp, const char *format, va_list args);
+
+static int tcl_dict_get_str (Tcl_Interp *interp, Tcl_Obj *tcl_dict, char *key, char **value);
+static int tcl_dict_get_int (Tcl_Interp *interp, Tcl_Obj *tcl_dict, char *key, int *value);
 
 void ig_add_tcl_commands (Tcl_Interp *interp)
 {
@@ -1267,8 +1270,8 @@ static int ig_tclc_reset (ClientData clientdata, Tcl_Interp *interp, int objc, T
 */
 static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    gchar   *loglevel   = NULL;
-    gchar   *log_id     = NULL;
+    char    *loglevel   = NULL;
+    char    *log_id     = NULL;
     gboolean list       = false;
     int      linenumber = 0;
 
@@ -1290,9 +1293,9 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
     }
 
     if (list) {
-        gchar *msg = g_strdup_printf ("The following loglevels are available:\n");
+        char *msg = g_strdup_printf ("The following loglevels are available:\n");
         for (int i = 0; i < LOGLEVEL_COUNT; i++) {
-            gchar *tmp = g_strdup_printf ("%s\t- %s\n", msg, loglevel_label[i]);
+            char *tmp = g_strdup_printf ("%s\t- %s\n", msg, loglevel_label[i]);
             g_free (msg);
             msg = tmp;
         }
@@ -1321,12 +1324,12 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
             if (log_id != NULL) {
                 // set particular log level:
                 log_particular_level (log_id, i);
-                gchar *msg = g_strdup_printf ("Set logID %s loglevel to %s", log_id, loglevel);
+                char *msg = g_strdup_printf ("Set logID %s loglevel to %s", log_id, loglevel);
                 Tcl_SetObjResult (interp, Tcl_NewStringObj ((char *)msg, -1));
                 g_free (msg);
             } else {
                 // set default log level:
-                gchar *msg = g_strdup_printf ("Set default loglevel to %s", loglevel);
+                char *msg = g_strdup_printf ("Set default loglevel to %s", loglevel);
                 Tcl_SetObjResult (interp, Tcl_NewStringObj ((char *)msg, -1));
                 set_default_log_level (i);
                 g_free (msg);
@@ -1359,9 +1362,9 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
 */
 static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    gchar *log_id   = "Tcl";
-    gint   loglevel = LOGLEVEL_INFO;
-    gint   abort    = 0;
+    char *log_id   = "Tcl";
+    gint  loglevel = LOGLEVEL_INFO;
+    gint  abort    = 0;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-id",      NULL,                               (void *)&log_id,       "log id",                              NULL},
@@ -1383,38 +1386,41 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
         return result;
     }
 
+    char *msg = "";
     if (objc > 0) {
         for (int i = 1; i < objc; i++) {
-            char *msg        = Tcl_GetString (remObjv[i]);
-            char *file       = "TCL";
+            msg = Tcl_GetString (remObjv[i]);
+            char *file       = "TCL-Unknown";
+            char *cmd        = NULL;
             int   linenumber = 0;
 
-            if (Tcl_Eval (interp, "info frame -1") == TCL_OK) {
-                Tcl_Obj *info_frame = Tcl_GetObjResult (interp);
+            if (!log_suppress (loglevel, log_id)) {
+                if (Tcl_Eval (interp, "info frame -1") == TCL_OK) {
+                    Tcl_Obj *dict_info_frame = Tcl_GetObjResult (interp);
 
-                Tcl_Obj *dict_lookup_file = Tcl_NewStringObj ("file", -1);
-                Tcl_IncrRefCount (dict_lookup_file);
+                    if (!tcl_dict_get_str (interp, dict_info_frame, "file", &file)) {
+                        if (tcl_dict_get_str (interp, dict_info_frame, "cmd", &cmd)) {
+                            cmd  = g_strdup_printf ("TCL-CMD(%s)", cmd);
+                            file = cmd;
+                        } else if (tcl_dict_get_str (interp, dict_info_frame, "proc", &cmd)) {
+                            cmd  = g_strdup_printf ("TCL-PROC(%s)", cmd);
+                            file = cmd;
+                        }
+                    }
 
-                Tcl_Obj *file_obj = NULL;
-                if ((Tcl_DictObjGet (interp, info_frame, dict_lookup_file, &file_obj) == TCL_OK) && (file_obj != NULL)) {
-                    file = Tcl_GetString (file_obj);
+                    if (get_loglinenumbers ()) {
+                        tcl_dict_get_int (interp, dict_info_frame, "line", &linenumber);
+                    }
                 }
-                Tcl_DecrRefCount (dict_lookup_file);
-
-                Tcl_Obj *dict_lookup_linenumber = Tcl_NewStringObj ("line", -1);
-                Tcl_IncrRefCount (dict_lookup_linenumber);
-
-                Tcl_Obj *linenumber_obj = NULL;
-                if ((Tcl_DictObjGet (interp, info_frame, dict_lookup_linenumber, &linenumber_obj) == TCL_OK) && (linenumber_obj != NULL)) {
-                    Tcl_GetIntFromObj (interp, linenumber_obj, &linenumber);
-                }
-                Tcl_DecrRefCount (dict_lookup_linenumber);
             }
+
             log_base (loglevel, log_id, basename (file), linenumber, "%s", msg);
-            if (abort) {
-                Tcl_SetObjResult (interp, Tcl_NewStringObj (msg, -1));
-            }
+            g_free (cmd);
         }
+    }
+
+    if (abort) {
+        Tcl_SetObjResult (interp, Tcl_NewStringObj (msg, -1));
     }
 
     if (objc != 0) ckfree (remObjv);
@@ -1437,8 +1443,8 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
 */
 static int ig_tclc_log_stat (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    gchar *loglevel = NULL;
-    gint   suppress = 0;
+    char *loglevel = NULL;
+    gint  suppress = 0;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-level",    NULL,                (void *)&loglevel, "log level",                                    NULL},
@@ -1511,11 +1517,40 @@ static int tcl_verror_msg (Tcl_Interp *interp, const char *format, va_list args)
     if (Tcl_Eval (interp, "lindex [dict get [info frame -1] cmd] 0") == TCL_OK) {
         scriptFile = Tcl_GetString (Tcl_GetObjResult (interp));
     }
-    gchar *user_msg  = g_strdup_vprintf (format, args);
-    gchar *error_msg = g_strdup_printf ("ERROR(%s): %s", scriptFile, user_msg);
+    char *user_msg  = g_strdup_vprintf (format, args);
+    char *error_msg = g_strdup_printf ("ERROR(%s): %s", scriptFile, user_msg);
     Tcl_SetObjResult (interp, Tcl_NewStringObj (error_msg, -1));
     g_free (user_msg);
     g_free (error_msg);
     return TCL_ERROR;
+}
+
+static int tcl_dict_get_str (Tcl_Interp *interp, Tcl_Obj *tcl_dict, char *key, char **value)
+{
+    Tcl_Obj *tcl_dict_key   = Tcl_NewStringObj (key, -1);
+    Tcl_Obj *tcl_dict_value = NULL;
+    int      retval         = 0;
+
+    Tcl_IncrRefCount (tcl_dict_key);
+    if ((Tcl_DictObjGet (interp, tcl_dict, tcl_dict_key, &tcl_dict_value) == TCL_OK) && (tcl_dict_value != NULL)) {
+        *value = Tcl_GetString (tcl_dict_value);
+        retval = 1;
+    }
+    Tcl_DecrRefCount (tcl_dict_key);
+    return retval;
+}
+
+static int tcl_dict_get_int (Tcl_Interp *interp, Tcl_Obj *tcl_dict, char *key, int *value)
+{
+    Tcl_Obj *tcl_dict_key   = Tcl_NewStringObj (key, -1);
+    Tcl_Obj *tcl_dict_value = NULL;
+    int      retval         = 0;
+
+    Tcl_IncrRefCount (tcl_dict_key);
+    if ((Tcl_DictObjGet (interp, tcl_dict, tcl_dict_key, &tcl_dict_value) == TCL_OK) && (tcl_dict_value != NULL)) {
+        retval = Tcl_GetIntFromObj (interp, tcl_dict_value, value);
+    }
+    Tcl_DecrRefCount (tcl_dict_key);
+    return retval;
 }
 
