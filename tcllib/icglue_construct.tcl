@@ -525,14 +525,16 @@ namespace eval ig {
             if {[llength $instance_names] == 0} {
                 log -error -abort "S: no instance names specified"
             }
+
+            set retval {}
             foreach inst [construct::expand_instances $instance_names] {
                 set instname [lindex $inst 0]
 
-                if {[catch {ig::db::create_pin -instname $instname -pinname $name -value $value} emsg]} {
+                if {[catch {lappend retval [ig::db::create_pin -instname $instname -pinname $name -value $value]} emsg]} {
                     log -error -abort "${emsg}"
                 }
             }
-            return {};
+            return $retval;
         }
 
         if {!$invert && !$bidir} {
@@ -540,10 +542,8 @@ namespace eval ig {
 
             set con_right {}
             foreach cr [lrange $arguments 2 end] {
-                if {[llength $cr] > 1} {
+                if {[llength $cr] > 0} {
                     lappend con_right {*}$cr
-                } else {
-                    lappend con_right $cr
                 }
             }
         } elseif {$invert} {
@@ -551,10 +551,8 @@ namespace eval ig {
 
             set con_right {}
             foreach cr [lrange $arguments 1 end-1] {
-                if {[llength $cr] > 1} {
+                if {[llength $cr] > 0} {
                     lappend con_right {*}$cr
-                } else {
-                    lappend con_right $cr
                 }
             }
 
@@ -570,10 +568,10 @@ namespace eval ig {
             set con_left_e  [construct::expand_instances $con_left  "true" "true"]
 
             if {$bidir} {
-                set sigid [ig::db::connect -bidir $con_left_e -signal-name $name -signal-size $width]
+                set retval [ig::db::connect -bidir $con_left_e -signal-name $name -signal-size $width]
             } else {
                 set con_right_e [construct::expand_instances $con_right "true" "true"]
-                set sigid [ig::db::connect -from {*}$con_left_e -to $con_right_e -signal-name $name -signal-size $width]
+                set retval [ig::db::connect -from {*}$con_left_e -to $con_right_e -signal-name $name -signal-size $width]
             }
 
             if {$value ne ""} {
@@ -586,7 +584,7 @@ namespace eval ig {
             log -error -abort "S (signal ${name}): error while creating signal:\n${emsg}"
         }
 
-        return $sigid
+        return $retval
     }
 
     ## @brief Create a new parameter.

@@ -1225,12 +1225,18 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
 
     struct ig_instance *inst = IG_INSTANCE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->instances_by_name, instname)));
     if (inst == NULL) {
-        return tcl_error_msg (interp, "Could not found instance \"%s\"\n", instname);
+        return tcl_error_msg (interp, "Could not find instance \"%s\"\n", instname);
     }
     if (!inst->module->resource) {
-        return tcl_error_msg (interp, "Unable to add pin - instance \"%s\" is not a resource.", instname);
+        return tcl_error_msg (interp, "Unable to add pin \"%s\" - instance \"%s\" is not a resource.", pinname, instname);
     }
-    ig_lib_add_pin (db, inst, pinname, value, "false");
+    struct ig_pin *pin = ig_lib_add_pin (db, inst, pinname, value, "false");
+
+    if (pin == NULL) {
+        return tcl_error_msg (interp, "Unable to add pin \"%s\" for instance \"%s\").", pin, instname);
+    }
+
+    Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT (pin)->id, -1));
 
     return TCL_OK;
 }
