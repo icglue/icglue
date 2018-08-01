@@ -63,7 +63,8 @@ struct ig_attribute {
 /**
  * @brief Common object data type.
  *
- * For initialization/memory free see @ref ig_obj_init, @ref ig_obj_free and @ref ig_obj_free_full.
+ * For initialization/memory free see @ref ig_obj_init, @ref ig_obj_ref, @ref ig_obj_unref,
+ * @ref ig_obj_free and @ref ig_obj_free_full.
  */
 struct ig_object {
     const char          *id;           /**< @brief Unique Object-ID. */
@@ -89,6 +90,7 @@ enum ig_port_dir {
  * @brief Module port data.
  *
  * For memory allocation/free see @ref ig_port_new and @ref ig_port_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_port {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
@@ -103,6 +105,7 @@ struct ig_port {
  * @brief Module parameter data.
  *
  * For memory allocation/free see @ref ig_param_new and @ref ig_param_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_param {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
@@ -118,6 +121,7 @@ struct ig_param {
  * @brief Module declaration data.
  *
  * For memory allocation/free see @ref ig_decl_new and @ref ig_decl_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_decl {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
@@ -134,6 +138,7 @@ struct ig_decl {
  * @brief Module codesection data.
  *
  * For memory allocation/free see @ref ig_code_new and @ref ig_code_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_code {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
@@ -148,6 +153,7 @@ struct ig_code {
  * @brief Regfile single register data.
  *
  * For memory allocation/free see @ref ig_rf_reg_new and @ref ig_rf_reg_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_rf_reg {
     struct ig_object object;    /**< @brief Inherited @ref ig_object struct. */
@@ -161,6 +167,7 @@ struct ig_rf_reg {
  * @brief Regfile entry data.
  *
  * For memory allocation/free see @ref ig_rf_entry_new and @ref ig_rf_entry_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_rf_entry {
     struct ig_object object;      /**< @brief Inherited @ref ig_object struct. */
@@ -176,6 +183,7 @@ struct ig_rf_entry {
  * @brief Regfile data.
  *
  * For memory allocation/free see @ref ig_rf_regfile_new and @ref ig_rf_regfile_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_rf_regfile {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
@@ -191,6 +199,7 @@ struct ig_rf_regfile {
  * @brief Module data.
  *
  * For memory allocation/free see @ref ig_module_new and @ref ig_module_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_module {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
@@ -217,6 +226,7 @@ struct ig_module {
  * @brief Instance pin data.
  *
  * For memory allocation/free see @ref ig_pin_new and @ref ig_pin_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_pin {
     struct ig_object object;    /**< @brief Inherited @ref ig_object struct. */
@@ -231,6 +241,7 @@ struct ig_pin {
  * @brief Instance parameter adjustment data.
  *
  * For memory allocation/free see @ref ig_adjustment_new and @ref ig_adjustment_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_adjustment {
     struct ig_object object;    /**< @brief Inherited @ref ig_object struct. */
@@ -245,6 +256,7 @@ struct ig_adjustment {
  * @brief Instance data.
  *
  * For memory allocation/free see @ref ig_instance_new and @ref ig_instance_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_instance {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
@@ -277,6 +289,7 @@ struct ig_instance {
  * @return The newly created object struct or @c NULL in case of an error.
  *
  * This function should be called within the allocation function of the actual data struct pointed to by @c obj.
+ * The initial reference count is set to 0 (see @ref ig_obj_ref and @ref ig_obj_unref).
  */
 void ig_obj_init (enum ig_object_type type, const char *name, struct ig_object *parent, struct ig_object *obj, GStringChunk *storage);
 
@@ -302,7 +315,14 @@ void ig_obj_free_full (struct ig_object *obj);
  * @brief Increment objects reference count.
  * @param obj Pointer to object.
  *
- * This increments the objects reference count.
+ * This increments the object's reference count.
+ * References should be managed carefully in order to prevent cycles.
+ * The current approach is: References are kept at parts which manage
+ * some sort of "children" (not necessarily representing hierarchy) - so
+ * for example a list of subobjects (e.g. ports in a module, child-instances
+ * in a module, instanciations of a module, pins in an instance).
+ * Back-references in this case must not increment the ref-count - currently
+ * they are deleted (set to @c NULL) when the managing object is freed.
  */
 void ig_obj_ref (struct ig_object *obj);
 
@@ -310,7 +330,7 @@ void ig_obj_ref (struct ig_object *obj);
  * @brief Decrement objects reference count.
  * @param obj Pointer to object.
  *
- * This decrements the objects reference count.
+ * This decrements the object's reference count.
  * If the reference count reaches a value <= 0 the object is freed using
  * @ref ig_obj_free_full.
  */
