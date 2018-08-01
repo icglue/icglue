@@ -248,10 +248,10 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
     if (of_module == NULL) return tcl_error_msg (interp, "No module specified for instance \"%s\"", name);
     if (parent_module == NULL) return tcl_error_msg (interp, " No parent module specified for instance \"%s\"", name);
 
-    struct ig_module *of_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id, of_module);
-    if (of_mod == NULL) of_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_name, of_module);
-    struct ig_module *pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id, parent_module);
-    if (pa_mod == NULL) pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_name, parent_module);
+    struct ig_module *of_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_id, of_module)));
+    if (of_mod == NULL) of_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_name, of_module)));
+    struct ig_module *pa_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_id, parent_module)));
+    if (pa_mod == NULL) pa_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_name, parent_module)));
 
     if (of_module == NULL) return tcl_error_msg (interp, "Unable to find module \"%s\" in database", of_module);
     if (parent_module == NULL) return tcl_error_msg (interp, "Unable to find parent-module \"%s\" in database", parent_module);
@@ -301,8 +301,8 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
     if (code == NULL) return tcl_error_msg (interp, "No code specified for codesection");
     if (parent_module == NULL) return tcl_error_msg (interp,  "No parent module specified for codesection");
 
-    struct ig_module *pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id, parent_module);
-    if (pa_mod == NULL) pa_mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_name, parent_module);
+    struct ig_module *pa_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_id, parent_module)));
+    if (pa_mod == NULL) pa_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_name, parent_module)));
 
     if (pa_mod == NULL) return tcl_error_msg (interp, "Unable to find parent module \"%s\" in database", parent_module);
     struct ig_code *cs = ig_lib_add_codesection (db, name, code, pa_mod);
@@ -363,9 +363,9 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
     ig_tclc_check_name_and_warn (entry_name);
     ig_tclc_check_name_and_warn (reg_name);
 
-    struct ig_object *to_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, to_id);
+    struct ig_object *to_obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, to_id));
     if ((to_obj == NULL)
-        || ((regfile_name != NULL) && ((to_obj->type != IG_OBJ_MODULE) || (((struct ig_module *)to_obj)->resource)))
+        || ((regfile_name != NULL) && ((to_obj->type != IG_OBJ_MODULE) || (IG_MODULE (to_obj)->resource)))
         || ((entry_name != NULL) && (to_obj->type != IG_OBJ_REGFILE))
         || ((reg_name != NULL) && (to_obj->type != IG_OBJ_REGFILE_ENTRY))) {
         return tcl_error_msg (interp, "Error: invalid -to object (%s) specified", to_id);
@@ -373,16 +373,16 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
 
     const char *result_str = "";
     if (regfile_name != NULL) {
-        struct ig_rf_regfile *regfile = ig_lib_add_regfile (db, regfile_name, (struct ig_module *)to_obj);
+        struct ig_rf_regfile *regfile = ig_lib_add_regfile (db, regfile_name, IG_MODULE (to_obj));
         if (regfile == NULL) return tcl_error_msg (interp, "Unable to create regfile \"%s\"", regfile_name);
 
         result_str = IG_OBJECT (regfile)->id;
     } else if (entry_name != NULL) {
-        struct ig_rf_entry *entry = ig_lib_add_regfile_entry (db, entry_name, (struct ig_rf_regfile *)to_obj);
+        struct ig_rf_entry *entry = ig_lib_add_regfile_entry (db, entry_name, IG_RF_REGFILE (to_obj));
         if (entry == NULL) return tcl_error_msg (interp, "Unable to create entry \"%s\" in regfile \"%s\"",  entry_name, regfile_name);
         result_str = IG_OBJECT (entry)->id;
     } else {
-        struct ig_rf_reg *reg = ig_lib_add_regfile_reg (db, reg_name, (struct ig_rf_entry *)to_obj);
+        struct ig_rf_reg *reg = ig_lib_add_regfile_reg (db, reg_name, IG_RF_ENTRY (to_obj));
         if (reg == NULL) return tcl_error_msg (interp, "Unable to create register \"%s\" in regfile \"%s\"",  reg_name, regfile_name);
         result_str = IG_OBJECT (reg)->id;
     }
@@ -442,7 +442,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
         return tcl_error_msg (interp, "Single attribute without value");
     }
 
-    struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, obj_name);
+    struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, obj_name));
     if (obj == NULL) {
         g_list_free (attr_list);
         return tcl_error_msg (interp, "Unknown object \"%s\"", obj_name);
@@ -515,7 +515,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
         return tcl_error_msg (interp, "Specifying single attribute and attribute list is not supported");
     }
 
-    struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, obj_name);
+    struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, obj_name));
     if (obj == NULL) {
         g_list_free (attr_list);
         return tcl_error_msg (interp, "Unknown object \"%s\"", obj_name);
@@ -709,7 +709,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         child_list_free = true;
     } else if ((version == IG_TOOOV_DECLS) || (version == IG_TOOOV_PORTS) || (version == IG_TOOOV_PARAMS)
                || (version == IG_TOOOV_CODE) || (version == IG_TOOOV_INSTANCES) || (version == IG_TOOOV_REGFILES)) {
-        struct ig_module *mod = (struct ig_module *)g_hash_table_lookup (db->modules_by_id, parent_name);
+        struct ig_module *mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_id, parent_name)));
         if (mod == NULL) {
             return tcl_error_msg (interp, "Unable to find \"%s\" in database", parent_name);
         }
@@ -735,7 +735,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             child_list = mod->regfiles->head;
         }
     } else if ((version == IG_TOOOV_PINS) || (version == IG_TOOOV_ADJ) || (version == IG_TOOOV_MODULES)) {
-        struct ig_instance *inst = (struct ig_instance *)g_hash_table_lookup (db->instances_by_id, parent_name);
+        struct ig_instance *inst = IG_INSTANCE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->instances_by_id, parent_name)));
         if (inst == NULL) return tcl_error_msg (interp, "Unable to find instance-id \"%s\"", parent_name);
 
         if (version == IG_TOOOV_PINS) {
@@ -747,22 +747,22 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             child_list_free = true;
         }
     } else if (version == IG_TOOOV_RF_ENTRIES) {
-        struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, parent_name);
+        struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, parent_name));
 
         if ((obj == NULL) || (obj->type != IG_OBJ_REGFILE)) {
             return tcl_error_msg (interp, "Unable to get regfile \"%s\" from database", parent_name);
         }
 
-        struct ig_rf_regfile *regfile = (struct ig_rf_regfile *)obj;
+        struct ig_rf_regfile *regfile = IG_RF_REGFILE (obj);
         child_list = regfile->entries->head;
     } else if (version == IG_TOOOV_RF_REGS) {
-        struct ig_object *obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, parent_name);
+        struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, parent_name));
 
         if ((obj == NULL) || (obj->type != IG_OBJ_REGFILE_ENTRY)) {
             return tcl_error_msg (interp, "Unable to get regfile-entry \"%s\" from database", parent_name);
         }
 
-        struct ig_rf_entry *entry = (struct ig_rf_entry *)obj;
+        struct ig_rf_entry *entry = IG_RF_ENTRY (obj);
         child_list = entry->regs->head;
     }
 
@@ -777,47 +777,47 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         const char       *i_name = NULL;
 
         if (version == IG_TOOOV_PINS) {
-            struct ig_pin *pin = (struct ig_pin *)li->data;
+            struct ig_pin *pin = IG_PIN (li->data);
             i_name = pin->name;
             i_obj  = IG_OBJECT (pin);
         } else if (version == IG_TOOOV_ADJ) {
-            struct ig_adjustment *adjustment = (struct ig_adjustment *)li->data;
+            struct ig_adjustment *adjustment = IG_ADJUSTMENT (li->data);
             i_name = adjustment->name;
             i_obj  = IG_OBJECT (adjustment);
         } else if (version == IG_TOOOV_PORTS) {
-            struct ig_port *port = (struct ig_port *)li->data;
+            struct ig_port *port = IG_PORT (li->data);
             i_name = port->name;
             i_obj  = IG_OBJECT (port);
         } else if (version == IG_TOOOV_PARAMS) {
-            struct ig_param *param = (struct ig_param *)li->data;
+            struct ig_param *param = IG_PARAM (li->data);
             i_name = param->name;
             i_obj  = IG_OBJECT (param);
         } else if (version == IG_TOOOV_DECLS) {
-            struct ig_decl *decl = (struct ig_decl *)li->data;
+            struct ig_decl *decl = IG_DECL (li->data);
             i_name = decl->name;
             i_obj  = IG_OBJECT (decl);
         } else if (version == IG_TOOOV_CODE) {
-            struct ig_code *code = (struct ig_code *)li->data;
+            struct ig_code *code = IG_CODE (li->data);
             i_name = code->name;
             i_obj  = IG_OBJECT (code);
         } else if (version == IG_TOOOV_MODULES) {
-            struct ig_module *module = (struct ig_module *)li->data;
+            struct ig_module *module = IG_MODULE (li->data);
             i_name = module->name;
             i_obj  = IG_OBJECT (module);
         } else if (version == IG_TOOOV_INSTANCES) {
-            struct ig_instance *instance = (struct ig_instance *)li->data;
+            struct ig_instance *instance = IG_INSTANCE (li->data);
             i_name = instance->name;
             i_obj  = IG_OBJECT (instance);
         } else if (version == IG_TOOOV_REGFILES) {
-            struct ig_rf_regfile *rf_regfile = (struct ig_rf_regfile *)li->data;
+            struct ig_rf_regfile *rf_regfile = IG_RF_REGFILE (li->data);
             i_name = rf_regfile->name;
             i_obj  = IG_OBJECT (rf_regfile);
         } else if (version == IG_TOOOV_RF_ENTRIES) {
-            struct ig_rf_entry *rf_entry = (struct ig_rf_entry *)li->data;
+            struct ig_rf_entry *rf_entry = IG_RF_ENTRY (li->data);
             i_name = rf_entry->name;
             i_obj  = IG_OBJECT (rf_entry);
         } else if (version == IG_TOOOV_RF_REGS) {
-            struct ig_rf_reg *rf_reg = (struct ig_rf_reg *)li->data;
+            struct ig_rf_reg *rf_reg = IG_RF_REG (li->data);
             i_name = rf_reg->name;
             i_obj  = IG_OBJECT (rf_reg);
         }
@@ -981,7 +981,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     if (from != NULL) {
         bool inv = false;
         ig_tclc_connection_parse (from, tstr_id, tstr_net, &t_adapt, &inv);
-        struct ig_object *src_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
+        struct ig_object *src_obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, tstr_id->str));
         if (src_obj == NULL) {
             log_error ("TCCon", "Signal \"%s\": could not find object for id \"%s\"", name, tstr_id->str);
             goto l_ig_tclc_connect_nfexit;
@@ -1006,7 +1006,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     for (GList *li = trg_orig_list; li != NULL; li = li->next) {
         bool inv = false;
         ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_net, &t_adapt, &inv);
-        struct ig_object *trg_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
+        struct ig_object *trg_obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, tstr_id->str));
         if (trg_obj == NULL) {
             log_error ("TCCon", "Signal \"%s\": could not find object for id \"%s\"", name, tstr_id->str);
             goto l_ig_tclc_connect_nfexit;
@@ -1035,7 +1035,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
     for (GList *li = gen_objs; li != NULL; li = li->next) {
-        struct ig_object *i_obj = (struct ig_object *)li->data;
+        struct ig_object *i_obj = PTR_TO_IG_OBJECT (li->data);
 
         ig_obj_attr_set (i_obj, "size", size, true);
 
@@ -1128,7 +1128,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
 
     for (GList *li = ept_list; li != NULL; li = li->next) {
         ig_tclc_connection_parse ((const char *)li->data, tstr_id, tstr_par, &t_adapt, NULL);
-        struct ig_object *trg_obj = (struct ig_object *)g_hash_table_lookup (db->objects_by_id, tstr_id->str);
+        struct ig_object *trg_obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, tstr_id->str));
         if (trg_obj == NULL) {
             result = tcl_error_msg (interp, "Parameter \"%s\": could not find object for id \"%s\"", name, tstr_id->str);
             goto l_ig_tclc_parameter_nfexit;
@@ -1155,7 +1155,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
 
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
     for (GList *li = gen_objs; li != NULL; li = li->next) {
-        struct ig_object *i_obj = (struct ig_object *)li->data;
+        struct ig_object *i_obj = PTR_TO_IG_OBJECT (li->data);
 
         Tcl_Obj *t_obj = Tcl_NewStringObj (i_obj->id, -1);
         Tcl_ListObjAppendElement (interp, retval, t_obj);
@@ -1223,7 +1223,7 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
         result = tcl_error_msg (interp, "No pin name specified");
     }
 
-    struct ig_instance *inst = (struct ig_instance *)g_hash_table_lookup (db->instances_by_name, instname);
+    struct ig_instance *inst = IG_INSTANCE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->instances_by_name, instname)));
     if (inst == NULL) {
         return tcl_error_msg (interp, "Could not found instance \"%s\"\n", instname);
     }

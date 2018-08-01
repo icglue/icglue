@@ -24,7 +24,6 @@
 static struct ig_attribute *ig_attribute_new (const char *value, bool constant);
 static inline void          ig_attribute_free (struct ig_attribute *attr);
 static void                 ig_attribute_free_gpointer (gpointer attr);
-static const char          *ig_obj_type_name (enum ig_object_type type);
 static const char          *ig_port_dir_name (enum ig_port_dir dir);
 
 #define IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE(PARENTPTR, QUEUE, CHILDTYPE, CHILDTOPARENT) do { \
@@ -63,7 +62,7 @@ static void ig_attribute_free_gpointer (gpointer attr)
     ig_attribute_free ((struct ig_attribute *)attr);
 }
 
-static const char *ig_obj_type_name (enum ig_object_type type)
+const char *ig_obj_type_name (enum ig_object_type type)
 {
     switch (type) {
         case IG_OBJ_PORT:          return "port";
@@ -142,17 +141,17 @@ void ig_obj_free_full (struct ig_object *obj)
 
     /* type-specific frees call ig_object_free on object */
     switch (obj->type) {
-        case IG_OBJ_PORT:          ig_port_free       ((struct ig_port       *)obj); break;
-        case IG_OBJ_PIN:           ig_pin_free        ((struct ig_pin        *)obj); break;
-        case IG_OBJ_PARAMETER:     ig_param_free      ((struct ig_param      *)obj); break;
-        case IG_OBJ_ADJUSTMENT:    ig_adjustment_free ((struct ig_adjustment *)obj); break;
-        case IG_OBJ_DECLARATION:   ig_decl_free       ((struct ig_decl       *)obj); break;
-        case IG_OBJ_CODESECTION:   ig_code_free       ((struct ig_code       *)obj); break;
-        case IG_OBJ_MODULE:        ig_module_free     ((struct ig_module     *)obj); break;
-        case IG_OBJ_INSTANCE:      ig_instance_free   ((struct ig_instance   *)obj); break;
-        case IG_OBJ_REGFILE_REG:   ig_rf_reg_free     ((struct ig_rf_reg     *)obj); break;
-        case IG_OBJ_REGFILE_ENTRY: ig_rf_entry_free   ((struct ig_rf_entry   *)obj); break;
-        case IG_OBJ_REGFILE:       ig_rf_regfile_free ((struct ig_rf_regfile *)obj); break;
+        case IG_OBJ_PORT:          ig_port_free       (IG_PORT       (PTR_TO_IG_OBJECT (obj))); break;
+        case IG_OBJ_PIN:           ig_pin_free        (IG_PIN        (PTR_TO_IG_OBJECT (obj))); break;
+        case IG_OBJ_PARAMETER:     ig_param_free      (IG_PARAM      (PTR_TO_IG_OBJECT (obj))); break;
+        case IG_OBJ_ADJUSTMENT:    ig_adjustment_free (IG_ADJUSTMENT (PTR_TO_IG_OBJECT (obj))); break;
+        case IG_OBJ_DECLARATION:   ig_decl_free       (IG_DECL       (PTR_TO_IG_OBJECT (obj))); break;
+        case IG_OBJ_CODESECTION:   ig_code_free       (IG_CODE       (PTR_TO_IG_OBJECT (obj))); break;
+        case IG_OBJ_MODULE:        ig_module_free     (IG_MODULE     (PTR_TO_IG_OBJECT (obj))); break;
+        case IG_OBJ_INSTANCE:      ig_instance_free   (IG_INSTANCE   (PTR_TO_IG_OBJECT (obj))); break;
+        case IG_OBJ_REGFILE_REG:   ig_rf_reg_free     (IG_RF_REG     (PTR_TO_IG_OBJECT (obj))); break;
+        case IG_OBJ_REGFILE_ENTRY: ig_rf_entry_free   (IG_RF_ENTRY   (PTR_TO_IG_OBJECT (obj))); break;
+        case IG_OBJ_REGFILE:       ig_rf_regfile_free (IG_RF_REGFILE (PTR_TO_IG_OBJECT (obj))); break;
     }
 }
 

@@ -27,6 +27,8 @@
 #include <glib.h>
 #include <stdbool.h>
 
+#include <logger.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -274,10 +276,29 @@ struct ig_instance {
 /* TODO: net? */
 
 /*******************************************************
+ * Defines
+ *******************************************************/
+
+/**
+ * @brief Use struct derived from struct ig_object as struct ig_object.
+ */
+#define IG_OBJECT(x)        (&((x)->object))
+
+/**
+ * @brief Cast from any pointer to pointer to struct ig_object.
+ */
+#define PTR_TO_IG_OBJECT(x) ((struct ig_object *)(x))
+
+/*******************************************************
  * Functions
  *******************************************************/
 
-#define IG_OBJECT(x) (&((x)->object))
+/**
+ * @brief Human readable name of object type.
+ * @param type Object type.
+ * @return Readable type name.
+ */
+const char *ig_obj_type_name (enum ig_object_type type);
 
 /**
  * @brief Initialize new object.
@@ -601,6 +622,46 @@ struct ig_instance *ig_instance_new (const char *name, struct ig_module *module,
  * Frees the instance data struct together with the related object.
  */
 void ig_instance_free (struct ig_instance *instance);
+
+
+
+/*******************************************************
+ * Cast inline functions
+ *******************************************************/
+
+#define __IG_OBJECT_GEN_CAST(NAME, VTYPE, ETYPE) \
+    /**\
+     @brief Checked cast from struct ig_object pointer to VTYPE pointer.\
+     @param obj ig_object to cast.\
+     @return pointer casted to VTYPE.\
+     \
+     If @c obj is @c NULL, @c NULL will be returned.\
+     If @c obj is of wrong type, an internal error is raised.\
+     */ \
+    static inline VTYPE *NAME (struct ig_object *obj) { \
+        if (obj == NULL) return NULL; \
+        if (obj->type == ETYPE) { \
+            return (VTYPE *)obj; \
+        } \
+\
+        log_errorint ("DOCst", "Cast of ig_object to %s failed: actual type was %s", ig_obj_type_name (ETYPE), ig_obj_type_name (obj->type)); \
+\
+        return NULL; \
+    }
+
+__IG_OBJECT_GEN_CAST (IG_PORT,       struct ig_port,       IG_OBJ_PORT)
+__IG_OBJECT_GEN_CAST (IG_PIN,        struct ig_pin,        IG_OBJ_PIN)
+__IG_OBJECT_GEN_CAST (IG_PARAM,      struct ig_param,      IG_OBJ_PARAMETER)
+__IG_OBJECT_GEN_CAST (IG_ADJUSTMENT, struct ig_adjustment, IG_OBJ_ADJUSTMENT)
+__IG_OBJECT_GEN_CAST (IG_DECL,       struct ig_decl,       IG_OBJ_DECLARATION)
+__IG_OBJECT_GEN_CAST (IG_CODE,       struct ig_code,       IG_OBJ_CODESECTION)
+__IG_OBJECT_GEN_CAST (IG_MODULE,     struct ig_module,     IG_OBJ_MODULE)
+__IG_OBJECT_GEN_CAST (IG_INSTANCE,   struct ig_instance,   IG_OBJ_INSTANCE)
+__IG_OBJECT_GEN_CAST (IG_RF_REG,     struct ig_rf_reg,     IG_OBJ_REGFILE_REG)
+__IG_OBJECT_GEN_CAST (IG_RF_ENTRY,   struct ig_rf_entry,   IG_OBJ_REGFILE_ENTRY)
+__IG_OBJECT_GEN_CAST (IG_RF_REGFILE, struct ig_rf_regfile, IG_OBJ_REGFILE)
+
+#undef __IG_OBJECT_GEN_CAST
 
 #ifdef __cplusplus
 }

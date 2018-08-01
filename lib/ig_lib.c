@@ -415,7 +415,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
         log_warn ("LConn", "nothing created for signal %s", signame);
     }
     for (GList *li = gen_objs_res; li != NULL; li = li->next) {
-        struct ig_object *io = (struct ig_object *)li->data;
+        struct ig_object *io = PTR_TO_IG_OBJECT (li->data);
         ig_obj_attr_set (io, "signal", signame, true);
     }
 
@@ -499,7 +499,7 @@ bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *de
         log_warn ("LParm", "nothing created for parameter %s", parname);
     }
     for (GList *li = gen_objs_res; li != NULL; li = li->next) {
-        struct ig_object *io = (struct ig_object *)li->data;
+        struct ig_object *io = PTR_TO_IG_OBJECT (li->data);
         ig_obj_attr_set (io, "parameter", parname, true);
     }
     if (gen_objs != NULL) {
@@ -652,7 +652,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
 
     /* startpoint is instance of generated module? */
     if (cinfo->obj->type == IG_OBJ_INSTANCE) {
-        struct ig_instance *inst = (struct ig_instance *)cinfo->obj;
+        struct ig_instance *inst = IG_INSTANCE (cinfo->obj);
         struct ig_module   *mod  = inst->module;
 
         if (!mod->resource) {
@@ -662,7 +662,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
             explicit_next = true;
         }
     } else if (cinfo->obj->type == IG_OBJ_MODULE) {
-        struct ig_module *mod = (struct ig_module *)cinfo->obj;
+        struct ig_module *mod = IG_MODULE (cinfo->obj);
         if (!mod->resource) {
             copy_first = true;
         }
@@ -676,7 +676,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
 
         if (cinfo->obj->type == IG_OBJ_INSTANCE) {
             result = g_list_prepend (result, cinfo);
-            struct ig_instance *inst = (struct ig_instance *)cinfo->obj;
+            struct ig_instance *inst = IG_INSTANCE (cinfo->obj);
             if (inst->parent == NULL) return result;
             cinfo = ig_lib_connection_info_new (db->str_chunks, IG_OBJECT (inst->parent), NULL, cinfo->dir);
             if (explicit_next) {
@@ -686,7 +686,7 @@ static GList *ig_lib_gen_hierarchy (struct ig_lib_db *db, struct ig_lib_connecti
             continue;
         } else if (cinfo->obj->type == IG_OBJ_MODULE) {
             result = g_list_prepend (result, cinfo);
-            struct ig_module *mod = (struct ig_module *)cinfo->obj;
+            struct ig_module *mod = IG_MODULE (cinfo->obj);
             if (mod->default_instance == NULL) return result;
             if (copy_first) {
                 bool force_name = cinfo->force_name;
@@ -893,7 +893,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
     log_debug ("HTrPS", "processing node %s", obj->id);
 
     if (obj->type == IG_OBJ_INSTANCE) {
-        struct ig_instance *inst = (struct ig_instance *)obj;
+        struct ig_instance *inst = IG_INSTANCE (obj);
 
         const char *conn_name = parent_name;
         if (conn_name == NULL) {
@@ -928,7 +928,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
             i_cinfo->parent_name = pin_name;
         }
     } else if (obj->type == IG_OBJ_MODULE) {
-        struct ig_module *mod = (struct ig_module *)obj;
+        struct ig_module *mod = IG_MODULE (obj);
 
         const char *signal_name = NULL;
 
@@ -1023,7 +1023,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
     log_debug ("HTrPP", "processing node %s", obj->id);
 
     if (obj->type == IG_OBJ_INSTANCE) {
-        struct ig_instance *inst = (struct ig_instance *)obj;
+        struct ig_instance *inst = IG_INSTANCE (obj);
 
         const char *adj_name = parent_name;
         if (adj_name == NULL) {
@@ -1051,7 +1051,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
             i_cinfo->parent_name = par_name;
         }
     } else if (obj->type == IG_OBJ_MODULE) {
-        struct ig_module *mod = (struct ig_module *)obj;
+        struct ig_module *mod = IG_MODULE (obj);
 
         const char *par_name = NULL;
 
