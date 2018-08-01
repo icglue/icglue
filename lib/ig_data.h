@@ -631,21 +631,21 @@ void ig_instance_free (struct ig_instance *instance);
 
 #define __IG_OBJECT_GEN_CAST(NAME, VTYPE, ETYPE) \
     /**\
-     @brief Checked cast from struct ig_object pointer to VTYPE pointer.\
-     @param obj ig_object to cast.\
-     @return pointer casted to VTYPE.\
+       @brief Checked cast from struct ig_object pointer to VTYPE pointer.\
+       @param obj ig_object to cast.\
+       @return pointer casted to VTYPE.\
      \
-     If @c obj is @c NULL, @c NULL will be returned.\
-     If @c obj is of wrong type, an internal error is raised.\
+       If @c obj is @c NULL, @c NULL will be returned.\
+       If @c obj is of wrong type, an internal error is raised.\
      */ \
     static inline VTYPE *NAME (struct ig_object *obj) { \
         if (obj == NULL) return NULL; \
         if (obj->type == ETYPE) { \
             return (VTYPE *)obj; \
         } \
-\
+        \
         log_errorint ("DOCst", "Cast of ig_object to %s failed: actual type was %s", ig_obj_type_name (ETYPE), ig_obj_type_name (obj->type)); \
-\
+        \
         return NULL; \
     }
 
