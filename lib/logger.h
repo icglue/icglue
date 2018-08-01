@@ -60,7 +60,7 @@ extern gchar *loglevel_label[LOGLEVEL_COUNT];
  * @brief Printf-like debug logging.
  * @param id Identifier for log messages. Is printed next to message and can be used for selective enabling/disabling.
  * @param format Printf-like format string.
- * @param ... Optinal printf-like variadic arguments.
+ * @param ... Optional printf-like variadic arguments.
  */
 #define log_debug(id, format, ...)    log_base (LOGLEVEL_DEBUG, id, __FILE__, __LINE__, format, ## __VA_ARGS__)
 
@@ -68,7 +68,7 @@ extern gchar *loglevel_label[LOGLEVEL_COUNT];
  * @brief Printf-like informational logging.
  * @param id Identifier for log messages. Is printed next to message and can be used for selective enabling/disabling.
  * @param format Printf-like format string.
- * @param ... Optinal printf-like variadic arguments.
+ * @param ... Optional printf-like variadic arguments.
  */
 #define log_info(id, format, ...)     log_base (LOGLEVEL_INFO, id, __FILE__, __LINE__, format, ## __VA_ARGS__)
 
@@ -76,7 +76,7 @@ extern gchar *loglevel_label[LOGLEVEL_COUNT];
  * @brief Printf-like warning-message logging.
  * @param id Identifier for log messages. Is printed next to message and can be used for selective enabling/disabling.
  * @param format Printf-like format string.
- * @param ... Optinal printf-like variadic arguments.
+ * @param ... Optional printf-like variadic arguments.
  */
 #define log_warn(id, format, ...)     log_base (LOGLEVEL_WARNING, id, __FILE__, __LINE__, format, ## __VA_ARGS__)
 
@@ -84,7 +84,7 @@ extern gchar *loglevel_label[LOGLEVEL_COUNT];
  * @brief Printf-like error-message logging.
  * @param id Identifier for log messages. Is printed next to message and can be used for selective enabling/disabling.
  * @param format Printf-like format string.
- * @param ... Optinal printf-like variadic arguments.
+ * @param ... Optional printf-like variadic arguments.
  */
 #define log_error(id, format, ...)    log_base (LOGLEVEL_ERROR, id, __FILE__, __LINE__, format, ## __VA_ARGS__)
 
@@ -92,7 +92,9 @@ extern gchar *loglevel_label[LOGLEVEL_COUNT];
  * @brief Printf-like error-message logging for library internal errors.
  * @param id Identifier for log messages. Is printed next to message and can be used for selective enabling/disabling.
  * @param format Printf-like format string.
- * @param ... Optinal printf-like variadic arguments.
+ * @param ... Optional printf-like variadic arguments.
+ *
+ * Logging an internal error will call exit(1) afterwards.
  */
 #define log_errorint(id, format, ...) log_base (LOGLEVEL_ERRORINT, id, __FILE__, __LINE__, format, ## __VA_ARGS__);
 
