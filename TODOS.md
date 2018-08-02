@@ -15,14 +15,12 @@
   - add get\_regfile -name (without -of option) possibility
 - add net/signal data type to retrieve signals?
 - library cleanup
-  - proper removal of child-objects from parents
   - merge similar data-structs
   - only one regfile per module
 
 ## tcllib
 - add instance-only command or check in M if already exists: sane values, instances only?
 - squash regfile
-- regfile R command with module
 
 ## templates
 - regfiles: support
