@@ -27,9 +27,10 @@ namespace eval ig::sng {
     #
     # @param instances SNG instances expression
     #
-    # @return List of sublists of form {\<instance\> \<instance-with-signal-info\>}.<br>
-    # \<instance\>: SNG instance name.<br>
-    # \<instance-with-signal-info\>: extended sng instance-with-signal name, e.g. "moda:signal_i".
+    # @return List of sublists of form {\<module\> \<instance-with-signal-info\> \<icglue-instance-with-signal-info\>}.<br>
+    # \<module\>: SNG module name.<br>
+    # \<instance-with-signal-info\>: extended sng instance-with-signal name, e.g. "mod_a:signal_i".
+    # \<instance-with-signal-info\>: extended icglue instance-with-signal name, e.g. "mod<a>:signal_i".
     proc split_instances {instances} {
         set result {}
         foreach i_e $instances {
@@ -40,21 +41,23 @@ namespace eval ig::sng {
                             lappend result [list \
                                 $m_mod \
                                 "${m_mod}_${i}${m_rem}" \
+                                "${m_mod}<${i}>${m_rem}" \
                             ]
                         }
                     } else {
                         lappend result [list \
                             $m_mod \
                             "${m_mod}_${i_inst}${m_rem}" \
+                            "${m_mod}<${i_inst}>${m_rem}" \
                         ]
                     }
                 }
             } else {
                 set sp [split $i_e ":"]
                 if {[llength $sp] > 1} {
-                    lappend result [list [lindex $sp 0] $i_e]
+                    lappend result [list [lindex $sp 0] $i_e $i_e]
                 } else {
-                    lappend result [list $i_e $i_e]
+                    lappend result [list $i_e $i_e $i_e]
                 }
             }
         }
@@ -382,7 +385,151 @@ namespace eval ig::sng {
         }
     }
 
-    ## @brief Parse and process SNG file.
+    # TODO: doc
+    proc convert_modules {mod_lines} {
+        set mod_trees [dict create]
+        set mod_standa {}
+
+        set timeout [llength $mod_lines]
+
+        while {[llength $mod_lines] > 0} {
+            set modname [lindex $mod_lines 0 2]
+            set unit    [lindex $mod_lines 0 3]
+            set modargs [lindex $mod_lines 0 4]
+            set insts   [lindex $mod_lines 0 5]
+
+            set insts_valid "true"
+            foreach i_inst $insts {
+                set inst_mod [lindex $i_inst 0]
+                if {![dict exists $mod_trees $inst_mod]} {
+                    set insts_valid "false"
+                    break
+                }
+            }
+
+            # try next
+            if {! $insts_valid} {
+                # rotate
+                set first [lindex $mod_lines 0]
+                set mod_lines [lrange $mod_lines 1 end]
+                lappend mod_lines $first
+
+                # timeout check
+                incr timeout -1
+                if {$timeout == 0} {
+                    ig::log -error "could not create module tree"
+                    return {}
+                }
+                continue
+            }
+
+            # process tree
+            set mtree {}
+            if {[llength $insts] > 0} {
+                lappend mtree {|}
+                foreach i_inst $insts {
+                    set inst_mod [lindex $i_inst 0]
+                    set inst_data [dict get $mod_trees $inst_mod]
+
+                    set args [dict get $inst_data "args"]
+                    if {![dict get $inst_data "res"]} {
+                        set iunit [dict get $inst_data "unit"]
+                        if {$iunit ne $unit} {
+                            lappend args "unit=${iunit}"
+                        }
+                    }
+
+                    if {[llength $args] > 0} {
+                        lappend mtree "+-- [lindex $i_inst 2] .. ([join $args ","])"
+                    } else {
+                        lappend mtree "+-- [lindex $i_inst 2]"
+                    }
+
+                    foreach item [dict get $inst_data "tree"] {
+                        lappend mtree "|   $item"
+                    }
+
+                    set idx [lsearch $mod_standa $inst_mod]
+                    if {$idx >= 0} {
+                        set mod_standa [lreplace $mod_standa $idx $idx]
+                    }
+                }
+                lappend mtree {}
+            }
+
+            # args
+            set args {}
+            set res  "false"
+            foreach i_arg $modargs {
+                switch $i_arg {
+                    "verilog"       -
+                    "v"             {}
+                    "vhdl"          {lappend args "vhdl"}
+                    "systemverilog" -
+                    "sv"            {lappend args "sv"}
+                    "rtl"           {}
+                    "tb"            {lappend args "tb"}
+                    "behavioral"    {lappend args "behavioral"}
+                    "ilm"           {lappend args "ilm"}
+                    "resource"      {
+                                        lappend args "res"
+                                        set res "true"
+                                    }
+                    default         {}
+                }
+            }
+
+            dict set mod_trees $modname "args" $args
+            dict set mod_trees $modname "tree" $mtree
+            dict set mod_trees $modname "res"  $res
+            dict set mod_trees $modname "unit" $unit
+
+            lappend mod_standa $modname
+
+            # next
+            set mod_lines [lrange $mod_lines 1 end]
+        }
+
+        set result {}
+
+        # return
+        foreach i_mod $mod_standa {
+            set mtree {}
+            set mod_data [dict get $mod_trees $i_mod]
+            lappend mtree "$i_mod ... ([join [dict get $mod_data "args"] ","])"
+            set mtree [concat $mtree [dict get $mod_data "tree"]]
+
+            set unit [dict get $mod_data "unit"]
+            if {$unit eq {}} {
+                set unit $i_mod
+            }
+
+            lappend result "M -unit \"${unit}\" -tree {"
+            foreach item $mtree {
+                lappend result "    $item"
+            }
+            lappend result "}"
+            lappend result {}
+        }
+
+        return $result
+    }
+
+    # TODO: doc
+    proc convert {parsed_lines} {
+        set result {}
+
+        lappend result "# icglue file converted from icsng"
+        lappend result {}
+
+        set result [concat $result [convert_modules [lsearch -all -inline -index 1 $parsed_lines "module"]]]
+
+        # TODO: signals, parameters, code
+
+        return $result
+    }
+
+    ## @brief Parse SNG file.
     #
     # @param filename Filename of SNG file.
     proc parse_file {filename} {
@@ -405,10 +552,36 @@ namespace eval ig::sng {
             incr i
         }
 
+        return $parsed
+    }
+
+    ## @brief Parse and process SNG file.
+    #
+    # @param filename Filename of SNG file.
+    proc evaluate_file {filename} {
+        set parsed [parse_file $filename]
+
         evaluate_lines $parsed
     }
 
-    namespace export parse_file
+    ## @brief Parse and convert SNG file into icglue script.
+    #
+    # @param in_filename Filename of SNG file.
+    # @param out_filename Filename of icglue script.
+    proc convert_file {in_filename out_filename} {
+        set parsed [parse_file $in_filename]
+
+        # for check + pragma-update
+        evaluate_lines $parsed
+
+        set outlines [convert $parsed]
+
+        set f [open $out_filename "w"]
+        puts $f [join $outlines "\n"]
+        close $f
+    }
+
+    namespace export evaluate_file convert_file
 }
 
 # vim: set filetype=icgluetcl syntax=tcl:

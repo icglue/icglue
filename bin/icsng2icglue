@@ -1,0 +1,47 @@
+#!/usr/bin/env tclsh
+
+#
+#   ICGlue is a Tcl-Library for scripted HDL generation
+#   Copyright (C) 2017-2018  Andreas Dixius, Felix Neumärker
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+# try to set package path and load ICGlue package for typical cases
+set binpath $::argv0
+# in case script is a relative symlink, get to absolute path of script
+catch {set binpath [file normalize [file join [file dirname $binpath] [file readlink $binpath]]]}
+lappend auto_path [file normalize [file dirname [file normalize $binpath]]/..]
+
+set icglue_silent_load "true"
+package require ICGlue
+
+proc main {} {
+    # TODO: argparse...
+
+    set c_infile [lindex $::argv 0]
+    if {$::argc > 1} {
+        set c_outfile [lindex $::argv 1]
+    } else {
+        set c_outfile "[file rootname $c_infile].icglue"
+    }
+
+    if {[file isfile $c_infile]} {
+        ig::sng::convert_file $c_infile $c_outfile
+    }
+}
+
+main
+
+# vim: set filetype=icgluetcl syntax=tcl:

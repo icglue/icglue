@@ -207,7 +207,7 @@ proc main {} {
     # construct hierarchy from input file
     if {[regexp "\.(ic)?sng$" $c_file]} {
         # teat (ic)sng files seperately (sng syntax)
-        ig::sng::parse_file $c_file
+        ig::sng::evaluate_file $c_file
     } else {
         ig::construct::run_script $c_file $scriptargs
     }
@@ -253,4 +253,4 @@ proc main {} {
 
 main
 
-    # vim: set filetype=icgluetcl syntax=tcl:
+# vim: set filetype=icgluetcl syntax=tcl:
