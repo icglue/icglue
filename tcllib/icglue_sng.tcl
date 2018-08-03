@@ -743,7 +743,42 @@ namespace eval ig::sng {
 
         ig::log -info -id "SNGCv" "Converting SNG pragmas of file $path"
 
-        # TODO: parse sng pragmas, insert icglue pragmas
+        set f [open $path "r"]
+        set vlog [read $f]
+        close $f
+
+        set icg_pragmas [ig::templates::parse_pragmas $vlog ".v"]
+        if {[llength $icg_pragmas] > 0} {
+            ig::log -warn -id "SNGCv" "Module $name: file $path already contains icglue pragmas... skipping."
+            return
+        }
+
+        set vlogl [split $vlog "\n"]
+        set vlogl [lreplace $vlogl -1 -1 "/* pragma icglue keep begin head */"]
+
+        set sng_pragma_data {
+            "// pragma ICSNG %%sng_verilog_module_begin%%"    "/* pragma icglue keep end */"
+            "// pragma ICSNG %%sng_verilog_module_end%%"      "    /* pragma icglue keep begin declarations */"
+            "// pragma ICSNG %%sng_verilog_instances_begin%%" "    /* pragma icglue keep end */"
+            "// pragma ICSNG %%sng_verilog_instances_end%%"   "    /* pragma icglue keep begin instances */"
+            "// pragma ICSNG %%sng_verilog_code_begin%%"      "    /* pragma icglue keep end */"
+            "// pragma ICSNG %%sng_verilog_code_end%%"        "    /* pragma icglue keep begin code */"
+            "endmodule"                                       "    /* pragma icglue keep end */\n\nendmodule"
+        }
+
+        foreach {ipragma irepl} $sng_pragma_data {
+            set idx [lsearch $vlogl $ipragma]
+            if {$idx < 0} {
+                ig::log -warn -id "SNGCv" "Module $name: file $path does not contain expected \"${ipragma}\"... skipping."
+                return
+            }
+
+            lset vlogl $idx $irepl
+        }
+
+        set f [open $path "w"]
+        puts $f [join $vlogl "\n"]
+        close $f
     }
 
     namespace export evaluate_file convert_file update_file_pragmas
