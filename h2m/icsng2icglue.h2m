@@ -1,0 +1,15 @@
+[description]
+Converts an \fBicsng\fR file to an \fBicglue\fR script for HDL generation.
+
+[reporting bugs]
+E-mail bug reports to \fBandreas.dixius@tu-dresden.de\fR, \fBfelix.neumaerker@tu-dresden.de\fR.
+.br
+Also, please include the output of ``icglue --version'' in the body of your report if at all possible.
+
+[see also]
+\fBicglue(1)\fR - Tcl-Library for scripted HDL generation.
+.br
+\fBicsng(1)\fR  - Structural netlist generator provided by ICPRO
+.PP
+HTML documentation of the Tcl-library at \fB%DOCDIRTCL%/html/index.html\fR
+\" vim: ft=nroff

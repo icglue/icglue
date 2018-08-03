@@ -733,10 +733,12 @@ namespace eval ig::sng {
     #
     # @param modid Object ID of module to process
     proc update_file_pragmas {modid {projdir .}} {
+
         set name [ig::db::get_attribute -object $modid -attribute "name"]
         set unit [ig::db::get_attribute -object $modid -attribute "parentunit" -default $name]
+        set mode [ig::db::get_attribute -object $modid -attribute "mode" -default "rtl"]
 
-        set path [file join $projdir "units" $unit "source/rtl/verilog" "${name}.v"]
+        set path [file join $projdir "units" $unit "source/$mode/verilog" "${name}.v"]
         if {![file exists $path]} {
             return
         }

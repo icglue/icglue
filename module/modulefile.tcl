@@ -27,7 +27,8 @@ if { ([module-info mode load] || [module-info mode switch2]) } {
         exit 1
     }
     if {[module-info shell] eq "zsh"} {
-        puts "compdef _gnu_generic $tool_name"
+        puts "compdef _gnu_generic icglue"
+        puts "compdef _gnu_generic icsng2icglue"
     }
 }
 

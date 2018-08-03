@@ -26,6 +26,7 @@ PKGGENSCR            := scripts/tcl_pkggen.tcl
 
 VERSION              := 1.0a1
 VERSIONSCR           := scripts/update_version.sh
+VERSIONSCRINSTALL    := scripts/install-version.sh
 
 DOCDIR               := doc
 DOCDIRTCL            := $(DOCDIR)/ICGlue
@@ -34,6 +35,10 @@ DOXYFILETCL          := doxy/tcl.doxyfile
 DOXYFILELIB          := doxy/lib.doxyfile
 
 BROWSER              ?= firefox
+
+MANSEC               := 1
+MANDIR               := share/man/man$(MANSEC)
+H2MBASENAMES         := icglue icsng2icglue
 
 SYNTAXDIR            := nagelfar
 SYNTAXFILE_LIB       := $(SYNTAXDIR)/ICGlue.nagelfar.db.tcl
@@ -91,9 +96,14 @@ docs: doctcl doclib
 showdocs:
 	$(BROWSER) $(DOCDIRLIB)/html/index.html $(DOCDIRTCL)/html/index.html > /dev/null 2> /dev/null &
 
-man:
-	-mkdir -p share/man/man1
-	-help2man -N -i ./h2m/icglue.h2m ./bin/icglue > share/man/man1/icglue.1
+$(MANDIR):
+	-mkdir -p $(MANDIR)
+
+$(MANDIR)/%.$(MANSEC): ./h2m/%.h2m ./bin/% | $(MANDIR)
+	-help2man -N -i ./h2m/$*.h2m ./bin/$* > $@
+	sed -i -e 's/(INSTALLED-VERSION)//' $@
+
+man: $(addprefix $(MANDIR)/, $(addsuffix .$(MANSEC), $(H2MBASENAMES)))
 
 .PHONY: doctcl doclib docs man
 
@@ -129,7 +139,7 @@ install_bin:
 	install -m755 -d $(INSTDIR)/lib/icglue/$(PKGDIR)
 	install -m644    $(PKGDIR)/*.tcl -t                $(INSTDIR)/lib/icglue/$(PKGDIR)
 	install -m755 -s $(PKGDIR)/*.so -t                 $(INSTDIR)/lib/icglue/$(PKGDIR)
-	install -m755 -D ./bin/icglue -T                   $(INSTDIR)/lib/icglue/icglue
+	$(VERSIONSCRINSTALL) ./bin/icglue                  $(INSTDIR)/lib/icglue/icglue
 	install -m755 -D ./bin/icsng2icglue -T             $(INSTDIR)/lib/icglue/icsng2icglue
 	install -m755 -d $(INSTDIR)/bin
 	ln -sf           $(PREFIX)/lib/icglue/icglue       $(INSTDIR)/bin/icglue
@@ -139,10 +149,11 @@ install_bin:
 
 install_doc:
 	install -m755 -d $(INSTDIR)/share/icglue
-	install -D       $(CURDIR)/share/man/man1/icglue.1 $(INSTDIR)/share/man/man1/icglue.1
-	-cp -r           $(DOCDIRTCL)/man                  $(INSTDIR)/share
-	-cp -r           $(DOCDIRTCL)/html                 $(INSTDIR)/share/icglue
-	sed -i -e 's#%DOCDIRTCL%#$(PREFIX)/share/icglue#' $(INSTDIR)/share/man/man1/icglue.1
+	install -m755 -d $(INSTDIR)/$(MANDIR)
+	install -D       $(CURDIR)/$(MANDIR)/*            $(INSTDIR)/$(MANDIR)
+	-cp     -r       $(DOCDIRTCL)/man                 $(INSTDIR)/share
+	-cp     -r       $(DOCDIRTCL)/html                $(INSTDIR)/share/icglue
+	sed -i -e 's#%DOCDIRTCL%#$(PREFIX)/share/icglue#' $(INSTDIR)/share/man/man1/icglue.$(MANSEC)
 
 install_helpers:
 	install -m755 -d $(INSTDIR)/share/icglue

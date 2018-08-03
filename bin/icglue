@@ -45,9 +45,10 @@ Mandatory arguments to long options are mandatory for short options too.
 
     -q, --quiet              Show errors only
     -v, --verbose            Be verbose
-    --version                Show version
-    --nocopyright            Do not print the ICGlue copyright, version and logo upon start to stderr
     -d, --debug              Show debug output
+    --nocopyright            Do not print the ICGlue copyright, version and logo upon start to stderr
+
+    --version                Show version
 
 If the FILE has the extention .sng or .icng, it will try to parse the input as icsng syntax and translate them to corresponding icglue commands.
 Otherwise the FILE is interpreted as TCL-Script which supports the icglue extension for hardware description.
@@ -58,16 +59,39 @@ Otherwise the FILE is interpreted as TCL-Script which supports the icglue extens
     }
 }
 
+proc additionalversion {} {
+
+    variable binpath
+    set gitpath [file dirname $binpath]
+    set results {}
+    # additionalversion_str default is replaced by make install
+    if {[set additionalversion_str "INSTALLED-VERSION"] ne "INSTALLED-VERSION"} {
+        return $additionalversion_str
+    }
+
+    if {![catch {set results [exec -ignorestderr igit -C $gitpath ls-files [file tail $binpath]]}]} {
+        if {[string trim $results] ne ""} {
+            set gitrev [exec git -C $gitpath rev-parse --short HEAD]
+            set gitdirty ""
+            if {[exec git -C $gitpath diff --shortstat] ne ""} {
+                set gitdirty "-dirty"
+            }
+            set additionalversion_str "git-rev ${gitrev}${gitdirty} \[live\]"
+        }
+    }
+    return " ($additionalversion_str)"
+}
+
 proc printversion {} {
-    puts \
-{ICGlue 1.0a1
+    puts [format \
+{ICGlue 1.0a1%s
 Copyright (C) 2017 Andreas Dixius, Felix Neumaerker
 
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 
-Written by Andreas Dixius, Felix Neumaerker}
+Written by Andreas Dixius, Felix Neumaerker} [additionalversion]]
 
     exit 0
 }

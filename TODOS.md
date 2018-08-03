@@ -7,8 +7,6 @@
     - how to write a construct script
     - ...?
 - add check (nagelfar shell script)
-- add manpage
-- add prepare[template]
 
 ## lib
 - regfile support
@@ -24,18 +22,14 @@
 
 ## templates
 - regfiles: support
-  - handshake read
   - trigger reg (different types: 1-0 trigger, toggle trigger, ...?)
-  - manual entry ( -> in docu custom always block)
   - sanity checker
-- testbench -> regs
-- testbench to outside dummy module (see nowriteout function ?)
+- **testbench -> regs**
+- **testbench to outside dummy module (see nowriteout function ?)**
 
 ## bin
 - allow multiple construction scripts?
 - add "nowriteout" function or similar? -> allows for construction with intermediate clean
-- tcl-stack-trace: suppress by default (just show error message) - enable per opt
-- add "prepare" (or similar) option to generate template construction-script
 
 ## docu
 - regfile / handshake direct connect
