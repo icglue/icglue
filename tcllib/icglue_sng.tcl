@@ -563,8 +563,57 @@ namespace eval ig::sng {
             return $txt
         } elseif {$type eq "ignore"} {
             return {}
+        } elseif {$type eq "signal"} {
+            set sig  [lindex $line 2]
+            set size [lindex $line 3]
+            set val  [lindex $line 4]
+            set arr  [lindex $line 5]
+            set ilft [lindex $line 6]
+            set irgt [lindex $line 7]
+
+            set cmd "S"
+            if {$size > 1} {
+                append cmd " -w [list $size]"
+            }
+            append cmd " ${sig}"
+
+            if {$val ne ""} {
+                append cmd " = [list $val]"
+            }
+
+            foreach iinst $ilft {
+                append cmd " \"[lindex $iinst 2]\""
+            }
+            if {$arr eq "->"} {
+                set arr "-->"
+            } elseif {$arr eq "<-"} {
+                set arr "<--"
+            }
+            append cmd " ${arr}"
+
+            foreach iinst $irgt {
+                append cmd " \"[lindex $iinst 2]\""
+            }
+
+            return $cmd
+        } elseif {$type eq "parameter"} {
+            set par  [lindex $line 2]
+            set val  [lindex $line 3]
+            set ilft [lindex $line 5]
+            set irgt [lindex $line 6]
+
+            set cmd "P"
+            append cmd " ${par}"
+            if {$val ne ""} {
+                append cmd " = [list $val]"
+            }
+            foreach iinst [concat $ilft $irgt] {
+                append cmd " \"[lindex $iinst 2]\""
+            }
+
+            return $cmd
         } else {
-            # TODO: signals, parameters, code
+            # TODO: code
             return {}
         }
     }
