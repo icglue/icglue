@@ -221,17 +221,15 @@
     ## </definition> ##
     ###########################################
 %>
-<%
-    ###########################################
-    ## <icglue-inst/code>
--%>
-<%I include-verilog/inst.module.template.vh %>
 <%-
+    ###########################################
+    ## <icglue-inst/code> -%>
+<%I include-verilog/inst.module.template.vh %><%-
     ## </icglue-inst/code> ##
     ###########################################
-%>
+-%>
 
-<%
+<%-
     ###########################################
     ## <common-sync>
     foreach_preamble {s r w sb} $sig_syncs {

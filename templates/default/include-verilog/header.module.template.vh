@@ -58,6 +58,6 @@ module <%=$mod_data(name)%> (
     <[get_pragma_content $pragma_data "keep" "declarations"]><%
     ## </signal declaration>
     ###########################################
-%>
+-%>
 
 <%- # vim: set filetype=verilog_template: -%>

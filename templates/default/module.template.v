@@ -1,9 +1,8 @@
 <%
     ##  icglue - module template
 -%>
-<%I include-verilog/header.module.template.vh %>
-
-<%
+<%I include-verilog/header.module.template.vh -%>
+<%-
     ###########################################
     ## <icglue-inst/code>
     if {[llength $mod_data(regfiles)] == 0} { -%>
@@ -17,7 +16,7 @@
     ## </regfile>
     ###########################################
     }
--%>
+%>
 
 endmodule
 <%- # vim: set filetype=verilog_template: -%>
