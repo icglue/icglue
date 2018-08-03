@@ -548,6 +548,27 @@ namespace eval ig::sng {
         return $result
     }
 
+    ## @brief Create construction command from a line preparsed by @ref parse_line.
+    #
+    # @param line parsed line containing icsng command.
+    # @return Line of generated icglue construction command or comment.
+    proc convert_other {line} {
+        set type [lindex $line 1]
+
+        if {$type eq "comment"} {
+            set txt [lindex $line 2]
+            if {[string index [string trimleft $txt] 0] ne "#"} {
+                set txt "#${txt}"
+            }
+            return $txt
+        } elseif {$type eq "ignore"} {
+            return {}
+        } else {
+            # TODO: signals, parameters, code
+            return {}
+        }
+    }
+
     ## @brief Convert list of lines preparsed by @ref parse_line into list of lines for a construction script.
     #
     # @param parsed_lines List of parsed lines by @ref parse_line.
@@ -558,9 +579,41 @@ namespace eval ig::sng {
         lappend result "# icglue file converted from icsng"
         lappend result {}
 
-        set result [concat $result [convert_modules [lsearch -all -inline -index 1 $parsed_lines "module"]]]
+        set mod_lines [lsearch -all -inline -index 1 $parsed_lines "module"]
+        set rem_lines [lsearch -all -inline -index 1 -not $parsed_lines "module"]
+        set pre_lines [list]
 
-        # TODO: signals, parameters, code
+        if {[llength $mod_lines] > 0} {
+            set first_mod_line [lindex $mod_lines 0 0]
+        } else {
+            set first_mod_line 0
+        }
+
+        for {set i 0} {$i < [llength $rem_lines]} {incr i} {
+            set line [lindex $rem_lines $i 0]
+            set type [lindex $rem_lines $i 1]
+
+            if {$line >= $first_mod_line} {
+                set pre_lines [lrange $rem_lines 0 [expr {$i - 1}]]
+                set rem_lines [lrange $rem_lines $i end]
+                break
+            }
+
+            if {($type ne "comment") && ($type ne "ignore")} {
+                # more than comment/empty before first module command
+                break
+            }
+        }
+
+        foreach i_line $pre_lines {
+            lappend result [convert_other $i_line]
+        }
+
+        lappend result {*}[convert_modules $mod_lines]
+
+        foreach i_line $rem_lines {
+            lappend result [convert_other $i_line]
+        }
 
         return $result
     }
