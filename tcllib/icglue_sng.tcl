@@ -724,11 +724,29 @@ namespace eval ig::sng {
         set outlines [convert $parsed]
 
         set f [open $out_filename "w"]
+        ig::log -info -id "SNGCv" "Generating icglue construction script $out_filename"
         puts $f [join $outlines "\n"]
         close $f
     }
 
-    namespace export evaluate_file convert_file
+    ## @brief Parse sng pragmas in existing module file and insert icglue template pragmas
+    #
+    # @param modid Object ID of module to process
+    proc update_file_pragmas {modid {projdir .}} {
+        set name [ig::db::get_attribute -object $modid -attribute "name"]
+        set unit [ig::db::get_attribute -object $modid -attribute "parentunit" -default $name]
+
+        set path [file join $projdir "units" $unit "source/rtl/verilog" "${name}.v"]
+        if {![file exists $path]} {
+            return
+        }
+
+        ig::log -info -id "SNGCv" "Converting SNG pragmas of file $path"
+
+        # TODO: parse sng pragmas, insert icglue pragmas
+    }
+
+    namespace export evaluate_file convert_file update_file_pragmas
 }
 
 # vim: set filetype=icgluetcl syntax=tcl:

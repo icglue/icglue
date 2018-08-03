@@ -28,17 +28,40 @@ set icglue_silent_load "true"
 package require ICGlue
 
 proc main {} {
-    # TODO: argparse...
-
+    # TODO: proper argparse...
+    set c_loglevel      "W"
+    set c_loglines      "false"
     set c_infile [lindex $::argv 0]
+
     if {$::argc > 1} {
         set c_outfile [lindex $::argv 1]
     } else {
+        # default outfile
         set c_outfile "[file rootname $c_infile].icglue"
     }
 
+    if {$c_loglines} {
+        ig::logger -level ${c_loglevel} -linenumber
+    } else {
+        ig::logger -level ${c_loglevel} -nolinenumber
+    }
+
+
+    ig::logger -level I -id SNGCv
+
+    # create icglue-script
     if {[file isfile $c_infile]} {
+        # TODO: check if already exists + force option?
         ig::sng::convert_file $c_infile $c_outfile
+    }
+
+    # insert icglue pragmas
+    foreach i_module [ig::db::get_modules -all] {
+        if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
+            ig::log -info "generating module $i_module"
+            # TODO: use ICPRO_DIR or something if available
+            ig::sng::update_file_pragmas $i_module "."
+        }
     }
 }
 
