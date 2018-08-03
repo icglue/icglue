@@ -612,8 +612,17 @@ namespace eval ig::sng {
             }
 
             return $cmd
+        } elseif {$type eq "code"} {
+            set mod  [lindex $line 2]
+            set code "\n[lindex $line 3]\n"
+
+            set cmd "C -verbatim"
+            append cmd " ${mod}"
+            append cmd " "
+            append cmd [list $code]
+
+            return $cmd
         } else {
-            # TODO: code
             return {}
         }
     }
