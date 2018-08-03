@@ -385,7 +385,10 @@ namespace eval ig::sng {
         }
     }
 
-    # TODO: doc
+    ## @brief Create module tree command from list of module-lines preparsed by @ref parse_line.
+    #
+    # @param mod_lines List of parsed lines containing module commands.
+    # @return List of lines of generated module-tree commands.
     proc convert_modules {mod_lines} {
         set mod_trees [dict create]
         set mod_standa {}
@@ -445,8 +448,22 @@ namespace eval ig::sng {
                         lappend mtree "+-- [lindex $i_inst 2]"
                     }
 
+                    if {[lindex $insts end] eq $i_inst} {
+                        set bar " "
+                    } else {
+                        set bar "|"
+                    }
+
                     foreach item [dict get $inst_data "tree"] {
-                        lappend mtree "|   $item"
+                        if {[string length $item] > 0} {
+                            lappend mtree "${bar}   $item"
+                        } else {
+                            if {$bar ne " "} {
+                                lappend mtree "${bar}"
+                            } else {
+                                lappend mtree {}
+                            }
+                        }
                     }
 
                     set idx [lsearch $mod_standa $inst_mod]
@@ -505,8 +522,24 @@ namespace eval ig::sng {
             }
 
             lappend result "M -unit \"${unit}\" -tree {"
+
+            # fill dots
+            set midx 0
             foreach item $mtree {
-                lappend result "    $item"
+                set midx [expr {max([string first "(" $item], $midx)}]
+            }
+
+            foreach item $mtree {
+                set idx [string first "(" $item]
+                if {$idx < $midx} {
+                    set item [string replace $item [expr {$idx - 2}] [expr {$idx - 2}] [string repeat "." [expr {$midx - $idx + 1}]]]
+                }
+
+                if {$item ne ""} {
+                    lappend result "    $item"
+                } else {
+                    lappend result {}
+                }
             }
             lappend result "}"
             lappend result {}
@@ -515,7 +548,10 @@ namespace eval ig::sng {
         return $result
     }
 
-    # TODO: doc
+    ## @brief Convert list of lines preparsed by @ref parse_line into list of lines for a construction script.
+    #
+    # @param parsed_lines List of parsed lines by @ref parse_line.
+    # @return List of lines for construction script.
     proc convert {parsed_lines} {
         set result {}
 
