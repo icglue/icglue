@@ -514,7 +514,7 @@ namespace eval ig::sng {
             set mtree {}
             set mod_data [dict get $mod_trees $i_mod]
             lappend mtree "$i_mod ... ([join [dict get $mod_data "args"] ","])"
-            set mtree [concat $mtree [dict get $mod_data "tree"]]
+            lappend mtree {*}[dict get $mod_data "tree"]
 
             set unit [dict get $mod_data "unit"]
             if {$unit eq {}} {

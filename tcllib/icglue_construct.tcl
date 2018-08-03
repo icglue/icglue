@@ -877,9 +877,9 @@ namespace eval ig {
                                 lassign [split $i_val ":"] s_implicit_mod s_port
                                 # special '=' means  signalname = fieldname
                                 if {$s_port eq "="} {
-                                    set s_modules [concat [list "${s_implicit_mod}:${i_name}!"] $s_modules]
+                                    linsert s_modules -1 [list "${s_implicit_mod}:${i_name}!"]
                                 } else {
-                                    set s_modules [concat [list ${s_implicit_mod}:${s_port}] $s_modules]
+                                    linsert s_modules -1 [list ${s_implicit_mod}:${s_port}]
                                 }
                                 set s_signal $i_name
                                 set i_val "$s_signal"
