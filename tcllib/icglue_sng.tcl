@@ -754,7 +754,7 @@ namespace eval ig::sng {
         }
 
         set vlogl [split $vlog "\n"]
-        set vlogl [lreplace $vlogl -1 -1 "/* pragma icglue keep begin head */"]
+        set vlogl [linsert $vlogl -1 "/* pragma icglue keep begin head */"]
 
         set sng_pragma_data {
             "// pragma ICSNG %%sng_verilog_module_begin%%"    "/* pragma icglue keep end */"
