@@ -870,26 +870,27 @@ namespace eval ig {
                         if {$i_attr eq "signal"} {
                             if {[llength $i_val] > 1} {
                                 set s_modules [lrange $i_val 1 end]
-                                set s_signal [lindex $i_val 0]
+                                set s_signal  [lindex $i_val 0]
 
                                 # special '=' means  signalname = fieldname
                                 if {$s_signal eq "="} {
                                     set s_signal $i_name
                                 }
                                 set i_val "$s_signal"
-                            }
-                            # implicit - auto connect if : is in signalname
-                            if {[string first ":" $i_val] ne -1} {
-                                lassign [split $i_val ":"] s_implicit_mod s_port
-                                # special '=' means  signalname = fieldname
-                                if {$s_port eq "="} {
-                                    linsert s_modules -1 [list "${s_implicit_mod}:${i_name}!"]
-                                } else {
-                                    linsert s_modules -1 [list ${s_implicit_mod}:${s_port}]
+                            } else {
+                                # implicit - auto connect if : is in signalname [list entry only]
+                                if {[string first ":" $i_val] ne -1} {
+                                    lassign [split $i_val ":"] s_implicit_mod s_port
+                                    # special '=' means  signalname = fieldname
+                                    if {$s_port eq "="} {
+                                        set s_modules [list "${s_implicit_mod}:${i_name}!"]
+                                    } else {
+                                        set s_modules [list ${s_implicit_mod}:${s_port}]
+                                    }
+                                    set s_signal $i_name
+                                    set i_val "$s_signal"
                                 }
-                                set s_signal $i_name
-                                set i_val "$s_signal"
-                           }
+                            }
                         }
                         if {$i_attr eq "type"} {
                             set s_type $i_val
