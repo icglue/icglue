@@ -647,6 +647,12 @@ namespace eval ig {
             log -error -abort "P (parameter ${name}): error while creating parameter:\n\t${emsg}"
         }
 
+        # provide paramname/-value as tcl variable
+        if {![uplevel 1 [list info exists $name]]} {
+            uplevel 1 [list set $name $value]
+        } else {
+            log -warn -id "PVar" "Refuse to TCL-variable $name to parameter value - Already exists ([uplevel 1 [list format "%s" $name]])"
+        }
         return $paramid
     }
 
