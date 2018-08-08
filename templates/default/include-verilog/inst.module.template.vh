@@ -8,7 +8,7 @@
         .<[format "%-${i_params_maxlen_name}s (%s)" $param(name) $param(value)]><% } { %>,<%="\n"%><% } %>
     )<% } %> i_<%=$inst(name)%> (<%="\n"%><% foreach_array_join pin $inst(pins) { -%>
         .<[format "%-${i_pins_maxlen_name}s (%s%s)" $pin(name) [expr {$pin(invert) ? "~" : ""}] $pin(connection)]><% } { %>,<%="\n"%><% } %>
-    );<% } %>
+    );<%="\n"%><% } %>
 
     <[get_pragma_content $pragma_data "keep" "instances"]><%
     ## </submodule instanciations>
