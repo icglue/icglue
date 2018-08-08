@@ -500,7 +500,7 @@ namespace eval ig {
         set width        1
         set value        ""
         set bidir        "false"
-        set invert       "false"
+        set invert       {}
         set resource_pin "false"
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
@@ -521,6 +521,12 @@ namespace eval ig {
         }
 
         if {$resource_pin} {
+            if {$invert eq "true"} {
+                set name "${name}_o"
+            } elseif {$invert eq "false"} {
+                set name "${name}_i"
+            }
+
             set instance_names [lrange $arguments 1 end]
             if {[llength $instance_names] == 0} {
                 log -error -abort "S: no instance names specified"
@@ -535,6 +541,9 @@ namespace eval ig {
                 }
             }
             return $retval;
+        }
+        if {$invert eq ""} {
+            set invert "false"
         }
 
         if {!$invert && !$bidir} {
