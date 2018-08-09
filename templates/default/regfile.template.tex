@@ -59,6 +59,17 @@
         return $len
     }
 
+    proc reg_type {} {
+        set type [uplevel 1 {set sreg(type)}]
+        if {[regexp -nocase {RW} $type]} {
+            return "RW"
+        } elseif {[regexp -nocase {R} $type]} {
+            return "R"
+        } else {
+            return "-"
+        }
+    }
+
 ########################################################################
     set register_list [regfile_to_arraylist $obj_id]
     foreach i_register $register_list {
@@ -90,7 +101,8 @@
             set len_max_tmp(1)  [max_array_entry_len_tex $register_list  address   ]
             set len_max_tmp(2)  [max_array_entry_len_tex $register(regs) name      ]
             set len_max_tmp(3)  [max_array_entry_len_tex $register(regs) width     ]
-            set len_max_tmp(4)  [max_array_entry_len_tex $register(regs) type      ]
+            #set len_max_tmp(4)  [max_array_entry_len_tex $register(regs) type      ]
+            set len_max_tmp(4)  2
             set len_max_tmp(5)  [max_array_entry_len_tex $register(regs) entrybits ]
             set len_max_tmp(6)  [max_array_entry_len_tex $register(regs) reset     ]
             set len_max_tmp(7)  [max_array_entry_len_tex $register(regs) comment   ]
@@ -163,10 +175,11 @@ foreach_array reg $register_list {
         } else {
             %>& & <%
         }
-        %><%= [tex_escape $sreg(name)] " \& " [tex_escape $sreg(width)] " \& " [tex_escape $sreg(type)] " \& " [tex_escape $sreg(entrybits)] " \& " [tex_escape $sreg(reset)] " \& " [tex_escape $sreg(comment)] "\\\\\}\%\n" %><%
+        %><%= [tex_escape $sreg(name)] " \& " [tex_escape $sreg(width)] " \& " [tex_escape [reg_type]] " \& " [tex_escape $sreg(entrybits)] " \& " [tex_escape $sreg(reset)] " \& " [tex_escape $sreg(comment)] "\\\\\}\%\n" %><%
         incr i_sreg
     }
 }
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %    }
 %}
+<%-# vim: set syn=tcl: %>
