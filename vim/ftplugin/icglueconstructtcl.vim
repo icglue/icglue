@@ -1,6 +1,6 @@
 
 if exists("b:did_icglueconstructtcl_ftplugin")
-  finish
+    finish
 endif
 let b:did_icglueconstructtcl_ftplugin = 1
 
@@ -32,8 +32,63 @@ endif
 
 " Undo the stuff we changed.
 let b:undo_ftplugin = "setlocal fo< com< cms< inc< inex< def< isf< kp<" .
-	    \	      " | unlet! b:browsefilter"
+            \         " | unlet! b:browsefilter"
 
 " Restore the saved compatibility options.
 let &cpo = s:cpo_save
 unlet s:cpo_save
+
+if !exists("b:ftplugin_icglue_noimap")
+    if !exists("b:ftplugin_icglue_opt1")
+        let b:ftplugin_icglue_opt1='-ogpc -l1'
+    endif
+    if !exists("b:ftplugin_icglue_opt2")
+        let b:ftplugin_icglue_opt2='-ogc -l1'
+    endif
+    vmap <silent> <Leader>ta        :call Align_icglue_signals('=p2P2W')     <CR>
+    vmap <silent> <Leader>ts        :call Quote_icglue_signals()             <CR>
+    vmap <silent> <Leader>tw        :call Move_icglue_width_signal()         <CR>
+    imap <silent> <C-A>        <ESC>:call Vins_icglue(b:ftplugin_icglue_opt1)<CR>
+    imap <silent> <C-E>        <ESC>:call Vins_icglue(b:ftplugin_icglue_opt2)<CR>
+
+endif
+
+fun! Vins_icglue(param)
+    let inst = getline('.')
+    let inst = substitute(inst, '\[', '\\[', '')
+    let inst = substitute(inst, '\]', '\\]', '')
+    let cmd = 'vins ' .  a:param . ' ' . shellescape(inst)
+    let result = system(cmd)
+    if (strlen(result) == 0)
+        echo "No module found!"
+    else
+        let replace_lines = split(result, '\n')
+        call setline(line('.'), replace_lines[0])
+        call append(line('.'), replace_lines[1:])
+        echo "Module completed!"
+    endif
+endfun
+
+fun! Align_icglue_signals(actrl) range
+    AlignPush
+    AlignCtrl g ^\s*S
+    call Align#AlignCtrl('p1P1W')
+    '<,'>Align "
+    silent '<,'>s/" \([^"]\{-}\)\(\s\+\)" /"\1"\2/ge
+    silent '<,'>s/\S\+\s\+\(<\|-\)-\(-\|>\)/§&/e
+    call Align#AlignCtrl('p1P0W')
+    '<,'>Align §
+    silent '<,'>s/§//e
+    call Align#AlignCtrl(a:actrl)
+    '<,'>Align := --> <-- <->
+    silent '<,'>s/\s\+$//e
+    AlignPop
+endfun
+
+fun! Quote_icglue_signals() range
+    '<,'>s/\(\s*\)S \([^" ]\+\)/\1S "\2"/
+endfun
+
+fun! Move_icglue_width_signal() range
+    '<,'>s/\(\s*\)S\s*-w\s*\(\S\+\)\s*\(\S\+\)/\1S \3 -w \2/g
+endfun

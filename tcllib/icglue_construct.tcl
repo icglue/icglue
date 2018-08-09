@@ -506,7 +506,7 @@ namespace eval ig {
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list                                                                      \
                 { {^-w(idth)?(=)?}         "string"      width        "set signal width" }                            \
-                { {^(-v(alue)?(=|$)|=$)}   "string"      value        "assign value to signal" }                      \
+                { {^(-v(alue)?(=|$)|=)}    "string"      value        "assign value to signal" }                      \
                 { {^-b(idir(ectional)?)?$} "const=true"  bidir        "bidirectional connection"}                     \
                 { {^<->$}                  "const=true"  bidir        "bidirectional connection"}                     \
                 { {^-(-)?>$}               "const=false" invert       "first element is interpreted as input source"} \
