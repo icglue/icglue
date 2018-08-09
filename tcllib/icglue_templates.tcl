@@ -871,9 +871,8 @@ namespace eval ig::templates {
         namespace delete _template_run
 
         if {${_error} ne ""} {
-            ig::log -error "error while running template for object [ig::db::get_attribute -object ${obj_id} -attribute "name"] and output type ${type}"
-            ig::log -error "stacktrace:\n${::errorInfo}"
-            ig::log -error -abort "template ${_tt_name} somewhere after line ${_linenr}"
+            ig::log -error "Error while running template for object [ig::db::get_attribute -object ${obj_id} -attribute "name"] and output type ${type}\nstacktrace:\n${::errorInfo}"
+            ig::log -error "template ${_tt_name} somewhere after line ${_linenr}"
         }
 
         file mkdir [file dirname ${_outf_name}]

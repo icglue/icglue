@@ -20,6 +20,7 @@
 #include "logger.h"
 
 #include <glib/gprintf.h>
+#include <string.h>
 #include <stdlib.h>
 #include "color.h"
 
@@ -108,6 +109,45 @@ gboolean log_suppress (const log_level_t level, const gchar *id)
     return (level < log_level_threshold);
 }
 
+// adapted from libappstream-glib
+guint string_replace (GString *string, const gchar *search, const gchar *replace)
+{
+    /* nothing to do */
+    if (string->len == 0) return 0;
+
+    gsize search_len  = strlen (search);
+    gsize replace_len = strlen (replace);
+    guint count       = 0;
+    gsize search_idx  = 0;
+
+
+    for (;;) {
+        gchar *tmp = g_strstr_len (string->str + search_idx, -1, search);
+        if (tmp == NULL)
+            break;
+
+        /* advance the counter in case @replace contains @search */
+        search_idx = (gsize)(tmp - string->str);
+
+        /* reallocate the string if required */
+        if (search_len > replace_len) {
+            g_string_erase (string, (gssize)search_idx, (gssize)(search_len - replace_len));
+            memcpy (tmp, replace, replace_len);
+        } else if (search_len < replace_len) {
+            g_string_insert_len (string, (gssize)search_idx, replace, (gssize)(replace_len - search_len));
+            /* we have to treat this specially as it could have
+             * been reallocated when the insertion happened */
+            memcpy (string->str + search_idx, replace, replace_len);
+        } else {
+            /* just memcmp in the new string */
+            memcpy (tmp, replace, replace_len);
+        }
+        search_idx += replace_len;
+        count++;
+    }
+
+    return count;
+}
 void log_basev (const log_level_t level, const gchar *id, const gchar *sfile, gint sline, const gchar *format, va_list arg_list)
 {
     if (log_suppress (level, id)) {
@@ -135,7 +175,9 @@ void log_basev (const log_level_t level, const gchar *id, const gchar *sfile, gi
     GString *log_formated = g_string_new (NULL);
 
     g_string_vprintf (log_string, format, arg_list);
-    g_string_printf (log_formated, "%s%s,%-5s%s    %s", log_header_color, loglevel_label[level], id, color_reset, log_string->str);
+
+    string_replace (log_string, "\n", "\n                ");
+    g_string_printf (log_formated, "%s%s,%-5s%s     %s", log_header_color, loglevel_label[level], id, color_reset, log_string->str);
     g_string_free (log_string, TRUE);
     log_count_print[level]++;
     g_free (log_header_color);
