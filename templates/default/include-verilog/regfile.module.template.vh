@@ -133,6 +133,9 @@
     proc custom_reg {} {
         return [uplevel 1 {regexp -nocase {C} $reg(type)}]
     }
+    proc fullcustom_reg {} {
+        return [uplevel 1 {regexp -nocase {FC} $reg(type)}]
+    }
     proc read_reg_sync {} {
         return [uplevel 1 {regexp -nocase {RS} $reg(type)}]
     }
@@ -215,7 +218,7 @@
     foreach_array_preamble entry $entry_list { %>
     // regfile registers / wires<% } { %>
     wire [31: 0] <[reg_val]>;<%
-        foreach_array_with reg $entry(regs) {[write_reg]} { %>
+        foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} { %>
     reg  <[reg_range]> <[reg_name]>;<% } %><%="\n"%><% } %>
     <%=[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-declaration"] %><%
     ## </definition> ##
@@ -291,7 +294,7 @@
         set maxlen_signalname [expr [max_array_entry_len $entry(regs) signal] + 2]
     %>
     <[format "// %s @ %s" $entry(name)  $entry(address)]><% if {[info exists entry(handshake)]} { %><[format " (%s)" [regsub -all {\m\S+:} $entry(handshake) {}]]><% }
-    if {[foreach_array_contains reg $entry(regs) {[write_reg]}]} {%>
+    if {[foreach_array_contains reg $entry(regs) {[write_reg] && ![fullcustom_reg]}]} {%>
     always @(posedge <[clk]> or negedge <[reset]>) begin
         if (<[reset]> == 1'b0) begin<% foreach_array_with reg $entry(regs) {[write_reg]} { %>
             <[reg_name]> <= <%=$reg(reset)%>;<% }
