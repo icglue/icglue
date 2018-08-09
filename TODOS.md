@@ -9,18 +9,21 @@
 - add check (nagelfar shell script)
 
 ## lib
+- no adapt while signal creation on ports
 - regfile support
   - add get\_regfile -name (without -of option) possibility
 - add net/signal data type to retrieve signals?
 - library cleanup
   - merge similar data-structs
   - only one regfile per module
+- localparams?
 
 ## tcllib
 - add instance-only command or check in M if already exists: sane values, instances only?
 - squash regfile
 
 ## templates
+- support module attributes (fpga)
 - regfiles: support
   - trigger reg (different types: 1-0 trigger, toggle trigger, ...?)
   - sanity checker
