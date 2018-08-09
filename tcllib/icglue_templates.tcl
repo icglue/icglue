@@ -196,7 +196,11 @@ namespace eval ig::templates {
                             }
                         }
                     } elseif {$entrybits eq ""} {
-                        set entrybits "[expr {$width + $next_bit - 1}]:$next_bit"
+                        if {$width == 1} {
+                            set entrybits "$next_bit"
+                        } else {
+                            set entrybits "[expr {$width + $next_bit - 1}]:$next_bit"
+                        }
                     }
 
                     set blist [split $entrybits ":"]
