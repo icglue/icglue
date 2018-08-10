@@ -1,7 +1,5 @@
 
 augroup filetypedetect
-    au! BufNewFile,BufRead *.icglue,*.glue
-        \ setf icglueconstructtcl |
-        \ set syntax=tcl
+    au! BufNewFile,BufRead *.icglue,*.glue setf icglueconstructtcl
 augroup END
 

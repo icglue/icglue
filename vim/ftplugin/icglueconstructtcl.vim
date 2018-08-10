@@ -4,7 +4,6 @@ if exists("b:did_icglueconstructtcl_ftplugin")
 endif
 let b:did_icglueconstructtcl_ftplugin = 1
 
-set syntax=tcl
 let g:syntastic_icglueconstructtcl_checkers = ['nagelfar']
 
 " from tcl ftplugin:
