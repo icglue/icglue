@@ -202,8 +202,8 @@ namespace eval ig {
                                                                                                                                       \
                    { {^-(rf|(regf(ile)?))(=|$)}       "string"              regfiles      "pass regfile attribute to icglue"      }   \
                                                                                                                                       \
-                   { {^-attr(ibutes)?(=|$)}           "string"              attributes    "pass a module arribute dict to icglue" }   \
-                   { {^-rfattr(ibutes)?(=|$)}         "string"              rfattributes  "pass a regfile arribute dict to icglue"}   \
+                   { {^-attr(ibutes?)?(=|$)}          "string"              attributes    "pass a module arribute dict to icglue" }   \
+                   { {^-rfattr(ibutes?)?(=|$)}        "string"              rfattributes  "pass a regfile arribute dict to icglue"}   \
             ] -context "MODULENAME" $args]
 
         # argument checks
@@ -364,8 +364,8 @@ namespace eval ig {
                     { {^(rf|(regf(ile)?)?)$}         "const=true"          fregfile      {} }  \
                     { {^(rf|(regf(ile)?)?)=}         "string"              fregfilename  {} }  \
                                                                                                \
-                    { {^attr(ibutes)?(=|$)}          "list"                fattributes   {} }  \
-                    { {^rfattr(ibutes)?(=|$)}        "list"                frfattributes {} }  \
+                    { {^attr(ibutes?)?(=|$)}         "list"                fattributes   {} }  \
+                    { {^rfattr(ibutes?)?(=|$)}       "list"                frfattributes {} }  \
                     ] [split $moduleflags "\n"]]
 
                 if {[llength $funknown] != 0} {
