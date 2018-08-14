@@ -44,7 +44,8 @@
     }
 
     proc reg_name {} {
-        return [uplevel 1 {format "reg_%-${maxlen_signame}s" $reg(name)}]
+        uplevel 1 {set maxlen_reg_name [expr {$maxlen_name + $maxlen_signame+1}]}
+        return [uplevel 1 {format "reg_%-${maxlen_reg_name}s" "${entry(name)}_${reg(name)}"}]
     }
     proc reg_range {} {
         if {[uplevel 1 expr {$reg(width) == 1}]} {

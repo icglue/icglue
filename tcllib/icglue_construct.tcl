@@ -847,8 +847,9 @@ namespace eval ig {
                         lassign [split $handshake_sig ":"] s_modules s_signal
                     }
                     if {$s_signal ne ""} {
-                        S $s_signal $rf_module_name $conn $s_modules
-                        ig::log -info -id "RCon" "S \"$s_signal\" $rf_module_name $conn $s_modules"
+                        set connect_cmd "S \"$s_signal\" $rf_module_name $conn $s_modules"
+                        eval $connect_cmd
+                        ig::log -info -id "RCon" "$connect_cmd"
                     }
                 }
                 set handshakelist [list [lindex $handshake_sig_in 0] [lindex $handshake_sig_out 0] [lrange $handshake 2 end]]
@@ -879,11 +880,11 @@ namespace eval ig {
                         if {$i_attr eq "signal"} {
                             if {[llength $i_val] > 1} {
                                 set s_modules [lrange $i_val 1 end]
-                                set s_signal  [lindex $i_val 0]
+                                set s_signal  "${entryname}_[lindex $i_val 0]"
 
                                 # special '=' means  signalname = fieldname
                                 if {$s_signal eq "="} {
-                                    set s_signal $i_name
+                                    set s_signal "${entryname}_${i_name}"
                                 }
                                 set i_val "$s_signal"
                             } else {
@@ -896,7 +897,7 @@ namespace eval ig {
                                     } else {
                                         set s_modules [list ${s_implicit_mod}:${s_port}]
                                     }
-                                    set s_signal $i_name
+                                    set s_signal "${entryname}_${i_name}"
                                     set i_val "$s_signal"
                                 }
                             }
@@ -929,7 +930,7 @@ namespace eval ig {
                     } elseif {[regexp {R} $s_type]} {
                         set conn "<--"
                     }
-                    set connect_cmd "S -w $s_width \"${s_signal}\" $rf_module_name:${s_signal}! $conn $s_modules"
+                    set connect_cmd "S \"${s_signal}\" -w $s_width $rf_module_name $conn $s_modules"
                     eval $connect_cmd
                     ig::log -info -id "RCon" "$connect_cmd"
                 }
