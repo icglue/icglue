@@ -792,6 +792,17 @@ namespace eval ig {
             log -error -abort "R (regfile-entry ${entryname}): no registers specified"
         }
 
+        if {[llength [lindex $regdef 0]] < 2} {
+            # we assume a list here, but there isn't one.., so let split by "\n" and create one
+            set regdef_new {}
+            foreach regdef_line [split $regdef "\n"] {
+                set regdef_line [string trim $regdef_line]
+                if {$regdef_line ne ""} {
+                    lappend regdef_new $regdef_line
+                }
+            }
+            set regdef $regdef_new
+        }
         # entry map
         set entry_default_map {name width entrybits type reset signal signalbits comment}
         set entry_map {}
