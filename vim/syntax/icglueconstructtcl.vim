@@ -43,16 +43,16 @@ hi def link igMIdent     igModuleIdentifier
 hi def link igModule     igModuleIdentifier
 
 " signal command
-syn keyword igSigcmd S                          contained
-syn match igSigwidth "\v-w(idth)?>(\=)?\s*\S+"  contained
-syn match igCon "\v\<-\>"                       contained
-syn match igCon "\v-(-)?\>"                     contained
-syn match igCon "\v\<(-)?-"                     contained
-syn match igSFlags "\v(-v(alue)?>(\=)?|\=)"     contained
-syn match igSFlags "\v-b(idir(ectional)?)?"     contained
-syn match igSFlags "\v-p(in)?"                  contained
-syn region igSlistblock start="\s{"ms=e end="}" contained contains=tclVarRef,igPort,tclNumber
-syn region igSignal start=/^\s*S\>/ end=/$/               contains=igSigcmd,igSigwidth,igCon,igSFlags,igPort,igSlistblock,@igtclExtensions
+syn keyword igSigcmd S                           contained
+syn match  igSigwidth "\v-w(idth)?>(\=)?\s*\S+"  contained
+syn match  igCon "\v\<-\>"                       contained
+syn match  igCon "\v-(-)?\>"                     contained
+syn match  igCon "\v\<(-)?-"                     contained
+syn match  igSFlags "\v(-v(alue)?>(\=)?|\=)"     contained
+syn match  igSFlags "\v-b(idir(ectional)?)?"     contained
+syn match  igSFlags "\v-p(in)?"                  contained
+syn region igSlistblock start="\s{"ms=e end="}"  contained contains=tclVarRef,igPort,tclNumber
+syn region igSignal start=/^\s*S\>/ end=/$/                contains=igSigcmd,igSigwidth,igCon,igSFlags,igPort,igSlistblock,@igtclExtensions
 
 hi def link igSigcmd     tclCommand
 hi def link igSigwidth   Constant
@@ -64,8 +64,8 @@ hi def link igSignal     igModuleIdentifier
 syn keyword igParamcmd P                              contained
 syn match   igParamNameConv "\v(<|:)[A-Z][A-Z_0-9]*>" contained
 syn match   igPFlags        "\v(\=|-v(alue)?>)"       contained
-syn region  igParamblock start="\s{"ms=e end="}"      contained contains=igParamNameConv
-syn region  igParam start=/^\s*P\>/ end=/$/                     contains=igParamcmd,igPFlagsigParamNameConv,igParamblock,igPort,igSlistblock,@igtclExtensions
+syn region  igParamblock start="\s{"ms=e end="}"      contained contains=igParamNameConv,tclNumber
+syn region  igParam      start=/^\s*P\>/ end=/$/                contains=igParamcmd,igPFlags,igParamNameConv,igParamblock,igPort,igSlistblock,@igtclExtensions
 hi def link igParamcmd      igCommand
 hi def link igPFlags        igFlags
 hi def link igParamNameConv Constant
