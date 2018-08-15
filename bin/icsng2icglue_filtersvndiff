@@ -1,0 +1,73 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+my $icsng_removed = "icsng_removed.diff";
+my $icglue_added  = "icglue_added.diff";
+
+open(my $removed, '>', $icsng_removed) or die $!;
+open(my $added,   '>', $icglue_added)  or die $!;
+
+my $printfile;
+while (my $line = <>) {
+    chomp $line;
+
+    # skip icsng obsolet wire declaration
+    if ($line =~ /^-\s*wire.*_o;\s*\/\/ \(from/) {
+        next;
+    }
+
+    # strip comments
+    $line =~ s#//.*##;
+
+    # compress spaces
+    $line =~ s/\s+/ /g;
+
+    #remove bracket opening/closing space
+    $line =~ s/ (\(|\))/$1/g;
+
+    $printfile = undef;
+
+    # sort to file
+    if ($line =~ s/^-//) {
+        $printfile = $removed;
+    } elsif ($line =~ s/^\+//) {
+        $printfile = $added;
+    }
+
+    # trim
+    $line =~ s/^\s+|\s+$//g;
+
+
+    # remove trailing stuff
+    $line =~ s/[,(]$//;
+
+    if ($line eq "" or $line eq ");" or $line eq "(" or $line =~ /^\/\* pragma/) {
+        next;
+    }
+
+    # add end of line
+    $line .= "\n";
+
+    if (defined($printfile)) {
+        print $printfile "$line";
+    }
+}
+
+close($removed);
+close($added);
+
+open($removed, '<', "$icsng_removed") or die $!;
+open(my $removed_sort, '>', "$icsng_removed.sort") or die $!;
+print $removed_sort sort <$removed>;
+close($removed);
+close($removed_sort);
+
+
+open($added, '<', "$icglue_added") or die $!;
+open(my $added_sort, '>', "$icglue_added.sort") or die $!;
+print $added_sort sort <$added>;
+close($added);
+close($added_sort);
+
