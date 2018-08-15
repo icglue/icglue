@@ -533,8 +533,14 @@ namespace eval ig {
             }
 
             set retval {}
+
             foreach inst [construct::expand_instances $instance_names] {
                 set instname [lindex $inst 0]
+                set inst_pinname [lindex $inst 2]
+                if {$inst_pinname ne ""} {
+                    # remove leading :
+                    set name [string range $inst_pinname 1 end]
+                }
 
                 if {[catch {lappend retval [ig::db::create_pin -instname $instname -pinname $name -value $value]} emsg]} {
                     log -error -abort "${emsg}"
