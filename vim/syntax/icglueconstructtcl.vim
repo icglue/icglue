@@ -17,21 +17,21 @@ hi def link igPort Normal
 syn cluster igtclExtensions add=tclComment,tclString,tclNumber,tclVarRef,tclLineContinue
 
 " module command
-syn keyword igModcmd M                                contained 
-syn match   igMFlags "\v-<tree>"                      contained 
-syn match   igMFlags "\v<u(nit)?>(\=)?"               contained 
-syn match   igMFlags "\v<i(nst(ances|anciate)?)?>"    contained 
-syn match   igMFlags "\v<rtl>"                        contained 
-syn match   igMFlags "\v<beh(av(ioral|ioural)?)?>"    contained 
-syn match   igMFlags "\v<(tb|testbench)?>"            contained 
-syn match   igMFlags "\v<v(erilog)?>"                 contained 
-syn match   igMFlags "\v<sv|-s(ystemverilog)?>"       contained 
-syn match   igMFlags "\v<vhd(l)?>"                    contained 
-syn match   igMFlags "\v<(ilm|macro)?>"               contained 
-syn match   igMFlags "\v<res(ource)?>"                contained 
-syn match   igMFlags "\v<(rf|(regf(ile)?)?)>(\=)?"    contained 
-syn match   igMFlags "\v<attr(ibutes)?>(\=)?"         contained 
-syn match   igMIdent "\v\w+"                          contained 
+syn keyword igModcmd M                                contained
+syn match   igMFlags "\v-<tree>"                      contained
+syn match   igMFlags "\v<u(nit)?>(\=)?"               contained
+syn match   igMFlags "\v<i(nst(ances|anciate)?)?>"    contained
+syn match   igMFlags "\v<rtl>"                        contained
+syn match   igMFlags "\v<beh(av(ioral|ioural)?)?>"    contained
+syn match   igMFlags "\v<(tb|testbench)?>"            contained
+syn match   igMFlags "\v<v(erilog)?>"                 contained
+syn match   igMFlags "\v<sv|-s(ystemverilog)?>"       contained
+syn match   igMFlags "\v<vhd(l)?>"                    contained
+syn match   igMFlags "\v<(ilm|macro)?>"               contained
+syn match   igMFlags "\v<res(ource)?>"                contained
+syn match   igMFlags "\v<(rf|(regf(ile)?)?)>(\=)?"    contained
+syn match   igMFlags "\v<attr(ibutes)?>(\=)?"         contained
+syn match   igMIdent "\v\w+"                          contained
 syn region  igMTFlags start="("ms=e+1 end=")"me=s-1   contained contains=igMFlags,tclCommand,tclEmbeddedStatement
 syn region  igMblocklist start="\v\{"ms=e end="\v\}"  contained contains=igMTFlags,igMIdent,tclVarRef,tclComment
 syn region  igModule  start=/^\s*M.*-tree/ end=/$/              contains=igModcmd,igMFlags,igMblocklist,tclComment,tclEmbeddedStatement,tclLineContinue
@@ -43,14 +43,14 @@ hi def link igMIdent     igModuleIdentifier
 hi def link igModule     igModuleIdentifier
 
 " signal command
-syn keyword igSigcmd S                          contained 
-syn match igSigwidth "\v-w(idth)?>(\=)?\s*\S+"  contained 
-syn match igCon "\v\<-\>"                       contained 
-syn match igCon "\v-(-)?\>"                     contained 
-syn match igCon "\v\<(-)?-"                     contained 
-syn match igSFlags "\v(-v(alue)?>(\=)?|\=)"     contained 
-syn match igSFlags "\v-b(idir(ectional)?)?"     contained 
-syn match igSFlags "\v-p(in)?"                  contained 
+syn keyword igSigcmd S                          contained
+syn match igSigwidth "\v-w(idth)?>(\=)?\s*\S+"  contained
+syn match igCon "\v\<-\>"                       contained
+syn match igCon "\v-(-)?\>"                     contained
+syn match igCon "\v\<(-)?-"                     contained
+syn match igSFlags "\v(-v(alue)?>(\=)?|\=)"     contained
+syn match igSFlags "\v-b(idir(ectional)?)?"     contained
+syn match igSFlags "\v-p(in)?"                  contained
 syn region igSlistblock start="\s{"ms=e end="}" contained contains=tclVarRef,igPort,tclNumber
 syn region igSignal start=/^\s*S\>/ end=/$/               contains=igSigcmd,igSigwidth,igCon,igSFlags,igPort,igSlistblock,@igtclExtensions
 
