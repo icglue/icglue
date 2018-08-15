@@ -51,7 +51,12 @@ init::output_file $template {
             set mode [ig::db::get_attribute -object $object -attribute "mode" -default "rtl"]
         }
         set lang [ig::db::get_attribute -object $object -attribute "language" -default "verilog"]
-        return "${output_dir_root}/units/${parent_unit}/source/${mode}/${lang}/${object_name}.v"
+        set fileext [dict create {*}{
+            "verilog"       .v
+            "systemverilog" .sv
+            "vhdl"          .vhdl
+        }]
+        return "${output_dir_root}/units/${parent_unit}/source/${mode}/${lang}/${object_name}[dict get $fileext $lang]"
     } elseif {$objtype eq "regfile"} {
         if {($type eq "c") || ($type eq "h")} {
             return "${output_dir_root}/units/regfile_access/source/behavioral/lib/rf_${object_name}.${type}"
