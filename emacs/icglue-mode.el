@@ -1,3 +1,4 @@
+
 ;;; icglue-mode.el --- minimal mode for ICGlue files
 
 
@@ -5,7 +6,7 @@
 
 ;; add to load-path and use require
 
-;; possible extensions: better highlighting, reuse font-lock from tcl-mode, auto-indent
+;; possible extensions: better highlighting, auto-indent, menu, completion, verilog highlighting in code sections
 
 ;; available faces
 ;; font-lock-constant-face
@@ -21,41 +22,12 @@
 
 ;;; Code:
 
-
-;;;;;;;;;; from tcl-mode.el ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar tcl-builtin-list
-  '("after" "append" "array" "bgerror" "binary" "catch" "cd" "clock"
-    "close" "concat" "console" "dde" "encoding" "eof" "exec" "expr"
-    "fblocked" "fconfigure" "fcopy" "file" "fileevent" "flush"
-    "format" "gets" "glob" "history" "incr" "info" "interp" "join"
-    "lappend" "lindex" "linsert" "list" "llength" "load" "lrange"
-    "lreplace" "lsort" "namespace" "open" "package" "pid" "puts" "pwd"
-    "read" "regexp" "registry" "regsub" "rename" "scan" "seek" "set"
-    "socket" "source" "split" "string" "subst" "tell" "time" "trace"
-    "unknown" "unset" "vwait")
-  "List of Tcl commands.  Used only for highlighting.
-Call `tcl-set-font-lock-keywords' after changing this list.
-This list excludes those commands already found in `tcl-proc-list' and
-`tcl-keyword-list'.")
-
-(defvar tcl-proc-list
-  '("proc" "method" "itcl_class" "body" "configbody" "class")
-  "List of commands whose first argument defines something.
-This exists because some people (eg, me) use `defvar' et al.
-Call `tcl-set-proc-regexp' and `tcl-set-font-lock-keywords'
-after changing this list.")
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
 (defconst icglue-keywords
       '(
-        (".*\#.*\\|//.*$"              . font-lock-comment-face)
-        ("^M \\|^P \\|^S \\|^C \\|^R " . font-lock-type-face)
-        ("-+>\\|<-+>\\|<-+"            . font-lock-function-name-face)
-        ("-w\\|-v\\|-unit\\|-tree"     . font-lock-keyword-face)
-        ("list"  . 'font-lock-builtin-face)
+        (".*\#.*\\|//.*$"                   . font-lock-comment-face)
+        (" *M \\| *P \\| *S \\| *C \\| *R " . font-lock-type-face)
+        ("-+>\\|<-+>\\|<-+"                 . font-lock-function-name-face)
+        ("-w\\|-v\\|-unit\\|-tree"          . font-lock-keyword-face)
         )
       ;; "Keywords for ICGlue"
        )
@@ -98,10 +70,9 @@ after changing this list.")
     map)
   "Keymap used in ICGlue mode.")
 
-(require 'prog-mode)
 
-(define-derived-mode icglue-mode prog-mode
-  (setq font-lock-defaults '(icglue-keywords))
+(define-derived-mode icglue-mode tcl-mode
+  (font-lock-add-keywords nil icglue-keywords)
   (setq mode-name "ICGlue Mode")
 
   (set (make-local-variable 'comment-multi-line) nil)
