@@ -74,11 +74,15 @@ hi def link igParam         igModuleIdentifier
 
 
 "-- code command --
-syn keyword igCodecmd C                          contained
-syn region  igClistblock start="{"ms=e end="}"   contained contains=igClistblock
-syn region  igCode start=/^\s*C\>/ end=/$/                 contains=igCodecmd,igClistblock,tclLineContinue,tclString
+syn keyword igCodecmd C                              contained
+syn region  igClistblock start="{"ms=e end="}"       contained contains=igClistblock
+syn match   igCFlags "\v-a(dapt)?>"                  contained
+syn match   igCFlags "\v(-v(erbatim)?|-noa(dapt)?)>" contained
+syn match   igCFlags "\v-s(ubst)?>"                  contained
+syn region  igCode start=/^\s*C\>/ end=/$/                    contains=igCodecmd,igCFlags,igClistblock,tclLineContinue,tclString
 " default highlighting
 hi def link igCodecmd    igCommand
+hi def link igCFlags     igFlags
 hi def link igCode       igModuleIdentifier
 hi def link igClistblock igInlineCode
 
