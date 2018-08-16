@@ -10,7 +10,7 @@ hi def link igModext  igModuleIdentifier
 
 " match verilog number
 syn match  tclNumber "\<\d\+'[bhd][0-9a-fA-F_]\+\>"
-syn region igPort start=/\v\S+:/ms=e end=/\v(\s|$)/ contained contains=tclVarRef
+syn region igPort start=/\v:/ms=e end=/\v>/ contained contains=tclVarRef
 
 hi def link igPort Normal
 
