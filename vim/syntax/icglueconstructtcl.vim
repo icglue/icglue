@@ -58,7 +58,7 @@ syn match  igSFlags "\v-p(in)?"                  contained
 syn region igSlistblock start="\s{"ms=e end="}"  contained contains=tclVarRef,igPort,tclNumber
 syn region igSignal start=/^\s*S\>/ end=/$/                contains=igSigcmd,igSigwidth,igCon,igSFlags,igPort,igSlistblock,@igtclExtensions
 
-hi def link igSigcmd     tclCommand
+hi def link igSigcmd     igCommand
 hi def link igSigwidth   Constant
 hi def link igSFlags     igFlags
 hi def link igSlistblock igSignal
