@@ -21,4 +21,4 @@ C proc_mgmt -a {
 # parameters
 P DATA_W -v 32 {proc_mgmt proc_core tb_proc_top}
 
-# vim: set filetype=icglueconstructtcl syntax=tcl:
+# vim: set filetype=icglueconstructtcl :
