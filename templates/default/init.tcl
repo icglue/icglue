@@ -7,7 +7,7 @@ init::output_types $template {
     if {$objtype eq "module"} {
         return {verilog}
     } elseif {$objtype eq "regfile"} {
-        return {csv txt tex html h c}
+        return {csv txt tex html h c hpp cpp}
     } else {
         ig::log -warning "no templates available for objects of type ${objtype}"
         return {}
@@ -58,7 +58,7 @@ init::output_file $template {
         }]
         return "${output_dir_root}/units/${parent_unit}/source/${mode}/${lang}/${object_name}[dict get $fileext $lang]"
     } elseif {$objtype eq "regfile"} {
-        if {($type eq "c") || ($type eq "h")} {
+        if {[regexp {^(h|c|(h|c)pp)$} $type]} {
             return "${output_dir_root}/units/regfile_access/source/behavioral/lib/rf_${object_name}.${type}"
         } else {
             set object_name     [ig::db::get_attribute -object $object -attribute "name"]

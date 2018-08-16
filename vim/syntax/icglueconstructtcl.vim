@@ -10,9 +10,13 @@ hi def link igModext  igModuleIdentifier
 
 " match verilog number
 syn match  tclNumber "\<\d\+'[bhd][0-9a-fA-F_]\+\>"
-syn region igPort start=/\v:/ms=e end=/\v>/ contained contains=tclVarRef
-
-hi def link igPort Normal
+syn match  igPortadapt "!"                             contained
+syn region igPortname start="\<" end="\>"              contained contains=tclVarRef
+syn region igPort start=/\v:/ms=e end=/\v(\s|$)/me=s-1 contained contains=igPortname,igPortadapt,tclVarRef
+hi def link igPortname  Normal
+"hi def link igPortadapt WarningMsg
+hi def link igPortadapt Typedef
+hi def link igPort      Exception
 
 syn cluster igtclExtensions add=tclComment,tclString,tclNumber,tclVarRef,tclLineContinue
 
@@ -45,9 +49,9 @@ hi def link igModule     igModuleIdentifier
 " signal command
 syn keyword igSigcmd S                           contained
 syn match  igSigwidth "\v-w(idth)?>(\=)?\s*\S+"  contained
-syn match  igCon "\v\<-\>"                       contained
-syn match  igCon "\v-(-)?\>"                     contained
-syn match  igCon "\v\<(-)?-"                     contained
+syn match  igCon "\v\s\<-\>\s"                   contained
+syn match  igCon "\v\s-(-)?\>\s"                 contained
+syn match  igCon "\v\s\<(-)?-\s"                 contained
 syn match  igSFlags "\v(-v(alue)?>(\=)?|\=)"     contained
 syn match  igSFlags "\v-b(idir(ectional)?)?"     contained
 syn match  igSFlags "\v-p(in)?"                  contained
