@@ -678,8 +678,9 @@ namespace eval ig {
     #      <tr><td><b> MODULENAME </b></td><td> name of the module contain the code</td></tr>
     #      <tr><td><b> CODE </b></td><td> the actual code that should be inlined </td></tr>
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -a(dapt)                  </i></td><td>  adapt signal names        <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; (-v(erbatim)|-noa(dapt))  </i></td><td>  do not adapt signal names <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -a(dapt)                  </i></td><td>  adapt signal names                                                        <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; (-v(erbatim)|-noa(dapt))  </i></td><td>  do not adapt signal names                                                 <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; (-s(ubst)                 </i></td><td>  perform Tcl substition CODE argument, do forget to escape, esp \[ and \]  <br></td></tr>
     #    </table>
     #
     # @return Object-ID of the newly created codesection.
@@ -688,11 +689,13 @@ namespace eval ig {
     proc C args {
         # defaults
         set adapt     "true"
+        set do_subst  "false"
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list                                                   \
-                { {^-a(dapt)?$}                   "const=true"  adapt "adapt signal names" }       \
-                { {^(-v(erbatim)?|-noa(dapt)?)$} "const=false" adapt "do not adapt signal names" } \
+        set arguments [ig::aux::parse_opts [list                                                                                                    \
+                { {^-a(dapt)?$}                 "const=true"  adapt    "adapt signal names" }                                                       \
+                { {^-(v(erbatim)?|noa(dapt)?)$} "const=false" adapt    "do not adapt signal names" }                                                \
+                { {^-s(ubst)?$}                 "const=true"  do_subst "perform Tcl substition CODE argument, do forget to escape, esp \[ and \]" } \
             ] -context "MODULENAME CODE" $args]
 
         # argument checks
@@ -704,6 +707,10 @@ namespace eval ig {
         set code [lindex $arguments 1]
         if {$code eq ""} {
             log -error -abort "C (module ${modname}): no code section specified"
+        }
+
+        if {$do_subst} {
+            set code [uplevel 1   subst [list $code]]
         }
 
         # actual code creation
