@@ -47,6 +47,9 @@ if !exists("b:ftplugin_icglue_noimap")
     vmap <silent> <Leader>tA        :call Align_icglue_signals('=p2P2W')       <CR>
     vmap <silent> <Leader>ta        :call Align_icglue_signals_blocks('=p2P2W')<CR>
 
+    vmap <silent> <Leader>tr        :call Ascii2UTF8_Tree()<CR>
+    vmap <silent> <Leader>tR        :call UTF82Ascii_Tree()<CR>
+
     vmap <silent> <Leader>ts        :call Quote_icglue_signals()               <CR>
     vmap <silent> <Leader>tw        :call Move_icglue_width_signal()           <CR>
     vmap <silent> <Leader>tb        :call Align_icglue_signal_linebreak_block()<CR>
@@ -114,7 +117,22 @@ fun! Align_icglue_signal_linebreak_block() range
     AlignCtrl Pop
 endfun
 
+fun! Ascii2UTF8_Tree() range
+    silent '<,'>s/|/│/ge
+    silent '<,'>s/+/├/ge
+    silent '<,'>s/-/─/ge
+    silent '<,'>s/\\/└/ge
+endfun
+
+fun! UTF82Ascii_Tree() range
+    silent '<,'>s/│/|/ge
+    silent '<,'>s/├/+/ge
+    silent '<,'>s/─/-/ge
+    silent '<,'>s/└/\\/ge
+endfun
+
 fun! Quote_icglue_signals() range
     '<,'>s/^\(\s*\)S \([^" ]\+\)/\1S "\2"/e
 endfun
+
 
