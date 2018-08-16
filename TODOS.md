@@ -6,6 +6,7 @@
     - how to write a template/template set
     - how to write a construct script
     - ...?
+    - minimal example that shows off most features (similar to initial SNG file)
 - add check (nagelfar shell script)
 
 ## lib
@@ -17,6 +18,7 @@
   - merge similar data-structs
   - only one regfile per module
 - localparams?
+- allow partial connections of bus signals
 
 ## tcllib
 - add instance-only command or check in M if already exists: sane values, instances only?
