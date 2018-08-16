@@ -102,7 +102,7 @@ endfun
 fun! Align_icglue_signal_linebreak_block() range
     AlignPush
     AlignCtrl g §
-    silent '<,'>s/\v^(.*(\<--|\<-\>|--\>)\s+|\s+)/&§/e
+    silent '<,'>s/\v^(.*(\<--|\<-\>|--\>)\s+|\s+)([^# ])/\1§\3/e
     call Align#AlignCtrl('p2P0I')
     silent '<,'>Align § 
     silent '<,'>s/§//e
