@@ -44,11 +44,14 @@ if !exists("b:ftplugin_icglue_noimap")
     if !exists("b:ftplugin_icglue_opt2")
         let b:ftplugin_icglue_opt2='-ogc -l1'
     endif
-    vmap <silent> <Leader>ta        :call Align_icglue_signals('=p2P2W')     <CR>
-    vmap <silent> <Leader>ts        :call Quote_icglue_signals()             <CR>
-    vmap <silent> <Leader>tw        :call Move_icglue_width_signal()         <CR>
-    imap <silent> <C-A>        <ESC>:call Vins_icglue(b:ftplugin_icglue_opt1)<CR>
-    imap <silent> <C-E>        <ESC>:call Vins_icglue(b:ftplugin_icglue_opt2)<CR>
+    vmap <silent> <Leader>tA        :call Align_icglue_signals('=p2P2W')       <CR>
+    vmap <silent> <Leader>ta        :call Align_icglue_signals_blocks('=p2P2W')<CR>
+
+    vmap <silent> <Leader>ts        :call Quote_icglue_signals()               <CR>
+    vmap <silent> <Leader>tw        :call Move_icglue_width_signal()           <CR>
+    vmap <silent> <Leader>tb        :call Align_icglue_signal_linebreak_block()<CR>
+    imap <silent> <C-A>        <ESC>:call Vins_icglue(b:ftplugin_icglue_opt1)  <CR>
+    imap <silent> <C-E>        <ESC>:call Vins_icglue(b:ftplugin_icglue_opt2)  <CR>
 
 endif
 
@@ -68,26 +71,50 @@ fun! Vins_icglue(param)
     endif
 endfun
 
+fun! Align_icglue_signals_blocks(actrl) range
+    call Align_icglue_signals(a:actrl)
+    call Align_icglue_signal_linebreak_block()
+endfun
+
 fun! Align_icglue_signals(actrl) range
     AlignPush
-    AlignCtrl g ^\s*S
+    AlignCtrl g ^\s*S\s
     call Align#AlignCtrl('p1P1W')
-    '<,'>Align "
+    silent '<,'>Align "
     silent '<,'>s/" \([^"]\{-}\)\(\s\+\)" /"\1"\2/ge
     silent '<,'>s/\S\+\s\+\(<\|-\)-\(-\|>\)/§&/e
     call Align#AlignCtrl('p1P0W')
-    '<,'>Align §
+    silent '<,'>Align §
     silent '<,'>s/§//e
     call Align#AlignCtrl(a:actrl)
-    '<,'>Align := --> <-- <->
+    silent '<,'>Align := --> <-- <->
     silent '<,'>s/\s\+$//e
     AlignPop
 endfun
 
-fun! Quote_icglue_signals() range
-    '<,'>s/\(\s*\)S \([^" ]\+\)/\1S "\2"/
+fun! Move_icglue_width_signal() range
+    '<,'>s/^\(\s*\)S\s*-w\s*\(\S\+\)\s*\(\S\+\)/\1S \3 -w \2/ge
 endfun
 
-fun! Move_icglue_width_signal() range
-    '<,'>s/\(\s*\)S\s*-w\s*\(\S\+\)\s*\(\S\+\)/\1S \3 -w \2/g
+fun! Align_icglue_signal_linebreak_block() range
+    AlignPush
+    AlignCtrl g §
+    silent '<,'>s/\v^(.*(\<--|\<-\>|--\>)\s+|\s+)/&§/e
+    call Align#AlignCtrl('p2P0I')
+    silent '<,'>Align § 
+    silent '<,'>s/§//e
+
+    " Alignment of \
+    "AlignCtrl g \v^(.*(\<--|\<-\>|--\>)\s+|\s+)
+    "call Align#AlignCtrl('p1P0W')
+    "silent '<,'>Align \\$
+
+    silent '<,'>s/\s\+\\$/ \\/e
+    silent '<,'>s/\s\+$//e
+    AlignCtrl Pop
 endfun
+
+fun! Quote_icglue_signals() range
+    '<,'>s/^\(\s*\)S \([^" ]\+\)/\1S "\2"/e
+endfun
+
