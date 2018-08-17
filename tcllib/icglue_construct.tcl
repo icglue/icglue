@@ -710,7 +710,7 @@ namespace eval ig {
         }
 
         if {$do_subst} {
-            set code [uplevel 1   subst [list $code]]
+            set code [uplevel 1 subst -nobackslashes -nocommands [list $code]]
         }
 
         # actual code creation
@@ -782,7 +782,7 @@ namespace eval ig {
         }
 
         if {$do_subst} {
-            set regdef [uplevel 1 subst [list $regdef]]
+            set regdef [uplevel 1 subst -nocommands [list $regdef]]
         }
 
         if {[llength $arguments] < 2} {
