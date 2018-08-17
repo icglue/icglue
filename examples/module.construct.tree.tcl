@@ -3,21 +3,21 @@
 M -unit "chungo" -tree {
     chungo(rtl)
     |
-    +-- chungo_inst .................... (rtl)
+    \-- chungo_inst .................... (rtl)
         |
-        +-- common_sync<chungo12..15> .. (res)
+        \-- common_sync<chungo12..15> .. (res)
 }
 
 M -unit "rftest" -tree {
     tb_top .................................... (tb,v)
     |
-    +-- top ................................... (rtl)
+    \-- top ................................... (rtl)
         |
         +-- mgmt .............................. (rtl)
         |   |
         |   +-- mgmt_regfile .................. (rf,rfattr=accesscargs={uint8_t xcoord} {uint8_t ycoord})
         |   |   |
-        |   |   +-- common_sync<1..2,4,test> .. (res)
+        |   |   \-- common_sync<1..2,4,test> .. (res)
         |   |
         |   +-- test_mgmt ..................... (res)
         |   +-- test_mgmt2 .................... (res)
@@ -35,16 +35,16 @@ M -unit "rftest" -tree {
         |   |   |   |   +-- test_mgmt6 ........ (res)
         |   |   |   |   +-- test_mgmt7 ........ (res)
         |   |   |   |
-        |   |   |   +-- test_mgmt71 ........... (rtl,unit=test,attr=clang => tcl, attr= compile=>ncsim)
+        |   |   |   \-- test_mgmt71 ........... (rtl,unit=test,attr=clang => tcl, attr= compile=>ncsim)
         |   |   |
-        |   |   +-- test_mgmt8 ................ (res)
+        |   |   \-- test_mgmt8 ................ (res)
         |   |
-        |   +-- test_mgmt9 .................... (res)
+        |   \-- test_mgmt9 .................... (res)
         |
         +-- core .............................. (rtl)
         |
         +-- common_sync<a,b1..4> .............. (res)
-        +-- common_sync_pedge ................. (res)
+        \-- common_sync_pedge ................. (res)
 }
 
 # connections
@@ -89,7 +89,7 @@ C mgmt -a {
 
 # parameters
 P DATA_W = 32 "mgmt_regfile core tb_top"
-P DATA_W0 -v32 {mgmt_regfile core}
+P DATA_W0 -v 32 {mgmt_regfile core}
 P DATA_W1 {mgmt_regfile} = 32
 P =0.1 DELAY      {common_sync<4,test>}
 P TEST    = "uiae"   {common_sync<4,test>}

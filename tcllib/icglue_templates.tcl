@@ -103,7 +103,7 @@ namespace eval ig::templates {
         # See also @ref ig::templates::init::template_file.
         # Should be called by @ref get_template_file.
         proc get_template_file_raw {object type template_dir} {
-            ig::log -error -abort "no template loaded"
+            ig::log -error -abort "No template loaded"
         }
 
         ## @brief Callback to get supported output types for given object.
@@ -114,7 +114,7 @@ namespace eval ig::templates {
         #
         # See also @ref ig::templates::init::output_types.
         proc get_output_types {object} {
-            ig::log -error -abort "no template loaded"
+            ig::log -error -abort "No template loaded"
         }
 
         ## @brief Callback wrapper to get the template file.
@@ -135,7 +135,7 @@ namespace eval ig::templates {
         #
         # See also @ref ig::templates::init::output_file.
         proc get_output_file {object type} {
-            ig::log -error -abort "no template loaded"
+            ig::log -error -abort "No template loaded"
         }
     }
 
@@ -830,7 +830,9 @@ namespace eval ig::templates {
     #
     # The output is written to the file specified by the template callback @ref ig::templates::current::get_output_file.
     proc write_object {obj_id type} {
-        set _tt_name [current::get_template_file $obj_id $type]
+        if {[catch {set _tt_name [current::get_template_file $obj_id $type]}]} {
+            return
+        }
 
         set _outf_name [current::get_output_file $obj_id $type]
 

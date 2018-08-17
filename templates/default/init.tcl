@@ -9,7 +9,7 @@ init::output_types $template {
     } elseif {$objtype eq "regfile"} {
         return {csv txt tex html h c hpp cpp}
     } else {
-        ig::log -warning "no templates available for objects of type ${objtype}"
+        ig::log -warning "No templates available for objects of type ${objtype}"
         return {}
     }
 }
@@ -21,16 +21,16 @@ init::template_file $template {
         if {$type eq "verilog"} {
             return "${template_dir}/module.template.v"
         } else {
-            ig::log -error -abort "no template available for objecttype/outputtype ${objtype}/${type}"
+            ig::log -error -abort "No template available for objecttype/outputtype ${objtype}/${type}"
         }
     } elseif {$objtype eq "regfile"} {
         if {[file exist "${template_dir}/regfile.template.${type}"]} {
             return "${template_dir}/regfile.template.${type}"
         } else {
-            ig::log -error -abort "no template available for objecttype/outputtype ${objtype}/${type}"
+            ig::log -error -abort "No template available for objecttype/outputtype ${objtype}/${type}"
         }
     } else {
-        ig::log -error -abort "no template available for objects of type ${objtype}"
+        ig::log -error -abort "No template available for objects of type ${objtype}"
     }
 }
 
@@ -68,7 +68,7 @@ init::output_file $template {
             return "${output_dir_root}/units/${module_unit}/doc/regfile/${object_name}.${type}"
         }
     } else {
-        ig::log -warning "no output file pattern specified for objects of type ${objtype}"
+        ig::log -warning "No output file pattern specified for objects of type ${objtype}"
         return "/dev/null"
     }
 }
