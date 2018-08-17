@@ -834,7 +834,20 @@ namespace eval ig::templates {
 
         set _outf_name [current::get_output_file $obj_id $type]
 
-        ig::log -info -id Gen "Generating ${_outf_name}"
+        set _outf_name_var ${_outf_name}
+        set _tt_name_var   ${_tt_name}
+
+        set _outf_name_var_norm [file normalize ${_outf_name_var}]
+        set _outf_name_var_new [string map [list [file normalize [pwd]]  {.}] ${_outf_name_var_norm}]
+        if {${_outf_name_var_new} ne ${_outf_name_var_norm}} {
+            set _outf_name_var ${_outf_name_var_new}
+        } else {
+            if {[info exists ::env(ICPRO_DIR)]} {
+                set _outf_name_var [string map [list $::env(ICPRO_DIR) {$ICPRO_DIR}] ${_outf_name_var}]
+            }
+        }
+
+        ig::log -info -id Gen "Generating ${_outf_name_var}"
         ig::log -info -id TPrs "Parsing template ${_tt_name}"
         set pragma_data [list]
         if {[file exists ${_outf_name}]} {
