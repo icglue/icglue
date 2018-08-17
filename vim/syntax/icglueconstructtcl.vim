@@ -6,13 +6,17 @@ set syntax=tcl
 " match module extname (modname<extname>)
 syn match igModext "<[^-<>]\+>"
 
+syn region  igCon start="\v\s(\<-\>|-(-)?\>|\<(-)?-)"ms=s+1 end="\v."me=e-1
+
+syn keyword tclTodo FIXME
+
 hi def link igModext  igModuleIdentifier
 
 " match verilog number
 syn match  tclNumber "\<\d\+'[bhd][0-9a-fA-F_]\+\>"
 syn match  igPortadapt "!"                             contained
-syn region igPortname start="\<" end="\>"              contained contains=tclVarRef
-syn region igPort start=/\v:/ms=e end=/\v(\s|$)/me=s-1 contained contains=igPortname,igPortadapt,tclVarRef
+syn region igPortname start="\<" end="\>"me=s-1        contained contains=tclVarRef
+syn region igPort start=/\v:/ms=e end=/\v(\s|$)/me=e-1 contained contains=igPortname,igPortadapt,tclVarRef
 hi def link igPortname  Normal
 "hi def link igPortadapt WarningMsg
 hi def link igPortadapt Typedef
@@ -49,9 +53,7 @@ hi def link igModule     igModuleIdentifier
 " signal command
 syn keyword igSigcmd S                           contained
 syn match  igSigwidth "\v-w(idth)?>(\=)?\s*\S+"  contained
-syn match  igCon "\v\s\<-\>\s"                   contained
-syn match  igCon "\v\s-(-)?\>\s"                 contained
-syn match  igCon "\v\s\<(-)?-\s"                 contained
+"syn match  igCon "\v(\<-\>|-(-)?\>|\<(-)?-)"     contained
 syn match  igSFlags "\v(-v(alue)?>(\=)?|\=)"     contained
 syn match  igSFlags "\v-b(idir(ectional)?)?"     contained
 syn match  igSFlags "\v-p(in)?"                  contained
@@ -69,7 +71,7 @@ syn keyword igParamcmd P                              contained
 syn match   igParamNameConv "\v(<|:)[A-Z][A-Z_0-9]*>" contained
 syn match   igPFlags        "\v(\=|-v(alue)?>)"       contained
 syn region  igParamblock start="\s{"ms=e end="}"      contained contains=igParamNameConv,tclNumber
-syn region  igParam      start=/^\s*P\>/ end=/$/                contains=igParamcmd,igPFlags,igParamNameConv,igParamblock,igPort,igSlistblock,@igtclExtensions
+syn region  igParam      start=/^\s*P\>/ end=/$/me=e-1          contains=igParamcmd,igPFlags,igParamNameConv,igParamblock,igPort,igSlistblock,@igtclExtensions
 hi def link igParamcmd      igCommand
 hi def link igPFlags        igFlags
 hi def link igParamNameConv Constant
@@ -79,12 +81,14 @@ hi def link igParam         igModuleIdentifier
 
 "-- code command --
 syn keyword igCodecmd C                              contained
-syn region  igClistblock start="{"ms=e end="}"       contained contains=igClistblock
+syn keyword igCTODO TODO FIXME                       contained
+syn region  igClistblock start="{"ms=e end="}"       contained contains=igClistblock,igCTODO
 syn match   igCFlags "\v-a(dapt)?>"                  contained
 syn match   igCFlags "\v(-v(erbatim)?|-noa(dapt)?)>" contained
 syn match   igCFlags "\v-s(ubst)?>"                  contained
-syn region  igCode start=/^\s*C\>/ end=/$/                    contains=igCodecmd,igCFlags,igClistblock,tclLineContinue,tclString
+syn region  igCode start=/^\s*C\>/ end=/$/me=e-1               contains=igCodecmd,igCFlags,igClistblock,tclLineContinue,tclString
 " default highlighting
+hi def link igCTODO      Todo
 hi def link igCodecmd    igCommand
 hi def link igCFlags     igFlags
 hi def link igCode       igModuleIdentifier
