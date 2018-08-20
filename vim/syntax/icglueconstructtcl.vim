@@ -39,7 +39,7 @@ syn match   igMFlags "\v-attr(ibutes)?>(\=)?"         contained
 syn match   igMIdent "\v\w+"                          contained
 syn region  igMTFlags start="("ms=e+1 end=")"me=s-1   contained contains=igMFlags,tclCommand,tclEmbeddedStatement
 syn region  igMblocklist start="\v\{"ms=e end="\v\}"  contained contains=igMTFlags,igMIdent,tclVarRef,tclComment
-syn region  igModule  start=/\v^\s*M>/ end=/$/                  contains=igModcmd,igMFlags,igMblocklist,tclComment,tclEmbeddedStatement,tclLineContinue
+syn region  igModule  start=/\v^\s*M>/ end=/$/                  contains=igModcmd,igMFlags,igMblocklist,tclComment,tclEmbeddedStatement,tclLineContinue,tclString
 
 hi def link igModcmd     igCommand
 hi def link igMTFlags    igModuleIdentifier
