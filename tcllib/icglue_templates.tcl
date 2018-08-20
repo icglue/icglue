@@ -172,59 +172,93 @@ namespace eval ig::templates {
                 set regs [ig::db::get_regfile_regs -all -of $i_entry]
                 set next_bit 0
 
+                try {
                 #entry_default_map {name width entrybits type reset signal signalbits}
-                foreach i_reg $regs {
-                    set name       [ig::db::get_attribute -object $i_reg -attribute "name"]
-                    set width      [ig::db::get_attribute -object $i_reg -attribute "rf_width"      -default -1]
-                    set entrybits  [ig::db::get_attribute -object $i_reg -attribute "rf_entrybits"  -default ""]
-                    set type       [ig::db::get_attribute -object $i_reg -attribute "rf_type"       -default "RW"]
-                    set reset      [ig::db::get_attribute -object $i_reg -attribute "rf_reset"      -default "-"]
-                    set signal     [ig::db::get_attribute -object $i_reg -attribute "rf_signal"     -default "-"]
-                    set signalbits [ig::db::get_attribute -object $i_reg -attribute "rf_signalbits" -default "-"]
-                    set comment    [ig::db::get_attribute -object $i_reg -attribute "rf_comment"    -default ""]
+                    foreach i_reg $regs {
+                        set name       [ig::db::get_attribute -object $i_reg -attribute "name"]
+                        set width      [ig::db::get_attribute -object $i_reg -attribute "rf_width"      -default -1]
+                        set entrybits  [ig::db::get_attribute -object $i_reg -attribute "rf_entrybits"  -default ""]
+                        set type       [ig::db::get_attribute -object $i_reg -attribute "rf_type"       -default "RW"]
+                        set reset      [ig::db::get_attribute -object $i_reg -attribute "rf_reset"      -default "-"]
+                        set signal     [ig::db::get_attribute -object $i_reg -attribute "rf_signal"     -default "-"]
+                        set signalbits [ig::db::get_attribute -object $i_reg -attribute "rf_signalbits" -default "-"]
+                        set comment    [ig::db::get_attribute -object $i_reg -attribute "rf_comment"    -default ""]
 
-                    if {$width < 0} {
-                        if {$entrybits eq ""} {
-                            set width 32
-                            set entrybits "31:0"
-                        } else {
-                            set blist [split $entrybits ":"]
-                            if {[llength $blist] == 1} {
-                                set width 1
+                        if {$width < 0} {
+                            if {$entrybits eq ""} {
+                                set width 32
+                                set entrybits "31:0"
                             } else {
-                                set width [expr {[lindex $blist 0] - [lindex $blist 1] + 1}]
+                                set blist [split $entrybits ":"]
+                                if {[llength $blist] == 1} {
+                                    set width 1
+                                } else {
+                                    set width [expr {[lindex $blist 0] - [lindex $blist 1] + 1}]
+                                }
+                            }
+                        } elseif {$entrybits eq ""} {
+                            if {$width == 1} {
+                                set entrybits "$next_bit"
+                            } else {
+                                set entrybits "[expr {$width + $next_bit - 1}]:$next_bit"
                             }
                         }
-                    } elseif {$entrybits eq ""} {
-                        if {$width == 1} {
-                            set entrybits "$next_bit"
+
+                        set blist [split $entrybits ":"]
+                        set bit_high [lindex $blist 0]
+                        set next_bit [expr {$bit_high+1}]
+                        if {[llength $blist] == 2} {
+                            set bit_low  [lindex $blist 1]
                         } else {
-                            set entrybits "[expr {$width + $next_bit - 1}]:$next_bit"
+                            set bit_low  $bit_high
                         }
+
+                        lappend reg_list [list \
+                            $name $bit_high $bit_low $width $entrybits $type $reset $signal $signalbits $comment $i_reg \
+                            ]
                     }
+                    set reg_list_raw [lsort -integer -index 2 $reg_list]
+                    set reg_list {}
+                    set idx_start 0
 
-                    set blist [split $entrybits ":"]
-                    set bit_high [lindex $blist 0]
-                    set next_bit [expr {$bit_high+1}]
-                    if {[llength $blist] == 2} {
-                        set bit_low  [lindex $blist 1]
-                    } else {
-                        set bit_low  $bit_high
+                    foreach i_reg $reg_list_raw {
+                        set i_bit_low [lindex $i_reg 2]
+                        set i_bit_high [lindex $i_reg 1]
+                        if {$i_bit_low - $idx_start > 1} {
+                            set tmp_high [expr {$i_bit_low - 1}]
+                            set tmp_low  [expr {$idx_start + 1}]
+                            lappend reg_list [list \
+                                "name"       "-" \
+                                "bit_high"   $tmp_high \
+                                "bit_low"    $tmp_low \
+                                "width"      [expr {$tmp_high - $tmp_low + 1}] \
+                                "entrybits"  "${tmp_high}:${tmp_low}" \
+                                "type"       "-" \
+                                "reset"      "-" \
+                                "signal"     "-" \
+                                "signalbits" "-" \
+                                "comment"    "" \
+                                "object"     "" \
+                                ]
+                        }
+                        lappend reg_list [list \
+                            "name"       [lindex $i_reg 0] \
+                            "bit_high"   [lindex $i_reg 1] \
+                            "bit_low"    [lindex $i_reg 2] \
+                            "width"      [lindex $i_reg 3] \
+                            "entrybits"  [lindex $i_reg 4] \
+                            "type"       [lindex $i_reg 5] \
+                            "reset"      [lindex $i_reg 6] \
+                            "signal"     [lindex $i_reg 7] \
+                            "signalbits" [lindex $i_reg 8] \
+                            "comment"    [lindex $i_reg 9] \
+                            "object"     [lindex $i_reg 10] \
+                            ]
+
+                        set idx_start $i_bit_high
                     }
-
-                    lappend reg_list [list \
-                        $name $bit_high $bit_low $width $entrybits $type $reset $signal $signalbits $comment $i_reg \
-                    ]
-                }
-                set reg_list_raw [lsort -integer -index 2 $reg_list]
-                set reg_list {}
-                set idx_start 0
-
-                foreach i_reg $reg_list_raw {
-                    set i_bit_low [lindex $i_reg 2]
-                    set i_bit_high [lindex $i_reg 1]
-                    if {$i_bit_low - $idx_start > 1} {
-                        set tmp_high [expr {$i_bit_low - 1}]
+                    if {$idx_start < 31} {
+                        set tmp_high 31
                         set tmp_low  [expr {$idx_start + 1}]
                         lappend reg_list [list \
                             "name"       "-" \
@@ -238,48 +272,23 @@ namespace eval ig::templates {
                             "signalbits" "-" \
                             "comment"    "" \
                             "object"     "" \
-                        ]
+                            ]
                     }
-                    lappend reg_list [list \
-                        "name"       [lindex $i_reg 0] \
-                        "bit_high"   [lindex $i_reg 1] \
-                        "bit_low"    [lindex $i_reg 2] \
-                        "width"      [lindex $i_reg 3] \
-                        "entrybits"  [lindex $i_reg 4] \
-                        "type"       [lindex $i_reg 5] \
-                        "reset"      [lindex $i_reg 6] \
-                        "signal"     [lindex $i_reg 7] \
-                        "signalbits" [lindex $i_reg 8] \
-                        "comment"    [lindex $i_reg 9] \
-                        "object"     [lindex $i_reg 10] \
-                    ]
 
-                    set idx_start $i_bit_high
-                }
-                if {$idx_start < 31} {
-                    set tmp_high 31
-                    set tmp_low  [expr {$idx_start + 1}]
-                    lappend reg_list [list \
-                        "name"       "-" \
-                        "bit_high"   $tmp_high \
-                        "bit_low"    $tmp_low \
-                        "width"      [expr {$tmp_high - $tmp_low + 1}] \
-                        "entrybits"  "${tmp_high}:${tmp_low}" \
-                        "type"       "-" \
-                        "reset"      "-" \
-                        "signal"     "-" \
-                        "signalbits" "-" \
-                        "comment"    "" \
-                        "object"     "" \
+                    set entry_attributes [ig::db::get_attribute -object $i_entry]
+                    lappend entry_list [list                                                    \
+                        "address" [ig::db::get_attribute -object $i_entry -attribute "address"] \
+                        {*}[dict remove $entry_attributes "address"]                            \
+                        "regs" $reg_list                                                        \
+                        ]
+                } on error {emsg eopt} {
+                    ig::log -error -id RF [format "Error while processing register \"%s/%s\" in regfile \"%s\" \n -- (%s) --\n%s" \
+                        [ig::db::get_attribute -object ${i_entry} -attribute "name"] ${name} \
+                        [ig::db::get_attribute -object ${regfile_id} -attribute "name"] \
+                        ${i_entry} \
+                        [dict get $eopt {-errorinfo}]
                     ]
                 }
-
-                set entry_attributes [ig::db::get_attribute -object $i_entry]
-                lappend entry_list [list                                                    \
-                    "address" [ig::db::get_attribute -object $i_entry -attribute "address"] \
-                    {*}[dict remove $entry_attributes "address"]                            \
-                    "regs" $reg_list                                                        \
-                ]
             }
             set entry_list [lsort -integer -index 1 $entry_list]
 
