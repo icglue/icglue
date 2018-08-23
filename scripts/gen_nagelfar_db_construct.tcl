@@ -26,5 +26,12 @@ package require ICGlue
 # import namespace ig (syntaxdb for *.icglue files)
 namespace import ::ig::*
 
+foreach ns [list {} ig::] {
+    set ::syntax(${ns}aux::max_set) {n x}
+    set ::syntax(${ns}P) {n x*}
+}
+
+unset ns
+
 source "$::env(NAGELFAR_SYNTAXBUILD)"
 

@@ -23,5 +23,11 @@ lappend auto_path [file normalize [file dirname [file normalize $::argv0]]/..]
 set icglue_silent_load "true"
 package require ICGlue
 
+foreach ns [list ig::] {
+    set ::syntax(${ns}aux::max_set) {n x}
+}
+
+unset ns
+
 source "$::env(NAGELFAR_SYNTAXBUILD)"
 
