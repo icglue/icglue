@@ -37,6 +37,7 @@ syn match   igMFlags "\v-?<res(ource)?>"              contained
 syn match   igMFlags "\v-?<(rf|(regf(ile)?)?)>(\=)?"  contained
 syn match   igMFlags "\v-?attr(ibutes)?>(\=)?"        contained
 syn match   igMFlags "\v-?rfattr(ibutes)?>(\=)?"      contained
+syn match   igMFlags "\v<inc(lude)?>"                 contained
 syn match   igMIdent "\v\w+"                          contained
 syn region  igMTFlags start="("ms=e+1 end=")"me=s-1   contained contains=igMFlags,tclCommand,tclEmbeddedStatement
 syn region  igMblocklist start="\v\{"ms=e end="\v\}"  contained contains=igMTFlags,igMIdent,tclVarRef,tclComment
