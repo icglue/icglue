@@ -11,6 +11,9 @@ Sets the template directories, equivalent to the \fB--template-dir\fR option. Mu
 .IP ICGLUE_TEMPLATE
 Sets the default template, equivalent to the \fB--template\fR option.
 
+.IP ICGLUE_LINE_NUMBERS
+Add linenumbers to icglue logging print-out (debug)
+
 [examples]
 Creating hierarchies via the \fIM\fR command with the -tree flag:
 .PP

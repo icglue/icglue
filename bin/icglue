@@ -155,6 +155,9 @@ proc main {} {
         set c_loglevel "D"
         set c_loglines "true"
     }
+    if {[info exists ::env(ICGLUE_LINE_NUMBERS)]} {
+        set c_loglines $::env(ICGLUE_LINE_NUMBERS)
+    }
 
     if {$c_loglines} {
         ig::logger -level ${c_loglevel} -linenumber

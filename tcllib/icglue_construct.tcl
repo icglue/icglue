@@ -688,14 +688,24 @@ namespace eval ig {
     # If adapt is specified (default), signal names in the code-block will be adapted by their local names.
     proc C args {
         # defaults
-        set adapt     "true"
-        set do_subst  "false"
+        set adapt         "true"
+        set do_var_subst  "true"
+        set do_indent_fix "true"
+
+        set verbatim      "false"
+
+        set do_subst      "false"
+        set default_indent "    "
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list                                                                                                    \
-                { {^-a(dapt)?$}                 "const=true"  adapt    "adapt signal names" }                                                       \
-                { {^-(v(erbatim)?|noa(dapt)?)$} "const=false" adapt    "do not adapt signal names" }                                                \
-                { {^-s(ubst)?$}                 "const=true"  do_subst "perform Tcl substition CODE argument, do forget to escape, esp \[ and \]" } \
+        set arguments [ig::aux::parse_opts [list \
+                { {^-a(dapt)?$}       "const=true"  adapt          "adapt signal names"                                           } \
+                { {^-noa(dapt)?$}     "const=false" adapt          "do not adapt signal names"                                    } \
+                { {^-s(ubst)?$}       "const=true"  do_var_subst   "perform Tcl-variable substition of CODE argument (default)"   } \
+                { {^-nos(ubst)?$}     "const=false" do_var_subst   "do not perform Tcl-variable substition of CODE argument"      } \
+                { {^-v(erbatim)$}     "const=true"  verbatim       "alias for -noadapt and -nosubst"                              } \
+                { {^-e(valulate)?$}   "const=true"  do_subst       "perform Tcl substition of CODE argument, do forget to escape" } \
+                { {^-noi(dentfix)?$ } "const=false" do_indent_fix  "do not fix the indent of the codeblock"                       } \
             ] -context "MODULENAME CODE" $args]
 
         # argument checks
@@ -704,13 +714,45 @@ namespace eval ig {
             log -error -abort "C: no module name specified"
         }
 
+
         set code [lindex $arguments 1]
         if {$code eq ""} {
             log -error -abort "C (module ${modname}): no code section specified"
         }
 
-        if {$do_subst} {
-            set code [uplevel 1 subst -nobackslashes -nocommands [list $code]]
+        if {$verbatim} {
+            set adapt "false"
+        } elseif {$do_subst} {
+            set code [uplevel 1 subst [list $code]]
+        } elseif {$do_var_subst} {
+            set code [uplevel 1 subst -nocommands [list $code]]
+        }
+
+        if {$do_indent_fix} {
+            set code_lines [split $code "\n"]
+            set file_indent 0
+            set lead_subst {}
+            set start_idx 0
+            foreach line $code_lines {
+                if {$line ne ""} {
+                    regexp {^\s+} $line lead_subst
+                    break
+                }
+                incr start_idx
+            }
+            set code_lines [lrange $code_lines $start_idx end]
+
+            set new_code {}
+            foreach line $code_lines {
+                if {$lead_subst ne ""} {
+                    set line [regsub ^$lead_subst $line $default_indent]
+                } else {
+                    set line "${default_indent}${line}"
+                }
+                set line [string trimright $line]
+                lappend new_code "$line\n"
+            }
+            set code [join $new_code {}]
         }
 
         # actual code creation
