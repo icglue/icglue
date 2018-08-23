@@ -81,7 +81,7 @@ endfun
 
 fun! Align_icglue_signals(actrl) range
     AlignPush
-    AlignCtrl g ^\s*S\s
+    AlignCtrl g ^\s*SR\?\s
     call Align#AlignCtrl('p1P1W')
     silent '<,'>Align "
     silent '<,'>s/" \([^"]\{-}\)\(\s\+\)" /"\1"\2/ge
@@ -104,7 +104,7 @@ fun! Align_icglue_signal_linebreak_block() range
     AlignCtrl g §
     silent '<,'>s/\v^(.*(\<--|\<-\>|--\>)\s+|\s+)([^# ])/\1§\3/e
     call Align#AlignCtrl('p2P0I')
-    silent '<,'>Align § 
+    silent '<,'>Align §
     silent '<,'>s/§//e
 
     " Alignment of \
@@ -114,7 +114,7 @@ fun! Align_icglue_signal_linebreak_block() range
 
     silent '<,'>s/\s\+\\$/ \\/e
     silent '<,'>s/\s\+$//e
-    AlignCtrl Pop
+    AlignPop
 endfun
 
 fun! Ascii2UTF8_Tree() range
