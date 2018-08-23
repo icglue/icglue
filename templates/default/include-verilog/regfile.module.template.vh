@@ -220,7 +220,7 @@
     // regfile registers / wires<% } { %>
     wire [31: 0] <[reg_val]>;<%
         foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} { %>
-    reg  <[reg_range]> <[reg_name]>;<% } %><%="\n"%><% } %>
+    reg  <[reg_range]> <[string trim [reg_name]]>;<% } %><%="\n"%><% } %>
     <%=[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-declaration"] %><%
     ## </definition> ##
     ###########################################
