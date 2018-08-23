@@ -7,11 +7,10 @@ MANPATH=${MANPATH:-/usr/share/man}
 export MANPATH="${MANPATH}:${pkgsrcpath}/share/man:${pkgsrcpath}/doc/ICGlue/man"
 
 
-if [[ -n ${ZSH_VERSION} ]] ; then
-    # remove logo header
-    eval "icg() { command icglue \$@ 2>&1 | tail -n+$(($(wc -l ${pkgsrcpath}/logo/logo.txt| cut -f1 -d" ") + 2)) }"
+alias icg='icglue --nocopyright'
 
-    compdef _gnu_generic icg
+if [[ -n ${ZSH_VERSION} ]] ; then
+    compdef _gnu_generic icglue
 fi
 
 unset src
