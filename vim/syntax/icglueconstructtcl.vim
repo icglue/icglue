@@ -15,7 +15,7 @@ hi def link igModext  igModuleIdentifier
 " match verilog number
 syn match  tclNumber "\<\d\+'[bhd][0-9a-fA-F_]\+\>"
 syn match  igPortadapt "!"                             contained
-syn region igPort start=/\v:/ms=e end=/\v(\s|\n)/me=s-1 contained contains=igPortadapt,tclVarRef
+syn region igPort start=/\v:/ms=e end=/\v(\s|\n|\})/me=s-1 contained contains=igPortadapt,tclVarRef
 hi def link igPortadapt Typedef
 hi def link igPort      Normal
 
@@ -35,7 +35,8 @@ syn match   igMFlags "\v-?<vhd(l)?>"                  contained
 syn match   igMFlags "\v-?<(ilm|macro)?>"             contained
 syn match   igMFlags "\v-?<res(ource)?>"              contained
 syn match   igMFlags "\v-?<(rf|(regf(ile)?)?)>(\=)?"  contained
-syn match   igMFlags "\v-attr(ibutes)?>(\=)?"         contained
+syn match   igMFlags "\v-?attr(ibutes)?>(\=)?"        contained
+syn match   igMFlags "\v-?rfattr(ibutes)?>(\=)?"      contained
 syn match   igMIdent "\v\w+"                          contained
 syn region  igMTFlags start="("ms=e+1 end=")"me=s-1   contained contains=igMFlags,tclCommand,tclEmbeddedStatement
 syn region  igMblocklist start="\v\{"ms=e end="\v\}"  contained contains=igMTFlags,igMIdent,tclVarRef,tclComment
@@ -65,14 +66,14 @@ hi def link igSlistblock igSignal
 hi def link igSignal     igModuleIdentifier
 
 " signal+register command
-syn keyword igSigRegcmd SR                             contained
-syn match igSRFlags "\v-addr\=?"                       contained
-syn match igSRFlags "@"                                contained
-syn match igSRFlags "\v-c(omment)?\=?"                 contained
-syn match igSRFlags "\v-handshake\=?"                  contained
-syn match igSRFlags "\v(-v(alue)?|\=|-r(eset(val)?)?)" contained
-syn region igSRlistblock start="\s{"ms=e end="}"       contained contains=tclVarRef,igPort,tclNumber,tclString
-syn region igSignalReg start=/^\s*SR\>/ms=e-1 end=/$/            contains=igSigRegcmd,igSigwidth,igCon,igSRFlags,igPort,igSRlistblock,@igtclExtensions
+syn keyword igSigRegcmd SR                               contained
+syn match   igSRFlags "\v-addr\=?"                       contained
+syn match   igSRFlags "@"                                contained
+syn match   igSRFlags "\v-c(omment)?\=?"                 contained
+syn match   igSRFlags "\v-handshake\=?"                  contained
+syn match   igSRFlags "\v(-v(alue)?|\=|-r(eset(val)?)?)" contained
+syn region  igSRlistblock start="\s{"ms=e end="}"        contained contains=tclVarRef,igPort,tclNumber,tclString
+syn region  igSignalReg start=/^\s*SR\>/ms=e-1 end=/$/             contains=igSigRegcmd,igSigwidth,igCon,igSRFlags,igPort,igSRlistblock,@igtclExtensions
 
 hi def link igSigRegcmd igCommand
 hi def link igSRFlags   igFlags
