@@ -594,10 +594,8 @@ namespace eval ig {
             }
 
             if {$value ne ""} {
-                set startmod [lindex [construct::expand_instances $con_left "true" "false"] 0 1]
-
-                set value_code [ig::db::add_codesection -parent-module $startmod -code "    assign ${name} = ${value};\n"]
-                ig::db::set_attribute -object $value_code -attribute "adapt" -value "true"
+                set startmod [lindex [construct::expand_instances $con_left] 0 1]
+                C $startmod -a "assign ${name} = ${value};"
             }
         } emsg]} {
             log -error -abort "S (signal ${name}): error while creating signal:\n${emsg}"
@@ -678,9 +676,14 @@ namespace eval ig {
     #      <tr><td><b> MODULENAME </b></td><td> name of the module contain the code</td></tr>
     #      <tr><td><b> CODE </b></td><td> the actual code that should be inlined </td></tr>
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -a(dapt)                  </i></td><td>  adapt signal names                                                        <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; (-v(erbatim)|-noa(dapt))  </i></td><td>  do not adapt signal names                                                 <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; (-s(ubst)                 </i></td><td>  perform Tcl substition CODE argument, do forget to escape, esp \[ and \]  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -a(dapt)                 </i></td><td>  adapt signal names                                                                        <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -noa(dapt)               </i></td><td>  do not adapt signal names                                                                 <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -s(ubst)                 </i></td><td>  perform Tcl-variable substition of CODE argument, do not forget to escape, esp \[ and \]  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -nos(ubst)               </i></td><td>  do not perform Tcl-variable substition of CODE argument                                   <br></tb></tr>
+    #      <tr><td><i> &ensp; &ensp; -v(erbatim)              </i></td><td>  alias for -noadapt and -nosubst                                                           <br></tb></tr>
+    #      <tr><td><i> &ensp; &ensp; -e((val)ulate)           </i></td><td>  perform Tcl substition of CODE argument, do not forget to escape                          <br></tb></tr>
+    #      <tr><td><i> &ensp; &ensp; -noi(dentfix)            </i></td><td>  do not fix the indent of the codeblock                                                    <br></tb></tr>
+    #
     #    </table>
     #
     # @return Object-ID of the newly created codesection.
@@ -689,23 +692,26 @@ namespace eval ig {
     proc C args {
         # defaults
         set adapt         "true"
+        #TODO: review, if do_var_subst = true is a good choice here...
+        #      -> what about $clog, $time, $strobe, $display, etc. -> not likely to be used compared to code generation with var's but still...
         set do_var_subst  "true"
         set do_indent_fix "true"
 
         set verbatim      "false"
 
         set do_subst      "false"
+        #TODO: should this be a parameter?
         set default_indent "    "
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
-                { {^-a(dapt)?$}       "const=true"  adapt          "adapt signal names"                                           } \
-                { {^-noa(dapt)?$}     "const=false" adapt          "do not adapt signal names"                                    } \
-                { {^-s(ubst)?$}       "const=true"  do_var_subst   "perform Tcl-variable substition of CODE argument (default)"   } \
-                { {^-nos(ubst)?$}     "const=false" do_var_subst   "do not perform Tcl-variable substition of CODE argument"      } \
-                { {^-v(erbatim)$}     "const=true"  verbatim       "alias for -noadapt and -nosubst"                              } \
-                { {^-e(valulate)?$}   "const=true"  do_subst       "perform Tcl substition of CODE argument, do forget to escape" } \
-                { {^-noi(dentfix)?$ } "const=false" do_indent_fix  "do not fix the indent of the codeblock"                       } \
+                { {^-a(dapt)?$}       "const=true"  adapt          "adapt signal names"                                               } \
+                { {^-noa(dapt)?$}     "const=false" adapt          "do not adapt signal names"                                        } \
+                { {^-s(ubst)?$}       "const=true"  do_var_subst   "perform Tcl-variable substition of CODE argument (default)"       } \
+                { {^-nos(ubst)?$}     "const=false" do_var_subst   "do not perform Tcl-variable substition of CODE argument"          } \
+                { {^-v(erbatim)$}     "const=true"  verbatim       "alias for -noadapt and -nosubst"                                  } \
+                { {^-e((val)?ulate)?$} "const=true"  do_subst       "perform Tcl substition of CODE argument, do not forget to escape" } \
+                { {^-noi(dentfix)?$ } "const=false" do_indent_fix  "do not fix the indent of the codeblock"                           } \
             ] -context "MODULENAME CODE" $args]
 
         # argument checks
@@ -775,10 +781,12 @@ namespace eval ig {
     #      <tr><td><b> ENTRYNAME </b></td><td> unique name for the register entry </td></tr>
     #      <tr><td><b> REGISTERTABLE </b></td><td> specification of the register table </td></tr>
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))($|=)  </i></td><td>  DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument  <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; (@|-addr($|=))        </i></td><td>  specify the address                                                      <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -handshake($|=)       </i></td><td>  specify signals and type for handshake {signal-out signal-in type}       <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -nosubst              </i></td><td>  do not perform Tcl substition in REGISTERTABLE argument                  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))($|=)  </i></td><td>  DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument      <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; (@|-addr($|=))        </i></td><td>  specify the address                                                          <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -handshake($|=)       </i></td><td>  specify sig-variablenals and type for handshake {signal-out signal-in type}  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -subst                </i></td><td>  perform Tcl-variable substition in REGISTERTABLE argument (default for now)  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -nosubst              </i></td><td>  do not perform Tcl-variable substition in REGISTERTABLE argument             <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -nosubst              </i></td><td>  do not perform Tcl-command substition in REGISTERTABLE argument              <br></td></tr>
     #    </table>
     #
     # @return Object-ID of the newly created regfile-entry.
@@ -804,14 +812,17 @@ namespace eval ig {
         set address     {}
         set regdef      {}
         set handshake   {}
-        set do_subst    "true"
+        set do_var_subst "true"
+        set do_subst     "false"
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list                                                                                                         \
-                { {^-(rf|regf(ile)?)($|=)} "string"             regfilename "DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument " } \
-                { {^(@|-addr($|=))}        "string"             address     "specify the address"}                                                       \
-                { {^-handshake($|=)}       "string"             handshake   "specify signals and type for handshake {signal-out signal-in type}"}        \
-                { {^-nosubst$}             "const=false"        do_subst    "do not perform Tcl substition in REGISTERTABLE argument"}                   \
+        set arguments [ig::aux::parse_opts [list \
+                { {^-(rf|regf(ile)?)($|=)}  "string"             regfilename    "DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument "          } \
+                { {^(@|-addr($|=))}         "string"             address        "specify the address"                                                               } \
+                { {^-handshake($|=)}        "string"             handshake      "specify signals and type for handshake {signal-out signal-in type} "               } \
+                { {^-s(ubst)?$}             "const=true"         do_var_subst   "perform Tcl-variable substition of REGISTERTABLE argument (default)"               } \
+                { {^-nosubst$}              "const=false"        do_var_subst   "do not perform Tcl-variable substition in REGISTERTABLE argument"                  } \
+                { {^-e((val)?ulate)?$}      "const=true"         do_subst       "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
             ] -context "REGFILE-MODULE ENTRYNAME REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -824,13 +835,17 @@ namespace eval ig {
         }
 
         if {$do_subst} {
+            set regdef [uplevel 1 subst [list $regdef]]
+        } elseif {$do_var_subst} {
             set regdef [uplevel 1 subst -nocommands [list $regdef]]
         }
 
         if {[llength $arguments] < 2} {
-            log -error -abort "R : not enough arguments"
+            log -error "R : not enough arguments"
+            return {}
         } elseif {[llength $arguments] > 3} {
-            log -error -abort "R (regfile-entry ${entryname}): too many arguments"
+            log -error "R (regfile-entry ${entryname}): too many arguments\nPassed arguments are:\n $arguments"
+            return {}
         }
 
         if {$entryname eq ""} {
@@ -856,6 +871,10 @@ namespace eval ig {
         set entry_default_map {name width entrybits type reset signal signalbits comment}
         set entry_map {}
         foreach i_entry [lindex $regdef 0] {
+            if {${i_entry} eq "|"} {
+                lappend entry_map "|"
+                continue;
+            }
             set idx_def [lsearch -glob $entry_default_map "${i_entry}*"]
             if {$idx_def < 0} {
                 log -error -abort "R (regfile-entry ${entryname}): invalid register attribute-name: ${i_entry}"
@@ -926,6 +945,9 @@ namespace eval ig {
             # creating registers
             foreach i_reg $regdef {
                 set i_name [lindex $i_reg [lsearch $entry_map "name"]]
+                if {[regexp {^-+} $i_name]} {
+                    continue
+                }
 
                 if {$i_name eq ""} {
                     log -error -abort "R (regfile-entry ${entryname}): reg defined without name"
@@ -1008,6 +1030,131 @@ namespace eval ig {
 
         return $entry_id
     }
+
+    ## @brief Create a new signal and connect it to a regfile
+    #
+    # @param args <b> [OPTION]... SIGNALNAME CONNECTIONPORTS...</b><br>
+    #    <table style="border:0px; border-spacing:40px 0px;">
+    #      <tr><td><b> __TODO__ HELPCONTEXT </b></td><td> __TODO__ ARGUMENT DESCRIPTION <br></td></tr>
+    #      <tr><td><b> OPTION </b></td><td><br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(-)>               </i></td><td>  first element is interpreted as input source <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; <(-)-               </i></td><td>  last element is interpreted as input source  <br></td></tr>
+    #
+    # @return Object-IDs of the newly created objects of newly created signal.
+    #
+    # Source and target-lists will be expanded and can contain local signal-name specifications after a ":" symbol
+    # (local signal-name suffixes can be generated when the signal-name is followed by "!")
+    # and multi-instance-expressions e.g. module\<1,4..9,a,b\>.
+    proc SR args {
+        # defaults
+        set name          ""
+        set width         1
+        set value         ""
+        set dir           "-->"
+        set resource_pin  "false"
+        set retval        {}
+        set reg_type      {}
+        set address       {}
+        set handshake     {}
+        set resetval      {}
+        set comment "-"
+
+        # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
+        set arguments [ig::aux::parse_opts [list \
+                { {^-w(idth)?(=)?}                 "string"       width     "set signal width"                                                    } \
+                { {^-(-)?\>$}                      "const=-->"    dir       "first element is interpreted as input source"                        } \
+                { {^<(-)?-$}                       "const=<--"    dir       "last element is interpreted as input source"                         } \
+                { {^(@|-addr($|=))}                "string"       address   "specify the address"                                                 } \
+                { {^-c(omment)?($|=)}              "string"       comment   "specify comment for the register"                                    } \
+                { {^-handshake($|=)}               "string"       handshake "specify signals and type for handshake {signal-out signal-in type}"  } \
+                { {^(=|-v(alue)?|-r(eset(val)?)?)} "string"       resetval  "specify reset value for the register"                                } \
+            ] -context "SIGNALNAME CONNECTIONPORTS..." $args]
+
+        set rf_args {"-nosubst"}
+        if {$address ne ""} {
+            lappend rf_args "@ [list $address]"
+        }
+
+        if {$resetval eq ""} {
+            set resetval "$width'h0"
+        }
+
+        if {$handshake ne ""} {
+            lappend rf_args "-handshake [list $handshake]"
+        }
+        set signalname [lindex $arguments 0]
+        if {$dir eq "-->"} {
+            set connect_cmd "S \"$signalname\" -w $width [lindex $arguments 1] --> [lrange $arguments 2 end]"
+        } else {
+            set connect_cmd "S \"$signalname\" -w $width [lrange $arguments 1 end-1] <-- [lindex $arguments end]"
+        }
+
+        set regfile_id {}
+
+        set rf_list {}
+        #TODO: replace as soon lib provide a better command
+        foreach i_md [ig::db::get_modules -all] {
+            set arg_idx 1
+            foreach name [lrange $arguments 1 end] {
+                lassign [split $name ":"] name
+                if {($name eq [ig::db::get_attribute -obj $i_md -attribute "name"])} {
+                    catch {
+                        set regfiles [ig::db::get_regfiles -of $i_md]
+                        if  {[llength $regfiles] == 1} {
+                            set reset $resetval
+                            if {$reg_type eq ""} {
+                                if {   (($dir eq "-->") && ($arg_idx == 1))
+                                    || (($dir eq "<--") && ($arg_idx == [llength $arguments]-1))} {
+                                    set reg_type "RW"
+                                } else {
+                                    set reg_type "R"
+                                    set reset "-"
+                                }
+                            }
+                            lappend rf_list [lindex $regfiles 0] $signalname $reg_type $reset
+                        }
+                    }
+                }
+                incr arg_idx
+            }
+        }
+        if {[llength $rf_list] == 0} {
+            set frame_dict [info frame -1]
+            ig::log -warn -id RSCon "No regfile found -- \n[file tail [dict get $frame_dict "file"]]:[dict get $frame_dict "line"] [dict get $frame_dict "cmd"]"
+            return $retval
+        } else {
+            ig::log -debug -id RSCon "Found regfile: $rf_list"
+        }
+
+        set regfile_cmd {}
+        foreach {rf entryname type reset} $rf_list {
+            ig::aux::max_set namelen       [string length {"name"}]
+            ig::aux::max_set namelen       [string length "val"]
+            ig::aux::max_set widthlen      [string length {"width"}]
+            ig::aux::max_set widthlen      [string length $width]
+            ig::aux::max_set typelen       [string length {"type"}]
+            ig::aux::max_set typelen       [string length $type]
+            ig::aux::max_set resetlen      [string length {"reset"}]
+            ig::aux::max_set resetlen      [string length $reset]
+            ig::aux::max_set signalnamelen [string length {"signalname"}]
+            ig::aux::max_set signalnamelen [string length $signalname]
+            ig::aux::max_set commentlen    [string length {"comment"}]
+            ig::aux::max_set commentlen    [string length $comment]
+
+            set rf_table "%-${namelen}s | %-${widthlen}s | %-${typelen}s | %-${resetlen}s | %-${signalnamelen}s | %-${commentlen}s\n"
+            set rf_name [ig::db::get_attribute -obj $rf -attribute "name"]
+            lappend regfile_cmd [string cat "R -rf=${rf_name} \"${entryname}\" [join $rf_args] {\n" \
+                [format "    $rf_table" {"name"} {"width"} {"type"} {"reset"} {"signal"}     {"comment"} ] \
+                [format "    $rf_table" "val"    "$width"  "$type"  "$reset"  "$signalname"  "\"$comment\""  ] \
+                "}"]
+        }
+        set regfile_cmd [join $regfile_cmd]
+        ig::log -id SRCmd "[info level 0]\n${connect_cmd}\n${regfile_cmd}"
+        set retval [eval "$connect_cmd"]
+        eval "$regfile_cmd"
+        return $retval
+    }
+
 
     ## @brief Create new regfile-entries based on table.
     #
