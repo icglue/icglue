@@ -38,6 +38,3 @@
 
 ## docu
 - regfile / handshake direct connect
-
-## vim
-- add alignment vim-script for signals usw. <(-)- -(-)>
