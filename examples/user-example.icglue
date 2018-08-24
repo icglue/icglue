@@ -1,0 +1,239 @@
+#!/usr/bin/env icglue
+
+# tcl-script with icglue commands-extensions
+# set syntax tcl !! (or icglueconstruct)
+
+# Generate hierarchie in unit submodule
+M -unit "component" -tree {
+    tb_component ................ (tb,v)
+    +- component_wrap ........... (rtl)
+       +- component_top ......... (rtl)
+          |
+          |- anothersubmod_wrap ..(rtl,unit=anothersubmod)
+          |  \- anothersubmod     (rtl)
+          |
+          \- submod_wrap ........ (inc)
+}
+
+M -unit "submod" -tree {
+    submod_wrap ........ (inc)
+    |
+    +- common_reset_combiner<ref_core> ............. (res)
+    +- common_sync<submod0..4> ..................... (res)
+    +- common_sync<submod_trigger_sync> ............ (res)
+    |
+    +- submod_regfile .............................. (rf)
+    \- submod_top .................................. (rtl)
+       |
+       +- submod ................................... (res)
+       \- nocif .................................... (res)
+
+}
+
+
+########################################################################
+### Simple exmaples of creating params, wires and inline code        ###
+########################################################################
+
+# parameters
+P RF_ADDR_SEL = 4'b0110 tb_component component_wrap
+
+# simple connections
+S "rf_address"   -w 32 tb_component  --> component_wrap
+set rf_addr_range 5
+# code placed in component_wrap (signal will be adapted, variable substition will be done as well,
+# so don't forget to escape!)
+C component_wrap {
+    assign rf_addr[31  : $rf_addr_range] = 'h0;
+    assign rf_addr[ 0 +: $rf_addr_range] = rf_address[ 0 :+ $rf_addr_range];
+    assign rf_sel = (addr[31:28] == RF_ADDR_SEL) ? 1'b1 : 1'b0;
+
+    // debugging:
+    always @(posedge clk_i) begin
+        if (rf_sel && rf_enable) begin
+            \$display ("Regfile access at address 0x%08x(%d)", rf_addr, \$time);
+        end
+    end
+}
+
+
+########################################################################
+### tcl proc example for connect by name                             ###
+########################################################################
+# scripted connections of clock and reset by name
+# - clk_resetn_mods(<typename> stores <instance-name> <clock-port> <resetn-port>
+# - clk_mods(<typename>)       stores <instance-name>[:<port>]
+# - reset_mods(<typename>)     stores <instance-name>[:<port>]
+proc create_clocking_and_resets {srcmod} {
+    variable clk_resetn_mods
+    variable clk_mods
+    variable resetn_mods
+    # iteration of all definied types
+    foreach type [array names clk_resetn_mods] {
+        # write values of the clk_resetn_mod to the clk_mods and resetn_mods
+        foreach {mod p_clk p_rstn} [set clk_resetn_mods($type)] {
+            lappend clk_mods($type)    ${mod}:${p_clk}
+            lappend resetn_mods($type) ${mod}:${p_rstn}
+        }
+        # actual signal creation
+        S "clk_${type}"     $srcmod -->  [set clk_mods($type)]
+        S "reset_${type}_n" $srcmod -->  [set resetn_mods($type)]
+    }
+}
+
+
+########################################################################
+### CLOCKING and RESET                                               ###
+########################################################################
+
+variable clk_resetn_mods
+variable clk_mods
+variable resetn_mods
+# see above for the variable names
+### REF-clock/reset ###
+set clk_resetn_mods(ref) {
+    submod_regfile clkref_i resetref_n_i
+}
+# special cases can go in those variables
+# set single & create single clock lists
+set resetn_mods(ref) {
+    common_reset_combiner<ref_core>:sec_reset_n_i
+}
+
+### CORE-clock/reset ###
+set clk_resetn_mods(core) {
+    common_sync<submod0..4,submod_trigger_sync> clk_i resetn_i
+    common_reset_combiner<ref_core>             clk_i prim_reset_n_i
+}
+
+# call the conneting proc
+create_clocking_and_resets "tb_component"
+
+
+########################################################################
+### Regfile connection and creation                                  ###
+########################################################################
+# type field depends on your regfile template supports
+# supported types of the default template are:
+#  - RS:     synchronized read (common_sync)
+#  - CR/CRW: custom read/write
+
+# fixed ports of the apb regfile template
+set rf_apb_ports {
+        rf_addr    --> apb_addr_i    32 component_wrap
+        rf_sel     --> apb_sel_i     1  component_wrap
+        rf_enable  --> apb_enable_i  1
+        rf_write   --> apb_write_i   1
+        rf_strb    --> apb_strb_i    4
+        rf_wdata   --> apb_wdata_i   32
+
+        rf_protect <-- apb_protect_o 3
+        rf_ready   <-- apb_ready_o   1
+        rf_rdata   <-- apb_rdata_o   32
+        rf_slverr  <-- apb_slver_or  1
+}
+
+foreach rf_conn [split $rf_apb_ports "\n"] {
+    lassign $rf_conn sig <-> p w mod
+    if {$rf_conn eq ""} {continue}
+    if {$mod eq ""} {
+        set mod tb_component
+    }
+    S "$sig" -w $w $mod ${<->} submod_regfile:${p}
+}
+
+
+# connection by single instance name:
+
+# in- and output ports of resources can be pin to any string (= is optional, default is {}):
+S "comb_reset_ref_core" -pin = {/*TODO*/}  <--  common_reset_combiner<ref_core>:syn_reset_n_o
+S "scan_mode"           -pin = 1'b0        -->  common_reset_combiner<ref_core>:testmode_i
+
+
+if {0} {
+    # explicit way
+    S "entry_name0_s_cfg"    -w 5  submod:s_cfg_i     <--  submod_regfile
+    S "entry_name0_s_status" -w 16 submod:s_status_o  -->  submod_regfile
+    R submod_regfile "entry_name0" {
+        "name"   | "entrybits" | "type" | "reset" | "signal"             | "comment"
+        -----    | ----------- | -----  | ------- | --------             | ---------
+        s_cfg    | 4:0         | RW     | 5'h0    | entry_name0_s_cfg    | "Configure component"
+        s_status | 15:0        | R      | 16'h0   | entry_name0_s_status | "Component status"
+    }
+} else {
+    # inline connection
+    # uncomment the following command to see generated signals while execution
+    #logger -level I -id RCon
+    R submod_regfile "entry_name0" {
+        "name"   | "entrybits" | "type" | "reset" | "signal"          | "comment"
+        -----    | ----------- | -----  | ------- | --------          | ---------
+        s_cfg    | 4:0         | RW     | 5'h0    | submod:s_cfg_i    | "Configure component"
+        s_status | 15:0        | R      | 16'h0   | submod:s_status_o | "Component status"
+    }
+}
+
+#  if the signal-width exceeds the the regfile data with you can split signals with the *signalbits* column
+S "s_cfg_large" -w 40 submod_regfile  -->  submod
+R submod_regfile "entry_name1_low" {
+    "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
+    -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
+    s_cfg  | 31:0        | RW     | 31’h0   | s_cfg_large | 31:0         | "Configure submod part 0"
+}
+R submod_regfile "entry_name1_high" {
+    "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
+    -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
+    s_cfg  | 7:0         | RW     | 8’h0    | s_cfg_large | 39:32        | "Configure submod part 1"
+}
+
+
+# regfile creation of a single entry + connection (for the lazy people, type can be specified, otherwise R/RW derived from the direction of the connection
+# uncomment the following command to see the S/R command issued
+#logger -level I -id SRCmd
+SR "submod_start_seed" -w 32 = 32'hCAFEBABE submod_regfile  -->  submod:start_seed_i \
+                                                                    -comment "Submodule start seed"
+
+
+# -handshake flag allows synchronisation (if supported by template)
+# works for the normal R command with and with-out inline connection as well
+if {1} {
+    S  "state_trigger"            submod_regfile                        -->  common_sync<submod_trigger_sync>:data_i
+    S  "state_trigger_sync"       common_sync<submod_trigger_sync>:data_o  -->  submod:trigger_i
+    S  "state_trigger_ack"        submod_regfile                        <--  submod:trigger_ack_o
+    SR "submod_state"       -w 32 submod_regfile                        <--  submod:state_o \
+                                                                                -handshake {"state_trigger" "state_trigger_ack" "S"} \
+                                                                                -comment "Submodule read state"
+} else {
+    # see `logger -level I -id SRCmd`  and `logger -level I -id RCon` for the generate commands
+    SR "submod_state"       -w 32 submod_regfile                        <--  submod:state_o \
+                                                                                -handshake { {"state_trigger"     common_sync<submod_trigger_sync>:data_i}
+                                                                                {"state_trigger_ack" submod:trigger_ack_o } "S"} \
+                                                                                -comment "Submodule read state"
+    S  "state_trigger_sync"       common_sync<submod_trigger_sync>:data_o  -->  submod:trigger_i
+}
+
+# a more scripting advanced example for:
+#   connecting control signals from regfile to submodule through common_syncs
+
+# rf_submod_con_list -> connection list with <signalname> <submod-port> <comment>
+set rf_submod_con_list {
+    start            start_i    "start's the module"
+    enable_feature0  feature0_i "enables feature0"
+    enable_feature1  feature1_i "enables feature1"
+    enable_feature2  feature2_i "enables feature2"
+    enable_feature3  feature3_i "enables feature3"
+}
+
+set i 0
+#rf_submod_table as list of lists
+set rf_submod_table {}
+lappend rf_submod_table [list "name"  "width" "type" "reset" "signal" "comment"]
+foreach {name submodport comment} $rf_submod_con_list {
+    # connect to sync's
+    S "submod_${name}"      submod_regfile     -->  common_sync<submod${i}>:data_i
+    S "submod_${name}_sync" submod:${submodport}  <--  common_sync<submod${i}>:data_o
+    lappend  rf_submod_table  [list "${name}" 1 RW  1'b0 "submod_${name}" "$comment"]
+    incr i
+}
+
+R submod_regfile "entry_sync0"  $rf_submod_table
+
