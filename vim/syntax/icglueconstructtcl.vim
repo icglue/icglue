@@ -97,7 +97,8 @@ hi def link igParam         igModuleIdentifier
 "code command
 syn keyword igCodecmd C                            contained
 syn keyword igCTODO TODO FIXME                     contained
-syn region  igClistblock start="{"ms=e end="}"     contained contains=igClistblock,igCTODO
+syn match   varEscape "\\\$"                       contained
+syn region  igClistblock start="{"ms=e end="}"     contained contains=igClistblock,igCTODO,tclVarRef,varEscape
 syn match   igCFlags "\v-a(dapt)?>"                contained
 syn match   igCFlags "\v-noa(dapt)?>"              contained
 syn match   igCFlags "\v-v(erbatim)?>"             contained
@@ -110,6 +111,7 @@ hi def link igCTODO      Todo
 hi def link igCodecmd    igCommand
 hi def link igCFlags     igFlags
 hi def link igCode       igModuleIdentifier
+hi def link varEscape    igInlineCode
 hi def link igClistblock igInlineCode
 
 
