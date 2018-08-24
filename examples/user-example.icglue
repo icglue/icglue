@@ -35,18 +35,18 @@ M -unit "submod" -tree {
 ### Simple exmaples of creating params, wires and inline code        ###
 ########################################################################
 
-# parameters
+# parameters (parameter name is new tcl variable with value)
 P RF_ADDR_SEL = 4'b0110 tb_component component_wrap
 
 # simple connections
-S "rf_address"   -w 32 tb_component  --> component_wrap
+S "rf_address" -w 32 tb_component  -->  component_wrap
 set rf_addr_range 5
 # code placed in component_wrap (signal will be adapted, variable substition will be done as well,
 # so don't forget to escape!)
 C component_wrap {
-    assign rf_addr[31  : $rf_addr_range] = 'h0;
-    assign rf_addr[ 0 +: $rf_addr_range] = rf_address[ 0 :+ $rf_addr_range];
-    assign rf_sel = (addr[31:28] == RF_ADDR_SEL) ? 1'b1 : 1'b0;
+    assign rf_addr[31  : ${rf_addr_range}] = 'h0;
+    assign rf_addr[ 0 +: ${rf_addr_range}] = rf_address[ 0 :+ ${rf_addr_range}];
+    assign rf_sel = (addr[31:28] == RF_ADDR_SEL) ? 1'b1 : 1'b0; 
 
     // debugging:
     always @(posedge clk_i) begin
@@ -76,8 +76,8 @@ proc create_clocking_and_resets {srcmod} {
             lappend resetn_mods($type) ${mod}:${p_rstn}
         }
         # actual signal creation
-        S "clk_${type}"     $srcmod -->  [set clk_mods($type)]
-        S "reset_${type}_n" $srcmod -->  [set resetn_mods($type)]
+        S "clk_${type}"     $srcmod  -->  [set clk_mods($type)]
+        S "reset_${type}_n" $srcmod  -->  [set resetn_mods($type)]
     }
 }
 
@@ -117,30 +117,6 @@ create_clocking_and_resets "tb_component"
 # supported types of the default template are:
 #  - RS:     synchronized read (common_sync)
 #  - CR/CRW: custom read/write
-
-# fixed ports of the apb regfile template
-set rf_apb_ports {
-        rf_addr    --> apb_addr_i    32 component_wrap
-        rf_sel     --> apb_sel_i     1  component_wrap
-        rf_enable  --> apb_enable_i  1
-        rf_write   --> apb_write_i   1
-        rf_strb    --> apb_strb_i    4
-        rf_wdata   --> apb_wdata_i   32
-
-        rf_protect <-- apb_protect_o 3
-        rf_ready   <-- apb_ready_o   1
-        rf_rdata   <-- apb_rdata_o   32
-        rf_slverr  <-- apb_slver_or  1
-}
-
-foreach rf_conn [split $rf_apb_ports "\n"] {
-    lassign $rf_conn sig <-> p w mod
-    if {$rf_conn eq ""} {continue}
-    if {$mod eq ""} {
-        set mod tb_component
-    }
-    S "$sig" -w $w $mod ${<->} submod_regfile:${p}
-}
 
 
 # connection by single instance name:
@@ -190,25 +166,29 @@ R submod_regfile "entry_name1_high" {
 # uncomment the following command to see the S/R command issued
 #logger -level I -id SRCmd
 SR "submod_start_seed" -w 32 = 32'hCAFEBABE submod_regfile  -->  submod:start_seed_i \
-                                                                    -comment "Submodule start seed"
+                                                                 -comment "Submodule start seed"
 
 
 # -handshake flag allows synchronisation (if supported by template)
 # works for the normal R command with and with-out inline connection as well
 if {1} {
-    S  "state_trigger"            submod_regfile                        -->  common_sync<submod_trigger_sync>:data_i
+
+    S  "state_trigger"            submod_regfile                           -->  common_sync<submod_trigger_sync>:data_i
     S  "state_trigger_sync"       common_sync<submod_trigger_sync>:data_o  -->  submod:trigger_i
-    S  "state_trigger_ack"        submod_regfile                        <--  submod:trigger_ack_o
-    SR "submod_state"       -w 32 submod_regfile                        <--  submod:state_o \
+    S  "state_trigger_ack"        submod_regfile                           <--  submod:trigger_ack_o
+    SR "submod_state"       -w 32 submod_regfile                           <--  submod:state_o \
                                                                                 -handshake {"state_trigger" "state_trigger_ack" "S"} \
                                                                                 -comment "Submodule read state"
+
 } else {
+
     # see `logger -level I -id SRCmd`  and `logger -level I -id RCon` for the generate commands
-    SR "submod_state"       -w 32 submod_regfile                        <--  submod:state_o \
+    SR "submod_state"       -w 32 submod_regfile                           <--  submod:state_o \
                                                                                 -handshake { {"state_trigger"     common_sync<submod_trigger_sync>:data_i}
                                                                                 {"state_trigger_ack" submod:trigger_ack_o } "S"} \
                                                                                 -comment "Submodule read state"
     S  "state_trigger_sync"       common_sync<submod_trigger_sync>:data_o  -->  submod:trigger_i
+
 }
 
 # a more scripting advanced example for:
@@ -236,4 +216,30 @@ foreach {name submodport comment} $rf_submod_con_list {
 }
 
 R submod_regfile "entry_sync0"  $rf_submod_table
+
+########################################################################
+### Connect fixed ports of the apb regfile template                  ###
+########################################################################
+set rf_apb_ports {
+        rf_addr    --> apb_addr_i    32 component_wrap
+        rf_sel     --> apb_sel_i     1  component_wrap
+        rf_enable  --> apb_enable_i  1
+        rf_write   --> apb_write_i   1
+        rf_strb    --> apb_strb_i    4
+        rf_wdata   --> apb_wdata_i   32
+
+        rf_protect <-- apb_protect_o 3
+        rf_ready   <-- apb_ready_o   1
+        rf_rdata   <-- apb_rdata_o   32
+        rf_slverr  <-- apb_slver_or  1
+}
+
+foreach rf_conn [split $rf_apb_ports "\n"] {
+    lassign $rf_conn sig <-> p w mod
+    if {$rf_conn eq ""} {continue}
+    if {$mod eq ""} {
+        set mod tb_component
+    }
+    S "$sig" -w $w $mod ${<->} submod_regfile:${p}
+}
 
