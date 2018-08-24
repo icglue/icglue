@@ -57,7 +57,7 @@ syn match  igSigwidth "\v-w(idth)?>(\=)?\s*\S+"  contained
 syn match  igSFlags "\v(-v(alue)?>(\=)?|\=)"     contained
 syn match  igSFlags "\v-b(idir(ectional)?)?"     contained
 syn match  igSFlags "\v-p(in)?"                  contained
-syn region igSlistblock start="\s{"ms=e end="}"  contained contains=tclVarRef,igPort,tclNumber
+syn region igSlistblock start="\s{"ms=e end="}"  contained contains=tclVarRef,igPort,tclNumber,igSlistblock
 syn region igSignal start=/^\s*S\>/ms=e end=/$/            contains=igSigcmd,igSigwidth,igCon,igSFlags,igPort,igSlistblock,@igtclExtensions
 
 hi def link igSigcmd     igCommand
@@ -73,7 +73,7 @@ syn match   igSRFlags "@"                                contained
 syn match   igSRFlags "\v-c(omment)?\=?"                 contained
 syn match   igSRFlags "\v-handshake\=?"                  contained
 syn match   igSRFlags "\v(-v(alue)?|\=|-r(eset(val)?)?)" contained
-syn region  igSRlistblock start="\s{"ms=e end="}"        contained contains=tclVarRef,igPort,tclNumber,tclString
+syn region  igSRlistblock start="\s{"ms=e end="}"        contained contains=tclVarRef,igPort,tclNumber,tclString,igSRlistblock
 syn region  igSignalReg start=/^\s*SR\>/ms=e-1 end=/$/             contains=igSigRegcmd,igSigwidth,igCon,igSRFlags,igPort,igSRlistblock,@igtclExtensions
 
 hi def link igSigRegcmd igCommand
@@ -85,7 +85,7 @@ hi def link igSRlistblock igSignal
 syn keyword igParamcmd P                               contained
 syn match   igParamNameConv "\v(<|:)[A-Z][A-Z_0-9]*>"  contained
 syn match   igPFlags        "\v(\=|-v(alue)?>)"        contained
-syn region  igParamblock start="\s{"ms=e end="}"       contained contains=igParamNameConv,tclNumber
+syn region  igParamblock start="\s{"ms=e end="}"       contained contains=igParamNameConv,tclNumber,igParamblock
 syn region  igParam      start=/^\s*P\>/ end=/$/me=s-1           contains=igParamcmd,igPFlags,igParamNameConv,igParamblock,igPort,igSlistblock,@igtclExtensions
 hi def link igParamcmd      igCommand
 hi def link igPFlags        igFlags
