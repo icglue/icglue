@@ -125,8 +125,8 @@ Same without inline connection:
 \fBS\fR "entry_name0_s_status" -w 16 submod:s_status_o  -->  component_regfile
 .br
 \fBR\fR component_regfile "entry_name0" {
-    "name"   | "entrybits" | "type" | "reset" | "signal" | "comment"
-    -----    | ----------- | -----  | ------- | -------- | ---------
+    "name"   | "entrybits" | "type" | "reset" | "signal"             | "comment"
+    -----    | ----------- | -----  | ------- | --------             | ---------
     s_cfg    | 4:0         | RW     | 5\[aq]h0    | entry_name0_s_cfg    | "Configure component"
     s_status | 15:0        | R      | 16\[aq]h0   | entry_name0_s_status | "Component status"
 .br
