@@ -183,6 +183,8 @@ proc main {} {
             ig::sng::update_file_pragmas $i_module $workingdir
         }
     }
+
+    file attributes $c_outfile -permissions 0755
 }
 
 main

@@ -128,11 +128,11 @@ namespace eval ig::sng {
                     (([[:alnum:]_]+)[\s]*:[\s]*)?
                     ([[:alnum:]_]+)[\s]*
                     (\((.*)\))?[\s]*
-                    :=
+                    (:=)?
                     ([^#/]+)?
                     ([#/]+.*)?
                     $
-                } $line mline m_parent mparent mmodule m_args mmoduleargs minstances mcomment]} {
+                } $line mline m_parent mparent mmodule m_args mmoduleargs massign minstances mcomment]} {
                 # module/instance definition
                 set args [split [string map {" " {} "\t" {}} $mmoduleargs] ","]
                 set insts [split $minstances " \t"]
@@ -484,7 +484,10 @@ namespace eval ig::sng {
                     "vhdl"          {lappend args "vhdl"}
                     "systemverilog" -
                     "sv"            {lappend args "sv"}
-                    "rtl"           {}
+                    "rtl"           {
+                                        # although rtl is default, printing it is comfortable in case of adding flags like "rf" or "unit"
+                                        lappend args "rtl"
+                                    }
                     "tb"            {lappend args "tb"}
                     "behavioral"    {lappend args "behavioral"}
                     "ilm"           {lappend args "ilm"}
@@ -572,17 +575,22 @@ namespace eval ig::sng {
             set irgt [lindex $line 7]
 
             set cmd "S"
+
+            append cmd " \"${sig}\""
             if {$size > 1} {
-                append cmd " -w [list $size]"
+                if {[string is integer $size]} {
+                    append cmd " -w [list $size]"
+                } else {
+                    append cmd " -w {[list $size]}"
+                }
             }
-            append cmd " ${sig}"
 
             if {$val ne ""} {
                 append cmd " = [list $val]"
             }
 
             foreach iinst $ilft {
-                append cmd " \"[lindex $iinst 2]\""
+                append cmd " [lindex $iinst 2]"
             }
             if {$arr eq "->"} {
                 set arr "-->"
@@ -592,7 +600,7 @@ namespace eval ig::sng {
             append cmd " ${arr}"
 
             foreach iinst $irgt {
-                append cmd " \"[lindex $iinst 2]\""
+                append cmd " [lindex $iinst 2]"
             }
 
             return $cmd
@@ -634,6 +642,8 @@ namespace eval ig::sng {
     proc convert {parsed_lines} {
         set result {}
 
+        lappend result "#!/usr/bin/env icglue"
+        lappend result {}
         lappend result "# icglue file converted from icsng"
         lappend result {}
 
