@@ -36,7 +36,7 @@ M -unit "submod" -tree {
 ########################################################################
 
 # parameters (parameter name is new tcl variable
-#   with the specified value - might be useful for regfile with are not 
+#   with the specified value - might be useful for regfile which are not 
 #   able to deal with parameters, due to byte-sel logic)
 P RF_ADDR_SEL = 4'b0110 tb_component component_wrap
 
@@ -124,7 +124,7 @@ create_clocking_and_resets "tb_component"
 ########################################################################
 ### Regfile connection and creation                                  ###
 ########################################################################
-# type field depends on your regfile template supports
+# type field depends on your regfile template
 # supported types of the default template are:
 #  - RS:     synchronized read (common_sync)
 #  - CR/CRW: custom read/write
@@ -152,7 +152,8 @@ if {0} {
     }
 }
 
-#  if the signal-width exceeds the the regfile data with you can split signals with the *signalbits* column
+#  if the signal-width exceeds the the regfile data width you can split signals with the *signalbits* column
+#  this is also useful for part selection and register subfield creation
 S "s_cfg_large" -w 40 submod_regfile  -->  submod
 R submod_regfile "entry_name1_low" {
     "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
