@@ -6,8 +6,8 @@
 # Generate hierarchie in unit submodule
 M -unit "component" -tree {
     tb_component ................ (tb,v)
-    +- component_wrap ........... (rtl)
-       +- component_top ......... (rtl)
+    \- component_wrap ........... (rtl)
+       \- component_top ......... (rtl)
           |
           |- anothersubmod_wrap ..(rtl,unit=anothersubmod)
           |  \- anothersubmod     (rtl)
@@ -35,14 +35,25 @@ M -unit "submod" -tree {
 ### Simple exmaples of creating params, wires and inline code        ###
 ########################################################################
 
-# parameters (parameter name is new tcl variable with value)
+# parameters (parameter name is new tcl variable
+#   with the specified value - might be useful for regfile with are not 
+#   able to deal with parameters, due to byte-sel logic)
 P RF_ADDR_SEL = 4'b0110 tb_component component_wrap
 
 # simple connections
 S "rf_address" -w 32 tb_component  -->  component_wrap
-set rf_addr_range 5
+
+# in- and output ports of resources can be pinned to any string (= is optional, default is {}):
+S "comb_reset_ref_core" -pin = {/*TODO*/}  <--  common_reset_combiner<ref_core>:syn_reset_n_o
+S "scan_mode"           -pin = 1'b0        -->  common_reset_combiner<ref_core>:testmode_i
+
+
 # code placed in component_wrap (signal will be adapted, variable substition will be done as well,
 # so don't forget to escape!)
+# - use -noadapt to disable adaption
+# - use -nosubst to disable variable substitution
+# - use -verbatim as alias of both (-noadapt -nosubst)
+set rf_addr_range 5
 C component_wrap {
     assign rf_addr[31  : ${rf_addr_range}] = 'h0;
     assign rf_addr[ 0 +: ${rf_addr_range}] = rf_address[ 0 :+ ${rf_addr_range}];
@@ -118,16 +129,9 @@ create_clocking_and_resets "tb_component"
 #  - RS:     synchronized read (common_sync)
 #  - CR/CRW: custom read/write
 
-
-# connection by single instance name:
-
-# in- and output ports of resources can be pin to any string (= is optional, default is {}):
-S "comb_reset_ref_core" -pin = {/*TODO*/}  <--  common_reset_combiner<ref_core>:syn_reset_n_o
-S "scan_mode"           -pin = 1'b0        -->  common_reset_combiner<ref_core>:testmode_i
-
-
+# two equal ways of regfile connection and creation 
 if {0} {
-    # explicit way
+    # explicit way (component view)
     S "entry_name0_s_cfg"    -w 5  submod:s_cfg_i     <--  submod_regfile
     S "entry_name0_s_status" -w 16 submod:s_status_o  -->  submod_regfile
     R submod_regfile "entry_name0" {
@@ -137,7 +141,7 @@ if {0} {
         s_status | 15:0        | R      | 16'h0   | entry_name0_s_status | "Component status"
     }
 } else {
-    # inline connection
+    # inline connection (toplevel integration view)
     # uncomment the following command to see generated signals while execution
     #logger -level I -id RCon
     R submod_regfile "entry_name0" {
@@ -176,15 +180,18 @@ if {1} {
     S  "state_trigger"            submod_regfile                           -->  common_sync<submod_trigger_sync>:data_i
     S  "state_trigger_sync"       common_sync<submod_trigger_sync>:data_o  -->  submod:trigger_i
     S  "state_trigger_ack"        submod_regfile                           <--  submod:trigger_ack_o
+    # handshake arguments are <trigger-signal> <trigger-ack-signal> [<type>]
+    # type = "S" means sync trigger-ack-signal via common sync
     SR "submod_state"       -w 32 submod_regfile                           <--  submod:state_o \
                                                                                 -handshake {"state_trigger" "state_trigger_ack" "S"} \
                                                                                 -comment "Submodule read state"
 
 } else {
 
+    # same as above but with inline handshake connections
     # see `logger -level I -id SRCmd`  and `logger -level I -id RCon` for the generate commands
     SR "submod_state"       -w 32 submod_regfile                           <--  submod:state_o \
-                                                                                -handshake { {"state_trigger"     common_sync<submod_trigger_sync>:data_i}
+                                                                                -handshake { {"state_trigger" common_sync<submod_trigger_sync>:data_i}
                                                                                 {"state_trigger_ack" submod:trigger_ack_o } "S"} \
                                                                                 -comment "Submodule read state"
     S  "state_trigger_sync"       common_sync<submod_trigger_sync>:data_o  -->  submod:trigger_i
@@ -209,7 +216,7 @@ set rf_submod_table {}
 lappend rf_submod_table [list "name"  "width" "type" "reset" "signal" "comment"]
 foreach {name submodport comment} $rf_submod_con_list {
     # connect to sync's
-    S "submod_${name}"      submod_regfile     -->  common_sync<submod${i}>:data_i
+    S "submod_${name}"      submod_regfile        -->  common_sync<submod${i}>:data_i
     S "submod_${name}_sync" submod:${submodport}  <--  common_sync<submod${i}>:data_o
     lappend  rf_submod_table  [list "${name}" 1 RW  1'b0 "submod_${name}" "$comment"]
     incr i
@@ -240,6 +247,7 @@ foreach rf_conn [split $rf_apb_ports "\n"] {
     if {$mod eq ""} {
         set mod tb_component
     }
+
     S "$sig" -w $w $mod ${<->} submod_regfile:${p}
 }
 
