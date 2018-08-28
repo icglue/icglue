@@ -404,6 +404,10 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
 
     log_debug ("LConn", "reducing hierarchy tree...");
     hier_tree = ig_lib_htree_reduce (hier_tree);
+    if (hier_tree == NULL) {
+        log_warn ("LConn", "Unable to create signal %s, because of insufficient hierarchy information.", signame);
+        goto l_ig_lib_connection_final_free_hierlist;
+    }
 
     ig_lib_htree_print (hier_tree);
 
@@ -488,6 +492,10 @@ bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *de
 
     log_debug ("LParm", "reducing hierarchy tree...");
     hier_tree = ig_lib_htree_reduce (hier_tree);
+    if (hier_tree == NULL) {
+        log_warn ("LParm", "Unable to create parameter %s, because of insufficient hierarchy information.", parname);
+        goto l_ig_lib_parameter_final_free_hierlist;
+    }
 
     ig_lib_htree_print (hier_tree);
 
@@ -846,15 +854,19 @@ static GNode *ig_lib_htree_reduce (GNode *hier_tree)
 {
     GNode *temp = hier_tree;
 
-    while (temp != NULL) {
+    for (;;) {
         if (g_node_n_children (temp) > 1) break;
+        temp = g_node_first_child (temp);
+
+        if (temp == NULL) break;
+
         struct ig_lib_connection_info *cinfo = (struct ig_lib_connection_info *)temp->data;
         if (cinfo->is_explicit) break;
-        temp = g_node_first_child (temp);
     }
 
     if (temp == NULL) {
         if (hier_tree != NULL) ig_lib_htree_free (hier_tree);
+        log_debug ("HTrRd", "!htree_reduce returns NULL!");
         return NULL;
     }
 

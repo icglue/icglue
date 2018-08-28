@@ -1117,7 +1117,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
 
     if (result != TCL_OK) goto l_ig_tclc_parameter_exit;
 
-    log_debug ("TCPar", "generating connection info");
+    log_debug ("TCPar", "generating connection info for parameter %s = %s)", name, value);
 
     GList   *trg_list = NULL;
     GString *tstr_id  = g_string_new (NULL);
