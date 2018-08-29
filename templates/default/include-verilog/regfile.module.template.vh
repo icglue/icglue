@@ -44,7 +44,7 @@
     }
 
     proc reg_name {} {
-        uplevel 1 {set maxlen_reg_name [expr {$maxlen_name + $maxlen_signame+1}]}
+        uplevel 1 {set maxlen_reg_name [expr {[string length $entry(name)] + 1 + $maxlen_signame}]}
         return [uplevel 1 {format "reg_%-${maxlen_reg_name}s" "${entry(name)}_${reg(name)}"}]
     }
     proc reg_range {} {
