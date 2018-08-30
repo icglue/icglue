@@ -1087,11 +1087,6 @@ namespace eval ig {
             lappend rf_args "-handshake [list $handshake]"
         }
         set signalname [lindex $arguments 0]
-        if {$dir eq "-->"} {
-            set connect_cmd "S \"$signalname\" -w $width [lindex $arguments 1] --> [lrange $arguments 2 end]"
-        } else {
-            set connect_cmd "S \"$signalname\" -w $width [lrange $arguments 1 end-1] <-- [lindex $arguments end]"
-        }
 
         set regfile_id {}
 
@@ -1115,7 +1110,10 @@ namespace eval ig {
                                     set reset "-"
                                 }
                             }
-                            lappend rf_list [lindex $regfiles 0] $signalname $reg_type $reset
+                            set rf [lindex $regfiles 0]
+                            set rf_name [ig::db::get_attribute -obj $rf -attribute "name"]
+                            set entryname ${signalname}
+                            lappend rf_list $rf_name $entryname $reg_type $reset
                         }
                     }
                 }
@@ -1130,8 +1128,16 @@ namespace eval ig {
             ig::log -debug -id RSCon "Found regfile: $rf_list"
         }
 
+        set signalname "[lindex $rf_list 0]_${signalname}"
+        if {$dir eq "-->"} {
+            set connect_cmd "S \"$signalname\" -w $width [lindex $arguments 1] --> [lrange $arguments 2 end]"
+        } else {
+            set connect_cmd "S \"$signalname\" -w $width [lrange $arguments 1 end-1] <-- [lindex $arguments end]"
+        }
+
+
         set regfile_cmd {}
-        foreach {rf entryname type reset} $rf_list {
+        foreach {rf_name entryname type reset} $rf_list {
             ig::aux::max_set namelen       [string length {"name"}]
             ig::aux::max_set namelen       [string length "val"]
             ig::aux::max_set widthlen      [string length {"width"}]
@@ -1146,7 +1152,6 @@ namespace eval ig {
             ig::aux::max_set commentlen    [string length $comment]
 
             set rf_table "%-${namelen}s | %-${widthlen}s | %-${typelen}s | %-${resetlen}s | %-${signalnamelen}s | %-${commentlen}s\n"
-            set rf_name [ig::db::get_attribute -obj $rf -attribute "name"]
             lappend regfile_cmd [string cat "R -rf=${rf_name} \"${entryname}\" [join $rf_args] {\n" \
                 [format "    $rf_table" {"name"} {"width"} {"type"} {"reset"} {"signal"}     {"comment"} ] \
                 [format "    $rf_table" "val"    "$width"  "$type"  "$reset"  "$signalname"  "\"$comment\""  ] \
