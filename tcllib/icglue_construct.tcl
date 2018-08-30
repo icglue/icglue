@@ -829,6 +829,7 @@ namespace eval ig {
             set entryname [lindex $arguments 0]
             set regdef    [lindex $arguments 1]
         } else {
+            # set regfilename temporary (might be just the module name...)
             set regfilename [lindex $arguments 0]
             set entryname   [lindex $arguments 1]
             set regdef      [lindex $arguments 2]
@@ -906,6 +907,8 @@ namespace eval ig {
             if {$regfile_id eq ""} {
                 log -error -abort "R (regfile-entry ${entryname}): invalid regfile name specified: ${regfilename}"
             }
+            # set the "real" regfilename
+            set regfilename [ig::db::get_attribute -obj $regfile_id -attribute "name"]
 
             # create entry
             set entry_id [ig::db::add_regfile -entry $entryname -to $regfile_id]
@@ -972,7 +975,7 @@ namespace eval ig {
 
                                 # special '=' means  signalname = fieldname
                                 if {$s_signal eq "="} {
-                                    set s_signal "${entryname}_${i_name}"
+                                    set s_signal "${regfilename}_${entryname}_${i_name}"
                                 }
                                 set i_val "$s_signal"
                             } else {
@@ -985,7 +988,7 @@ namespace eval ig {
                                     } else {
                                         set s_modules [list ${s_implicit_mod}:${s_port}]
                                     }
-                                    set s_signal "${entryname}_${i_name}"
+                                    set s_signal "${regfilename}_${entryname}_${i_name}"
                                     set i_val "$s_signal"
                                 }
                             }
@@ -1018,7 +1021,8 @@ namespace eval ig {
                     } elseif {[regexp {R} $s_type]} {
                         set conn "<--"
                     }
-                    set connect_cmd "S \"${s_signal}\" -w $s_width $rf_module_name $conn $s_modules"
+                    set rf_port [regsub "^${regfilename}_" ${s_signal} {}]
+                    set connect_cmd "S \"${s_signal}\" -w $s_width ${rf_module_name}:${rf_port} $conn $s_modules"
                     eval $connect_cmd
                     ig::log -info -id "RCon" "$connect_cmd"
                 }
