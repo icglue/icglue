@@ -926,6 +926,7 @@ namespace eval ig {
                 set handshake_sig_in  [lindex $handshake 0]
                 set handshake_sig_out [lindex $handshake 1]
 
+                set handshake_sig_in_out {}
                 foreach {handshake_sig conn} [list $handshake_sig_in --> $handshake_sig_out <--] {
                     set s_signal {}
                     if {[llength $handshake_sig] > 1} {
@@ -933,15 +934,23 @@ namespace eval ig {
                         set s_modules [lindex $handshake_sig 1]
                     } elseif {[string first : $handshake_sig] != -1} {
                         lassign [split $handshake_sig ":"] s_modules s_signal
+                        if {![regexp "^${regfilename}" $s_signal]} {
+                            set s_modules "${s_modules}:${s_signal}!"
+                            set s_signal  "${regfilename}_${s_signal}"
+                        }
+                    } else {
+                        lappend handshake_sig_in_out $handshake_sig
                     }
+
                     if {$s_signal ne ""} {
                         set connect_cmd "S \"$s_signal\" $rf_module_name $conn $s_modules"
                         eval $connect_cmd
                         ig::log -info -id "RCon" "$connect_cmd"
+                        lappend handshake_sig_in_out $s_signal
                     }
                 }
-                set handshakelist [list [lindex $handshake_sig_in 0] [lindex $handshake_sig_out 0] [lrange $handshake 2 end]]
-
+                set handshakelist [list {*}$handshake_sig_in_out [lrange $handshake 2 end]]
+                #set handshakelist [list [lindex $handshake_sig_in 0] [lindex $handshake_sig_out 0] [lrange $handshake 2 end]]
                 ig::db::set_attribute -object $entry_id -attribute "handshake" -value $handshakelist
             }
 
