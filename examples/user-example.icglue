@@ -9,7 +9,7 @@ M -unit "component" -tree {
     \- component_wrap ........... (rtl)
        \- component_top ......... (rtl)
           |
-          |- anothersubmod_wrap ..(rtl,unit=anothersubmod)
+          +- anothersubmod_wrap ..(rtl,unit=anothersubmod)
           |  \- anothersubmod     (rtl)
           |
           \- submod_wrap ........ (inc)
@@ -36,7 +36,7 @@ M -unit "submod" -tree {
 ########################################################################
 
 # parameters (parameter name is new tcl variable
-#   with the specified value - might be useful for regfile which are not 
+#   with the specified value - might be useful for regfile which are not
 #   able to deal with parameters, due to byte-sel logic)
 P RF_ADDR_SEL = 4'b0110 tb_component component_wrap
 
@@ -57,7 +57,7 @@ set rf_addr_range 5
 C component_wrap {
     assign rf_addr[31  : ${rf_addr_range}] = 'h0;
     assign rf_addr[ 0 +: ${rf_addr_range}] = rf_address[ 0 :+ ${rf_addr_range}];
-    assign rf_sel = (addr[31:28] == RF_ADDR_SEL) ? 1'b1 : 1'b0; 
+    assign rf_sel = (addr[31:28] == RF_ADDR_SEL) ? 1'b1 : 1'b0;
 
     // debugging:
     always @(posedge clk_i) begin
@@ -129,7 +129,7 @@ create_clocking_and_resets "tb_component"
 #  - RS:     synchronized read (common_sync)
 #  - CR/CRW: custom read/write
 
-# two equal ways of regfile connection and creation 
+# two equal ways of regfile connection and creation
 if {0} {
     # explicit way (component view)
     S "entry_name0_s_cfg"    -w 5  submod:s_cfg_i     <--  submod_regfile
@@ -158,12 +158,12 @@ S "s_cfg_large" -w 40 submod_regfile  -->  submod
 R submod_regfile "entry_name1_low" {
     "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
     -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
-    s_cfg  | 31:0        | RW     | 31’h0   | s_cfg_large | 31:0         | "Configure submod part 0"
+    s_cfg  | 31:0        | RW     | 31'h0   | s_cfg_large | 31:0         | "Configure submod part 0"
 }
 R submod_regfile "entry_name1_high" {
     "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
     -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
-    s_cfg  | 7:0         | RW     | 8’h0    | s_cfg_large | 39:32        | "Configure submod part 1"
+    s_cfg  | 7:0         | RW     | 8'h0    | s_cfg_large | 39:32        | "Configure submod part 1"
 }
 
 
@@ -219,7 +219,7 @@ foreach {name submodport comment} $rf_submod_con_list {
     # connect to sync's
     S "submod_${name}"      submod_regfile        -->  common_sync<submod${i}>:data_i
     S "submod_${name}_sync" submod:${submodport}  <--  common_sync<submod${i}>:data_o
-    lappend  rf_submod_table  [list "${name}" 1 RW  1'b0 "submod_${name}" "$comment"]
+    lappend rf_submod_table [list "${name}" 1 RW 1'b0 "submod_${name}" "$comment"]
     incr i
 }
 
