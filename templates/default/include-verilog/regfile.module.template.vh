@@ -310,7 +310,7 @@
                         if {![custom_reg]} {%>
                         <[reg_name]><[reg_range_bytesel $byte]> <= <[rf_w_data]>[<[reg_entrybits_bytesel $byte]>];<%
                         } else { %>
-                        <[get_pragma_content $pragma_data "keep" "custom_assign_$reg(name)" ".v" "
+                        <[get_pragma_content $pragma_data "keep" "custom_assign_$entry(name)_$reg(name)" ".v" "
                         // TODO: [reg_name][reg_range_bytesel $byte] <= [rf_w_data]\[[reg_entrybits_bytesel $byte]\];
                         "]><% } } { %>
                     end<% } } %>
@@ -338,7 +338,7 @@
         if {![custom_reg]} {%>
     assign <[reg_val]>[<[reg_entrybits]>] = <%=$_reg_val_output%>;<%
         } else { %>
-    <[get_pragma_content $pragma_data "keep" "custom_read_output_$reg(name)" ".v" "
+    <[get_pragma_content $pragma_data "keep" "custom_read_output_$entry(name)_$reg(name)" ".v" "
     // TODO: assign [reg_val]\[[reg_entrybits]\] = ${_reg_val_output};
     "]><% } } %><%="\n"%><% } %><%="\n"
     %><[rf_comment_block "apb ready/error generate"]>
