@@ -25,7 +25,6 @@
 - squash regfile
 
 ## templates
-- keep-pragmas: **get rid of "pragma"** keyword (just "icglue" or "generator icglue" or "template icglue" ...)
 - support module attributes (fpga)
 - regfiles: support
   - trigger reg (different types: 1-0 trigger, toggle trigger, ...?)
