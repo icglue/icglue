@@ -742,6 +742,7 @@ namespace eval ig::sng {
     ## @brief Parse sng pragmas in existing module file and insert icglue template keep blocks
     #
     # @param modid Object ID of module to process
+    # @param projdir Root-directory of project - file lookup for pragma replacement starts there.
     proc update_file_pragmas {modid {projdir .}} {
 
         set name [ig::db::get_attribute -object $modid -attribute "name"]
