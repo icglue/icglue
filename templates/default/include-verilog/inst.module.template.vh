@@ -10,7 +10,7 @@
         .<[format "%-${i_pins_maxlen_name}s (%s%s)" $pin(name) [expr {$pin(invert) ? "~" : ""}] $pin(connection)]><% } { %>,<%="\n"%><% } %>
     );<%="\n"%><% } %>
 
-    <[get_pragma_content $pragma_data "keep" "instances"]><%
+    <[get_keep_block_content $keep_block_data "keep" "instances"]><%
     ## </submodule instanciations>
     ###########################################
 %>
@@ -19,7 +19,7 @@
     ## <code>
     foreach_array_preamble cs $mod_data(code) { %><%="\n\n"%><% } {
     %><%="$cs(code)"%><% } %>
-    <[get_pragma_content $pragma_data "keep" "code"]><%
+    <[get_keep_block_content $keep_block_data "keep" "code"]><%
     ## </code>
     ###########################################
 -%>

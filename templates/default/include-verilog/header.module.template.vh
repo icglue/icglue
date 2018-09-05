@@ -15,7 +15,7 @@
 
 -%>
 
-<%-= [get_pragma_content $pragma_data "keep" "head" ".v" "
+<%-= [get_keep_block_content $keep_block_data "keep" "head" ".v" "
 /*
  * Module: $mod_data(name)
  * Author:
@@ -38,7 +38,7 @@ module <%=$mod_data(name)%> (
     ## <parameters>
     foreach_array_preamble param $mod_data(parameters) { %><%="\n"%><% } { -%>
     <[format "%-${param_data_maxlen_type}s %-${param_data_maxlen_name}s = %s;\n" $param(vlog.type) $param(name) $param(value)]><% } -%>
-    <[get_pragma_content $pragma_data "keep" "parameters"]><%
+    <[get_keep_block_content $keep_block_data "keep" "parameters"]><%
     ## </parameters>
     ###########################################
 %>
@@ -55,7 +55,7 @@ module <%=$mod_data(name)%> (
     ## <signal declaration>
     foreach_array_preamble decl $mod_data(declarations) { %><%="\n\n"%><% } { -%>
     <[format "%-${decl_data_maxlen_type}s %${decl_data_maxlen_range}s %s;\n" $decl(vlog.type) $decl(vlog.bitrange)  $decl(name)]><% } -%>
-    <[get_pragma_content $pragma_data "keep" "declarations"]><%
+    <[get_keep_block_content $keep_block_data "keep" "declarations"]><%
     ## </signal declaration>
     ###########################################
 -%>

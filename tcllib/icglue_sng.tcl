@@ -739,7 +739,7 @@ namespace eval ig::sng {
         close $f
     }
 
-    ## @brief Parse sng pragmas in existing module file and insert icglue template pragmas
+    ## @brief Parse sng pragmas in existing module file and insert icglue template keep blocks
     #
     # @param modid Object ID of module to process
     proc update_file_pragmas {modid {projdir .}} {
@@ -759,23 +759,23 @@ namespace eval ig::sng {
         set vlog [read $f]
         close $f
 
-        set icg_pragmas [ig::templates::parse_pragmas $vlog ".v"]
-        if {[llength $icg_pragmas] > 0} {
-            ig::log -warn -id "SNGCv" "Module $name: file $path already contains icglue pragmas... skipping."
+        set icg_blocks [ig::templates::parse_keep_blocks $vlog ".v"]
+        if {[llength $icg_blocks] > 0} {
+            ig::log -warn -id "SNGCv" "Module $name: file $path already contains icglue keep blocks... skipping."
             return
         }
 
         set vlogl [split $vlog "\n"]
-        set vlogl [linsert $vlogl -1 "/* pragma icglue keep begin head */"]
+        set vlogl [linsert $vlogl -1 "/* icglue keep begin head */"]
 
         set sng_pragma_data {
-            "// pragma ICSNG %%sng_verilog_module_begin%%"    "/* pragma icglue keep end */"
-            "// pragma ICSNG %%sng_verilog_module_end%%"      "    /* pragma icglue keep begin declarations */"
-            "// pragma ICSNG %%sng_verilog_instances_begin%%" "    /* pragma icglue keep end */"
-            "// pragma ICSNG %%sng_verilog_instances_end%%"   "    /* pragma icglue keep begin instances */"
-            "// pragma ICSNG %%sng_verilog_code_begin%%"      "    /* pragma icglue keep end */"
-            "// pragma ICSNG %%sng_verilog_code_end%%"        "    /* pragma icglue keep begin code */"
-            "endmodule"                                       "    /* pragma icglue keep end */\n\nendmodule"
+            "// pragma ICSNG %%sng_verilog_module_begin%%"    "/* icglue keep end */"
+            "// pragma ICSNG %%sng_verilog_module_end%%"      "    /* icglue keep begin declarations */"
+            "// pragma ICSNG %%sng_verilog_instances_begin%%" "    /* icglue keep end */"
+            "// pragma ICSNG %%sng_verilog_instances_end%%"   "    /* icglue keep begin instances */"
+            "// pragma ICSNG %%sng_verilog_code_begin%%"      "    /* icglue keep end */"
+            "// pragma ICSNG %%sng_verilog_code_end%%"        "    /* icglue keep begin code */"
+            "endmodule"                                       "    /* icglue keep end */\n\nendmodule"
         }
 
         foreach {ipragma irepl} $sng_pragma_data {

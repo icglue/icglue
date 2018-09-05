@@ -192,7 +192,7 @@
     ## <localparams>
     %><[rf_comment_block "Regfile ADDRESS definition"]><% foreach_array entry $entry_list { -%>
     localparam <[param]> = <[addr_vlog]>;<%="\n"%><% } -%>
-    <[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-addresses"]><%
+    <[get_keep_block_content $keep_block_data "keep" "regfile-${rf(name)}-addresses"]><%
     ## </localparams> ##
     ###########################################
 %>
@@ -221,7 +221,7 @@
     wire [31: 0] <[reg_val]>;<%
         foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} { %>
     reg  <[reg_range]> <[string trim [reg_name]]>;<% } %><%="\n"%><% } %>
-    <%=[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-declaration"] %><%
+    <%=[get_keep_block_content $keep_block_data "keep" "regfile-${rf(name)}-declaration"] %><%
     ## </definition> ##
     ###########################################
 %>
@@ -300,7 +300,7 @@
         if (<[reset]> == 1'b0) begin<% foreach_array_with reg $entry(regs) {[write_reg]} { %>
             <[reg_name]> <= <%=$reg(reset)%>;<% }
         if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
-            <[get_pragma_content $pragma_data "keep" "custom_reset_${entry(name)}"]><% } %>
+            <[get_keep_block_content $keep_block_data "keep" "custom_reset_${entry(name)}"]><% } %>
         end else begin
             if (<[rf_w_sel]> && <[rf_enable]>) begin
                 if (<[rf_addr]> == <[string trim [param]]>) begin<%
@@ -310,14 +310,14 @@
                         if {![custom_reg]} {%>
                         <[reg_name]><[reg_range_bytesel $byte]> <= <[rf_w_data]>[<[reg_entrybits_bytesel $byte]>];<%
                         } else { %>
-                        <[get_pragma_content $pragma_data "keep" "custom_assign_$entry(name)_$reg(name)" ".v" "
+                        <[get_keep_block_content $keep_block_data "keep" "custom_assign_$entry(name)_$reg(name)" ".v" "
                         // TODO: [reg_name][reg_range_bytesel $byte] <= [rf_w_data]\[[reg_entrybits_bytesel $byte]\];
                         "]><% } } { %>
                     end<% } } %>
                 end
             end<%
             if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
-            <[get_pragma_content $pragma_data "keep" "custom_code_${entry(name)}"]><% } %>
+            <[get_keep_block_content $keep_block_data "keep" "custom_code_${entry(name)}"]><% } %>
         end
     end<% foreach_array_with reg $entry(regs) {[write_reg] && ($reg(signal) ne "-")} { %>
     assign <[signal_name]><[signal_entrybits]> = <[string trim [reg_name]]>;<% } %><%="\n"%><%
@@ -338,7 +338,7 @@
         if {![custom_reg]} {%>
     assign <[reg_val]>[<[reg_entrybits]>] = <%=$_reg_val_output%>;<%
         } else { %>
-    <[get_pragma_content $pragma_data "keep" "custom_read_output_$entry(name)_$reg(name)" ".v" "
+    <[get_keep_block_content $keep_block_data "keep" "custom_read_output_$entry(name)_$reg(name)" ".v" "
     // TODO: assign [reg_val]\[[reg_entrybits]\] = ${_reg_val_output};
     "]><% } } %><%="\n"%><% } %><%="\n"
     %><[rf_comment_block "apb ready/error generate"]>
@@ -349,7 +349,7 @@
         end<%
         foreach_array entry $entry_list {
             if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
-                <[get_pragma_content $pragma_data "keep" "custom_ready_$entry(name)" ".v" "
+                <[get_keep_block_content $keep_block_data "keep" "custom_ready_$entry(name)" ".v" "
                 // TODO: generate ready for custom entry $entry(name)
                 //if ([rf_addr] == [string trim [param]]) begin
                 //    [rf_ready_sig] = CONDITION;
@@ -369,12 +369,12 @@
         if (<[rf_r_sel]> && <[rf_enable]>) begin
             <[rf_err_sig]> = ~<[rf_read_permitted]>;
         end
-        <[get_pragma_content $pragma_data "keep" "generate-apb-ready-error"]>
+        <[get_keep_block_content $keep_block_data "keep" "generate-apb-ready-error"]>
     end
     assign <[rf_ready]> = <[rf_ready_sig]>;
     assign <[rf_err]> = <[rf_err_sig]>;
 
-    <[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-code"]><%
+    <[get_keep_block_content $keep_block_data "keep" "regfile-${rf(name)}-code"]><%
     ## <register-write>
     ###########################################
 %>
@@ -391,7 +391,7 @@
                 <[rf_r_data_sig]> = <[reg_val]>;<% if {[foreach_array_contains reg $entry(regs) {[write_reg]}]} { %>
                 <[rf_next_write_permitted]> = 1;<% } %>
             end<% } %>
-            <%=[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-outputmux"] %>
+            <%=[get_keep_block_content $keep_block_data "keep" "regfile-${rf(name)}-outputmux"] %>
             default: begin
                 <[rf_r_data_sig]> = 32'h0000_0000;
                 <[rf_next_read_permitted]> = 0;
@@ -399,7 +399,7 @@
         endcase
     end
     assign <[rf_r_data]> = <[rf_r_data_sig]>;
-    <%=[get_pragma_content $pragma_data "keep" "regfile-${rf(name)}-outputcode"] %><%
+    <%=[get_keep_block_content $keep_block_data "keep" "regfile-${rf(name)}-outputcode"] %><%
     ## </output mux> ##
     ###########################################
 %>

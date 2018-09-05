@@ -21,7 +21,7 @@ proc write_reg {} {
 extern "C" {
 #endif
 
-<[get_pragma_content $pragma_data "keep" "custom" ".h"]>
+<[get_keep_block_content $keep_block_data "keep" "custom" ".h"]>
 
 <%-
 # iterate over entries sorted by address
