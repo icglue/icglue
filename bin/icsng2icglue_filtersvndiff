@@ -43,7 +43,7 @@ while (my $line = <>) {
     # remove trailing stuff
     $line =~ s/[,(]$//;
 
-    if ($line eq "" or $line eq ");" or $line eq "(" or $line =~ /^\/\* pragma/) {
+    if ($line eq "" or $line eq ");" or $line eq "(" or $line =~ /^\/\* pragma/ or $line =~ /^\/\* icglue/) {
         next;
     }
 
