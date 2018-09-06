@@ -239,7 +239,7 @@ set rf_apb_ports {
         rf_protect <-- apb_protect_o 3
         rf_ready   <-- apb_ready_o   1
         rf_rdata   <-- apb_rdata_o   32
-        rf_slverr  <-- apb_slver_or  1
+        rf_slverr  <-- apb_slver_o   1
 }
 
 foreach rf_conn [split $rf_apb_ports "\n"] {
