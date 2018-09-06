@@ -74,7 +74,7 @@ C component_wrap {
 # scripted connections of clock and reset by name
 # - clk_resetn_mods(<typename> stores <instance-name> <clock-port> <resetn-port>
 # - clk_mods(<typename>)       stores <instance-name>[:<port>]
-# - reset_mods(<typename>)     stores <instance-name>[:<port>]
+# - resetn_mods(<typename>)    stores <instance-name>[:<port>]
 proc create_clocking_and_resets {srcmod} {
     variable clk_resetn_mods
     variable clk_mods
