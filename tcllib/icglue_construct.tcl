@@ -1031,7 +1031,7 @@ namespace eval ig {
                         set conn "<--"
                     }
                     set rf_port [regsub "^${regfilename}_" ${s_signal} {}]
-                    set connect_cmd "S \"${s_signal}\" -w $s_width ${rf_module_name}:${rf_port} $conn $s_modules"
+                    set connect_cmd "S \"${s_signal}\" -w $s_width ${rf_module_name}:${rf_port}! $conn $s_modules"
                     eval $connect_cmd
                     ig::log -info -id "RCon" "$connect_cmd"
                 }
