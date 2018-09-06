@@ -3,7 +3,7 @@
 icglue_modhome=$HOME/workspace/icglue
 
 if [[ $1 -ne "" ]] ; then
-    icglue_modhome=$1
+    icglue_modhome=$(readlink -e $1)
 fi
 
 if [[ ! -e ${icglue_modhome}/bin/icglue ]] ; then
