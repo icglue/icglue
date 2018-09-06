@@ -297,10 +297,16 @@
     <[format "// %s @ %s" $entry(name)  $entry(address)]><% if {[info exists entry(handshake)]} { %><[format " (%s)" [regsub -all {\m\S+:} $entry(handshake) {}]]><% }
     if {[foreach_array_contains reg $entry(regs) {[write_reg] && ![fullcustom_reg]}]} {%>
     always @(posedge <[clk]> or negedge <[reset]>) begin
-        if (<[reset]> == 1'b0) begin<% foreach_array_with reg $entry(regs) {[write_reg]} { %>
+        if (<[reset]> == 1'b0) begin<% foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} { %>
             <[reg_name]> <= <%=$reg(reset)%>;<% }
-        if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
-            <[get_keep_block_content $keep_block_data "keep" "custom_reset_${entry(name)}"]><% } %>
+            if {[foreach_array_contains reg $entry(regs) {[fullcustom_reg]}]} {
+                set fc_reset_list {}
+                foreach_array_with reg $entry(regs) {[write_reg] && [fullcustom_reg]} {
+                    lappend fc_reset_list [format "%12s// TODO: [reg_name] <= $reg(reset);" {}]
+                }
+            %>
+            <[get_keep_block_content $keep_block_data "keep" "fullcustom_reset_${entry(name)}" ".v" "\n[join $fc_reset_list "\n"]
+            "]><% } %>
         end else begin
             if (<[rf_w_sel]> && <[rf_enable]>) begin
                 if (<[rf_addr]> == <[string trim [param]]>) begin<%
@@ -349,13 +355,12 @@
         end<%
         foreach_array entry $entry_list {
             if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
-                <[get_keep_block_content $keep_block_data "keep" "custom_ready_$entry(name)" ".v" "
-                // TODO: generate ready for custom entry $entry(name)
-                //if ([rf_addr] == [string trim [param]]) begin
-                //    [rf_ready_sig] = CONDITION;
-                //end
-                "
-                ]><%
+        <[get_keep_block_content $keep_block_data "keep" "custom_ready_$entry(name)" ".v" "
+        // TODO: generate ready for custom entry $entry(name)
+        //if ([rf_addr] == [string trim [param]]) begin
+        //    [rf_ready_sig] = CONDITION;
+        //end
+        "]><%
             }
         }
         foreach handshake $handshake_list { %>
