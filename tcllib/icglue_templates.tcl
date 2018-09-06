@@ -764,26 +764,26 @@ namespace eval ig::templates {
     # Subtypes depend on the template used.
     proc parse_keep_blocks {txt {filesuffix ".v"}} {
         set result [list]
-        lassign [comment_begin_end $filesuffix] pstart pend
+        lassign [comment_begin_end $filesuffix] cbegin cend
 
         # compatibility: accept comments with "pragma"
-        if {[string first "${pstart}pragma icglue keep begin " $txt] >= 0} {
-            set block_start "${pstart}pragma icglue keep begin "
-            set block_end   "${pstart}pragma icglue keep end${pend}"
+        if {[string first "${cbegin}pragma icglue keep begin " $txt] >= 0} {
+            set block_start "${cbegin}pragma icglue keep begin "
+            set block_end   "${cbegin}pragma icglue keep end${cend}"
         } else {
-            set block_start "${pstart}icglue keep begin "
-            set block_end   "${pstart}icglue keep end${pend}"
+            set block_start "${cbegin}icglue keep begin "
+            set block_end   "${cbegin}icglue keep end${cend}"
         }
 
         while {[set i [string first $block_start $txt]] >= 0} {
             incr i [string length $block_start]
 
-            if {[set j [string first "${pend}" $txt $i]] < 0} {
+            if {[set j [string first $cend $txt $i]] < 0} {
                 error "No end of icglue keep comment"
             }
 
             set type [string range $txt $i [expr {$j - 1}]]
-            set txt [string range $txt [expr {$j + 3}] end]
+            set txt [string range $txt [expr {$j + [string length $cend]}] end]
 
             if {[set i [string first $block_end $txt]] < 0} {
                 error "No end of block after keep block begin - pragma type was ${type}"
@@ -805,16 +805,16 @@ namespace eval ig::templates {
     # @return Content of specified block previously parsed or default_content.
     proc get_keep_block_content {block_data block_entry block_subentry {filesuffix ".v"} {default_content {}}} {
         set result {}
-        lassign [comment_begin_end $filesuffix] pstart pend
+        lassign [comment_begin_end $filesuffix] cbegin cend
 
-        append result "${pstart}icglue ${block_entry} begin ${block_subentry}${pend}"
+        append result "${cbegin}icglue ${block_entry} begin ${block_subentry}${cend}"
         set idx [lsearch -index 1 [lsearch -inline -all -index 0 $block_data $block_entry] $block_subentry]
         if {$idx >= 0} {
             append result [lindex $block_data $idx 2]
         } else {
             append result ${default_content}
         }
-        append result "${pstart}icglue ${block_entry} end${pend}"
+        append result "${cbegin}icglue ${block_entry} end${cend}"
     }
 
     # template parse cache
