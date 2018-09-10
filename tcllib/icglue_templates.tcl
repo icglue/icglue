@@ -544,6 +544,7 @@ namespace eval ig::templates {
 
     ## @brief Parse a template.
     # @param txt Template as a single String.
+    # @param filename Name of template file for error logging.
     # @return Tcl-Code generated from template as a single String.
     #
     # The template method is copied/modified to fit here from
@@ -551,105 +552,122 @@ namespace eval ig::templates {
     #
     # The resulting Tcl Code will write the generated output to a variable @c _res
     # when evaluated.
-    proc parse_template {txt} {
-        set code "set _res {}\n"
-        set code "set _linenr 1\n"
-        set linenr 1
+    proc parse_template {txt {filename {}}} {
+        set code  "set _res {}\n"
+        set stack [list [list $filename 1 $txt]]
 
-        # search  delimiter -- \x5b is open square bracket
-        while {[regexp -indices {<(%|\x5b)([+-])?} $txt indices m_type m_chomp]} {
-            lassign $indices i_delim_start i_delim_end
+        while {[llength $stack] > 0} {
+            lassign [lindex $stack end] filename linenr txt
+            set stack [lreplace $stack end end]
 
-            # include tag
-            set incltag 0
-
-            set opening_char [string index $txt [lindex $m_type 0]]
-            if {$opening_char eq "%"} {
-                set closing_delim "%>"
-            } else {
-                # \x5d is close square bracket
-                set closing_delim "\x5d>"
-            }
-
-            # check for right chomp
-            set right_i [expr {$i_delim_start - 1}]
-
-
-            set i [expr {$i_delim_end + 1}]
-            if {([string index $txt [lindex $m_chomp 0]] eq "-") && ([string index $txt $right_i] eq "\n")} {
-                incr right_i -1
-            }
-
-            # append verbatim/normal template content (tcl-list)
-            incr linenr [ig::aux::string_count_nl [string range $txt 0 [expr {$i-1}]]]
+            append code "set _filename [list $filename]\n"
             append code "set _linenr $linenr\n"
-            append code "append _res [list [string range $txt 0 $right_i]]\n"
-            set txt [string range $txt $i end]
 
-            if {$closing_delim eq "%>"} {
-                if {[string index $txt 0] eq "="} {
-                # <%= will be be append, but evaluated as tcl-argument
-                    append code "append _res "
-                    set txt [string range $txt 1 end]
-                } elseif {[string index $txt 0] eq "I"} {
-                # <%I will be included here
-                    set incltag 1
-                    set txt [string range $txt 1 end]
+            # search  delimiter -- \x5b is open square bracket
+            while {[regexp -indices {<(%|\x5b)([+-])?} $txt indices m_type m_chomp]} {
+                lassign $indices i_delim_start i_delim_end
+
+                # include tag
+                set incltag 0
+
+                set opening_char [string index $txt [lindex $m_type 0]]
+                if {$opening_char eq "%"} {
+                    set closing_delim "%>"
                 } else {
-                # append as tcl code
+                    # \x5d is close square bracket
+                    set closing_delim "\x5d>"
                 }
-            } else {
-                # closing delimiter is closing square bracket
-                append code "append _res \[ "
-            }
 
-            # search ${closing_delim} delimiter
-            if {[set i [string first $closing_delim $txt]] == -1} {
-                error "No matching $closing_delim"
-            }
-            set left_i [expr {$i + 2}]
-            incr i -1
-            # check for left chomp
-            if {[string match {[-+]} [string index $txt $i]]} {
-                if {([string index $txt $i] eq "-") && ([string index $txt $left_i] eq "\n")} {
-                    incr left_i
+                # check for right chomp
+                set right_i [expr {$i_delim_start - 1}]
+
+
+                set i [expr {$i_delim_end + 1}]
+                if {([string index $txt [lindex $m_chomp 0]] eq "-") && ([string index $txt $right_i] eq "\n")} {
+                    incr right_i -1
                 }
-                incr i -1
-            }
 
-            # include tag / code
-            incr linenr [ig::aux::string_count_nl [string range $txt 0 [expr {$left_i-1}]]]
+                # append verbatim/normal template content (tcl-list)
+                incr linenr [ig::aux::string_count_nl [string range $txt 0 [expr {$i-1}]]]
+                append code "set _linenr $linenr\n"
+                append code "append _res [list [string range $txt 0 $right_i]]\n"
+                set txt [string range $txt $i end]
 
-            if {$incltag} {
-                set incfname [eval "file join \${current::template_dir} [string range $txt 0 $i]"]
-                ig::log -info -id TPrs "...parsing included template $incfname"
-                set incfile [open $incfname "r"]
-                set inccontent [read $incfile]
-                close $incfile
-                incr linenr [expr {-[ig::aux::string_count_nl $inccontent]}]
-                set txt [string cat $inccontent [string range $txt $left_i end]]
-            } else {
                 if {$closing_delim eq "%>"} {
-                    append code "[string range $txt 0 $i] \n"
+                    if {[string index $txt 0] eq "="} {
+                    # <%= will be be append, but evaluated as tcl-argument
+                        append code "append _res "
+                        set txt [string range $txt 1 end]
+                    } elseif {[string index $txt 0] eq "I"} {
+                    # <%I will be included here
+                        set incltag 1
+                        set txt [string range $txt 1 end]
+                    } else {
+                    # append as tcl code
+                    }
                 } else {
                     # closing delimiter is closing square bracket
-                    append code "[string range $txt 0 $i] \]\n"
+                    append code "append _res \[ "
                 }
-                set txt [string range $txt $left_i end]
+
+                # search ${closing_delim} delimiter
+                if {[set i [string first $closing_delim $txt]] == -1} {
+                    error "No matching $closing_delim"
+                }
+                set left_i [expr {$i + 2}]
+                incr i -1
+                # check for left chomp
+                if {[string match {[-+]} [string index $txt $i]]} {
+                    if {([string index $txt $i] eq "-") && ([string index $txt $left_i] eq "\n")} {
+                        incr left_i
+                    }
+                    incr i -1
+                }
+
+                # include tag / code
+                incr linenr [ig::aux::string_count_nl [string range $txt 0 [expr {$left_i-1}]]]
+
+                if {$incltag} {
+                    set incfname [eval "file join \${current::template_dir} [string range $txt 0 $i]"]
+                    ig::log -info -id TPrs "...parsing included template $incfname"
+                    set incfile [open $incfname "r"]
+                    set inccontent [read $incfile]
+                    close $incfile
+
+                    lappend stack [list $filename $linenr [string range $txt $left_i end]]
+                    set linenr 1
+                    set filename $incfname
+                    set txt $inccontent
+
+                    # loop-check
+                    if {[lsearch -index 0 $stack $filename] >= 0} {
+                        error "template file $filename includes itself"
+                    }
+                } else {
+                    if {$closing_delim eq "%>"} {
+                        append code "[string range $txt 0 $i] \n"
+                    } else {
+                        # closing delimiter is closing square bracket
+                        append code "[string range $txt 0 $i] \]\n"
+                    }
+                    set txt [string range $txt $left_i end]
+                }
+                append code "set _filename [list $filename]\n"
+                append code "set _linenr $linenr\n"
             }
-            append code "set _linenr $linenr\n"
+
+            # append remainder of verbatim/normal template content
+            if {$txt ne ""} {
+                append code "append _res [list $txt]\n"
+            }
         }
 
-        # append remainder of verbatim/normal template content
-        if {$txt ne ""} {
-            append code "append _res [list $txt]\n"
-        }
         return $code
     }
 
     proc parse_template2 {txt} {
-        set code "set _res {}\n"
-        set code "set _linenr 1\n"
+        set    code "set _res {}\n"
+        append code "set _linenr 1\n"
         set linenr 1
 
         while {[regexp -expanded {
@@ -837,7 +855,7 @@ namespace eval ig::templates {
         set template_raw [read ${template_file}]
         close ${template_file}
 
-        set template_script [parse_template ${template_raw}]
+        set template_script [parse_template ${template_raw} ${template_filename}]
 
         lappend template_script_cache [list $fname_full $template_script]
 
@@ -889,7 +907,8 @@ namespace eval ig::templates {
             {    namespace import ::ig::templates::get_keep_block_content} \
             "    variable keep_block_data [list $block_data]" \
             {    variable _res {}} \
-            {    variable _linenr 1} \
+            {    variable _linenr 0} \
+            {    variable _filename {}} \
             {    variable _error {}} \
             "    variable obj_id [list $obj_id]" \
             "    if {\[catch {" \
@@ -900,14 +919,15 @@ namespace eval ig::templates {
             "\}" \
             ] "\n"]
 
-        set _res    ${_template_run::_res}
-        set _error  ${_template_run::_error}
-        set _linenr ${_template_run::_linenr}
+        set _res      ${_template_run::_res}
+        set _error    ${_template_run::_error}
+        set _linenr   ${_template_run::_linenr}
+        set _filename ${_template_run::_filename}
         namespace delete _template_run
 
         if {${_error} ne ""} {
             ig::log -error "Error while running template for object [ig::db::get_attribute -object ${obj_id} -attribute "name"] and output type ${type}\nstacktrace:\n${::errorInfo}"
-            ig::log -error "template ${_tt_name} somewhere after line ${_linenr}"
+            ig::log -error "template ${_filename} somewhere after line ${_linenr}"
         }
 
         file mkdir [file dirname ${_outf_name}]
