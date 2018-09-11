@@ -1,12 +1,6 @@
 # Todo-List
 
 ## general
-- documentation
-  - some markdown pages with explanations?
-    - how to write a template/template set
-    - how to write a construct script
-    - ...?
-    - minimal example that shows off most features (similar to initial SNG file)
 - add check (nagelfar shell script)
 
 ## lib
@@ -26,6 +20,7 @@
 
 ## templates
 - support module attributes (fpga)
+- codesections: selective adaption with checks (e.g. "assign signalname! = something;")
 - regfiles: support
   - trigger reg (different types: 1-0 trigger, toggle trigger, ...?)
   - sanity checker
@@ -36,5 +31,11 @@
 - allow multiple construction scripts?
 - add "nowriteout" function or similar? -> allows for construction with intermediate clean
 
-## docu
+## documentation
 - regfile / handshake direct connect
+- some markdown pages with explanations?
+  - how to write a construct script
+  - how to write a template/template set
+  - how the software is organized (for developers)
+  - ...?
+  - minimal example that shows off most features (similar to initial SNG file)
