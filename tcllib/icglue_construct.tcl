@@ -678,10 +678,11 @@ namespace eval ig {
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -a(dapt)                 </i></td><td>  adapt signal names                                                                        <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -noa(dapt)               </i></td><td>  do not adapt signal names                                                                 <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -a(dapt-)s(elective(ly)) </i></td><td>  selectively adapt signal names followed by "!"                                            <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -s(ubst)                 </i></td><td>  perform Tcl-variable substition of CODE argument, do not forget to escape, esp \[ and \]  <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -nos(ubst)               </i></td><td>  do not perform Tcl-variable substition of CODE argument                                   <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -v(erbatim)              </i></td><td>  alias for -noadapt and -nosubst                                                           <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -e((val)ulate)           </i></td><td>  perform Tcl substition of CODE argument, do not forget to escape                          <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -e(val(ulate))           </i></td><td>  perform Tcl substition of CODE argument, do not forget to escape                          <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -noi(dentfix)            </i></td><td>  do not fix the indent of the codeblock                                                    <br></td></tr>
     #
     #    </table>
