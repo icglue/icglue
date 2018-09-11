@@ -20,7 +20,6 @@
 
 ## templates
 - support module attributes (fpga)
-- codesections: selective adaption with checks (e.g. "assign signalname! = something;")
 - regfiles: support
   - trigger reg (different types: 1-0 trigger, toggle trigger, ...?)
   - sanity checker

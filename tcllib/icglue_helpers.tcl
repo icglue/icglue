@@ -492,10 +492,11 @@ namespace eval ig::aux {
     proc adapt_codesection {codesection} {
         set do_adapt [ig::db::get_attribute -object $codesection -attribute "adapt" -default "false"]
         set code [ig::db::get_attribute -object $codesection -attribute "code"]
-        if {!$do_adapt} {
+        if {[string is boolean $do_adapt] && (!$do_adapt)} {
             return $code
         }
 
+        # collect signals of module and replacement-name
         set parent_mod [ig::db::get_attribute -object $codesection -attribute "parent"]
         set signal_replace [list]
         #set t_start [clock microseconds]
@@ -514,15 +515,27 @@ namespace eval ig::aux {
             lappend signal_replace $i_rep
         }
 
+        # adapt signal-names
+        if {$do_adapt eq "selective"} {
+            set re {^(.*?)(\m[[:alnum:]_]+\M)\!(.*)$}
+            set selective "true"
+        } else {
+            set re {^(.*?)(\m[[:alnum:]_]+\M)(.*)$}
+            set selective "false"
+        }
+
         #set t_collect [clock microseconds]
         set code_out {}
         while {[string length $code] > 0} {
-            if {[regexp {^(.*?)(\m[[:alnum:]_]+\M)(.*)$} $code m_whole m_pre m_var m_post]} {
+            if {[regexp $re $code m_whole m_pre m_var m_post]} {
                 append code_out $m_pre
                 set    code     $m_post
                 set    idx      [lsearch -exact -index 0 $signal_replace $m_var]
                 if {$idx < 0} {
                     append code_out $m_var
+                    if {$selective} {
+                        ig::log -warn -id "TACAd" "selective adaption in codesection failed: signal \"$m_var\" not found in module \"[ig::db::get_attribute -object $parent_mod -attribute "name"]\""
+                    }
                 } else {
                     append code_out [lindex $signal_replace $idx 1]
                 }

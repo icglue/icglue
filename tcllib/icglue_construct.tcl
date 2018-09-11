@@ -705,13 +705,14 @@ namespace eval ig {
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
-                { {^-a(dapt)?$}        "const=true"  adapt          "adapt signal names"                                               } \
-                { {^-noa(dapt)?$}      "const=false" adapt          "do not adapt signal names"                                        } \
-                { {^-s(ubst)?$}        "const=true"  do_var_subst   "perform Tcl-variable substition of CODE argument (default)"       } \
-                { {^-nos(ubst)?$}      "const=false" do_var_subst   "do not perform Tcl-variable substition of CODE argument"          } \
-                { {^-v(erbatim)$}      "const=true"  verbatim       "alias for -noadapt and -nosubst"                                  } \
-                { {^-e((val)?ulate)?$} "const=true"  do_subst       "perform Tcl substition of CODE argument, do not forget to escape" } \
-                { {^-noi(dentfix)?$ }  "const=false" do_indent_fix  "do not fix the indent of the codeblock"                           } \
+                { {^-a(dapt)?$}                   "const=true"      adapt          "adapt signal names"                                               } \
+                { {^-noa(dapt)?$}                 "const=false"     adapt          "do not adapt signal names"                                        } \
+                { {^-a(dapt-)?s(elective(ly)?)?$} "const=selective" adapt          "selectively adapt signal names followed by \"!\""                 } \
+                { {^-s(ubst)?$}                   "const=true"      do_var_subst   "perform Tcl-variable substition of CODE argument (default)"       } \
+                { {^-nos(ubst)?$}                 "const=false"     do_var_subst   "do not perform Tcl-variable substition of CODE argument"          } \
+                { {^-v(erbatim)$}                 "const=true"      verbatim       "alias for -noadapt and -nosubst"                                  } \
+                { {^-e(val(ulate)?)?$}            "const=true"      do_subst       "perform Tcl substition of CODE argument, do not forget to escape" } \
+                { {^-noi(dentfix)?$ }             "const=false"     do_indent_fix  "do not fix the indent of the codeblock"                           } \
             ] -context "MODULENAME CODE" $args]
 
         # argument checks
