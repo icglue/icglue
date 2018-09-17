@@ -306,7 +306,9 @@
                 }
             %>
             <[pop_keep_block_content keep_block_data "keep" "fullcustom_reset_${entry(name)}" ".v" "\n[join $fc_reset_list "\n"]
-            "]><% } %>
+            "]><% } elseif {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} { %>
+            <[pop_keep_block_content keep_block_data "keep" "custom_reset_${entry(name)}" ".v" ""]><%
+            } %>
         end else begin
             if (<[rf_w_sel]> && <[rf_enable]>) begin
                 if (<[rf_addr]> == <[string trim [param]]>) begin<%
