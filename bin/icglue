@@ -84,7 +84,7 @@ proc additionalversion {} {
 
 proc printversion {} {
     puts [format \
-{ICGlue 1.0%s
+{ICGlue 2.0a1%s
 Copyright (C) 2017 Andreas Dixius, Felix Neumaerker
 
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
