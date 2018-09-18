@@ -80,6 +80,7 @@ $(PKGIDX): $(TCLSOURCES) $(LIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 updateversion:
 	$(VERSIONSCR) $(VERSION)
 	$(MAKE)
+	$(MAKE) man
 
 .PHONY: updateversion
 
