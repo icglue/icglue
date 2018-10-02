@@ -466,6 +466,7 @@ namespace eval ig::templates {
                     "code"           [ig::aux::adapt_codesection $i_code] \
                 ]
             }
+            set code_data [ig::aux::align_codesections $code_data]
             lappend result "code" $code_data
 
             # instances

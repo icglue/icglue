@@ -18,7 +18,6 @@
 - add instance-only command or check in M if already exists: sane values, instances only?
 - squash regfile
 - codesections:
-  - add some do-align property (e.g. align (multiple) codesection's content at '=' or '<=')
   - make adapt-selectively the default?
 
 ## templates

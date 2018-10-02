@@ -679,6 +679,7 @@ namespace eval ig {
     #      <tr><td><i> &ensp; &ensp; -a(dapt)                 </i></td><td>  adapt signal names                                                                        <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -noa(dapt)               </i></td><td>  do not adapt signal names                                                                 <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -a(dapt-)s(elective(ly)) </i></td><td>  selectively adapt signal names followed by "!"                                            <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -al(ign)                 </i></td><td>  align codesections at given string                                                        <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -s(ubst)                 </i></td><td>  perform Tcl-variable substition of CODE argument, do not forget to escape, esp \[ and \]  <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -nos(ubst)               </i></td><td>  do not perform Tcl-variable substition of CODE argument                                   <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -v(erbatim)              </i></td><td>  alias for -noadapt and -nosubst                                                           <br></td></tr>
@@ -693,6 +694,7 @@ namespace eval ig {
     proc C args {
         # defaults
         set adapt         "true"
+        set align         {}
         #TODO: review, if do_var_subst = true is a good choice here...
         #      -> what about $clog, $time, $strobe, $display, etc. -> not likely to be used compared to code generation with var's but still...
         set do_var_subst  "true"
@@ -709,6 +711,7 @@ namespace eval ig {
                 { {^-a(dapt)?$}                   "const=true"      adapt          "adapt signal names"                                               } \
                 { {^-noa(dapt)?$}                 "const=false"     adapt          "do not adapt signal names"                                        } \
                 { {^-a(dapt-)?s(elective(ly)?)?$} "const=selective" adapt          "selectively adapt signal names followed by \"!\""                 } \
+                { {^-al(ign)?$}                   "string"          align          "align codesections at given string"                               } \
                 { {^-s(ubst)?$}                   "const=true"      do_var_subst   "perform Tcl-variable substition of CODE argument (default)"       } \
                 { {^-nos(ubst)?$}                 "const=false"     do_var_subst   "do not perform Tcl-variable substition of CODE argument"          } \
                 { {^-v(erbatim)$}                 "const=true"      verbatim       "alias for -noadapt and -nosubst"                                  } \
@@ -768,6 +771,7 @@ namespace eval ig {
             set cid [ig::db::add_codesection -parent-module [ig::db::get_modules -name $modname] -code $code]
 
             ig::db::set_attribute -object $cid -attribute "adapt" -value $adapt
+            ig::db::set_attribute -object $cid -attribute "align" -value $align
         } emsg]} {
             log -error -abort "C (module ${modname}): error while creating codesection:\n${emsg}"
         }

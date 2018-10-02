@@ -551,6 +551,56 @@ namespace eval ig::aux {
         return $code_out
     }
 
+    ## @brief Align dict of preprocessed codesection-data.
+    #
+    # @param cslist List of codesection dicts of form {name <name> object <obj-id> code_raw <code> code <adapted code>}
+    #
+    # @return modified cslist
+    proc align_codesections {cslist} {
+        set istart 0
+        set csllen [llength $cslist]
+
+        while {$istart < $csllen} {
+            set align [ig::db::get_attribute -object [dict get [lindex $cslist $istart] object] -attribute "align" -default {}]
+            if {$align eq {}} {
+                incr istart
+                continue
+            }
+            for {set istop [expr {$istart + 1}]} {$istop < $csllen} {incr istop} {
+                set align_s [ig::db::get_attribute -object [dict get [lindex $cslist $istop] object] -attribute "align" -default {}]
+                if {$align ne $align_s} {
+                    break
+                }
+            }
+
+            set midx 0
+            for {set i $istart} {$i < $istop} {incr i} {
+                set code [dict get [lindex $cslist $i] "code"]
+                foreach l [split $code "\n"] {
+                    set midx [expr {max ($midx, [string first $align $l])}]
+                }
+            }
+
+            for {set i $istart} {$i < $istop} {incr i} {
+                set code [dict get [lindex $cslist $i] "code"]
+                set ll {}
+                foreach l [split $code "\n"] {
+                    set sidx [string first $align $l]
+                    if {$sidx < 0} {
+                        lappend ll $l
+                    } else {
+                        lappend ll [format "%-*s%s" $midx [string range $l 0 [expr {$sidx - 1}]] [string range $l $sidx end]]
+                    }
+                }
+                lset cslist $i [dict replace [lindex $cslist $i] "code" [join $ll "\n"]]
+            }
+
+            set istart $istop
+        }
+
+        return $cslist
+    }
+
     ## @brief Adapt a signalname in given module to the local signal name.
     #
     # @param signalname Name of the signal to check.
