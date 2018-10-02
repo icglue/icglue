@@ -35,4 +35,4 @@
 %>
 
 endmodule
-<%- # vim: set filetype=verilog_template: -%>
+<%+ # vim: set filetype=verilog_template: -%>
