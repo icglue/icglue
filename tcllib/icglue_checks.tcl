@@ -43,7 +43,9 @@ namespace eval ig::checks {
             "name"    [ig::db::get_attribute -object $regfile_id -attribute "name"] \
             "entries" [ig::templates::preprocess::regfile_to_arraylist $regfile_id] \
         ]
+
         check_regfile_addresses $rfdata
+        check_regfile_entrybits $rfdata
     }
 
     ## @brief Run regfile entry address check.
@@ -52,6 +54,9 @@ namespace eval ig::checks {
         set rfname  [dict get $regfile_data "name"]
         set entries [dict get $regfile_data "entries"]
         set addr_list [list]
+
+        # currently assume 32bit aligned - extend to allow other addressing if supported ...
+        set alignment 4
 
         foreach i_entry $entries {
             set name    [dict get $i_entry "name"]
@@ -65,10 +70,34 @@ namespace eval ig::checks {
                 continue
             }
 
-            # add to list (currently assume 32bit aligned - extend to allow other addressing if supported ...)
-            for {set i 0} {$i < 4} {incr i} {
-                set iaddr [expr {int($address / 4) * 4 + $i}]
+            # add to list
+            for {set i 0} {$i < $alignment} {incr i} {
+                set iaddr [expr {int($address / $alignment) * $alignment + $i}]
                 lappend addr_list [list $iaddr $name]
+            }
+        }
+    }
+
+    ## @brief Run regfile entry bit check.
+    # @param regfile_data preprocessed data of regfile to check.
+    proc check_regfile_entrybits {regfile_data} {
+        set rfname  [dict get $regfile_data "name"]
+        set entries [dict get $regfile_data "entries"]
+
+        # assume 32 bit regs - change if other widths supported
+        set wordsize 32
+
+        foreach i_entry $entries {
+            set ename [dict get $i_entry "name"]
+            set regs  [dict get $i_entry "regs"]
+
+            foreach i_reg $regs {
+                set rname [dict get $i_reg "name"]
+                set bhigh [dict get $i_reg "bit_high"]
+
+                if {$bhigh >= $wordsize} {
+                    ig::log -warn -id "ChkRS" "register \"${rname}\" in entry \"${ename}\" exceeds wordsize of ${wordsize} (MSB = ${bhigh}, regfile ${rfname})"
+                }
             }
         }
     }
