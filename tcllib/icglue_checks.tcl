@@ -91,12 +91,28 @@ namespace eval ig::checks {
             set ename [dict get $i_entry "name"]
             set regs  [dict get $i_entry "regs"]
 
+            set bit_list [list]
+
             foreach i_reg $regs {
                 set rname [dict get $i_reg "name"]
-                set bhigh [dict get $i_reg "bit_high"]
+                set blow  [expr {int([dict get $i_reg "bit_low"])}]
+                set bhigh [expr {int([dict get $i_reg "bit_high"])}]
 
                 if {$bhigh >= $wordsize} {
-                    ig::log -warn -id "ChkRS" "register \"${rname}\" in entry \"${ename}\" exceeds wordsize of ${wordsize} (MSB = ${bhigh}, regfile ${rfname})"
+                    ig::log -warn -id "ChkRB" "register \"${rname}\" in entry \"${ename}\" exceeds wordsize of ${wordsize} (MSB = ${bhigh}, regfile ${rfname})"
+                }
+
+                for {set i $blow} {$i <= $bhigh} {incr i} {
+                    # check if existing
+                    set idx [lsearch -integer -index 0 $bit_list $i]
+                    if {$idx >= 0} {
+                        lassign [lindex $bit_list $idx] o_bit o_name
+                        ig::log -warn -id "ChkRB" "registers \"${rname}\" and \"${o_name}\" in entry \"${ename}\" overlap at bit ${i} (regfile ${rfname})"
+                        continue
+                    }
+
+                    # add to list
+                    lappend bit_list [list $i $rname]
                 }
             }
         }
