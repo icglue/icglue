@@ -39,19 +39,23 @@ namespace eval ig::checks {
     ## @brief Run sanity/consistency checks for given regfile.
     # @param regfile_id Object-ID of regfile to check.
     proc check_regfile {regfile_id} {
-        check_regfile_addresses $regfile_id
+        set rfdata [list \
+            "name"    [ig::db::get_attribute -object $regfile_id -attribute "name"] \
+            "entries" [ig::templates::preprocess::regfile_to_arraylist $regfile_id] \
+        ]
+        check_regfile_addresses $rfdata
     }
 
     ## @brief Run regfile entry address check.
-    # @param regfile_id Object-ID of regfile to check.
-    proc check_regfile_addresses {regfile_id} {
-        set rfname  [ig::db::get_attribute -object $regfile_id -attribute "name"]
-        set entries [ig::db::get_regfile_entries -all -of $regfile_id]
+    # @param regfile_data preprocessed data of regfile to check.
+    proc check_regfile_addresses {regfile_data} {
+        set rfname  [dict get $regfile_data "name"]
+        set entries [dict get $regfile_data "entries"]
         set addr_list [list]
 
         foreach i_entry $entries {
-            set name    [ig::db::get_attribute -object $i_entry -attribute "name"]
-            set address [ig::db::get_attribute -object $i_entry -attribute "address"]
+            set name    [dict get $i_entry "name"]
+            set address [dict get $i_entry "address"]
 
             # check if existing
             set idx [lsearch -integer -index 0 $addr_list [expr {int($address)}]]
