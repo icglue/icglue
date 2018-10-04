@@ -167,13 +167,15 @@ namespace eval ig::templates {
             # collect all regfile entries, sort by address
             set entries [ig::db::get_regfile_entries -all -of $regfile_id]
             set entry_list {}
+            set wordsize 32
+
             foreach i_entry $entries {
                 set reg_list {}
                 set regs [ig::db::get_regfile_regs -all -of $i_entry]
                 set next_bit 0
 
                 try {
-                #entry_default_map {name width entrybits type reset signal signalbits}
+                    #entry_default_map {name width entrybits type reset signal signalbits}
                     foreach i_reg $regs {
                         set name       [ig::db::get_attribute -object $i_reg -attribute "name"]
                         set width      [ig::db::get_attribute -object $i_reg -attribute "rf_width"      -default -1]
@@ -186,8 +188,8 @@ namespace eval ig::templates {
 
                         if {$width < 0} {
                             if {$entrybits eq ""} {
-                                set width 32
-                                set entrybits "31:0"
+                                set width $wordsize
+                                set entrybits "[expr {$wordsize - 1}]:0"
                             } else {
                                 set blist [split $entrybits ":"]
                                 if {[llength $blist] == 1} {
@@ -257,8 +259,8 @@ namespace eval ig::templates {
 
                         set idx_start $i_bit_high
                     }
-                    if {$idx_start < 31} {
-                        set tmp_high 31
+                    if {$idx_start < $wordsize - 1} {
+                        set tmp_high [expr {$wordsize - 1}]
                         set tmp_low  [expr {$idx_start + 1}]
                         lappend reg_list [list \
                             "name"       "-" \

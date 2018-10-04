@@ -903,6 +903,7 @@ namespace eval ig {
             set i_md [ig::aux::get_regfile_modid $regfilename]
 
             set regfiles [ig::db::get_regfiles -of $i_md]
+            set alignment 4
             if {[llength $regfiles] > 0} {
                 set regfile_id [lindex $regfiles 0]
                 set rf_module_name [ig::db::get_attribute -obj $i_md -attribute "name"]
@@ -1042,7 +1043,7 @@ namespace eval ig {
                     ig::log -info -id "RCon" "$connect_cmd"
                 }
             }
-            ig::aux::regfile_next_addr $i_md [format "0x%04X" [expr {$address+4}]]
+            ig::aux::regfile_next_addr $i_md [format "0x%04X" [expr {$address + $alignment}]]
         } emsg]} {
             log -error -abort "R (regfile-entry ${entryname}): error while creating regfile-entry:\n${emsg}"
         }
