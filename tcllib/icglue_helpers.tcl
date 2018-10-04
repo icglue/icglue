@@ -553,7 +553,7 @@ namespace eval ig::aux {
 
     ## @brief Align dict of preprocessed codesection-data.
     #
-    # @param cslist List of codesection dicts of form {name <name> object <obj-id> code_raw <code> code <adapted code>}
+    # @param cslist List of codesection dicts of form {name \<name\> object \<obj-id\> code_raw \<code\> code \<adapted code\>}
     #
     # @return modified cslist
     proc align_codesections {cslist} {
