@@ -63,7 +63,7 @@ namespace eval ig::checks {
             set address [dict get $i_entry "address"]
 
             # check if existing
-            set idx [lsearch -integer -index 0 $addr_list [expr {int($address)}]]
+            set idx [lsearch -exact -integer -index 0 $addr_list $address]
             if {$idx >= 0} {
                 lassign [lindex $addr_list $idx] o_address o_name
                 ig::log -warn -id "ChkRA" "regfile entries \"${o_name}\" and \"${name}\" overlap at address [format "0x%08x" $address] (regfile ${rfname})"
@@ -95,8 +95,8 @@ namespace eval ig::checks {
 
             foreach i_reg $regs {
                 set rname [dict get $i_reg "name"]
-                set blow  [expr {int([dict get $i_reg "bit_low"])}]
-                set bhigh [expr {int([dict get $i_reg "bit_high"])}]
+                set blow  [dict get $i_reg "bit_low"]
+                set bhigh [dict get $i_reg "bit_high"]
 
                 if {$bhigh >= $wordsize} {
                     ig::log -warn -id "ChkRB" "register \"${rname}\" in entry \"${ename}\" exceeds wordsize of ${wordsize} (MSB = ${bhigh}, regfile ${rfname})"
@@ -104,7 +104,7 @@ namespace eval ig::checks {
 
                 for {set i $blow} {$i <= $bhigh} {incr i} {
                     # check if existing
-                    set idx [lsearch -integer -index 0 $bit_list $i]
+                    set idx [lsearch -exact -integer -index 0 $bit_list $i]
                     if {$idx >= 0} {
                         lassign [lindex $bit_list $idx] o_bit o_name
                         ig::log -warn -id "ChkRB" "registers \"${rname}\" and \"${o_name}\" in entry \"${ename}\" overlap at bit ${i} (regfile ${rfname})"
