@@ -241,9 +241,9 @@ proc main {} {
 
     # generate modules with template
     foreach i_module [ig::db::get_modules -all] {
+        ig::checks::check_object $i_module
         if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
             ig::log -info "generating module $i_module"
-            ig::checks::check_object $i_module
             ig::templates::write_object_all $i_module
         }
         if {![catch {ig::db::get_regfiles -all -of $i_module} regfiles]} {

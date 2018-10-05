@@ -30,8 +30,62 @@ namespace eval ig::checks {
             "regfile" {
                 check_regfile $obj_id
             }
+            "module" {
+                if {[ig::db::get_attribute -object $obj_id -attribute "resource"]} {
+                    check_resource_module $obj_id
+                } else {
+                    return
+                }
+            }
             default {
                 return
+            }
+        }
+    }
+
+    ## @brief Run sanity/consistency checks for given resource module.
+    # @param module_id Object-ID of module to check.
+    proc check_resource_module {module_id} {
+        check_resource_module_port_consistency $module_id
+    }
+
+    ## @brief Run instance port consistency check for given resource module.
+    # @param module_id Object-ID of module to check.
+    proc check_resource_module_port_consistency {module_id} {
+        set mname [ig::db::get_attribute -object $module_id -attribute "name"]
+        set inst_list [list]
+        foreach i_inst [ig::db::get_instances -all] {
+            if {[ig::db::get_attribute -object $i_inst -attribute "module"] eq $module_id} {
+                lappend inst_list $i_inst
+            }
+        }
+        if {[llength $inst_list] <= 1} {return}
+
+        set ilist [list]
+        set pildict [dict create]
+
+        foreach i_inst $inst_list {
+            set iname [ig::db::get_attribute -object $i_inst -attribute "name"]
+            lappend ilist $iname
+
+            foreach i_pin [ig::db::get_pins -of $i_inst] {
+                set pname [ig::db::get_attribute -object $i_pin -attribute "name"]
+                dict lappend pildict $pname $iname
+            }
+        }
+
+        foreach pin [dict keys $pildict] {
+            set pilist [dict get $pildict $pin]
+            if {$pilist ne $ilist} {
+                set nulist [list]
+                foreach ii $ilist {
+                    if {[lsearch -exact $pilist $ii] < 0} {
+                        lappend nulist $ii
+                    }
+                }
+                if {[llength $pilist] > 1} {set pis "s"} else {set pis ""}
+                if {[llength $nulist] > 1} {set nus "s"} else {set nus ""}
+                ig::log -warn -id "ChkIP" "Port \"${pin}\" of resource module \"${mname}\" connected in instance${pis} \"[join $pilist "\", \""]\" but missing in instance${nus} \"[join $nulist "\", \""]\"."
             }
         }
     }
