@@ -666,7 +666,7 @@ namespace eval ig::aux {
         return $i_md
     }
 
-    ## @brief Get/Set implicit regfile address 
+    ## @brief Get/Set implicit regfile address
     #
     # @param rfmodid regfile module id
     # @param args    optional value of address to be set
