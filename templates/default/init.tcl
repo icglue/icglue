@@ -5,7 +5,8 @@
 init::output_types $template {
     set objtype [ig::db::get_attribute -object $object -attribute "type"]
     if {$objtype eq "module"} {
-        return {verilog}
+        set lang [ig::db::get_attribute -object $object -attribute "language"]
+        return $lang
     } elseif {$objtype eq "regfile"} {
         return {csv txt tex html h c}
     } else {
@@ -20,6 +21,8 @@ init::template_file $template {
     if {$objtype eq "module"} {
         if {$type eq "verilog"} {
             return "${template_dir}/module.template.v"
+        } elseif {$type eq "systemverilog"} {
+            return "${template_dir}/module.template.sv"
         } else {
             ig::log -error -abort "No template available for objecttype/outputtype ${objtype}/${type}"
         }
