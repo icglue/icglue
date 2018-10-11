@@ -420,6 +420,10 @@ namespace eval ig::templates {
             # ports
             set port_data {}
             foreach i_port [ig::db::get_ports -of $module_id] {
+                set dimension_bitrange ""
+                foreach dimension [ig::db::get_attribute -object $i_port -attribute "dimension"] {
+                    append dimension_bitrange [ig::vlog::bitrange $dimension]
+                }
                 lappend port_data [list \
                     "name"           [ig::db::get_attribute -object $i_port -attribute "name"] \
                     "object"         $i_port \
@@ -427,6 +431,7 @@ namespace eval ig::templates {
                     "vlog.bitrange"  [ig::vlog::obj_bitrange $i_port] \
                     "direction"      [ig::db::get_attribute -object $i_port -attribute "direction"] \
                     "vlog.direction" [ig::vlog::port_dir $i_port] \
+                    "dimension"      $dimension_bitrange \
                 ]
             }
             lappend result "ports" $port_data
@@ -447,6 +452,10 @@ namespace eval ig::templates {
             # delarations
             set decl_data {}
             foreach i_decl [ig::db::get_declarations -of $module_id] {
+                set dimension_bitrange ""
+                foreach dimension [ig::db::get_attribute -object $i_decl -attribute "dimension"] {
+                    append dimension_bitrange [ig::vlog::bitrange $dimension]
+                }
                 lappend decl_data [list \
                     "name"           [ig::db::get_attribute -object $i_decl -attribute "name"] \
                     "object"         $i_decl \
@@ -454,6 +463,7 @@ namespace eval ig::templates {
                     "vlog.bitrange"  [ig::vlog::obj_bitrange $i_decl] \
                     "defaulttype"    [ig::db::get_attribute -object $i_decl -attribute "default_type"] \
                     "vlog.type"      [ig::vlog::declaration_type $i_decl] \
+                    "dimension"      $dimension_bitrange \
                 ]
             }
             lappend result "declarations" $decl_data

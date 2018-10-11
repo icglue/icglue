@@ -502,11 +502,13 @@ namespace eval ig {
         set bidir        "false"
         set invert       {}
         set resource_pin "false"
+        set dimension    {}
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list                                                                      \
                 { {^-w(idth)?(=)?}         "string"      width        "set signal width" }                            \
                 { {^(-v(alue)?(=|$)|=)}    "string"      value        "assign value to signal" }                      \
+                { {^-d(imension)?(=)?}     "string"      dimension    "multi-dimensional SV ports" }                  \
                 { {^-b(idir(ectional)?)?$} "const=true"  bidir        "bidirectional connection"}                     \
                 { {^<->$}                  "const=true"  bidir        "bidirectional connection"}                     \
                 { {^-(-)?>$}               "const=false" invert       "first element is interpreted as input source"} \
@@ -591,6 +593,10 @@ namespace eval ig {
             } else {
                 set con_right_e [construct::expand_instances $con_right "true" "true"]
                 set retval [ig::db::connect -from {*}$con_left_e -to $con_right_e -signal-name $name -signal-size $width]
+            }
+
+            foreach obj $retval {
+                ig::db::set_attribute -object $obj -attribute "dimension" -value $dimension
             }
 
             if {$value ne ""} {
