@@ -34,6 +34,7 @@ namespace eval ig::checks {
                 if {[ig::db::get_attribute -object $obj_id -attribute "resource"]} {
                     check_resource_module $obj_id
                 } else {
+                    check_module $obj_id
                     return
                 }
             }
@@ -88,6 +89,35 @@ namespace eval ig::checks {
                 ig::log -warn -id "ChkIP" "Port \"${pin}\" of resource module \"${mname}\" connected in instance${pis} \"[join $pilist "\", \""]\" but missing in instance${nus} \"[join $nulist "\", \""]\"."
             }
         }
+    }
+
+    ## @brief Run sanity/consistency checks for given module.
+    # @param module_id Object-ID of module to check.
+    proc check_module {module_id} {
+        check_multi_dimensional_port_lang $module_id
+    }
+
+    # warn if the language does not support multidimensional ports
+    # assume that only SystemVerilog supports it
+    proc check_multi_dimensional_port_lang {module_id} {
+        set mname [ig::db::get_attribute -object $module_id -attribute "name"]
+        set lang  [ig::db::get_attribute -object $module_id -attribute "language"]
+        if {$lang ne "systemverilog"} {
+            foreach i_port [ig::db::get_ports -of $module_id] {
+                set dimension [ig::db::get_attribute -object $i_port -attribute "dimension"]
+                if {[llength $dimension] ne 0} {
+                    ig::log -warn -id "ChkMD" "Port \"${i_port}\" in module \"${mname}\" has dimension \"${dimension}\". This is not supported in \"${lang}\"."
+                }
+            }
+            foreach i_decl [ig::db::get_declarations -of $module_id] {
+                set dimension [ig::db::get_attribute -object $i_decl -attribute "dimension"]
+                if {[llength $dimension] ne 0} {
+                    ig::log -warn -id "ChkMD" "Declarations \"${i_decl}\" in module \"${mname}\" has dimension \"${dimension}\". This is not supported in \"${lang}\"."
+                }
+            }
+
+        }
+
     }
 
     ## @brief Run sanity/consistency checks for given regfile.
