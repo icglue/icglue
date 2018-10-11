@@ -1,0 +1,18 @@
+#!/usr/bin/env icglue
+
+# tcl-script with icglue commands-extensions
+# set syntax tcl !! (or icglueconstruct)
+
+# show case multidimensional ports
+
+M -unit "multidimensional" -tree {
+    tb_multidimensional            (tb,sv)
+    ----multidimensional_wrap      (rtl,v)
+    --------multidimensional_top   (rtl,sv)
+}
+
+S "simple_signal" -w 12       tb_multidimensional --> multidimensional_top
+
+S "2d_signal" -w 8 -d 4       tb_multidimensional --> multidimensional_top
+
+S "3d_signal" -w 4 -d "9 14"  tb_multidimensional --> multidimensional_top
