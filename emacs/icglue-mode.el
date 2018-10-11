@@ -27,7 +27,7 @@
         (".*\#.*\\|//.*$"                        . font-lock-comment-face)
         ("^ *M \\|^ *P \\|^ *S \\|^ *C \\|^ *R " . font-lock-type-face)
         ("-+>\\|<-+>\\|<-+"                      . font-lock-function-name-face)
-        ("-w\\|-v\\|-unit\\|-tree"               . font-lock-keyword-face)
+        ("-w\\|-v\\|-d\\|-unit\\|-tree"          . font-lock-keyword-face)
         )
       ;; "Keywords for ICGlue"
        )
