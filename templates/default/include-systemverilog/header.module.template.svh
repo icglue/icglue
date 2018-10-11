@@ -24,15 +24,6 @@
 "] -%>
 
 module <%=$mod_data(name)%> (
-<%-
-    ###########################################
-    ## <module port list>
-    foreach_array_preamble_epilog_join port $mod_data(ports) {%><%="\n"%><% } { -%>
-        <%=$port(name)%><% } { -%>,<%="\n"%><% } { %>
-    <% } %>);<%
-    ## </module port list>
-    ###########################################
-%>
 <%
     ###########################################
     ## <parameters>
@@ -46,11 +37,12 @@ module <%=$mod_data(name)%> (
     ###########################################
     ## <port declaration>
     foreach_array_preamble port $mod_data(ports) { -%><%="\n"%><% } { -%>
-    <[format "%-${port_data_maxlen_dir}s %${port_data_maxlen_range}s %s - %s;\n" $port(vlog.direction) $port(vlog.bitrange) $port(name) $port(dimension)]><% }
+    <[format "%-${port_data_maxlen_dir}s %${port_data_maxlen_range}s %s %s;\n" $port(vlog.direction) $port(vlog.bitrange) $port(name) $port(dimension)]><% }
     ## </port declaration>
     ###########################################
-%>
-<%-
+%>);
+
+<%
     ###########################################
     ## <signal declaration>
     foreach_array_preamble decl $mod_data(declarations) { %><%="\n\n"%><% } { -%>
