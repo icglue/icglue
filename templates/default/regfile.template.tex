@@ -9,7 +9,6 @@
 
 %><%
 
-
 ########################################################################
     proc tex_escape {string_in} {
         set string_out $string_in
@@ -247,9 +246,11 @@ foreach_array reg $register_list {
 % register diagram
 <%  foreach_array reg $register_list {
         %><%= "\{" $rf_name  ":" $reg(name) ".diag\}\{\%\n"%><%
-        %>   \begin{register}{H}{<%=[tex_escape $reg(name)]%>}{<[format "0x%08x" [tex_escape $reg(address)]]><%= "\}%\n" %><%
+
+        %>   \begin{register}{H}{<%=[tex_escape $reg(name) ]%>}{<[format "0x%08x" [tex_escape $reg(address)]]><%= "\}%\n" %><%
         %>    \label{reg_<%=$rf_name "_" $reg(name)%>}<%="%\n"%><%
-        foreach_array sreg [lreverse $reg(regs)] {
+        foreach_array sreg [ lreverse $reg(regs) ] {
+
             if {[regexp -nocase {\-} $sreg(name)]} {
                 %>    \getReg{<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" ".diag\}\%\n" %><%
             } else {
@@ -264,6 +265,7 @@ foreach_array reg $register_list {
 % register diagram contend
 <%  foreach_array reg $register_list {
     foreach_array sreg [lreverse $reg(regs)]  {
+
         if {[regexp -nocase {\-} $sreg(name)]} {
             %><%= "\{" $rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" ".diag\}\{" %><%
         } else {
@@ -286,7 +288,9 @@ foreach_array reg $register_list {
         %><%= "\{" $rf_name  ":" $reg(name) ".comment\}\{\%\n" %><%
         %>    \noindent <%= "\%\n" %><%
         %>    \begin{tabularx}{\textwidth}{llX}<%= "\%\n" %><%
+
         foreach_array sreg [lreverse $reg(regs)] {
+
             if {[regexp -nocase {\-} $sreg(name)]} {
                 %><%
             } else {
@@ -299,3 +303,4 @@ foreach_array reg $register_list {
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %    }
 %}
+
