@@ -11,23 +11,17 @@
 
 
 ########################################################################
-    proc get_padding_size { width string } {
-        set string_length [string length $string]
-        set padding       [expr {$width - $string_length} ]
-        return $padding
-    }
-
     proc tex_escape {string_in} {
         set string_out $string_in
-        set string_out [string map [list "\_" "\\_" ] $string_out]
-        set string_out [string map [list "\&" "\\&" ] $string_out]
-        set string_out [string map [list "\%" "\\%" ] $string_out]
-        set string_out [string map [list "\|" "\\|" ] $string_out]
+        set string_out [string map [list "\_" "\\_"]  $string_out]
+        set string_out [string map [list "\&" "\\&"]  $string_out]
+        set string_out [string map [list "\%" "\\%"]  $string_out]
+        set string_out [string map [list "\|" "\\|"]  $string_out]
         set string_out [string map [list "\{" "\\\{"] $string_out]
         set string_out [string map [list "\}" "\\\}"] $string_out]
-        set string_out [string map [list "\^" "\\^" ] $string_out]
-        set string_out [string map [list "\#" "\\#" ] $string_out]
-        set string_out [string map [list "\~" "\\~" ] $string_out]
+        set string_out [string map [list "\^" "\\^"]  $string_out]
+        set string_out [string map [list "\#" "\\#"]  $string_out]
+        set string_out [string map [list "\~" "\\~"]  $string_out]
         return $string_out
     }
 
@@ -157,15 +151,15 @@
 
     foreach_array register $register_list {
         foreach_array sreg $register(regs) {
-            set len_max_tmp(0)  [max_array_entry_len_tex $register_list  name      ]
-            set len_max_tmp(1)  [max_array_entry_len_tex $register_list  address   ]
-            set len_max_tmp(2)  [max_array_entry_len_tex $register(regs) name      ]
-            set len_max_tmp(3)  [max_array_entry_len_tex $register(regs) width     ]
-            #set len_max_tmp(4)  [max_array_entry_len_tex $register(regs) type      ]
+            set len_max_tmp(0)  [max_array_entry_len_tex $register_list  name]
+            set len_max_tmp(1)  [max_array_entry_len_tex $register_list  address]
+            set len_max_tmp(2)  [max_array_entry_len_tex $register(regs) name]
+            set len_max_tmp(3)  [max_array_entry_len_tex $register(regs) width]
+            #set len_max_tmp(4)  [max_array_entry_len_tex $register(regs) type]
             set len_max_tmp(4)  2
-            set len_max_tmp(5)  [max_array_entry_len_tex $register(regs) entrybits ]
-            set len_max_tmp(6)  [max_array_entry_len_tex $register(regs) reset     ]
-            set len_max_tmp(7)  [max_array_entry_len_tex $register(regs) comment   ]
+            set len_max_tmp(5)  [max_array_entry_len_tex $register(regs) entrybits]
+            set len_max_tmp(6)  [max_array_entry_len_tex $register(regs) reset]
+            set len_max_tmp(7)  [max_array_entry_len_tex $register(regs) comment]
 
             set len_max_data(0) [expr {max ($len_max_tmp(0), $len_max_data(0))}]
             set len_max_data(1) [expr {max ($len_max_tmp(1), $len_max_data(1))}]
@@ -179,8 +173,8 @@
     }
 
     foreach i_column $num_column {
-        set text    [lindex $header $i_column ]
-        set text    [tex_escape $text ]
+        set text    [lindex $header $i_column]
+        set text    [tex_escape $text]
         set text    [concat "\\textbf\{" $text "\}"]
 
         set len_header [string length $text]
@@ -253,9 +247,9 @@ foreach_array reg $register_list {
 % register diagram
 <%  foreach_array reg $register_list {
         %><%= "\{" $rf_name  ":" $reg(name) ".diag\}\{\%\n"%><%
-        %>   \begin{register}{H}{<%=[tex_escape $reg(name) ]%>}{<[format "0x%08x" [tex_escape $reg(address)]]><%= "\}%\n" %><%
+        %>   \begin{register}{H}{<%=[tex_escape $reg(name)]%>}{<[format "0x%08x" [tex_escape $reg(address)]]><%= "\}%\n" %><%
         %>    \label{reg_<%=$rf_name "_" $reg(name)%>}<%="%\n"%><%
-        foreach_array sreg [ lreverse $reg(regs) ] {
+        foreach_array sreg [lreverse $reg(regs)] {
             if {[regexp -nocase {\-} $sreg(name)]} {
                 %>    \getReg{<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" ".diag\}\%\n" %><%
             } else {
@@ -269,7 +263,7 @@ foreach_array reg $register_list {
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register diagram contend
 <%  foreach_array reg $register_list {
-    foreach_array sreg [ lreverse $reg(regs) ]  {
+    foreach_array sreg [lreverse $reg(regs)]  {
         if {[regexp -nocase {\-} $sreg(name)]} {
             %><%= "\{" $rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" ".diag\}\{" %><%
         } else {
@@ -292,7 +286,7 @@ foreach_array reg $register_list {
         %><%= "\{" $rf_name  ":" $reg(name) ".comment\}\{\%\n" %><%
         %>    \noindent <%= "\%\n" %><%
         %>    \begin{tabularx}{\textwidth}{llX}<%= "\%\n" %><%
-        foreach_array sreg [ lreverse $reg(regs) ] {
+        foreach_array sreg [lreverse $reg(regs)] {
             if {[regexp -nocase {\-} $sreg(name)]} {
                 %><%
             } else {
