@@ -8,6 +8,8 @@
     #----------------------------------------#
 
 %><%
+
+
 ########################################################################
     proc get_padding_size { width string } {
         set string_length [string length $string]
@@ -65,9 +67,67 @@
             return "RW"
         } elseif {[regexp -nocase {R} $type]} {
             return "R"
+        } elseif {[regexp -nocase {RS} $type]} {
+            return "R"
         } else {
             return "-"
         }
+    }
+    proc reg_start_bit {} {
+        set entrybits [uplevel 1 {set sreg(entrybits)}]
+        if {[regexp -nocase {:} $entrybits]} {
+            set str [lindex [split $entrybits  ":"] 1]
+            return $str
+        } else {
+            return $entrybits
+        }
+    }
+    proc reg_reset {} {
+        set reset [uplevel 1 {set sreg(reset)}]
+        set width [uplevel 1 {set sreg(width)}]
+        set type  [uplevel 1 {set  sreg(type)}]
+
+        if {$type == "RW" ||  $type == "CRW" ||  $type == "FCRW"} {
+            if {$width == 1} {
+                set str [string trim $reset "1'b"]
+                set str [string trim $str   "1'h"]
+                set str [string trim $str   "1'd"]
+                return $str
+            } elseif {$width == 2} {
+                if {[regexp -nocase {b} $reset]} {
+                    set str [string trim $reset "2'b"]
+                    return  $str
+                } else {
+                    set str [string trim $reset "2'h"]
+                    set str [string trim $str   "2'd"]
+                    binary scan [binary format H* $str] B* bits
+                    return [string range $bits 6 7]
+                }
+                return $str
+            } elseif {$width == 3} {
+                if {[regexp -nocase {b} $reset]} {
+                    set str [string trim $reset "3'b"]
+                    return  $str
+                } else {
+                    set str [string trim $reset "3'h"]
+                    set str [string trim $str   "3'd"]
+                    binary scan [binary format H* $str] B* bits
+                    return [string range $bits 5 7]
+                }
+                return $str
+            }
+        } elseif { $type == "R" || $type == "RS" || $type == "CR" || $type == "FCR"  } {
+            return X
+        }
+
+        return [string cat "{" [tex_escape $reset] "}"]
+    }
+    proc sreg_name {} {
+        set name [uplevel 1 {set sreg(name)}]
+        if {[regexp -nocase {\-} $name]} {
+           return [string map {"\-" "unused"} $name]
+        }
+        return $name
     }
 
 ########################################################################
@@ -154,22 +214,27 @@
 <%  foreach_array reg $register_list {
         %><%= "\{" $rf_name  ":" $reg(name) "\}\{\%\n"%><%
         foreach_array sreg $reg(regs) {
-        %>    \getReg{<%=$rf_name ":" $reg(name) ":"  $sreg(name) "\}\%\n" %><%
+            if {[regexp -nocase {\-} $sreg(name)]} {
+                %>    \getReg{<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" "\}\%\n" %><%
+            } else {
+                %>    \getReg{<%=$rf_name ":" $reg(name) ":"  $sreg(name) "\}\%\n" %><%
+            }
         }
         %><%="\}\%\n"%><%
     }
-%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% register address
-<%  foreach_array reg $register_list {
-        %><%= "\{" $rf_name  ":" $reg(name) ".addr\}\{"%><[format "0x%08x" $reg(address)]><%= "\}\%\n"%><%
-    }
-%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register content
 <%
 foreach_array reg $register_list {
     set i_sreg 0
     foreach_array sreg $reg(regs) {
-        %><%= "\{" $rf_name  ":" $reg(name) ":" $sreg(name) "\}\{" %><%
+        %><%=
+        if {[regexp -nocase {\-} $sreg(name)]} {
+            %>    {<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" "\}\{" %><%
+        } else {
+            %>    {<%=$rf_name ":" $reg(name) ":"  $sreg(name) "\}\{" %><%
+        }
+
         if {$i_sreg == 0} {
             %><%= [tex_escape $reg(name)] " \& \\getReg\{" $rf_name  ":" $reg(name) ".addr\} \& "%><%
         } else {
@@ -180,6 +245,63 @@ foreach_array reg $register_list {
     }
 }
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% register address
+<%  foreach_array reg $register_list {
+        %><%= "\{" $rf_name  ":" $reg(name) ".addr\}\{"%><[format "0x%08x" $reg(address)]><%= "\}\%\n"%><%
+    }
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% register diagram
+<%  foreach_array reg $register_list {
+        %><%= "\{" $rf_name  ":" $reg(name) ".diag\}\{\%\n"%><%
+        %>   \begin{register}{H}{<%=[tex_escape $reg(name) ]%>}{<[format "0x%08x" [tex_escape $reg(address)]]><%= "\}%\n" %><%
+        %>    \label{reg_<%=$rf_name "_" $reg(name)%>}<%="%\n"%><%
+        foreach_array sreg [ lreverse $reg(regs) ] {
+            if {[regexp -nocase {\-} $sreg(name)]} {
+                %>    \getReg{<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" ".diag\}\%\n" %><%
+            } else {
+                %>    \getReg{<%=$rf_name ":" $reg(name) ":"  $sreg(name) ".diag\}\%\n" %><%
+            }
+        }
+        %>    \reglabel{Reset}%\regnewline%<%="\n"
+        %>   \end{register}%<%="\n"
+        %><%="\}\%\n"%><%
+    }
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% register diagram contend
+<%  foreach_array reg $register_list {
+    foreach_array sreg [ lreverse $reg(regs) ]  {
+        if {[regexp -nocase {\-} $sreg(name)]} {
+            %><%= "\{" $rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" ".diag\}\{" %><%
+        } else {
+            %><%= "\{" $rf_name  ":" $reg(name) ":" $sreg(name) ".diag\}\{" %><%
+        }
+
+        if { [reg_type] == "R"} {
+            %>\regfield[gray!15]<%
+        } elseif { [reg_type] == "\-"} {
+            %>\regfield[gray!70]<%
+        } else {
+            %>\regfield[white]<%
+        }
+        %><%= "\{" [tex_escape [sreg_name]] "\}\{"  [tex_escape $sreg(width)] "\}\{"  [tex_escape [reg_start_bit]] "\}\{" [reg_reset] "\}\}\%\n" %><%
+    }
+}
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% register comment
+<%  foreach_array reg $register_list {
+        %><%= "\{" $rf_name  ":" $reg(name) ".comment\}\{\%\n" %><%
+        %>    \noindent <%= "\%\n" %><%
+        %>    \begin{tabularx}{\textwidth}{llX}<%= "\%\n" %><%
+        foreach_array sreg [ lreverse $reg(regs) ] {
+            if {[regexp -nocase {\-} $sreg(name)]} {
+                %><%
+            } else {
+                %><%="        \\textbf\{" [tex_escape [sreg_name]] "\} \& \(" [tex_escape [reg_type]]  "\) \& " [tex_escape $sreg(comment)] "\\\\\%\n" %><%
+            }
+        }
+        %>    \end{tabularx}<%= "\%\n" %><%
+        %><%="\}\%\n"%><%
+    }
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %    }
 %}
-<%-# vim: set syn=tcl: %>
