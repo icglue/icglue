@@ -82,29 +82,51 @@
 
         if {$type == "RW" ||  $type == "CRW" ||  $type == "FCRW"} {
             if {$width == 1} {
-                set str [string trim $reset "1'b"]
-                set str [string trim $str   "1'h"]
-                set str [string trim $str   "1'd"]
-                return $str
+                if {[regexp -nocase {b} $reset]} {
+                    set str [string trim $reset "1'b"]
+                    return  $str
+                } elseif {[regexp -nocase {h} $reset]} {
+                    set str [string trim $reset "1'h"]
+                    binary scan [binary format H* $str] B* bits
+                    return [string range $bits 7 7]
+                } elseif {[regexp -nocase {d} $reset]} {
+                    set str [string trim $reset   "1'd"]
+                    binary scan [binary format H* $str] B* bits
+                    return [string range $bits 7 7]
+                } else {
+                    binary scan [binary format H* $reset] B* bits
+                    return [string range $bits 7 7]
+                }
             } elseif {$width == 2} {
                 if {[regexp -nocase {b} $reset]} {
                     set str [string trim $reset "2'b"]
                     return  $str
-                } else {
+                } elseif {[regexp -nocase {h} $reset]} {
                     set str [string trim $reset "2'h"]
-                    set str [string trim $str   "2'd"]
                     binary scan [binary format H* $str] B* bits
                     return [string range $bits 6 7]
+                } elseif {[regexp -nocase {d} $reset]} {
+                    set str [string trim $reset   "2'd"]
+                    binary scan [binary format H* $str] B* bits
+                    return [string range $bits 6 7]
+                } else {
+                    binary scan [binary format H* $reset] B* bits
+                    return [string range $bits 6 7]
                 }
-                return $str
             } elseif {$width == 3} {
                 if {[regexp -nocase {b} $reset]} {
                     set str [string trim $reset "3'b"]
                     return  $str
-                } else {
+                } elseif {[regexp -nocase {h} $reset]} {
                     set str [string trim $reset "3'h"]
-                    set str [string trim $str   "3'd"]
                     binary scan [binary format H* $str] B* bits
+                    return [string range $bits 5 7]
+                } elseif {[regexp -nocase {d} $reset]} {
+                    set str [string trim $reset   "3'd"]
+                    binary scan [binary format H* $str] B* bits
+                    return [string range $bits 5 7]
+                } else {
+                    binary scan [binary format H* $reset] B* bits
                     return [string range $bits 5 7]
                 }
                 return $str
@@ -195,72 +217,31 @@
 %  \usepackage[color]{register}     % register diagram use v1.7+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% usage:
-%% \getReg{regfile:register.table}      % get table entry of register
-%%                         .address}    % get address of register
-%%                         .diag}       % get register diagram
-%%                         .comment}    % get register comment for diagram
+%% \getReg{regfile}{register.table}     % get table entry of register
+%%                          .address}   % get address of register
+%%                          .diag}      % get register diagram
+%%                          .comment}   % get register comment for diagram
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% register table header (comment in if needed)
 %\newcommand {\getRegHeader}{Register Name & Address & Name & Width & Access & Align & Reset & Description \\}%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% if file is used standalone commentin the following 2 commands:
 %%
-%\newcommand {\getReg}[1]{%
+%\newcommand {\getReg}[2]{%
 %\IfStrEqCase{#1}{%
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% register file
-{<%=$rf_name ".table"%>}{%
-<%  foreach_array reg $register_list {
-    %>    \getReg{<%=$rf_name ":" $reg(name) ".table\}\%\n" %><%
-    }
-%>}%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% register
-<%  foreach_array reg $register_list {
-        %><%= "\{" $rf_name  ":" $reg(name) ".table\}\{\%\n"%><%
-        foreach_array sreg $reg(regs) {
-            if {[regexp -nocase {\-} $sreg(name)]} {
-                %>    \getReg{<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused.table\}\%\n" %><%
-            } else {
-                %>    \getReg{<%=$rf_name ":" $reg(name) ":"  $sreg(name) ".table\}\%\n" %><%
-            }
-        }
-        %><%="\}\%\n"%><%
-    }
-%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% register content
-<%
-foreach_array reg $register_list {
-    set i_sreg 0
-    foreach_array sreg $reg(regs) {
-        %><%=
-        if {[regexp -nocase {\-} $sreg(name)]} {
-            %>    {<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused.table\}\{" %><%
-        } else {
-            %>    {<%=$rf_name ":" $reg(name) ":"  $sreg(name) ".table\}\{" %><%
-        }
-
-        if {$i_sreg == 0} {
-            %><%= [tex_escape $reg(name)] " \& \\getReg\{" $rf_name  ":" $reg(name) ".addr\} \& "%><%
-        } else {
-            %>& & <%
-        }
-        %><%= [tex_escape $sreg(name)] " \& " [tex_escape $sreg(width)] " \& " [tex_escape [reg_type]] " \& " [tex_escape $sreg(entrybits)] " \& " [tex_escape $sreg(reset)] " \& " [tex_escape $sreg(comment)] "\\\\\}\%\n" %><%
-        incr i_sreg
-    }
-}
-%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+<%="\{" $rf_name "\}\{\%" %>
+    \IfStrEqCase{#2}{%
 % register address
 <%  foreach_array reg $register_list {
-        %><%= "\{" $rf_name  ":" $reg(name) ".addr\}\{"%><[format "0x%08x" $reg(address)]><%= "\}\%\n"%><%
+        %><%= "\{" $reg(name) ".addr\}\{"%><[format "0x%08x" $reg(address)]><%= "\}\%\n"%><%
     }
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register diagram
 <%  foreach_array reg $register_list {
-        %><%= "\{" $rf_name  ":" $reg(name) ".diag\}\{\%\n"%><%
+        %><%= "\{" $reg(name) ".diag\}\{\%\n"%><%
 
         %>   \begin{register}{H}{<%=[tex_escape $reg(name) ]%>}{<[format "0x%08x" [tex_escape $reg(address)]]><%= "\}%\n" %><%
         %>    \label{reg_<%=$rf_name "_" $reg(name)%>}<%="%\n"%><%
@@ -282,7 +263,7 @@ foreach_array reg $register_list {
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register comment
 <%  foreach_array reg $register_list {
-        %><%= "\{" $rf_name  ":" $reg(name) ".comment\}\{\%\n" %><%
+        %><%= "\{" $reg(name) ".comment\}\{\%\n" %><%
         %>    \noindent <%= "\%\n" %><%
         %>    \begin{tabularx}{\textwidth}{llX}<%= "\%\n" %><%
 
@@ -297,6 +278,44 @@ foreach_array reg $register_list {
         %>    \end{tabularx}<%= "\%\n" %><%
         %><%="\}\%\n"%><%
     }
+
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%    }  % comment in if file used standalone
-%}      % comment in if file used standalone
+% register table
+<%  foreach_array reg $register_list {
+        %><%= "\{" $reg(name) ".table\}\{\%\n"%><%
+        set i_sreg 0
+        foreach_array sreg $reg(regs) {
+            %><%=
+            if {$i_sreg == 0} {
+                %><%=  "    " [tex_escape $reg(name)] " \& [format "0x%08x" $reg(address)] \& "%><%
+            } else {
+                %>    & & <%
+            }
+            %><%= [tex_escape $sreg(name)] " \& " [tex_escape $sreg(width)] " \& " [tex_escape [reg_type]] " \& " [tex_escape $sreg(entrybits)] " \& " [tex_escape $sreg(reset)] " \& " [tex_escape $sreg(comment)] "\\\\\%\n" %><%
+            incr i_sreg
+        }
+        %><%="\}\%\n"%><%
+    }
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% register file
+{<%= "table" %>}{%
+<%  foreach_array reg $register_list {
+        set i_sreg 0
+        foreach_array sreg $reg(regs) {
+            %><%=
+            if {$i_sreg == 0} {
+                %><%= "    " [tex_escape $reg(name)] " \& [format "0x%08x" $reg(address)] \& "%><%
+            } else {
+                %>    & & <%
+            }
+            %><%= [tex_escape $sreg(name)] " \& " [tex_escape $sreg(width)] " \& " [tex_escape [reg_type]] " \& " [tex_escape $sreg(entrybits)] " \& " [tex_escape $sreg(reset)] " \& " [tex_escape $sreg(comment)] "\\\\\%\n" %><%
+            incr i_sreg
+        }
+    }
+%>}%
+%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    }  % keep these closing brace!
+   }   % keep these closing brace!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% }    % comment in if file used standalone
+%}     % comment in if file used standalone
