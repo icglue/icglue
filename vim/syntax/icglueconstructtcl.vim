@@ -95,17 +95,18 @@ hi def link igParam         igModuleIdentifier
 
 
 "code command
-syn keyword igCodecmd C                            contained
-syn keyword igCTODO TODO FIXME                     contained
-syn match   varEscape "\\\$"                       contained
-syn region  igClistblock start="{"ms=e end="}"     contained contains=igClistblock,igCTODO,tclVarRef,varEscape
-syn match   igCFlags "\v-a(dapt)?>"                contained
-syn match   igCFlags "\v-noa(dapt)?>"              contained
-syn match   igCFlags "\v-v(erbatim)?>"             contained
-syn match   igCFlags "\v-s(ubst)?>"                contained
-syn match   igCFlags "\v-nos(ubst)?>"              contained
-syn match   igCFlags "\v-e(val(ulate)?)?>"         contained
-syn region  igCode start=/^\s*C\>/ end=/$/me=s-1             contains=igCodecmd,igCFlags,igClistblock,tclLineContinue,tclString
+syn keyword igCodecmd C                               contained
+syn keyword igCTODO TODO FIXME                        contained
+syn match   varEscape "\\\$"                          contained
+syn region  igClistblock start="{"ms=e end="}"        contained contains=igClistblock,igCTODO,tclVarRef,varEscape
+syn match   igCFlags "\v-a(dapt)?>"                   contained
+syn match   igCFlags "\v-noa(dapt)?>"                 contained
+syn match   igCFlags "\v-a(dapt-)?s(elective(ly)?)?>" contained
+syn match   igCFlags "\v-v(erbatim)?>"                contained
+syn match   igCFlags "\v-s(ubst)?>"                   contained
+syn match   igCFlags "\v-nos(ubst)?>"                 contained
+syn match   igCFlags "\v-e(val(ulate)?)?>"            contained
+syn region  igCode start=/^\s*C\>/ end=/$/me=s-1                contains=igCodecmd,igCFlags,igClistblock,tclLineContinue,tclString
 
 hi def link igCTODO      Todo
 hi def link igCodecmd    igCommand
