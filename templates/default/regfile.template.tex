@@ -188,29 +188,44 @@
 
 
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% !!! do not modify this file unless you know what you are doing !!!
+%%%%%%%%%%%%%%%% generated register file documentation  %%%%%%%%%%%%%%%%
+%% please include the following latex packages:
+%  \usepackage{xstring}             % needed for IfStrEqCase structure
+%  \usepackage{xcolor}              % needed for register diagram
+%  \usepackage[color]{register}     % register diagram use v1.7+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% usage:
+%% \getReg{regfile:register.table}      % get table entry of register
+%%                         .address}    % get address of register
+%%                         .diag}       % get register diagram
+%%                         .comment}    % get register comment for diagram
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% register table header (comment in if needed)
 %\newcommand {\getRegHeader}{Register Name & Address & Name & Width & Access & Align & Reset & Description \\}%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% if file is used standalone commentin the following 2 commands:
+%%
 %\newcommand {\getReg}[1]{%
 %\IfStrEqCase{#1}{%
-%
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register file
-{<%=$rf_name%>}{%
+{<%=$rf_name ".table"%>}{%
 <%  foreach_array reg $register_list {
-    %>    \getReg{<%=$rf_name ":" $reg(name) "\}\%\n" %><%
+    %>    \getReg{<%=$rf_name ":" $reg(name) ".table\}\%\n" %><%
     }
 %>}%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register
 <%  foreach_array reg $register_list {
-        %><%= "\{" $rf_name  ":" $reg(name) "\}\{\%\n"%><%
+        %><%= "\{" $rf_name  ":" $reg(name) ".table\}\{\%\n"%><%
         foreach_array sreg $reg(regs) {
             if {[regexp -nocase {\-} $sreg(name)]} {
-                %>    \getReg{<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" "\}\%\n" %><%
+                %>    \getReg{<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused.table\}\%\n" %><%
             } else {
-                %>    \getReg{<%=$rf_name ":" $reg(name) ":"  $sreg(name) "\}\%\n" %><%
+                %>    \getReg{<%=$rf_name ":" $reg(name) ":"  $sreg(name) ".table\}\%\n" %><%
             }
         }
         %><%="\}\%\n"%><%
@@ -223,9 +238,9 @@ foreach_array reg $register_list {
     foreach_array sreg $reg(regs) {
         %><%=
         if {[regexp -nocase {\-} $sreg(name)]} {
-            %>    {<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" "\}\{" %><%
+            %>    {<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused.table\}\{" %><%
         } else {
-            %>    {<%=$rf_name ":" $reg(name) ":"  $sreg(name) "\}\{" %><%
+            %>    {<%=$rf_name ":" $reg(name) ":"  $sreg(name) ".table\}\{" %><%
         }
 
         if {$i_sreg == 0} {
@@ -249,39 +264,21 @@ foreach_array reg $register_list {
 
         %>   \begin{register}{H}{<%=[tex_escape $reg(name) ]%>}{<[format "0x%08x" [tex_escape $reg(address)]]><%= "\}%\n" %><%
         %>    \label{reg_<%=$rf_name "_" $reg(name)%>}<%="%\n"%><%
-        foreach_array sreg [ lreverse $reg(regs) ] {
+        foreach_array sreg [lreverse $reg(regs) ] {
+            if { [reg_type] == "R"} {
+                %>      \regfield[gray!15]<%
+            } elseif { [reg_type] == "\-"} {
+                %>      \regfield[gray!70]<%
 
-            if {[regexp -nocase {\-} $sreg(name)]} {
-                %>    \getReg{<%=$rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" ".diag\}\%\n" %><%
             } else {
-                %>    \getReg{<%=$rf_name ":" $reg(name) ":"  $sreg(name) ".diag\}\%\n" %><%
+                %>      \regfield[white]<%
             }
+            %><%= "\{" [tex_escape [sreg_name]] "\}\{"  [tex_escape $sreg(width)] "\}\{"  [tex_escape [reg_start_bit]] "\}\{" [reg_reset] "\}\%\n" %><%
         }
         %>    \reglabel{Reset}%\regnewline%<%="\n"
         %>   \end{register}%<%="\n"
         %><%="\}\%\n"%><%
     }
-%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% register diagram contend
-<%  foreach_array reg $register_list {
-    foreach_array sreg [lreverse $reg(regs)]  {
-
-        if {[regexp -nocase {\-} $sreg(name)]} {
-            %><%= "\{" $rf_name ":" $reg(name) ":" [string map {":" "_"} $sreg(entrybits)] "\_unused" ".diag\}\{" %><%
-        } else {
-            %><%= "\{" $rf_name  ":" $reg(name) ":" $sreg(name) ".diag\}\{" %><%
-        }
-
-        if { [reg_type] == "R"} {
-            %>\regfield[gray!15]<%
-        } elseif { [reg_type] == "\-"} {
-            %>\regfield[gray!70]<%
-        } else {
-            %>\regfield[white]<%
-        }
-        %><%= "\{" [tex_escape [sreg_name]] "\}\{"  [tex_escape $sreg(width)] "\}\{"  [tex_escape [reg_start_bit]] "\}\{" [reg_reset] "\}\}\%\n" %><%
-    }
-}
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register comment
 <%  foreach_array reg $register_list {
@@ -301,6 +298,5 @@ foreach_array reg $register_list {
         %><%="\}\%\n"%><%
     }
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%    }
-%}
-
+%    }  % comment in if file used standalone
+%}      % comment in if file used standalone
