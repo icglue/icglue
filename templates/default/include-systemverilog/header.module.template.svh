@@ -23,17 +23,15 @@
  */
 "] -%>
 
-module <%=$mod_data(name)%> #(
-<%-
+module <%=$mod_data(name)%><%
     ###########################################
     ## <parameters>
-    foreach_array_join param $mod_data(parameters) { -%>
-    <[format "%-${param_data_maxlen_type}s %-${param_data_maxlen_name}s = %s" $param(vlog.type) $param(name) $param(value)]><% } { %><%=",\n"%><% } %>
-    <[pop_keep_block_content keep_block_data "keep" "parameters"]><%
+    foreach_array_preamble_epilog_join param $mod_data(parameters) { -%><%=" #(\n"%><% } { -%>
+    <[format "%-${param_data_maxlen_type}s %-${param_data_maxlen_name}s = %s" "$param(vlog.type)" "$param(name)" "$param(value)"]><% } { %><%=",\n"%><% } { %><%="\n)"%><% } %><%
     ## </parameters>
     ###########################################
-%>
-) (
+-%>
+ (
 <%-
     ###########################################
     ## <port declaration>
@@ -42,6 +40,8 @@ module <%=$mod_data(name)%> #(
     ## </port declaration>
     ###########################################
 %>);
+
+    <[pop_keep_block_content keep_block_data "keep" "localparams"]>
 <%
     ###########################################
     ## <signal declaration>

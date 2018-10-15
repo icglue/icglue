@@ -11,6 +11,9 @@ M -unit "multidimensional" -tree {
     --------multidimensional_top   (rtl,sv)
 }
 
+#P TEST  = 4'b0110 tb_multidimensional multidimensional_top
+#P TEST2 = 6'd42   tb_multidimensional multidimensional_top
+
 S "simple_signal" -w 12       tb_multidimensional --> multidimensional_top
 
 S "2d_signal" -w 8 -d 4       tb_multidimensional --> multidimensional_top
