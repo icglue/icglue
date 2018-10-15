@@ -23,30 +23,30 @@
  */
 "] -%>
 
-module <%=$mod_data(name)%> (
-<%
+module <%=$mod_data(name)%> #(
+<%-
     ###########################################
     ## <parameters>
-    foreach_array_preamble param $mod_data(parameters) { %><%="\n"%><% } { -%>
-    <[format "%-${param_data_maxlen_type}s %-${param_data_maxlen_name}s = %s;\n" $param(vlog.type) $param(name) $param(value)]><% } -%>
+    foreach_array_join param $mod_data(parameters) { -%>
+    <[format "%-${param_data_maxlen_type}s %-${param_data_maxlen_name}s = %s" $param(vlog.type) $param(name) $param(value)]><% } { %><%=",\n"%><% } %>
     <[pop_keep_block_content keep_block_data "keep" "parameters"]><%
     ## </parameters>
     ###########################################
 %>
-<%
+) (
+<%-
     ###########################################
     ## <port declaration>
-    foreach_array_preamble port $mod_data(ports) { -%><%="\n"%><% } { -%>
-    <[format "%-${port_data_maxlen_dir}s %${port_data_maxlen_range}s %s %s;\n" $port(vlog.direction) $port(vlog.bitrange) $port(name) $port(dimension)]><% }
+    foreach_array_preamble_epilog_join port $mod_data(ports) { -%><%="\n"%><% } { -%>
+    <[format "%-${port_data_maxlen_dir}s %${port_data_maxlen_range}s %s%s" $port(vlog.direction) $port(vlog.bitrange) $port(name) $port(dimension)]><% } { %><%=",\n"%><% } { %><%="\n"%><% }
     ## </port declaration>
     ###########################################
 %>);
-
 <%
     ###########################################
     ## <signal declaration>
-    foreach_array_preamble decl $mod_data(declarations) { %><%="\n\n"%><% } { -%>
-    <[format "%-${decl_data_maxlen_type}s %${decl_data_maxlen_range}s %s %s;\n" $decl(vlog.type) $decl(vlog.bitrange) $decl(name) $decl(dimension)]><% } -%>
+    foreach_array_preamble decl $mod_data(declarations) { %><%="\n"%><% } { -%>
+    <[format "%-${decl_data_maxlen_type}s %${decl_data_maxlen_range}s %s%s;\n" $decl(vlog.type) $decl(vlog.bitrange) $decl(name) $decl(dimension)]><% } -%>
     <[pop_keep_block_content keep_block_data "keep" "declarations"]><%
     ## </signal declaration>
     ###########################################
