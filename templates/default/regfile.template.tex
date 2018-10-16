@@ -21,6 +21,8 @@
         set string_out [string map [list "\^" "\\^"]  $string_out]
         set string_out [string map [list "\#" "\\#"]  $string_out]
         set string_out [string map [list "\~" "\\~"]  $string_out]
+        set string_out [string map [list ">" "$>$"]   $string_out]
+        set string_out [string map [list "<" "$<$"]   $string_out]
         return $string_out
     }
 
@@ -83,14 +85,14 @@
         if {$type == "RW" ||  $type == "CRW" ||  $type == "FCRW"} {
             if {$width == 1} {
                 if {[regexp -nocase {b} $reset]} {
-                    set str [string trim $reset "1'b"]
+                    set str [string map {"1'b" ""} $reset]
                     return  $str
                 } elseif {[regexp -nocase {h} $reset]} {
-                    set str [string trim $reset "1'h"]
+                    set str [string map {"1'h" ""} $reset]
                     binary scan [binary format H* $str] B* bits
                     return [string range $bits 7 7]
                 } elseif {[regexp -nocase {d} $reset]} {
-                    set str [string trim $reset   "1'd"]
+                    set str [string map {"1'd" ""} $reset]
                     binary scan [binary format H* $str] B* bits
                     return [string range $bits 7 7]
                 } else {
@@ -265,8 +267,8 @@
 <%  foreach_array reg $register_list {
         %><%= "\{" $reg(name) ".comment\}\{\%\n" %><%
         %>    \noindent <%= "\%\n" %><%
+        %>    \begin{center} <%= "\%\n" %><%
         %>    \begin{tabularx}{\textwidth}{llX}<%= "\%\n" %><%
-
         foreach_array sreg [lreverse $reg(regs)] {
 
             if {[regexp -nocase {\-} $sreg(name)]} {
@@ -276,9 +278,9 @@
             }
         }
         %>    \end{tabularx}<%= "\%\n" %><%
+        %>    \end{center} <%= "\%\n" %><%
         %><%="\}\%\n"%><%
     }
-
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register table
 <%  foreach_array reg $register_list {
