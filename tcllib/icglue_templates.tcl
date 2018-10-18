@@ -221,7 +221,7 @@ namespace eval ig::templates {
                     }
                     set reg_list_raw [lsort -integer -index 2 $reg_list]
                     set reg_list {}
-                    set idx_start 0
+                    set idx_start -1
 
                     foreach i_reg $reg_list_raw {
                         set i_bit_low [lindex $i_reg 2]
