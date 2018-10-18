@@ -229,12 +229,18 @@ namespace eval ig::templates {
                         if {$i_bit_low - $idx_start > 1} {
                             set tmp_high [expr {$i_bit_low - 1}]
                             set tmp_low  [expr {$idx_start + 1}]
+                            if {$tmp_high == $tmp_low} {
+                                set entrybits $tmp_high
+                            } else {
+                                set entrybits "${tmp_high}:${tmp_low}"
+                            }
+
                             lappend reg_list [list \
                                 "name"       "-" \
                                 "bit_high"   $tmp_high \
                                 "bit_low"    $tmp_low \
                                 "width"      [expr {$tmp_high - $tmp_low + 1}] \
-                                "entrybits"  "${tmp_high}:${tmp_low}" \
+                                "entrybits"  $entrybits \
                                 "type"       "-" \
                                 "reset"      "-" \
                                 "signal"     "-" \
@@ -262,12 +268,18 @@ namespace eval ig::templates {
                     if {$idx_start < $wordsize - 1} {
                         set tmp_high [expr {$wordsize - 1}]
                         set tmp_low  [expr {$idx_start + 1}]
+                        if {$tmp_high == $tmp_low} {
+                            set entrybits $tmp_high
+                        } else {
+                            set entrybits "${tmp_high}:${tmp_low}"
+                        }
+
                         lappend reg_list [list \
                             "name"       "-" \
                             "bit_high"   $tmp_high \
                             "bit_low"    $tmp_low \
                             "width"      [expr {$tmp_high - $tmp_low + 1}] \
-                            "entrybits"  "${tmp_high}:${tmp_low}" \
+                            "entrybits"  $entrybits \
                             "type"       "-" \
                             "reset"      "-" \
                             "signal"     "-" \
