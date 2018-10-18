@@ -16,7 +16,7 @@ M -unit "component" -tree {
 }
 
 M -unit "submod" -tree {
-    submod_wrap ........ (inc)
+    submod_wrap ........ (rtl)
     |
     +- common_reset_combiner<ref_core> ............. (res)
     +- common_sync<submod0..4> ..................... (res)
@@ -27,7 +27,6 @@ M -unit "submod" -tree {
        |
        +- submod ................................... (res)
        \- nocif .................................... (res)
-
 }
 
 
@@ -138,7 +137,7 @@ if {0} {
         "name"   | "entrybits" | "type" | "reset" | "signal"             | "comment"
         -----    | ----------- | -----  | ------- | --------             | ---------
         s_cfg    | 4:0         | RW     | 5'h0    | entry_name0_s_cfg    | "Configure component"
-        s_status | 15:0        | R      | 16'h0   | entry_name0_s_status | "Component status"
+        s_status | 31:16       | R      | 16'h0   | entry_name0_s_status | "Component status"
     }
 } else {
     # inline connection (toplevel integration view)
@@ -148,7 +147,7 @@ if {0} {
         "name"   | "entrybits" | "type" | "reset" | "signal"          | "comment"
         -----    | ----------- | -----  | ------- | --------          | ---------
         s_cfg    | 4:0         | RW     | 5'h0    | submod:s_cfg_i    | "Configure component"
-        s_status | 15:0        | R      | 16'h0   | submod:s_status_o | "Component status"
+        s_status | 31:16       | R      | 16'h0   | submod:s_status_o | "Component status"
     }
 }
 
@@ -158,7 +157,7 @@ S "s_cfg_large" -w 40 submod_regfile  -->  submod
 R submod_regfile "entry_name1_low" {
     "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
     -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
-    s_cfg  | 31:0        | RW     | 31'h0   | s_cfg_large | 31:0         | "Configure submod part 0"
+    s_cfg  | 31:0        | RW     | 32'h0   | s_cfg_large | 31:0         | "Configure submod part 0"
 }
 R submod_regfile "entry_name1_high" {
     "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"

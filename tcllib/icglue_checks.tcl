@@ -128,8 +128,9 @@ namespace eval ig::checks {
             "entries" [ig::templates::preprocess::regfile_to_arraylist $regfile_id] \
         ]
 
-        check_regfile_addresses $rfdata
-        check_regfile_entrybits $rfdata
+        check_regfile_addresses   $rfdata
+        check_regfile_entrybits   $rfdata
+        check_regfile_resetvalues $rfdata
     }
 
     ## @brief Run regfile entry address check.
@@ -197,6 +198,67 @@ namespace eval ig::checks {
 
                     # add to list
                     lappend bit_list [list $i $rname]
+                }
+            }
+        }
+    }
+
+    ## @brief Run regfile reset-value width check.
+    # @param regfile_data preprocessed data of regfile to check.
+    proc check_regfile_resetvalues {regfile_data} {
+        set rfname  [dict get $regfile_data "name"]
+        set entries [dict get $regfile_data "entries"]
+
+        # assume 32 bit regs - change if other widths supported
+        set wordsize 32
+
+        foreach i_entry $entries {
+            set ename [dict get $i_entry "name"]
+            set regs  [dict get $i_entry "regs"]
+
+            foreach i_reg $regs {
+                set rname  [dict get $i_reg "name"]
+                set width  [dict get $i_reg "width"]
+                set rstval [dict get $i_reg "reset"]
+
+                if {$rstval eq "-"} {continue}
+
+                # TODO: add central parser function for verilog values
+                if {[string is integer $rstval]} {
+                    # width necessary to represent actual integer value
+                    set rstwidth [expr {int(ceil(log($rstval+1)/log(2)))}]
+                    if {$rstwidth < $width} {set rstwidth $width}
+                } elseif {[string first {'} $rstval] >= 0} {
+                    # width specified
+                    set wsplit  [split $rstval {'}]
+                    set wstring [lindex $wsplit 0]
+                    if {$wstring eq {}} {
+                        # unspecified size
+                        set rstvalc [string map {h 0x b 0b o 0} [lindex $wsplit 1]]
+                        if {[string index $rstvalc 0] eq "d"} {
+                            set rstvalc [string range $rstvalc 1 end]
+                            while {([string length $rstvalc] > 1) && ([string index $rstvalc 0] eq "0")} {
+                                set rstvalc [string range $rstvalc 1 end]
+                            }
+                        }
+                        if {![string is integer $rstvalc]} {
+                            continue
+                        }
+                        set rstwidth [expr {int(ceil(log($rstvalc+1)/log(2)))}]
+                        if {$rstwidth < $width} {set rstwidth $width}
+                    } elseif {[string is integer $wstring]} {
+                        # specified size
+                        set rstwidth $wstring
+                    } else {
+                        continue
+                    }
+                } else {
+                    # cannot check reset-value
+                    continue
+                }
+
+                if {$rstwidth != $width} {
+                    ig::log -warn -id "ChkRB" "register \"${rname}\" in entry \"${ename}\" has reset value \"${rstval}\" needing ${rstwidth} bits but is ${width} bits wide (regfile ${rfname})"
                 }
             }
         }
