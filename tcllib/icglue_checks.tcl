@@ -94,12 +94,12 @@ namespace eval ig::checks {
     ## @brief Run sanity/consistency checks for given module.
     # @param module_id Object-ID of module to check.
     proc check_module {module_id} {
-        check_multi_dimensional_port_lang $module_id
+        check_module_multi_dimensional_port_lang $module_id
     }
 
     # warn if the language does not support multidimensional ports
     # assume that only SystemVerilog supports it
-    proc check_multi_dimensional_port_lang {module_id} {
+    proc check_module_multi_dimensional_port_lang {module_id} {
         set mname [ig::db::get_attribute -object $module_id -attribute "name"]
         set lang  [ig::db::get_attribute -object $module_id -attribute "language"]
         if {$lang ne "systemverilog"} {
