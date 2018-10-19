@@ -106,7 +106,7 @@ namespace eval ig::vlog {
     ## @brief Try to parse a (simple) verilog value into an integer.
     #
     # @param value The value to parse.
-    # @param paramlist Known values of verilog parameters to use (currently unused).
+    # @param paramlist Known values of verilog parameters to use in form {{name1 value1} ...}.
     #
     # @return List of form {success value size} where
     # success is a boolean specifying whether the value could be parsed or not,
@@ -117,30 +117,84 @@ namespace eval ig::vlog {
         set resval   0
         set ressize -1
 
-        if {[string is integer $value]} {
-            # width necessary to represent actual integer value
+        if {[string is integer -strict $value]} {
+            # simple integer
             set success true
             set resval $value
-        } elseif {[string first {'} $value] >= 0} {
-            # width specified
-            set wsplit  [split $value {'}]
-            set wstring [lindex $wsplit 0]
+        } elseif {[regexp {^\s*([0-9]*)'([a-zA-Z])[0_]*([0-9a-fA-F_]+)\s*$} $value m_whole m_width m_radix m_value]} {
+            # verilog number with radix specified
+            set wstring $m_width
 
-            # unspecified size
-            set resvalc [string map {h 0x b 0b o 0} [lindex $wsplit 1]]
-            if {[string index $resvalc 0] eq "d"} {
-                set resvalc [string range $resvalc 1 end]
-                while {([string length $resvalc] > 1) && ([string index $resvalc 0] eq "0")} {
-                    set resvalc [string range $resvalc 1 end]
-                }
-            }
-            if {[string is integer $resvalc]} {
+            set resvalc {}
+            append resvalc [string map {h 0x H 0x b 0b B 0b o 0 O 0 d {} D {}} $m_radix] [string map {_ {}} $m_value]
+
+            if {[string is entier -strict $resvalc]} {
                 set success true
                 set resval $resvalc
 
                 if {$wstring ne {}} {
+                    # width specified
                     set ressize $wstring
                 }
+            }
+        } elseif {[regexp {^\s*([a-zA-Z]\w*)\s*$} $value m_whole m_param]} {
+            # parameter
+            set idx [lsearch -index 0 -exact $paramlist $m_param]
+            if {$idx >= 0} {
+                return [parse_value [lindex $paramlist $idx 1] [lreplace $paramlist $idx $idx]]
+            }
+        } elseif {[regexp {^\s*\((.*)\)\s*$} $value m_whole m_content]} {
+            # parantheses
+            return [parse_value $m_content $paramlist]
+        } elseif {[regexp {^\s*\{\s*(.*)\s*\}\s*$} $value m_whole m_content]} {
+            # braces
+            if {[regexp {^([^{},[:space:]][^{},]+)(\{.*\})} $m_content m_whole m_rep m_val]} {
+                # repetition
+                lassign [parse_value $m_rep $paramlist] rep_s rep_v rep_w
+                if {!$rep_s} {return [list $rep_s 0 -1]}
+                lassign [parse_value $m_val $paramlist] val_s val_v val_w
+                if {(!$val_s) || ($val_w <= 0)} {return [list $rep_s 0 -1]}
+
+                set ressize 0
+                for {set i 0} {$i < $rep_v} {incr i} {
+                    incr ressize $val_w
+                    set resval [expr {($resval << $val_w) | $val_v}]
+                }
+                set success true
+            } else {
+                # concatenation
+                # split ...
+                set vals [list]
+                set balance 0
+                set temp [list]
+                foreach val [split $m_content ","] {
+                    set balance [expr {$balance + [string length [string map {\{ {}} $val]] - [string length [string map {\} {}} $val]]}]
+                    lappend temp $val
+                    if {$balance == 0} {
+                        lappend vals [join $temp ","]
+                        set temp [list]
+                    }
+                }
+                if {$balance != 0} {return [list false 0 -1]}
+
+                # concatenate ...
+                set first true
+                set ressize 0
+                foreach val $vals {
+                    lassign [parse_value $val $paramlist] val_s val_v val_w
+                    if {!$val_s} {return [list false 0 -1]}
+                    if {$first} {
+                        set first false
+                    } else {
+                        if {$val_w < 0} {return [list false 0 -1]}
+                    }
+
+                    set resval [expr {($resval << $val_w) | $val_v}]
+                    if {$ressize >= 0} {
+                        incr ressize $val_w
+                    }
+                }
+                set success true
             }
         }
 
