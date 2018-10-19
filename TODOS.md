@@ -22,7 +22,6 @@
   - specify data width / address alignment?
   - specify regfile portnames (clk, ...)
 - codesections: make adapt-selectively the default?
-- verilog-helpers: add parser for simple verilog values - use it in checkers
 
 ## templates
 - support module attributes (fpga)

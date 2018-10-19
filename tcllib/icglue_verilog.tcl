@@ -103,6 +103,50 @@ namespace eval ig::vlog {
         }
     }
 
+    ## @brief Try to parse a (simple) verilog value into an integer.
+    #
+    # @param value The value to parse.
+    # @param paramlist Known values of verilog parameters to use (currently unused).
+    #
+    # @return List of form {success value size} where
+    # success is a boolean specifying whether the value could be parsed or not,
+    # value is the value parsed on success or 0 otherwise and
+    # size is the specified number of bits for the value or -1 if unspecified/unsuccessful.
+    proc parse_value {value {paramlist {}}} {
+        set success  false
+        set resval   0
+        set ressize -1
+
+        if {[string is integer $value]} {
+            # width necessary to represent actual integer value
+            set success true
+            set resval $value
+        } elseif {[string first {'} $value] >= 0} {
+            # width specified
+            set wsplit  [split $value {'}]
+            set wstring [lindex $wsplit 0]
+
+            # unspecified size
+            set resvalc [string map {h 0x b 0b o 0} [lindex $wsplit 1]]
+            if {[string index $resvalc 0] eq "d"} {
+                set resvalc [string range $resvalc 1 end]
+                while {([string length $resvalc] > 1) && ([string index $resvalc 0] eq "0")} {
+                    set resvalc [string range $resvalc 1 end]
+                }
+            }
+            if {[string is integer $resvalc]} {
+                set success true
+                set resval $resvalc
+
+                if {$wstring ne {}} {
+                    set ressize $wstring
+                }
+            }
+        }
+
+        return [list $success $resval $ressize]
+    }
+
     namespace export *
 }
 

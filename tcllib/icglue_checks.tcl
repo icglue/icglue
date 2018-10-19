@@ -223,38 +223,12 @@ namespace eval ig::checks {
 
                 if {$rstval eq "-"} {continue}
 
-                # TODO: add central parser function for verilog values
-                if {[string is integer $rstval]} {
-                    # width necessary to represent actual integer value
-                    set rstwidth [expr {int(ceil(log($rstval+1)/log(2)))}]
+                lassign [ig::vlog::parse_value $rstval] psucc pval rstwidth
+
+                if {!$psucc} {continue}
+                if {$rstwidth < 0} {
+                    set rstwidth [expr {int(ceil(log($pval+1)/log(2)))}]
                     if {$rstwidth < $width} {set rstwidth $width}
-                } elseif {[string first {'} $rstval] >= 0} {
-                    # width specified
-                    set wsplit  [split $rstval {'}]
-                    set wstring [lindex $wsplit 0]
-                    if {$wstring eq {}} {
-                        # unspecified size
-                        set rstvalc [string map {h 0x b 0b o 0} [lindex $wsplit 1]]
-                        if {[string index $rstvalc 0] eq "d"} {
-                            set rstvalc [string range $rstvalc 1 end]
-                            while {([string length $rstvalc] > 1) && ([string index $rstvalc 0] eq "0")} {
-                                set rstvalc [string range $rstvalc 1 end]
-                            }
-                        }
-                        if {![string is integer $rstvalc]} {
-                            continue
-                        }
-                        set rstwidth [expr {int(ceil(log($rstvalc+1)/log(2)))}]
-                        if {$rstwidth < $width} {set rstwidth $width}
-                    } elseif {[string is integer $wstring]} {
-                        # specified size
-                        set rstwidth $wstring
-                    } else {
-                        continue
-                    }
-                } else {
-                    # cannot check reset-value
-                    continue
                 }
 
                 if {$rstwidth != $width} {
