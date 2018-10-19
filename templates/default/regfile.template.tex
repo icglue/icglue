@@ -86,13 +86,16 @@
             if {$width == 1} {
                 if {[regexp -nocase {b} $reset]} {
                     set str [string map {"1'b" ""} $reset]
+                    set str [string map {"'b" ""} $str]
                     return  $str
                 } elseif {[regexp -nocase {h} $reset]} {
                     set str [string map {"1'h" ""} $reset]
+                    set str [string map {"'h" ""} $str]
                     binary scan [binary format H* $str] B* bits
                     return [string range $bits 7 7]
                 } elseif {[regexp -nocase {d} $reset]} {
                     set str [string map {"1'd" ""} $reset]
+                    set str [string map {"'d" ""} $str]
                     binary scan [binary format H* $str] B* bits
                     return [string range $bits 7 7]
                 } else {
@@ -102,13 +105,16 @@
             } elseif {$width == 2} {
                 if {[regexp -nocase {b} $reset]} {
                     set str [string trim $reset "2'b"]
+                    set str [string map {"'b" ""} $str]
                     return  $str
                 } elseif {[regexp -nocase {h} $reset]} {
                     set str [string trim $reset "2'h"]
+                    set str [string map {"'h" ""} $str]
                     binary scan [binary format H* $str] B* bits
                     return [string range $bits 6 7]
                 } elseif {[regexp -nocase {d} $reset]} {
                     set str [string trim $reset   "2'd"]
+                    set str [string map {"'d" ""} $str]
                     binary scan [binary format H* $str] B* bits
                     return [string range $bits 6 7]
                 } else {
@@ -118,13 +124,16 @@
             } elseif {$width == 3} {
                 if {[regexp -nocase {b} $reset]} {
                     set str [string trim $reset "3'b"]
+                    set str [string map {"'b" ""} $str]
                     return  $str
                 } elseif {[regexp -nocase {h} $reset]} {
                     set str [string trim $reset "3'h"]
+                    set str [string map {"'h" ""} $str]
                     binary scan [binary format H* $str] B* bits
                     return [string range $bits 5 7]
                 } elseif {[regexp -nocase {d} $reset]} {
                     set str [string trim $reset   "3'd"]
+                    set str [string map {"'d" ""} $str]
                     binary scan [binary format H* $str] B* bits
                     return [string range $bits 5 7]
                 } else {
@@ -212,40 +221,28 @@
 
 
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%% generated register file documentation  %%%%%%%%%%%%%%%%
-%% please include the following latex packages:
-%  \usepackage{xstring}             % needed for IfStrEqCase structure
-%  \usepackage{xcolor}              % needed for register diagram
-%  \usepackage[color]{register}     % register diagram use v1.7+
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% usage:
-%% \getReg{regfile}{register.table}     % get table entry of register
-%%                          .address}   % get address of register
-%%                          .diag}      % get register diagram
-%%                          .comment}   % get register comment for diagram
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% register table header (comment in if needed)
-%\newcommand {\getRegHeader}{Register Name & Address & Name & Width & Access & Align & Reset & Description \\}%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% if file is used standalone commentin the following 2 commands:
-%%
-%\newcommand {\getReg}[2]{%
-%\IfStrEqCase{#1}{%
+%\usepackage{filecontents}
+%\newcommand {\getReg}[1]{
+%    \InputIfFileExists{#1}{}{
+%        \textbf{\\ \textcolor{red}{ {\LaTeX} error: \textbackslash getReg() failed to find requested information!}}
+%    }
+%}
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-<%="\{" $rf_name "\}\{\%" %>
-    \IfStrEqCase{#2}{%
-% register address
-<%  foreach_array reg $register_list {
-        %><%= "\{" $reg(name) ".addr\}\{"%><[format "0x%08x" $reg(address)]><%= "\}\%\n"%><%
-    }
+% register address list
+<%
+foreach_array reg $register_list {
+    %><%= "\\begin\{filecontents\}\{" $rf_name ":" $reg(name) ".addr.tex\} \n" %><%
+    %><%= "    " %><[format "0x%08x" $reg(address)]><%= "\%\n" %><%
+    %><%= "\\end\{filecontents\}\n"%><%
+}
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register diagram
 <%  foreach_array reg $register_list {
-        %><%= "\{" $reg(name) ".diag\}\{\%\n"%><%
-
+        %><%= "\\begin\{filecontents\}\{" $rf_name ":" $reg(name) ".diag.tex\}\n"
         %>   \begin{register}{H}{<%=[tex_escape $reg(name) ]%>}{<[format "0x%08x" [tex_escape $reg(address)]]><%= "\}%\n" %><%
+        %>    \begin{regdesc}%<%="%\n"%><%
         %>    \label{reg_<%=$rf_name "_" $reg(name)%>}<%="%\n"%><%
         foreach_array sreg [lreverse $reg(regs) ] {
             if { [reg_type] == "R"} {
@@ -259,13 +256,14 @@
             %><%= "\{" [tex_escape [sreg_name]] "\}\{"  [tex_escape $sreg(width)] "\}\{"  [tex_escape [reg_start_bit]] "\}\{" [reg_reset] "\}\%\n" %><%
         }
         %>    \reglabel{Reset}%\regnewline%<%="\n"
+        %>    \end{regdesc}%<%="%\n"%><%
         %>   \end{register}%<%="\n"
-        %><%="\}\%\n"%><%
+        %><%="\\end\{filecontents\}\n\n"%><%
     }
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register comment
 <%  foreach_array reg $register_list {
-        %><%= "\{" $reg(name) ".comment\}\{\%\n" %><%
+        %><%= "\\begin\{filecontents\}\{" $rf_name ":" $reg(name) ".comment.tex\}\n"
         %>    \noindent <%= "\%\n" %><%
         %>    \begin{center} <%= "\%\n" %><%
         %>    \begin{tabularx}{\textwidth}{llX}<%= "\%\n" %><%
@@ -279,29 +277,13 @@
         }
         %>    \end{tabularx}<%= "\%\n" %><%
         %>    \end{center} <%= "\%\n" %><%
-        %><%="\}\%\n"%><%
+        %><%="\\end\{filecontents\}\n\n"%><%
     }
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% register table
-<%  foreach_array reg $register_list {
-        %><%= "\{" $reg(name) ".table\}\{\%\n"%><%
-        set i_sreg 0
-        foreach_array sreg $reg(regs) {
-            %><%=
-            if {$i_sreg == 0} {
-                %><%=  "    " [tex_escape $reg(name)] " \& [format "0x%08x" $reg(address)] \& "%><%
-            } else {
-                %>    & & <%
-            }
-            %><%= [tex_escape $sreg(name)] " \& " [tex_escape $sreg(width)] " \& " [tex_escape [reg_type]] " \& " [tex_escape $sreg(entrybits)] " \& " [tex_escape $sreg(reset)] " \& " [tex_escape $sreg(comment)] "\\\\\%\n" %><%
-            incr i_sreg
-        }
-        %><%="\}\%\n"%><%
-    }
-%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% register file
-{<%= "table" %>}{%
-<%  foreach_array reg $register_list {
+% register file table
+<%=  "\\begin\{filecontents\}\{" $rf_name ":table.tex\}\n" %><%
+%><%= "    Register Name \& Address \& Name \& Width \& Access \& Align \& Reset \& Description \\\\n" %><%
+%><% foreach_array reg $register_list {
         set i_sreg 0
         foreach_array sreg $reg(regs) {
             %><%=
@@ -314,10 +296,5 @@
             incr i_sreg
         }
     }
-%>}%
+%><%="\\end\{filecontents\}\n\n"%><%
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    }  % keep these closing brace!
-   }   % keep these closing brace!
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% }    % comment in if file used standalone
-%}     % comment in if file used standalone
