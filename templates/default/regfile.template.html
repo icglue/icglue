@@ -8,17 +8,18 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-   <title> noc_spi_rf register file contend overview </title>
+   <title> register file contend overview </title>
 
    <style  type="text/css">
    .tooltip {
        position: relative;
        display: inline-block;
        border-bottom: 1px dotted black;
+       cursor: help;
    }
    .tooltip .tooltiptext {
        visibility: hidden;
-       background-color: #777;
+       background-color: black;
        color: #fff;
        text-align: center;
        border-radius: 6px;
@@ -37,16 +38,70 @@
        opacity: 1;
    }
 
+   .cpp_w_button {
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .cpp_r_button {
+        background-color: #FE2916;
+        border: none;
+        color: white;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .tex_button {
+        background-color: #FFBF1F;
+        border: none;
+        color: white;
+        text-align: center;
+        cursor: pointer;
+    }
+
    </style>
+
+    <script type="text/javascript">
+
+        function tempAlert(msg,duration){
+            var el = document.createElement("div");
+            el.setAttribute("style","position:fixed;top:40%;left:50%; color:white;font-size: 20px; background-color: #2B3409;");
+            el.innerHTML = msg;
+            setTimeout(function(){
+                el.parentNode.removeChild(el);
+            },duration);
+            document.body.appendChild(el);
+        }
+
+        function setClipboard(value) {
+            var tempInput = document.createElement("input");
+            tempInput.style = "position: absolute; left: -1000px; top: -1000px";
+            tempInput.value = value;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            tempAlert("Copied information to clipboard", 2000);
+        }
+
+    </script>
+
 </head>
+
 <body>
-   <div style="overflow-x:auto;">
+   <div>
    <table frame="border" rules="all">
    <tr bgcolor="#ffe0b3">
      <th><div class="tooltip">RegisterName<span class="tooltiptext">name of the register</span></div></th>
      <th><div class="tooltip">Address<span class="tooltiptext">local register address (hex)</span></div></th>
+     <th></th>
+     <th></th>
+     <th></th>
      <th><div class="tooltip">Name<span class="tooltiptext">name of the subregister</span></div></th>
-     <th><div class="tooltip">Port<span class="tooltiptext">name of the according register file port</span></div></th>
+     <th></th>
      <th><div class="tooltip">Width<span class="tooltiptext">width of the subregister</span></div></th>
      <th><div class="tooltip">Access<span class="tooltiptext">type of possible register access<br />R: read only<br />RW: read and write<br />DEBUG: same as RW but port is not used</span></div></th>
      <th><div class="tooltip">Align<span class="tooltiptext">position of subregister in register</span></div></th>
@@ -56,6 +111,20 @@
 <%
 ##########################################################################################
 set entry_list [regfile_to_arraylist $obj_id]
+set rf_name [object_name $obj_id]
+set userparams [ig::db::get_attribute -object $obj_id -attribute "accesscargs" -default {}]
+set header_name "rf_${rf_name}"
+
+proc read_reg {} {
+    return [uplevel 1 {regexp -nocase {^[^-W]*$} $reg(type)}]
+}
+proc write_reg {} {
+    return [uplevel 1 {regexp -nocase {W} $reg(type)}]
+}
+
+proc write_reg_j {} {
+    return [uplevel 1 {regexp -nocase {W} $reg_j(type)}]
+}
 
 ##########################################################################################
 # iterate over entries sorted by address
@@ -66,13 +135,65 @@ foreach i_entry $entry_list {
 
     array set entry $i_entry
 
+    set arguments_read  $userparams
+    set arguments_write $userparams
+
+    set write_regs {}
+    set read_regs {}
+
     #sub register loop
     set sreg_idx 0
     # get number of subregs
     set num_sregs [llength $entry(regs)]
+
     foreach i_reg $entry(regs) {
 
         array set reg $i_reg
+
+        if {[string is integer $reg(width)]} {
+            if {$reg(width) <= 1} {
+                set rtype "bool"
+            } elseif {$reg(width) <= 8} {
+                set rtype "uint8_t"
+            } elseif {$reg(width) <= 16} {
+                set rtype "uint16_t"
+            } else {
+                set rtype "uint32_t"
+            }
+        } else {
+            set rtype "uint32_t"
+        }
+
+        set reg_data [list name $reg(name) type $rtype]
+        set userparams_extra $userparams
+        lappend userparams_extra {}
+        set userparams_extra [join $userparams_extra ", "]
+
+
+        foreach j_reg $entry(regs) {
+            array set reg_j $j_reg
+
+            if {[write_reg_j]} {
+                lappend arguments_write "${rtype} ${reg_j(name)}"
+                lappend write_regs $reg_data
+            }
+
+            if {$reg_j(type) ne "-"} {
+                lappend arguments_read "${rtype} *${reg_j(name)}"
+                lappend read_regs $reg_data
+            }
+
+            if {[llength $read_regs] > 0} {
+                set has_read 1
+            } else {
+                set has_read 0
+            }
+            if {[llength $write_regs] > 0} {
+                set has_write 1
+            } else {
+                set has_write 0
+            }
+        }
 
         if { ($reg_idx % 2) ==  0 } {
             if {$reg(type) ne "-"} {
@@ -91,9 +212,34 @@ foreach i_entry $entry_list {
         if {$sreg_idx == 0} {
             %>      <td rowspan="<%=$num_sregs %>"><b><%=$entry(name)                      %></b></td><%="\n"%><%
             %>      <td rowspan="<%=$num_sregs %>"><b><%=[format "0x%08x" $entry(address)] %></b></td><%="\n"%><%
+            %>      <td rowspan="<%=$num_sregs %>"><%="\n"%><%
+            %><% if {$has_read} { %><%
+            %>          <div class="tooltip"><button class="cpp_r_button" style="font-family:'Courier New'"  onclick="setClipboard('<%="rf_${rf_name}_${entry(name)}"%>_read  (<[join $arguments_read ", "]>);')">CRD</button><%="\n"
+            %>          <span class="tooltiptext" style="background-color: black; color: white">click to copy CPP read function</span></div><%= "\n"
+            %><%+ } -%>        </td><%="\n"%><%
+            %>        <td rowspan="<%=$num_sregs %>"><%="\n"%><%
+            %><% if {$has_write} {
+            %>          <div class="tooltip"><button class="cpp_w_button" style="font-family:'Courier New'" onclick="setClipboard('<%="rf_${rf_name}_${entry(name)}"%>_write (<[join $arguments_write ", "]>);')">CWR</button><%="\n"
+            %>          <span class="tooltiptext" style="background-color: black; color: white">click to copy CPP write function</span></div><%= "\n"
+            %><%+ } -%>        </td><%="\n"%><%
+            %>        <td rowspan="<%=$num_sregs %>"><%="\n"%><%
+            %>          <div class="tooltip"><button class="tex_button" style="font-family:'Courier New'" onclick="setClipboard('<%= "\\\\getReg\{" $rf_name ":" $entry(name) ".diag\};" %> ')">TEX</button><%="\n"
+            %>          <span class="tooltiptext" style="background-color: black; color: white">click to copy latex diagram call</span></div><%= "\n"
+            %>    </td><%= "\n"
         }
         %>      <td><%=                   $reg(name)     %></td><%="\n"%><%
-        %>      <td><%=                   $reg(signal)   %></td><%="\n"%><%
+        %>      <td align="left"><%
+        %><%  if {$reg(type) ne "-"} { %>
+            <div class="tooltip"><button class="cpp_r_button" style="font-family:'Courier New'"
+            onclick="setClipboard('<%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_read (<%=$userparams_extra%><%=$rtype%> *value);')">CRD</button>
+            <span class="tooltiptext" style="background-color: black; color: white">click to copy CPP read function</span></div>
+        <% }
+         if {[write_reg]} { %>
+            <div class="tooltip"><button class="cpp_w_button" style="font-family:'Courier New'"
+            onclick="setClipboard('<%="rf_${rf_name}_${entry(name)}_${reg(name)}"%>_write (<%=$userparams_extra%><%=$rtype%> value);')">CWR</button>
+            <span class="tooltiptext" style="background-color: black; color: white">click to copy CPP write function</span></div>
+        <% } %></td><%= "\n"
+        %><%
         %>      <td align="center"><%=    $reg(width)    %></td><%="\n"%><%
         %>      <td align="center"><%=    $reg(type)     %></td><%="\n"%><%
         %>      <td align="center"><%=    $reg(entrybits)%></td><%="\n"%><%
