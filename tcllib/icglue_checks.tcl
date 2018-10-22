@@ -227,7 +227,7 @@ namespace eval ig::checks {
 
                 if {!$psucc} {continue}
                 if {$rstwidth < 0} {
-                    set rstwidth [expr {int(ceil(log($pval+1)/log(2)))}]
+                    set rstwidth [expr {clog2($pval+1)}]
                     if {$rstwidth < $width} {set rstwidth $width}
                 }
 

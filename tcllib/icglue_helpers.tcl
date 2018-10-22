@@ -690,4 +690,30 @@ namespace eval ig::aux {
     namespace export *
 }
 
+## @brief Return integer value of ceil(log2(x))
+#
+# @param x should be an integer > 0.
+# @return int(ceil(log2(x)))
+proc ::tcl::mathfunc::clog2 {x} {
+    # simple version does not work due to floating point precision:
+    #return [expr {int(ceil(log($x)/log(2)))}]
+
+    if {$x <= 0} {error "cannot compute logarithm of $x"}
+    if {![string is entier $x]} {
+        set x [expr {entier(ceil($x)) - 1}]
+    } else {
+        incr x -1
+    }
+
+    set y 0
+
+    while {$x > 0} {
+        incr y
+        set x [expr {$x >> 1}]
+    }
+
+    return $y
+}
+
+
 # vim: set filetype=icgluetcl syntax=tcl:
