@@ -183,14 +183,14 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
             return NULL;
         }
         if (type->default_instance->parent != NULL) {
-            log_error ("ENoRs", "module %s is no resource and is already instanciated", type->name);
+            log_error ("ENoRs", "module %s is no resource and is already instantiated", type->name);
             return NULL;
         }
 
         inst = type->default_instance;
 
         if (ig_lib_check_cycle (db, inst, parent)) {
-            log_error ("ECycl", "cannot instanciate module %s in module %s - would create hierarchy cycle!", type->name, parent->name);
+            log_error ("ECycl", "cannot instantiate module %s in module %s - would create hierarchy cycle!", type->name, parent->name);
             return NULL;
         }
 
