@@ -148,17 +148,17 @@ void ig_obj_free_full (struct ig_object *obj)
 
     /* type-specific frees call ig_object_free on object */
     switch (obj->type) {
-        case IG_OBJ_PORT:          ig_port_free       (IG_PORT       (PTR_TO_IG_OBJECT (obj))); break;
-        case IG_OBJ_PIN:           ig_pin_free        (IG_PIN        (PTR_TO_IG_OBJECT (obj))); break;
-        case IG_OBJ_PARAMETER:     ig_param_free      (IG_PARAM      (PTR_TO_IG_OBJECT (obj))); break;
-        case IG_OBJ_ADJUSTMENT:    ig_adjustment_free (IG_ADJUSTMENT (PTR_TO_IG_OBJECT (obj))); break;
-        case IG_OBJ_DECLARATION:   ig_decl_free       (IG_DECL       (PTR_TO_IG_OBJECT (obj))); break;
-        case IG_OBJ_CODESECTION:   ig_code_free       (IG_CODE       (PTR_TO_IG_OBJECT (obj))); break;
-        case IG_OBJ_MODULE:        ig_module_free     (IG_MODULE     (PTR_TO_IG_OBJECT (obj))); break;
-        case IG_OBJ_INSTANCE:      ig_instance_free   (IG_INSTANCE   (PTR_TO_IG_OBJECT (obj))); break;
-        case IG_OBJ_REGFILE_REG:   ig_rf_reg_free     (IG_RF_REG     (PTR_TO_IG_OBJECT (obj))); break;
-        case IG_OBJ_REGFILE_ENTRY: ig_rf_entry_free   (IG_RF_ENTRY   (PTR_TO_IG_OBJECT (obj))); break;
-        case IG_OBJ_REGFILE:       ig_rf_regfile_free (IG_RF_REGFILE (PTR_TO_IG_OBJECT (obj))); break;
+        case IG_OBJ_PORT:          ig_port_free       (IG_PORT       (obj)); break;
+        case IG_OBJ_PIN:           ig_pin_free        (IG_PIN        (obj)); break;
+        case IG_OBJ_PARAMETER:     ig_param_free      (IG_PARAM      (obj)); break;
+        case IG_OBJ_ADJUSTMENT:    ig_adjustment_free (IG_ADJUSTMENT (obj)); break;
+        case IG_OBJ_DECLARATION:   ig_decl_free       (IG_DECL       (obj)); break;
+        case IG_OBJ_CODESECTION:   ig_code_free       (IG_CODE       (obj)); break;
+        case IG_OBJ_MODULE:        ig_module_free     (IG_MODULE     (obj)); break;
+        case IG_OBJ_INSTANCE:      ig_instance_free   (IG_INSTANCE   (obj)); break;
+        case IG_OBJ_REGFILE_REG:   ig_rf_reg_free     (IG_RF_REG     (obj)); break;
+        case IG_OBJ_REGFILE_ENTRY: ig_rf_entry_free   (IG_RF_ENTRY   (obj)); break;
+        case IG_OBJ_REGFILE:       ig_rf_regfile_free (IG_RF_REGFILE (obj)); break;
     }
 }
 
