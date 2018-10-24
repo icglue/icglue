@@ -76,6 +76,7 @@ const char *ig_obj_type_name (enum ig_object_type type)
         case IG_OBJ_REGFILE_REG:   return "register";
         case IG_OBJ_REGFILE_ENTRY: return "regfile-entry";
         case IG_OBJ_REGFILE:       return "regfile";
+        case IG_OBJ_NET:           return "net";
     }
 
     return "UNKNOWN";
@@ -159,6 +160,7 @@ void ig_obj_free_full (struct ig_object *obj)
         case IG_OBJ_REGFILE_REG:   ig_rf_reg_free     (IG_RF_REG     (obj)); break;
         case IG_OBJ_REGFILE_ENTRY: ig_rf_entry_free   (IG_RF_ENTRY   (obj)); break;
         case IG_OBJ_REGFILE:       ig_rf_regfile_free (IG_RF_REGFILE (obj)); break;
+        case IG_OBJ_NET:           ig_net_free        (IG_NET        (obj)); break;
     }
 }
 
@@ -271,6 +273,7 @@ struct ig_port *ig_port_new (const char *name, enum ig_port_dir dir, struct ig_m
     port->name   = ig_obj_attr_get (IG_OBJECT (port), "name");
     port->dir    = dir;
     port->parent = parent;
+    port->net    = NULL;
 
     return port;
 }
@@ -337,6 +340,7 @@ struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_
     decl->default_assignment = ig_obj_attr_get (IG_OBJECT (decl), "assign");
     decl->default_type       = default_type;
     decl->parent             = parent;
+    decl->net                = NULL;
 
     return decl;
 }
@@ -566,6 +570,7 @@ struct ig_pin *ig_pin_new (const char *name, const char *connection, struct ig_i
     pin->name       = ig_obj_attr_get (IG_OBJECT (pin), "name");
     pin->connection = ig_obj_attr_get (IG_OBJECT (pin), "connection");
     pin->parent     = parent;
+    pin->net        = NULL;
 
     return pin;
 }
@@ -652,5 +657,59 @@ void ig_instance_free (struct ig_instance *instance)
     IG_OBJECT_CHILD_QUEUE_UNREF_AND_FREE (instance, pins,        struct ig_pin,        parent);
 
     g_slice_free (struct ig_instance, instance);
+}
+
+
+
+/*******************************************************
+ * net data
+ *******************************************************/
+
+struct ig_net *ig_net_new (const char *name, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+
+    struct ig_net    *net      = g_slice_new (struct ig_net);
+    struct ig_object *plist[1] = {NULL};
+    ig_obj_init (IG_OBJ_NET, name, plist, IG_OBJECT (net), storage);
+
+    net->name = ig_obj_attr_get (IG_OBJECT (net), "name");
+
+    net->objects = g_queue_new ();
+
+    return net;
+}
+
+void ig_net_free (struct ig_net *net)
+{
+    if (net == NULL) return;
+
+    ig_obj_free (IG_OBJECT (net));
+
+    if (net->objects != NULL) {
+        for (GList *li = net->objects->head; li != NULL; li = li->next) {
+            struct ig_object *obj         = PTR_TO_IG_OBJECT (li->data);
+            struct ig_net   **obj_net_ptr = NULL;
+
+            if (obj->type == IG_OBJ_PORT) {
+                obj_net_ptr = &(IG_PORT (obj)->net);
+            } else if (obj->type == IG_OBJ_PIN) {
+                obj_net_ptr = &(IG_PIN (obj)->net);
+            } else if (obj->type == IG_OBJ_DECLARATION) {
+                obj_net_ptr = &(IG_DECL (obj)->net);
+            } else {
+                log_errorint ("NtFre", "Net %s contains object of invalid type %s.", net->name, ig_obj_type_name (obj->type));
+            }
+
+            if ((obj_net_ptr != NULL) && (*obj_net_ptr == net)) {
+                *obj_net_ptr = NULL;
+            }
+
+            ig_obj_unref (obj);
+        }
+        g_queue_free (net->objects);
+    }
+
+    g_slice_free (struct ig_net, net);
 }
 

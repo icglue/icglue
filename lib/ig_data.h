@@ -51,7 +51,8 @@ enum ig_object_type {
     IG_OBJ_INSTANCE,
     IG_OBJ_REGFILE_REG,
     IG_OBJ_REGFILE_ENTRY,
-    IG_OBJ_REGFILE
+    IG_OBJ_REGFILE,
+    IG_OBJ_NET
 };
 
 /**
@@ -101,6 +102,7 @@ struct ig_port {
     enum ig_port_dir dir;     /**< @brief Direction of port. */
 
     struct ig_module *parent; /**< @brief Module containing port. */
+    struct ig_net    *net;    /**< @brief Net connected to port or @c NULL. */
 };
 
 /**
@@ -134,6 +136,7 @@ struct ig_decl {
     const char *default_assignment; /**< @brief Default assignment to declared variable or @c NULL if unassigned. */
 
     struct ig_module *parent;       /**< @brief Module containing declaration. */
+    struct ig_net    *net;    /**< @brief Net connected to decl or @c NULL. */
 };
 
 /**
@@ -237,6 +240,7 @@ struct ig_pin {
     const char *connection;     /**< @brief Value/signal connected to pin. */
 
     struct ig_instance *parent; /**< @brief Instance containing pin */
+    struct ig_net      *net;    /**< @brief Net connected to pin or @c NULL. */
 };
 
 /**
@@ -273,7 +277,19 @@ struct ig_instance {
     GQueue *pins;             /**< @brief Instance pins. Queue data: (struct @ref ig_pin *) */
 };
 
-/* TODO: net? */
+/**
+ * @brief Net data.
+ *
+ * For memory allocation/free see @ref ig_net_new and @ref ig_net_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
+ */
+struct ig_net {
+    struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
+
+    const char *name;         /**< @brief Name of net. */
+
+    GQueue *objects;          /**< @brief Objects of net. */
+};
 
 /*******************************************************
  * Defines
@@ -624,6 +640,24 @@ struct ig_instance *ig_instance_new (const char *name, struct ig_module *module,
 void ig_instance_free (struct ig_instance *instance);
 
 
+/**
+ * @brief Create new net data struct.
+ * @param name Name of net.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated net structure or @c NULL in case of an error.
+ *
+ * Default attributes are set in the related object.
+ */
+struct ig_net *ig_net_new (const char *name, GStringChunk *storage);
+
+/**
+ * @brief Free net data struct.
+ * @param net Pointer to net data struct to free.
+ *
+ * Frees the net data struct together with the related object.
+ */
+void ig_net_free (struct ig_net *net);
+
 
 /*******************************************************
  * Cast inline functions
@@ -660,6 +694,7 @@ __IG_OBJECT_GEN_CAST (IG_INSTANCE,   struct ig_instance,   IG_OBJ_INSTANCE)
 __IG_OBJECT_GEN_CAST (IG_RF_REG,     struct ig_rf_reg,     IG_OBJ_REGFILE_REG)
 __IG_OBJECT_GEN_CAST (IG_RF_ENTRY,   struct ig_rf_entry,   IG_OBJ_REGFILE_ENTRY)
 __IG_OBJECT_GEN_CAST (IG_RF_REGFILE, struct ig_rf_regfile, IG_OBJ_REGFILE)
+__IG_OBJECT_GEN_CAST (IG_NET,        struct ig_net,        IG_OBJ_NET)
 
 #undef __IG_OBJECT_GEN_CAST
 
