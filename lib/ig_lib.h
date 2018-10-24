@@ -46,7 +46,8 @@ struct ig_lib_db {
     GHashTable *instances_by_name; /**< @brief Mapping of instance names to instance data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_instance *) </tt> */
     GHashTable *instances_by_id;   /**< @brief Mapping of Object-ID to instance data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_instance *) </tt> */
 
-    /* TODO: remaining */
+    GHashTable *nets_by_name;      /**< @brief Mapping of net names to net data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_net *) </tt> */
+    GHashTable *nets_by_id;        /**< @brief Mapping of Object-ID to net data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_net *) </tt> */
 
     GStringChunk *str_chunks;      /**< @brief String container used for all generated objects. */
 };
