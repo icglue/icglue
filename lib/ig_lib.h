@@ -192,12 +192,12 @@ void ig_lib_connection_info_free (struct ig_lib_connection_info *cinfo);
  * @param signame Signal name.
  * @param source Signal source or @c NULL. Will be freed after usage.
  * @param targets List of signal endpoints. List data: <tt> (struct @ref ig_lib_connection_info *) </tt>. Will be freed after usage.
- * @param[out] gen_objs List of newly created hierarchy pin/port/declaration elements of signal. List data: <tt> (struct ig_object *) </tt>.
+ * @param[out] gen_net Newly created net data.
  * @return true on success.
  *
  * @c source and @c targets will be freed on return, @c *gen_objs must be freed by caller.
  */
-bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets, GList **gen_objs);
+bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets, struct ig_net **gen_net);
 
 /**
  * @brief Create hierarchical parameter.

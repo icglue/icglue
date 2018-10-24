@@ -1025,16 +1025,18 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     trg_list = g_list_reverse (trg_list);
 
     log_debug ("TCCon", "starting connection...");
-    GList *gen_objs = NULL;
+    struct ig_net *gen_net = NULL;
 
-    if (!ig_lib_connection (db, name, src, trg_list, &gen_objs)) {
-        g_list_free (gen_objs);
+    if (!ig_lib_connection (db, name, src, trg_list, &gen_net)) {
+        ig_net_free (gen_net);
         result = tcl_error_msg (interp, "Signal \"%s\", error while trying to create connection", name);
     }
     log_debug ("TCCon", "... finished connection");
 
+    /* TODO: return net object id instead of list and provide get-objects of net function */
+    ig_obj_attr_set (IG_OBJECT (gen_net), "size", size, true);
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
-    for (GList *li = gen_objs; li != NULL; li = li->next) {
+    for (GList *li = gen_net->objects->head; li != NULL; li = li->next) {
         struct ig_object *i_obj = PTR_TO_IG_OBJECT (li->data);
 
         ig_obj_attr_set (i_obj, "size", size, true);
@@ -1046,7 +1048,6 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     log_debug ("TCCon", "freeing results...");
 
     Tcl_SetObjResult (interp, retval);
-    g_list_free (gen_objs);
 
 l_ig_tclc_connect_exit_pre:
     g_string_free (tstr_id, true);

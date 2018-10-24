@@ -354,7 +354,7 @@ struct ig_rf_reg *ig_lib_add_regfile_reg (struct ig_lib_db *db, const char *name
 }
 
 
-bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets, GList **gen_objs)
+bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib_connection_info *source, GList *targets, struct ig_net **gen_net)
 {
     GList *hier_start_list = NULL;
 
@@ -434,13 +434,12 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
     }
 
     struct ig_net *net = ig_lib_add_net (db, signame, gen_objs_res);
-    /* TODO: return net */
 
-    if (gen_objs != NULL) {
-        *gen_objs = gen_objs_res;
-    } else {
-        g_list_free (gen_objs_res);
+    if (gen_net != NULL) {
+        *gen_net = net;
     }
+
+    g_list_free (gen_objs_res);
 
     log_debug ("LConn", "deleting hierarchy tree...");
     ig_lib_htree_free (hier_tree);
