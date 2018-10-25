@@ -110,8 +110,8 @@ struct ig_module *ig_lib_add_module (struct ig_lib_db *db, const char *name, boo
     char *l_name = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod)->name);
     char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod)->id);
 
-    g_hash_table_insert (db->modules_by_name, l_name, mod);
-    g_hash_table_insert (db->modules_by_id,   l_id,   mod);
+    g_hash_table_insert (db->modules_by_name, l_name, IG_OBJECT (mod));
+    g_hash_table_insert (db->modules_by_id,   l_id,   IG_OBJECT (mod));
     g_hash_table_insert (db->objects_by_id,   l_id,   IG_OBJECT (mod));
     ig_obj_ref (IG_OBJECT (mod));
     ig_obj_ref (IG_OBJECT (mod));
@@ -218,8 +218,8 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
     char *l_name = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (inst)->name);
     char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (inst)->id);
 
-    g_hash_table_insert (db->instances_by_name, l_name, inst);
-    g_hash_table_insert (db->instances_by_id,   l_id,   inst);
+    g_hash_table_insert (db->instances_by_name, l_name, IG_OBJECT (inst));
+    g_hash_table_insert (db->instances_by_id,   l_id,   IG_OBJECT (inst));
     g_hash_table_insert (db->objects_by_id,     l_id,   IG_OBJECT (inst));
     ig_obj_ref (IG_OBJECT (inst));
     ig_obj_ref (IG_OBJECT (inst));
@@ -1185,9 +1185,9 @@ static struct ig_net *ig_lib_add_net (struct ig_lib_db *db, const char *netname,
     char *l_name = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (net)->name);
     char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (net)->id);
 
-    g_hash_table_insert (db->nets_by_name, l_name, net);
-    g_hash_table_insert (db->nets_by_id, l_id, net);
-    g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (net));
+    g_hash_table_insert (db->nets_by_name,  l_name, IG_OBJECT (net));
+    g_hash_table_insert (db->nets_by_id,    l_id,   IG_OBJECT (net));
+    g_hash_table_insert (db->objects_by_id, l_id,   IG_OBJECT (net));
     ig_obj_ref (IG_OBJECT (net));
     ig_obj_ref (IG_OBJECT (net));
     ig_obj_ref (IG_OBJECT (net));

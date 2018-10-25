@@ -40,14 +40,14 @@ extern "C" {
 struct ig_lib_db {
     GHashTable *objects_by_id;     /**< @brief Mapping of ID to objects. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
 
-    GHashTable *modules_by_name;   /**< @brief Mapping of module names to module data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_module *) </tt> */
-    GHashTable *modules_by_id;     /**< @brief Mapping of Object-ID to module data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_module *) </tt> */
+    GHashTable *modules_by_name;   /**< @brief Mapping of module names to module object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
+    GHashTable *modules_by_id;     /**< @brief Mapping of Object-ID to module object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
 
-    GHashTable *instances_by_name; /**< @brief Mapping of instance names to instance data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_instance *) </tt> */
-    GHashTable *instances_by_id;   /**< @brief Mapping of Object-ID to instance data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_instance *) </tt> */
+    GHashTable *instances_by_name; /**< @brief Mapping of instance names to instance object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
+    GHashTable *instances_by_id;   /**< @brief Mapping of Object-ID to instance object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
 
-    GHashTable *nets_by_name;      /**< @brief Mapping of net names to net data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_net *) </tt> */
-    GHashTable *nets_by_id;        /**< @brief Mapping of Object-ID to net data. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_net *) </tt> */
+    GHashTable *nets_by_name;      /**< @brief Mapping of net names to net object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
+    GHashTable *nets_by_id;        /**< @brief Mapping of Object-ID to net object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
 
     GStringChunk *str_chunks;      /**< @brief String container used for all generated objects. */
 };
