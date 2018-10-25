@@ -7,9 +7,6 @@
   - add description
 
 ## lib
-- regfile support
-  - add get\_regfile -name (without -of option) possibility
-- add net/signal data type to retrieve signals?
 - library cleanup
   - merge similar data-structs
   - only one regfile per module
