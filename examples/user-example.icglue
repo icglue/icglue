@@ -133,7 +133,7 @@ if {0} {
     # explicit way (component view)
     S "entry_name0_s_cfg"    -w 5  submod:s_cfg_i     <--  submod_regfile
     S "entry_name0_s_status" -w 16 submod:s_status_o  -->  submod_regfile
-    R submod_regfile "entry_name0" {
+    R submod_regfile "entry_name0" -protected {
         "name"   | "entrybits" | "type" | "reset" | "signal"             | "comment"
         -----    | ----------- | -----  | ------- | --------             | ---------
         s_cfg    | 4:0         | RW     | 5'h0    | entry_name0_s_cfg    | "Configure component"
@@ -184,6 +184,7 @@ if {1} {
     # type = "S" means sync trigger-ack-signal via common sync
     SR "submod_state"       -w 32 submod_regfile                           <--  submod:state_o \
                                                                                 -handshake {"state_trigger" "state_trigger_ack" "S"} \
+                                                                                -protected \
                                                                                 -comment "Submodule read state"
 
 } else {
@@ -197,6 +198,9 @@ if {1} {
     S  "state_trigger_sync"       common_sync<submod_trigger_sync>:data_o  -->  submod:trigger_i
 
 }
+
+# control regfile protection via protected register
+SR "rf_protect" -w 1 = 1'b0 submod_regfile:rf_protect_ctl! --> submod_regfile:apb_prot_en! -comment "protection enable"
 
 # a more scripting advanced example for:
 #   connecting control signals from regfile to submodule through common_syncs
@@ -228,17 +232,17 @@ R submod_regfile "entry_sync0"  $rf_submod_table
 ### Connect fixed ports of the apb regfile template                  ###
 ########################################################################
 set rf_apb_ports {
-        rf_addr    --> apb_addr_i    32 component_wrap
-        rf_sel     --> apb_sel_i     1  component_wrap
-        rf_enable  --> apb_enable_i  1
-        rf_write   --> apb_write_i   1
-        rf_strb    --> apb_strb_i    4
-        rf_wdata   --> apb_wdata_i   32
+        rf_addr    --> apb_addr    32 component_wrap
+        rf_sel     --> apb_sel     1  component_wrap
+        rf_enable  --> apb_enable  1
+        rf_write   --> apb_write   1
+        rf_strb    --> apb_strb    4
+        rf_prot    --> apb_prot    3
+        rf_wdata   --> apb_wdata   32
 
-        rf_protect <-- apb_protect_o 3
-        rf_ready   <-- apb_ready_o   1
-        rf_rdata   <-- apb_rdata_o   32
-        rf_slverr  <-- apb_slver_o   1
+        rf_ready   <-- apb_ready   1
+        rf_rdata   <-- apb_rdata   32
+        rf_slverr  <-- apb_slver   1
 }
 
 foreach rf_conn [split $rf_apb_ports "\n"] {
@@ -248,6 +252,6 @@ foreach rf_conn [split $rf_apb_ports "\n"] {
         set mod tb_component
     }
 
-    S "$sig" -w $w $mod ${<->} submod_regfile:${p}
+    S "$sig" -w $w $mod ${<->} submod_regfile:${p}!
 }
 

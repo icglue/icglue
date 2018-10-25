@@ -9,7 +9,9 @@
     proc rf_write                {} { return "apb_write_i"             }
     proc rf_w_data               {} { return "apb_wdata_i"             }
     proc rf_bytesel              {} { return "apb_strb_i"              }
-    proc rf_prot                 {} { return "apb_prot_i"              }
+    proc rf_prot                 {} { return "apb_prot_i\[1\]"         }
+    proc rf_prot_enable          {} { return "apb_prot_en_i"           }
+    proc rf_prot_ok              {} { return "rf_apb_prot_ok"          }
 
     proc rf_r_data               {} { return "apb_rdata_o"             }
     proc rf_ready                {} { return "apb_ready_o "            }
@@ -183,7 +185,11 @@
                         "first occurence: [dict get $handshake_sig_in_from_out $handshake_sig_out] / redeclared $handshake_sig_in (ignored)"
                 }
             }
-            dict lappend handshake_cond_req $handshake_sig_out "([rf_addr] == [string trim [param]])"
+            if {$entry(protected)} {
+                dict lappend handshake_cond_req $handshake_sig_out "(([rf_addr] == [string trim [param]]) && [rf_prot_ok])"
+            } else {
+                dict lappend handshake_cond_req $handshake_sig_out "([rf_addr] == [string trim [param]])"
+            }
         }
 
 %>
@@ -206,10 +212,13 @@
     reg          <[rf_err_sig]>;
     wire         <[rf_w_sel]>;
     wire         <[rf_r_sel]>;
+    wire         <[rf_prot_ok]>;
     reg          <[rf_write_permitted]>;
     reg          <[rf_next_write_permitted]>;
     reg          <[rf_read_permitted]>;
-    reg          <[rf_next_read_permitted]>;<%="\n"%><%
+    reg          <[rf_next_read_permitted]>;
+
+    assign <[rf_prot_ok]> = <[rf_prot]> | ~<[rf_prot_enable]>;<%="\n"%><%
     foreach_preamble {s r w sb} $sig_syncs { %>
     // common sync signals<% } { %>
     wire <%=$w%> <%=$r%>_sync;<% } %><%="\n"%><%
@@ -311,7 +320,7 @@
             } %>
         end else begin
             if (<[rf_w_sel]> && <[rf_enable]>) begin
-                if (<[rf_addr]> == <[string trim [param]]>) begin<%
+                if (<% if {$entry(protected)} {%>(<%}%><[rf_addr]> == <[string trim [param]]><% if {$entry(protected)} {%>) && <[rf_prot_ok]><%}%>) begin<%
                     for {set byte 0} {$byte < 4} {incr byte} {
                         foreach_array_preamble_epilog_with reg $entry(regs) {[write_reg] && [reg_entrybits_in_bytesel $byte]} { %>
                     if (<[rf_bytesel]>[<%=$byte%>] == 1'b1) begin<% } { %><%
@@ -396,7 +405,9 @@
         case (<[rf_addr]>)<% foreach_array entry $entry_list { %>
             <[string trim [param]]>: begin
                 <[rf_r_data_sig]> = <[reg_val]>;<% if {[foreach_array_contains reg $entry(regs) {[write_reg]}]} { %>
-                <[rf_next_write_permitted]> = 1;<% } %>
+                <[rf_next_write_permitted]> = <% if {$entry(protected)} { %><[rf_prot_ok]><% } else { %>1<% } %>;<% } %><%
+                if {$entry(protected)} {%>
+                <[rf_next_read_permitted]> = <[rf_prot_ok]>;<% } %>
             end<% } %>
             <%=[pop_keep_block_content keep_block_data "keep" "regfile-${rf(name)}-outputmux"] %>
             default: begin

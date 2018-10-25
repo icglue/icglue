@@ -797,6 +797,7 @@ namespace eval ig {
     #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))($|=)  </i></td><td>  DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument      <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; (@|-addr($|=))        </i></td><td>  specify the address                                                          <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -handshake($|=)       </i></td><td>  specify sig-variablenals and type for handshake {signal-out signal-in type}  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -prot(ect(ed)?)?      </i></td><td>  register is protected for privileged-only access                             <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -subst                </i></td><td>  perform Tcl-variable substition in REGISTERTABLE argument (default for now)  <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -nosubst              </i></td><td>  do not perform Tcl-variable substition in REGISTERTABLE argument             <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -nosubst              </i></td><td>  do not perform Tcl-command substition in REGISTERTABLE argument              <br></td></tr>
@@ -820,11 +821,12 @@ namespace eval ig {
     # <b>REGn</b>: Sublists containing the actual register-data.
     proc R args {
         # defaults
-        set entryname   ""
-        set regfilename ""
-        set address     {}
-        set regdef      {}
-        set handshake   {}
+        set entryname    ""
+        set regfilename  ""
+        set address      {}
+        set regdef       {}
+        set handshake    {}
+        set protected    "false"
         set do_var_subst "true"
         set do_subst     "false"
 
@@ -833,6 +835,7 @@ namespace eval ig {
                 { {^-(rf|regf(ile)?)($|=)}  "string"             regfilename    "DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument "          } \
                 { {^(@|-addr($|=))}         "string"             address        "specify the address"                                                               } \
                 { {^-handshake($|=)}        "string"             handshake      "specify signals and type for handshake {signal-out signal-in type} "               } \
+                { {^-prot(ect(ed)?)?$}      "const=true"         protected      "register is protected for privileged-only access"                                  } \
                 { {^-s(ubst)?$}             "const=true"         do_var_subst   "perform Tcl-variable substition of REGISTERTABLE argument (default)"               } \
                 { {^-nosubst$}              "const=false"        do_var_subst   "do not perform Tcl-variable substition in REGISTERTABLE argument"                  } \
                 { {^-e((val)?ulate)?$}      "const=true"         do_subst       "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
@@ -927,7 +930,8 @@ namespace eval ig {
             if {(![string is integer $address]) || ($address < 0)} {
                 log -error -abort "R (regfile-entry ${entryname}): no/invalid address"
             }
-            ig::db::set_attribute -object $entry_id -attribute "address" -value $address
+            ig::db::set_attribute -object $entry_id -attribute "address"   -value $address
+            ig::db::set_attribute -object $entry_id -attribute "protected" -value $protected
             # set handshake
             if {$handshake ne ""} {
                 set handshakelist {}
@@ -1077,6 +1081,7 @@ namespace eval ig {
         set reg_type      {}
         set address       {}
         set handshake     {}
+        set protected     "false"
         set resetval      {}
         set comment "-"
 
@@ -1088,6 +1093,7 @@ namespace eval ig {
                 { {^(@|-addr($|=))}                "string"       address   "specify the address"                                                 } \
                 { {^-c(omment)?($|=)}              "string"       comment   "specify comment for the register"                                    } \
                 { {^-handshake($|=)}               "string"       handshake "specify signals and type for handshake {signal-out signal-in type}"  } \
+                { {^-prot(ect(ed)?)?$}             "const=true"   protected "register is protected for privileged-only access"                    } \
                 { {^(=|-v(alue)?|-r(eset(val)?)?)} "string"       resetval  "specify reset value for the register"                                } \
             ] -context "SIGNALNAME CONNECTIONPORTS..." $args]
 
@@ -1101,38 +1107,39 @@ namespace eval ig {
         }
 
         if {$handshake ne ""} {
-            lappend rf_args "-handshake [list $handshake]"
+            lappend rf_args "-handshake" [list $handshake]
         }
+        if {$protected} {
+            lappend rf_args "-protected"
+        }
+
         set signalname [lindex $arguments 0]
 
         set regfile_id {}
 
         set rf_list {}
-        #TODO: replace as soon lib provide a better command
-        foreach i_md [ig::db::get_modules -all] {
+
+        foreach i_rf [ig::db::get_regfiles -all] {
+            set i_md [ig::db::get_attribute -obj $i_rf -attribute "parent"]
             set arg_idx 1
             foreach name [lrange $arguments 1 end] {
                 lassign [split $name ":"] name
                 if {($name eq [ig::db::get_attribute -obj $i_md -attribute "name"])} {
-                    catch {
-                        set regfiles [ig::db::get_regfiles -of $i_md]
-                        if  {[llength $regfiles] == 1} {
-                            set reset $resetval
-                            if {$reg_type eq ""} {
-                                if {   (($dir eq "-->") && ($arg_idx == 1))
-                                    || (($dir eq "<--") && ($arg_idx == [llength $arguments]-1))} {
-                                    set reg_type "RW"
-                                } else {
-                                    set reg_type "R"
-                                    set reset "-"
-                                }
-                            }
-                            set rf [lindex $regfiles 0]
-                            set rf_name [ig::db::get_attribute -obj $rf -attribute "name"]
-                            set entryname ${signalname}
-                            lappend rf_list $rf_name $entryname $reg_type $reset
+                    set reset $resetval
+                    if {$reg_type eq ""} {
+                        if {   (($dir eq "-->") && ($arg_idx == 1))
+                            || (($dir eq "<--") && ($arg_idx == [llength $arguments]-1))} {
+                            set reg_type "RW"
+                        } else {
+                            set reg_type "R"
+                            set reset "-"
                         }
                     }
+                    set rf $i_rf
+                    set rf_name [ig::db::get_attribute -obj $rf -attribute "name"]
+                    set entryname ${signalname}
+                    lappend rf_list $rf_name $entryname $reg_type $reset
+                    break
                 }
                 incr arg_idx
             }
@@ -1269,23 +1276,26 @@ namespace eval ig {
             log -error -abort "RT (regfile ${regfilename}): no registers specified"
         }
 
-        #order: {entryname ?address? ...}
+        #order: {entryname ?address? ?protect? ...}
         set r_head [lindex $regtable 0]
         set regtable [lrange $regtable 1 end]
 
         set idx_entry   [lsearch $r_head "entryname"]
         set idx_addr    [lsearch $r_head "address"]
+        set idx_protect [lsearch $r_head "protect"]
 
         set e_head      {}
         foreach i_h $r_head {
             if {$i_h eq "entryname"} {continue}
             if {$i_h eq "address"}   {continue}
+            if {$i_h eq "protect"}   {continue}
             lappend e_head $i_h
         }
 
         set e_dict      {}
         set e_last_name {}
         set e_last_addr {}
+        set e_last_prot {}
         set e_table     {}
 
         foreach i_row $regtable {
@@ -1299,12 +1309,15 @@ namespace eval ig {
             set e_row  {}
             set e_name {}
             set e_addr {}
+            set e_prot {}
 
             for {set i 0} {$i < [llength $i_row]} {incr i} {
                 if {($i == $idx_entry)} {
                     set e_name [lindex $i_row $i]
                 } elseif {($i == $idx_addr)} {
                     set e_addr [lindex $i_row $i]
+                } elseif {($i == $idx_protect)} {
+                    set e_prot [lindex $i_row $i]
                 } else {
                     lappend e_row [lindex $i_row $i]
                 }
@@ -1314,9 +1327,13 @@ namespace eval ig {
             if {$e_name eq ""} {
                 log -warn "register table row \"${i_row}\" has no entry name"
             }
-            if {($e_addr eq "") && ($e_name eq $e_last_name)} {set e_addr $e_last_addr}
+            if {$e_name eq $e_last_name} {
+                if {$e_addr eq ""} {set e_addr $e_last_addr}
+                if {$e_prot eq ""} {set e_prot $e_last_prot}
+            }
 
             dict set e_dict $e_name addr $e_addr
+            dict set e_dict $e_name prot $e_prot
             if {$e_name ne $e_last_name} {
                 dict set e_dict $e_name table [list $e_head]
             }
@@ -1332,11 +1349,15 @@ namespace eval ig {
         # create
         dict for {e_name e_data} $e_dict {
             set e_addr  [dict get $e_data "addr"]
+            set e_prot  [dict get $e_data "prot"]
             set e_table [dict get $e_data "table"]
 
             set opts {}
             if {$e_addr ne ""} {
                 lappend opts "@${e_addr}"
+            }
+            if {$e_prot ne ""} {
+                lappend opts "-protected"
             }
             if {$nosubst_opt ne ""} {
                 lappend opts $nosubst_opt
