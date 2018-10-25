@@ -902,33 +902,27 @@ namespace eval ig {
         }
         set regdef [lrange $regdef 1 end]
 
-        # actual regfile creation
+        # actual entry creation
         if {[catch {
             # get regfile
             set regfile_id {}
             set rf_module_name {}
-            set i_md [ig::aux::get_regfile_modid $regfilename]
+            set regfile_id [ig::db::get_regfiles -name $regfilename]
 
-            set regfiles [ig::db::get_regfiles -of $i_md]
             set alignment 4
-            if {[llength $regfiles] > 0} {
-                set regfile_id [lindex $regfiles 0]
-                set rf_module_name [ig::db::get_attribute -obj $i_md -attribute "name"]
-            } else {
-                log -error -abort "R (name $regfilename): unable to get regfile_id"
-            }
 
             if {$regfile_id eq ""} {
                 log -error -abort "R (regfile-entry ${entryname}): invalid regfile name specified: ${regfilename}"
             }
             # set the "real" regfilename
             set regfilename [ig::db::get_attribute -obj $regfile_id -attribute "name"]
+            set rf_module_name [ig::db::get_attribute -obj [ig::db::get_attribute -obj $regfile_id -attribute "parent"] -attribute "name"]
 
             # create entry
             set entry_id [ig::db::add_regfile -entry $entryname -to $regfile_id]
             # set address
             if {$address eq ""} {
-                set address [ig::aux::regfile_next_addr $i_md]
+                set address [ig::aux::regfile_next_addr $regfile_id]
             }
             if {(![string is integer $address]) || ($address < 0)} {
                 log -error -abort "R (regfile-entry ${entryname}): no/invalid address"
@@ -1050,7 +1044,7 @@ namespace eval ig {
                     ig::log -info -id "RCon" "$connect_cmd"
                 }
             }
-            ig::aux::regfile_next_addr $i_md [format "0x%04X" [expr {$address + $alignment}]]
+            ig::aux::regfile_next_addr $regfile_id [format "0x%04X" [expr {$address + $alignment}]]
         } emsg]} {
             log -error -abort "R (regfile-entry ${entryname}): error while creating regfile-entry:\n${emsg}"
         }

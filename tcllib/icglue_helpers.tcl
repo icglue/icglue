@@ -641,50 +641,21 @@ namespace eval ig::aux {
         }
     }
 
-    ## @brief Get regfile module identifier from regfilename
-    #
-    # @param regfilename the name of regfile (module)
-    # @return regfile module id
-    #
-    proc get_regfile_modid {regfilename} {
-        # TODO: move to lib / adapt lib query functions
-        set regfile_id {}
-        foreach i_md [ig::db::get_modules -all] {
-            if {![catch {ig::db::get_regfiles -name $regfilename -of $i_md} i_id]} {
-                break
-            }
-            if {($regfilename eq [ig::db::get_attribute -obj $i_md -attribute "name"])} {
-                set regfiles [ig::db::get_regfiles -of $i_md]
-                if  {[llength $regfiles] > 0} {
-                    break
-                }
-            }
-        }
-        if {$i_md eq ""} {
-            log -error -abort "get_regfile_modid: Unable to get regfile by name $regfilename"
-        }
-        return $i_md
-    }
-
     ## @brief Get/Set implicit regfile address
     #
-    # @param rfmodid regfile module id
-    # @param args    optional value of address to be set
+    # @param rfid regfile id
+    # @param args optional value of address to be set
     # @return address
-    proc regfile_next_addr {rfmodid args} {
+    proc regfile_next_addr {rfid args} {
         if {[llength $args] > 1} {
             log -error -abort "regfile_next_addr takes maximal two arguments."
         }
 
         if {[llength $args] == 1} {
-            ig::db::set_attribute -obj $rfmodid -attribute "_save_reg_addr" -value [lindex $args 0]
+            ig::db::set_attribute -obj $rfid -attribute "_save_reg_addr" -value [lindex $args 0]
         }
 
-        if {![catch {ig::db::get_attribute -obj $rfmodid -attribute "_save_reg_addr"} addr]} {
-            return $addr
-        } else {
-            return "0x0000"
-        }
+        return [ig::db::get_attribute -obj $rfid -attribute "_save_reg_addr" -default "0x0000"]
     }
 
     namespace export *
