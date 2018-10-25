@@ -58,6 +58,7 @@ static int ig_tclc_add_regfile      (ClientData clientdata, Tcl_Interp *interp, 
 static int ig_tclc_set_attribute    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_get_attribute    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_get_objs_of_obj  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_net_objects  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_connect          (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_parameter        (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int ig_tclc_create_pin       (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
@@ -98,6 +99,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_entries", ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_regs",    ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_nets",            ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_net_objects",     ig_tclc_get_net_objects, lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "connect",             ig_tclc_connect,         lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "parameter",           ig_tclc_parameter,       lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_pin",          ig_tclc_create_pin,      lib_db, NULL);
@@ -890,6 +892,61 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
 
     return TCL_OK;
 }
+
+/* TCLDOC
+##
+# @brief Return child object(s) of given net.
+#
+# @param args Parsed command arguments:<br>
+# -of \<net-object-id\>
+#
+# @return Object-ID(s) of child object(s) or an error
+*/
+static int ig_tclc_get_net_objects (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
+
+    if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
+
+    /* arg parsing */
+    char *parent_name = NULL;
+
+    Tcl_ArgvInfo arg_table [] = {
+        {TCL_ARGV_STRING, "-of", NULL, (void *)&parent_name, "parent object", NULL},
+
+        TCL_ARGV_AUTO_HELP,
+        TCL_ARGV_TABLE_END
+    };
+
+    int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+    if (result != TCL_OK) return result;
+
+    /* sanity checks */
+    if (parent_name == NULL) {
+        return tcl_error_msg (interp, "Flag -of <net> needs to be specified");
+    }
+
+    struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->nets_by_id, parent_name));
+    if (obj == NULL) {
+        return tcl_error_msg (interp, "Unable to get net-object \"%s\" from database", parent_name);
+    }
+
+    struct ig_net *net = IG_NET (obj);
+
+    Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
+
+    for (GList *li = net->objects->head; li != NULL; li = li->next) {
+        struct ig_object *i_obj = PTR_TO_IG_OBJECT (li->data);
+
+        Tcl_Obj *t_obj = Tcl_NewStringObj (i_obj->id, -1);
+        Tcl_ListObjAppendElement (interp, retval, t_obj);
+    }
+
+    Tcl_SetObjResult (interp, retval);
+
+    return TCL_OK;
+}
+
 
 static void ig_tclc_connection_parse (const char *input, GString *id, GString *net, bool *adapt, bool *inv_ptr)
 {
