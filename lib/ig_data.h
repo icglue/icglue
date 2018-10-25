@@ -70,8 +70,9 @@ struct ig_attribute {
  * @ref ig_obj_free and @ref ig_obj_free_full.
  */
 struct ig_object {
-    const char          *id;           /**< @brief Unique Object-ID. */
     enum  ig_object_type type;         /**< @brief Type of Object stored in inheriting struct. */
+    const char          *id;           /**< @brief Unique Object-ID. */
+    const char          *name;         /**< @brief Object name. */
 
     int refcount;                      /**< @brief Reference count for memory management. */
 
@@ -98,7 +99,6 @@ enum ig_port_dir {
 struct ig_port {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
-    const char      *name;    /**< @brief Name of port. */
     enum ig_port_dir dir;     /**< @brief Direction of port. */
 
     struct ig_module *parent; /**< @brief Module containing port. */
@@ -114,7 +114,6 @@ struct ig_port {
 struct ig_param {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
-    const char *name;         /**< @brief Name of parameter. */
     const char *value;        /**< @brief Default value of parameter. */
     bool        local;        /**< @brief Set if local parameter. */
 
@@ -130,8 +129,7 @@ struct ig_param {
 struct ig_decl {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
-    const char *name;         /**< @brief Name of declaration. */
-    bool        default_type;       /**< @brief Set if declaration is of default type (language dependant). */
+    bool default_type;              /**< @brief Set if declaration is of default type (language dependant). */
 
     const char *default_assignment; /**< @brief Default assignment to declared variable or @c NULL if unassigned. */
 
@@ -148,7 +146,6 @@ struct ig_decl {
 struct ig_code {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
-    const char *name;         /**< @brief Name of codesection. */
     const char *code;         /**< @brief Actual code. */
 
     struct ig_module *parent; /**< @brief Module containing codesection. */
@@ -163,8 +160,6 @@ struct ig_code {
 struct ig_rf_reg {
     struct ig_object object;    /**< @brief Inherited @ref ig_object struct. */
 
-    const char *name;           /**< @brief Name of register. */
-
     struct ig_rf_entry *parent; /**< @brief Regfile-entry containing register. */
 };
 
@@ -176,8 +171,6 @@ struct ig_rf_reg {
  */
 struct ig_rf_entry {
     struct ig_object object;      /**< @brief Inherited @ref ig_object struct. */
-
-    const char *name;             /**< @brief Name of entry. */
 
     GQueue *regs;                 /**< @brief Registers of entry. Queue data: (struct @ref ig_rf_reg *) */
 
@@ -193,8 +186,6 @@ struct ig_rf_entry {
 struct ig_rf_regfile {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
-    const char *name;         /**< @brief Name of regfile. */
-
     GQueue *entries;          /**< @brief Regfile-entries. Queue data: (struct @ref ig_rf_entry *) */
 
     struct ig_module *parent; /**< @brief Module containing regfile. */
@@ -209,9 +200,8 @@ struct ig_rf_regfile {
 struct ig_module {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
-    const char *name;         /**< @brief Name of module. */
-    bool        ilm;          /**< @brief ILM property. */
-    bool        resource;     /**< @brief Resource property. */
+    bool ilm;                 /**< @brief ILM property. */
+    bool resource;            /**< @brief Resource property. */
 
     /* module content */
     GQueue *params;           /**< @brief Parameters.   Queue data: (struct @ref ig_param *)      */
@@ -236,7 +226,6 @@ struct ig_module {
 struct ig_pin {
     struct ig_object object;    /**< @brief Inherited @ref ig_object struct. */
 
-    const char *name;           /**< @brief Name of pin */
     const char *connection;     /**< @brief Value/signal connected to pin. */
 
     struct ig_instance *parent; /**< @brief Instance containing pin */
@@ -252,7 +241,6 @@ struct ig_pin {
 struct ig_adjustment {
     struct ig_object object;    /**< @brief Inherited @ref ig_object struct. */
 
-    const char *name;           /**< @brief Name of parameter. */
     const char *value;          /**< @brief Adjusted value. */
 
     struct ig_instance *parent; /**< @brief Instance containing adjustment. */
@@ -267,7 +255,6 @@ struct ig_adjustment {
 struct ig_instance {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
-    const char       *name;   /**< @brief Name of instance. */
     struct ig_module *module; /**< @brief Module instanciated. */
 
     struct ig_module *parent; /**< @brief Module instanciating instance. */
@@ -285,8 +272,6 @@ struct ig_instance {
  */
 struct ig_net {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
-
-    const char *name;         /**< @brief Name of net. */
 
     GQueue *objects;          /**< @brief Objects of net. */
 };

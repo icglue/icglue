@@ -107,7 +107,7 @@ struct ig_module *ig_lib_add_module (struct ig_lib_db *db, const char *name, boo
         return NULL;
     }
 
-    char *l_name = g_string_chunk_insert_const (db->str_chunks, mod->name);
+    char *l_name = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod)->name);
     char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod)->id);
 
     g_hash_table_insert (db->modules_by_name, l_name, mod);
@@ -179,26 +179,26 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
     }
 
     if (parent->resource) {
-        log_error ("EPRes", "cannot create instances in resource module %s", parent->name);
+        log_error ("EPRes", "cannot create instances in resource module %s", IG_OBJECT (parent)->name);
         return NULL;
     }
 
     struct ig_instance *inst = NULL;
 
     if (!type->resource) {
-        if (strcmp (name, type->default_instance->name) != 0) {
-            log_error ("ENoRs", "module %s is no resource - so only a default instance is valid", type->name);
+        if (strcmp (name, IG_OBJECT (type->default_instance)->name) != 0) {
+            log_error ("ENoRs", "module %s is no resource - so only a default instance is valid", IG_OBJECT (type)->name);
             return NULL;
         }
         if (type->default_instance->parent != NULL) {
-            log_error ("ENoRs", "module %s is no resource and is already instantiated", type->name);
+            log_error ("ENoRs", "module %s is no resource and is already instantiated", IG_OBJECT (type)->name);
             return NULL;
         }
 
         inst = type->default_instance;
 
         if (ig_lib_check_cycle (db, inst, parent)) {
-            log_error ("ECycl", "cannot instantiate module %s in module %s - would create hierarchy cycle!", type->name, parent->name);
+            log_error ("ECycl", "cannot instantiate module %s in module %s - would create hierarchy cycle!", IG_OBJECT (type)->name, IG_OBJECT (parent)->name);
             return NULL;
         }
 
@@ -215,7 +215,7 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
         ig_obj_ref (IG_OBJECT (inst));
     }
 
-    char *l_name = g_string_chunk_insert_const (db->str_chunks, inst->name);
+    char *l_name = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (inst)->name);
     char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (inst)->id);
 
     g_hash_table_insert (db->instances_by_name, l_name, inst);
@@ -234,11 +234,11 @@ struct ig_code *ig_lib_add_codesection (struct ig_lib_db *db, const char *name, 
     if (code == NULL) return NULL;
     if (parent == NULL) return NULL;
 
-    log_debug ("LACSc", "new codesection for module %s...", parent->name);
+    log_debug ("LACSc", "new codesection for module %s...", IG_OBJECT (parent)->name);
     struct ig_code *cs = ig_code_new (name, code, parent, db->str_chunks);
 
     if (cs == NULL) {
-        log_error ("LACSc", "error while creating new codesection for module %s", parent->name);
+        log_error ("LACSc", "error while creating new codesection for module %s", IG_OBJECT (parent)->name);
         return NULL;
     }
 
@@ -249,7 +249,7 @@ struct ig_code *ig_lib_add_codesection (struct ig_lib_db *db, const char *name, 
 
     g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (cs));
     ig_obj_ref (IG_OBJECT (cs));
-    log_debug ("LACSc", "...added codesection for module %s", parent->name);
+    log_debug ("LACSc", "...added codesection for module %s", IG_OBJECT (parent)->name);
 
     return cs;
 }
@@ -260,18 +260,18 @@ struct ig_rf_regfile *ig_lib_add_regfile (struct ig_lib_db *db, const char *name
     if (name == NULL) return NULL;
     if (parent == NULL) return NULL;
 
-    log_debug ("LARgf", "new regfile %s for module %s...", name, parent->name);
+    log_debug ("LARgf", "new regfile %s for module %s...", name, IG_OBJECT (parent)->name);
     struct ig_rf_regfile *rf = ig_rf_regfile_new (name, parent, db->str_chunks);
 
     if (rf == NULL) {
-        log_error ("LARgf", "error while creating new regfile %s for module %s", name, parent->name);
+        log_error ("LARgf", "error while creating new regfile %s for module %s", name, IG_OBJECT (parent)->name);
         return NULL;
     }
 
     char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (rf)->id);
 
     if (g_hash_table_contains (db->objects_by_id, l_id)) {
-        log_error ("LARgf", "Regfile %s already exists", rf->name);
+        log_error ("LARgf", "Regfile %s already exists", IG_OBJECT (rf)->name);
         ig_rf_regfile_free (rf);
 
         rf = NULL;
@@ -281,7 +281,7 @@ struct ig_rf_regfile *ig_lib_add_regfile (struct ig_lib_db *db, const char *name
 
         g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (rf));
         ig_obj_ref (IG_OBJECT (rf));
-        log_debug ("LARgf", "...added regfile %s for module %s", name, parent->name);
+        log_debug ("LARgf", "...added regfile %s for module %s", name, IG_OBJECT (parent)->name);
     }
 
     return rf;
@@ -293,18 +293,18 @@ struct ig_rf_entry *ig_lib_add_regfile_entry (struct ig_lib_db *db, const char *
     if (name == NULL) return NULL;
     if (parent == NULL) return NULL;
 
-    log_debug ("LARfE", "new entry %s for regfile %s...", name, parent->name);
+    log_debug ("LARfE", "new entry %s for regfile %s...", name, IG_OBJECT (parent)->name);
     struct ig_rf_entry *entry = ig_rf_entry_new (name, parent, db->str_chunks);
 
     if (entry == NULL) {
-        log_error ("LARfE", "error while creating new entry %s for regfile %s", name, parent->name);
+        log_error ("LARfE", "error while creating new entry %s for regfile %s", name, IG_OBJECT (parent)->name);
         return NULL;
     }
 
     char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (entry)->id);
 
     if (g_hash_table_contains (db->objects_by_id, l_id)) {
-        log_error ("LARfE", "Regfile-Entry %s already exists in regfile %s", entry->name, parent->name);
+        log_error ("LARfE", "Regfile-Entry %s already exists in regfile %s", IG_OBJECT (entry)->name, IG_OBJECT (parent)->name);
         ig_rf_entry_free (entry);
 
         entry = NULL;
@@ -314,7 +314,7 @@ struct ig_rf_entry *ig_lib_add_regfile_entry (struct ig_lib_db *db, const char *
 
         g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (entry));
         ig_obj_ref (IG_OBJECT (entry));
-        log_debug ("LARfE", "...added entry %s for regfile %s", name, parent->name);
+        log_debug ("LARfE", "...added entry %s for regfile %s", name, IG_OBJECT (parent)->name);
     }
 
     return entry;
@@ -326,18 +326,18 @@ struct ig_rf_reg *ig_lib_add_regfile_reg (struct ig_lib_db *db, const char *name
     if (name == NULL) return NULL;
     if (parent == NULL) return NULL;
 
-    log_debug ("LARfR", "new reg %s for regfile-entrty %s...", name, parent->name);
+    log_debug ("LARfR", "new reg %s for regfile-entrty %s...", name, IG_OBJECT (parent)->name);
     struct ig_rf_reg *reg = ig_rf_reg_new (name, parent, db->str_chunks);
 
     if (reg == NULL) {
-        log_error ("LARfR", "error while creating new reg %s for regfile-entry %s", name, parent->name);
+        log_error ("LARfR", "error while creating new reg %s for regfile-entry %s", name, IG_OBJECT (parent)->name);
         return NULL;
     }
 
     char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (reg)->id);
 
     if (g_hash_table_contains (db->objects_by_id, l_id)) {
-        log_error ("LARfR", "Regfile-reg %s already exists in regfile-entry %s", reg->name, parent->name);
+        log_error ("LARfR", "Regfile-reg %s already exists in regfile-entry %s", IG_OBJECT (reg)->name, IG_OBJECT (parent)->name);
         ig_rf_reg_free (reg);
 
         reg = NULL;
@@ -347,7 +347,7 @@ struct ig_rf_reg *ig_lib_add_regfile_reg (struct ig_lib_db *db, const char *name
 
         g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (reg));
         ig_obj_ref (IG_OBJECT (reg));
-        log_debug ("LARfR", "...added reg %s for regfile-entry %s", name, parent->name);
+        log_debug ("LARfR", "...added reg %s for regfile-entry %s", name, IG_OBJECT (parent)->name);
     }
 
     return reg;
@@ -1171,7 +1171,7 @@ static struct ig_net *ig_lib_add_net (struct ig_lib_db *db, const char *netname,
         } else if (obj->type == IG_OBJ_DECLARATION) {
             obj_net_ptr = &(IG_DECL (obj)->net);
         } else {
-            log_errorint ("NtFre", "Net %s contains object of invalid type %s.", net->name, ig_obj_type_name (obj->type));
+            log_errorint ("NtFre", "Net %s contains object of invalid type %s.", IG_OBJECT (net)->name, ig_obj_type_name (obj->type));
         }
 
         if (obj_net_ptr != NULL) {
@@ -1182,7 +1182,7 @@ static struct ig_net *ig_lib_add_net (struct ig_lib_db *db, const char *netname,
         g_queue_push_tail (net->objects, obj);
     }
 
-    char *l_name = g_string_chunk_insert_const (db->str_chunks, net->name);
+    char *l_name = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (net)->name);
     char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (net)->id);
 
     g_hash_table_insert (db->nets_by_name, l_name, net);

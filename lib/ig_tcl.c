@@ -310,7 +310,7 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
     if (pa_mod == NULL) return tcl_error_msg (interp, "Unable to find parent module \"%s\" in database", parent_module);
     struct ig_code *cs = ig_lib_add_codesection (db, name, code, pa_mod);
 
-    if (cs == NULL) return tcl_error_msg (interp, "Unable to create codesection for module \"%s\"", pa_mod->name);
+    if (cs == NULL) return tcl_error_msg (interp, "Unable to create codesection for module \"%s\"", IG_OBJECT (pa_mod)->name);
     Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT (cs)->id, -1));
 
     return TCL_OK;
@@ -793,7 +793,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
                 return tcl_error_msg (interp, "Object \"%s\" does not have a net", parent_name);
             }
             if (obj_net != NULL) {
-                child_list = g_list_prepend (child_list, obj_net);
+                child_list = g_list_prepend (child_list, obj);
             }
         } else if (child_name != NULL) {
             if (g_hash_table_contains (db->nets_by_name, child_name)) {
@@ -812,58 +812,8 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     }
 
     for (GList *li = child_list; li != NULL; li = li->next) {
-        struct ig_object *i_obj  = NULL;
-        const char       *i_name = NULL;
-
-        if (version == IG_TOOOV_PINS) {
-            struct ig_pin *pin = IG_PIN (li->data);
-            i_name = pin->name;
-            i_obj  = IG_OBJECT (pin);
-        } else if (version == IG_TOOOV_ADJ) {
-            struct ig_adjustment *adjustment = IG_ADJUSTMENT (li->data);
-            i_name = adjustment->name;
-            i_obj  = IG_OBJECT (adjustment);
-        } else if (version == IG_TOOOV_PORTS) {
-            struct ig_port *port = IG_PORT (li->data);
-            i_name = port->name;
-            i_obj  = IG_OBJECT (port);
-        } else if (version == IG_TOOOV_PARAMS) {
-            struct ig_param *param = IG_PARAM (li->data);
-            i_name = param->name;
-            i_obj  = IG_OBJECT (param);
-        } else if (version == IG_TOOOV_DECLS) {
-            struct ig_decl *decl = IG_DECL (li->data);
-            i_name = decl->name;
-            i_obj  = IG_OBJECT (decl);
-        } else if (version == IG_TOOOV_CODE) {
-            struct ig_code *code = IG_CODE (li->data);
-            i_name = code->name;
-            i_obj  = IG_OBJECT (code);
-        } else if (version == IG_TOOOV_MODULES) {
-            struct ig_module *module = IG_MODULE (li->data);
-            i_name = module->name;
-            i_obj  = IG_OBJECT (module);
-        } else if (version == IG_TOOOV_INSTANCES) {
-            struct ig_instance *instance = IG_INSTANCE (li->data);
-            i_name = instance->name;
-            i_obj  = IG_OBJECT (instance);
-        } else if (version == IG_TOOOV_REGFILES) {
-            struct ig_rf_regfile *rf_regfile = IG_RF_REGFILE (li->data);
-            i_name = rf_regfile->name;
-            i_obj  = IG_OBJECT (rf_regfile);
-        } else if (version == IG_TOOOV_RF_ENTRIES) {
-            struct ig_rf_entry *rf_entry = IG_RF_ENTRY (li->data);
-            i_name = rf_entry->name;
-            i_obj  = IG_OBJECT (rf_entry);
-        } else if (version == IG_TOOOV_RF_REGS) {
-            struct ig_rf_reg *rf_reg = IG_RF_REG (li->data);
-            i_name = rf_reg->name;
-            i_obj  = IG_OBJECT (rf_reg);
-        } else if (version == IG_TOOOV_NET) {
-            struct ig_net *net = IG_NET (li->data);
-            i_name = net->name;
-            i_obj  = IG_OBJECT (net);
-        }
+        struct ig_object *i_obj  = PTR_TO_IG_OBJECT (li->data);
+        const char       *i_name = i_obj->name;
 
         if (all) {
             Tcl_Obj *t_obj = Tcl_NewStringObj (i_obj->id, -1);

@@ -129,7 +129,8 @@ void ig_obj_init (enum ig_object_type type, const char *name, struct ig_object *
 
     g_string_free (s_id, true);
 
-    obj->id = ig_obj_attr_get (obj, "id");
+    obj->id   = ig_obj_attr_get (obj, "id");
+    obj->name = ig_obj_attr_get (obj, "name");
 }
 
 void ig_obj_free (struct ig_object *obj)
@@ -270,7 +271,6 @@ struct ig_port *ig_port_new (const char *name, enum ig_port_dir dir, struct ig_m
 
     ig_obj_attr_set (IG_OBJECT (port), "direction", ig_port_dir_name (dir), true);
 
-    port->name   = ig_obj_attr_get (IG_OBJECT (port), "name");
     port->dir    = dir;
     port->parent = parent;
     port->net    = NULL;
@@ -303,7 +303,6 @@ struct ig_param *ig_param_new (const char *name, const char *value, bool local, 
     ig_obj_attr_set (IG_OBJECT (param), "value",  value, true);
     ig_obj_attr_set (IG_OBJECT (param), "local",  (local ? "true" : "false"), true);
 
-    param->name   = ig_obj_attr_get (IG_OBJECT (param), "name");
     param->value  = ig_obj_attr_get (IG_OBJECT (param), "value");
     param->local  = local;
     param->parent = parent;
@@ -336,7 +335,6 @@ struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_
     ig_obj_attr_set (IG_OBJECT (decl), "default_type", (default_type ? "true" : "false"), true);
     if (assign != NULL) ig_obj_attr_set (IG_OBJECT (decl), "assign", assign, true);
 
-    decl->name               = ig_obj_attr_get (IG_OBJECT (decl), "name");
     decl->default_assignment = ig_obj_attr_get (IG_OBJECT (decl), "assign");
     decl->default_type       = default_type;
     decl->parent             = parent;
@@ -379,7 +377,6 @@ struct ig_code *ig_code_new (const char *name, const char *codesection, struct i
 
     ig_obj_attr_set (IG_OBJECT (code), "code",   codesection,        true);
 
-    code->name   = ig_obj_attr_get (IG_OBJECT (code), "name");
     code->code   = ig_obj_attr_get (IG_OBJECT (code), "code");
     code->parent = parent;
 
@@ -409,7 +406,6 @@ struct ig_rf_reg *ig_rf_reg_new (const char *name, struct ig_rf_entry *parent, G
     struct ig_object *plist[4] = {IG_OBJECT (parent->parent->parent), IG_OBJECT (parent->parent), IG_OBJECT (parent), NULL};
     ig_obj_init (IG_OBJ_REGFILE_REG, name, plist, IG_OBJECT (reg), storage);
 
-    reg->name   = ig_obj_attr_get (IG_OBJECT (reg), "name");
     reg->parent = parent;
 
     return reg;
@@ -432,7 +428,6 @@ struct ig_rf_entry *ig_rf_entry_new (const char *name, struct ig_rf_regfile *par
     struct ig_object   *plist[3] = {IG_OBJECT (parent->parent), IG_OBJECT (parent), NULL};
     ig_obj_init (IG_OBJ_REGFILE_ENTRY, name, plist, IG_OBJECT (entry), storage);
 
-    entry->name   = ig_obj_attr_get (IG_OBJECT (entry), "name");
     entry->parent = parent;
     entry->regs   = g_queue_new ();
 
@@ -463,7 +458,6 @@ struct ig_rf_regfile *ig_rf_regfile_new (const char *name, struct ig_module *par
     struct ig_object     *plist[2] = {IG_OBJECT (parent), NULL};
     ig_obj_init (IG_OBJ_REGFILE, name, plist, IG_OBJECT (regfile), storage);
 
-    regfile->name    = ig_obj_attr_get (IG_OBJECT (regfile), "name");
     regfile->parent  = parent;
     regfile->entries = g_queue_new ();
 
@@ -497,7 +491,6 @@ struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStr
     ig_obj_attr_set (IG_OBJECT (module), "ilm",      (ilm      ? "true" : "false"), true);
     ig_obj_attr_set (IG_OBJECT (module), "resource", (resource ? "true" : "false"), true);
 
-    module->name     = ig_obj_attr_get (IG_OBJECT (module), "name");
     module->ilm      = ilm;
     module->resource = resource;
 
@@ -567,7 +560,6 @@ struct ig_pin *ig_pin_new (const char *name, const char *connection, struct ig_i
 
     ig_obj_attr_set (IG_OBJECT (pin), "connection", connection, true);
 
-    pin->name       = ig_obj_attr_get (IG_OBJECT (pin), "name");
     pin->connection = ig_obj_attr_get (IG_OBJECT (pin), "connection");
     pin->parent     = parent;
     pin->net        = NULL;
@@ -600,7 +592,6 @@ struct ig_adjustment *ig_adjustment_new (const char *name, const char *value, st
 
     ig_obj_attr_set (IG_OBJECT (adjustment), "value",  value, true);
 
-    adjustment->name   = ig_obj_attr_get (IG_OBJECT (adjustment), "name");
     adjustment->value  = ig_obj_attr_get (IG_OBJECT (adjustment), "value");
     adjustment->parent = parent;
 
@@ -627,7 +618,7 @@ struct ig_instance *ig_instance_new (const char *name, struct ig_module *module,
     log_debug ("DINew", "Generating instance %s", name);
 
     if ((parent != NULL) && (parent->resource)) {
-        log_error ("DINew", "Cannot create instances within resource module %s", parent->name);
+        log_error ("DINew", "Cannot create instances within resource module %s", IG_OBJECT (parent)->name);
         return NULL;
     }
 
@@ -637,7 +628,6 @@ struct ig_instance *ig_instance_new (const char *name, struct ig_module *module,
 
     ig_obj_attr_set (IG_OBJECT (instance), "module", IG_OBJECT (module)->id, true);
 
-    instance->name   = ig_obj_attr_get (IG_OBJECT (instance), "name");
     instance->module = module;
     instance->parent = parent;
 
@@ -673,8 +663,6 @@ struct ig_net *ig_net_new (const char *name, GStringChunk *storage)
     struct ig_object *plist[1] = {NULL};
     ig_obj_init (IG_OBJ_NET, name, plist, IG_OBJECT (net), storage);
 
-    net->name = ig_obj_attr_get (IG_OBJECT (net), "name");
-
     net->objects = g_queue_new ();
 
     return net;
@@ -698,7 +686,7 @@ void ig_net_free (struct ig_net *net)
             } else if (obj->type == IG_OBJ_DECLARATION) {
                 obj_net_ptr = &(IG_DECL (obj)->net);
             } else {
-                log_errorint ("NtFre", "Net %s contains object of invalid type %s.", net->name, ig_obj_type_name (obj->type));
+                log_errorint ("NtFre", "Net %s contains object of invalid type %s.", IG_OBJECT (net)->name, ig_obj_type_name (obj->type));
             }
 
             if ((obj_net_ptr != NULL) && (*obj_net_ptr == net)) {
