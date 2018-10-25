@@ -46,6 +46,9 @@ struct ig_lib_db {
     GHashTable *instances_by_name; /**< @brief Mapping of instance names to instance object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
     GHashTable *instances_by_id;   /**< @brief Mapping of Object-ID to instance object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
 
+    GHashTable *regfiles_by_name;  /**< @brief Mapping of regfile names to regfile object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
+    GHashTable *regfiles_by_id;    /**< @brief Mapping of Object-ID to regfile object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
+
     GHashTable *nets_by_name;      /**< @brief Mapping of net names to net object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
     GHashTable *nets_by_id;        /**< @brief Mapping of Object-ID to net object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
 

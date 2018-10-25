@@ -246,13 +246,12 @@ proc main {} {
             ig::log -info "generating module $i_module"
             ig::templates::write_object_all $i_module
         }
-        if {![catch {ig::db::get_regfiles -all -of $i_module} regfiles]} {
-            foreach i_regfile $regfiles {
-                ig::log -info "generating regfiledoc $i_regfile"
-                ig::checks::check_object $i_regfile
-                ig::templates::write_object_all $i_regfile
-            }
-        }
+    }
+    # generate regfiles with template
+    foreach i_regfile [ig::db::get_regfiles -all] {
+        ig::log -info "generating regfiledoc $i_regfile"
+        ig::checks::check_object $i_regfile
+        ig::templates::write_object_all $i_regfile
     }
 
     set exitcode 0

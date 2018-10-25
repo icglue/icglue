@@ -53,6 +53,8 @@ struct ig_lib_db *ig_lib_db_new ()
     result->modules_by_name   = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
     result->instances_by_id   = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
     result->instances_by_name = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
+    result->regfiles_by_id    = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
+    result->regfiles_by_name  = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
     result->nets_by_id        = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
     result->nets_by_name      = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
 
@@ -67,6 +69,8 @@ void ig_lib_db_clear (struct ig_lib_db *db)
     g_hash_table_remove_all (db->modules_by_name);
     g_hash_table_remove_all (db->instances_by_id);
     g_hash_table_remove_all (db->instances_by_name);
+    g_hash_table_remove_all (db->regfiles_by_id);
+    g_hash_table_remove_all (db->regfiles_by_name);
     g_hash_table_remove_all (db->nets_by_id);
     g_hash_table_remove_all (db->nets_by_name);
     g_hash_table_remove_all (db->objects_by_id);
@@ -82,6 +86,8 @@ void ig_lib_db_free (struct ig_lib_db *db)
     g_hash_table_destroy (db->modules_by_name);
     g_hash_table_destroy (db->instances_by_id);
     g_hash_table_destroy (db->instances_by_name);
+    g_hash_table_destroy (db->regfiles_by_id);
+    g_hash_table_destroy (db->regfiles_by_name);
     g_hash_table_destroy (db->nets_by_id);
     g_hash_table_destroy (db->nets_by_name);
     g_hash_table_destroy (db->objects_by_id);
@@ -260,6 +266,11 @@ struct ig_rf_regfile *ig_lib_add_regfile (struct ig_lib_db *db, const char *name
     if (name == NULL) return NULL;
     if (parent == NULL) return NULL;
 
+    if (g_hash_table_contains (db->regfiles_by_name, name)) {
+        log_error ("EAExi", "regfile %s already exists", name);
+        return NULL;
+    }
+
     log_debug ("LARgf", "new regfile %s for module %s...", name, IG_OBJECT (parent)->name);
     struct ig_rf_regfile *rf = ig_rf_regfile_new (name, parent, db->str_chunks);
 
@@ -268,21 +279,26 @@ struct ig_rf_regfile *ig_lib_add_regfile (struct ig_lib_db *db, const char *name
         return NULL;
     }
 
-    char *l_id = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (rf)->id);
-
-    if (g_hash_table_contains (db->objects_by_id, l_id)) {
-        log_error ("LARgf", "Regfile %s already exists", IG_OBJECT (rf)->name);
+    if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (rf)->id)) {
+        log_errorint ("EAExi", "object %s already exists", IG_OBJECT (rf)->id);
         ig_rf_regfile_free (rf);
 
-        rf = NULL;
-    } else {
-        g_queue_push_tail (parent->regfiles, rf);
-        ig_obj_ref (IG_OBJECT (rf));
-
-        g_hash_table_insert (db->objects_by_id, l_id, IG_OBJECT (rf));
-        ig_obj_ref (IG_OBJECT (rf));
-        log_debug ("LARgf", "...added regfile %s for module %s", name, IG_OBJECT (parent)->name);
+        return NULL;
     }
+
+    char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (rf)->id);
+    char *l_name = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (rf)->name);
+
+    g_queue_push_tail (parent->regfiles, rf);
+    ig_obj_ref (IG_OBJECT (rf));
+
+    g_hash_table_insert (db->regfiles_by_name, l_name, IG_OBJECT (rf));
+    g_hash_table_insert (db->regfiles_by_id,   l_id,   IG_OBJECT (rf));
+    g_hash_table_insert (db->objects_by_id,    l_id,   IG_OBJECT (rf));
+    ig_obj_ref (IG_OBJECT (rf));
+    ig_obj_ref (IG_OBJECT (rf));
+    ig_obj_ref (IG_OBJECT (rf));
+    log_debug ("LARgf", "...added regfile %s for module %s", name, IG_OBJECT (parent)->name);
 
     return rf;
 }

@@ -668,7 +668,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
 
     /* sanity checks */
     if (parent_name == NULL) {
-        if ((version == IG_TOOOV_DECLS) || (version == IG_TOOOV_PORTS) || (version == IG_TOOOV_PARAMS) || (version == IG_TOOOV_CODE) || (version == IG_TOOOV_REGFILES)) {
+        if ((version == IG_TOOOV_DECLS) || (version == IG_TOOOV_PORTS) || (version == IG_TOOOV_PARAMS) || (version == IG_TOOOV_CODE)) {
             return tcl_error_msg (interp, "Flag -of <module> needs to be specified");
         } else if ((version == IG_TOOOV_PINS) || (version == IG_TOOOV_ADJ)) {
             return tcl_error_msg (interp, "Flag -of <instance> needs to be specified");
@@ -714,6 +714,24 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         } else {
             if (g_hash_table_contains (db->modules_by_name, child_name)) {
                 child_list = g_list_prepend (child_list, g_hash_table_lookup (db->modules_by_name, child_name));
+            }
+        }
+        child_list_free = true;
+    } else if ((version == IG_TOOOV_REGFILES) && (parent_name == NULL)) {
+        if (all) {
+            child_list = g_hash_table_get_values (db->regfiles_by_id);
+        } else {
+            if (g_hash_table_contains (db->regfiles_by_name, child_name)) {
+                child_list = g_list_prepend (child_list, g_hash_table_lookup (db->regfiles_by_name, child_name));
+            }
+        }
+        child_list_free = true;
+    } else if ((version == IG_TOOOV_NET) && (parent_name == NULL)) {
+        if (all) {
+            child_list = g_hash_table_get_values (db->nets_by_id);
+        } else {
+            if (g_hash_table_contains (db->nets_by_name, child_name)) {
+                child_list = g_list_prepend (child_list, g_hash_table_lookup (db->nets_by_name, child_name));
             }
         }
         child_list_free = true;
@@ -775,33 +793,26 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         struct ig_rf_entry *entry = IG_RF_ENTRY (obj);
         child_list = entry->regs->head;
     } else if (version == IG_TOOOV_NET) {
-        if (parent_name != NULL) {
-            struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, parent_name));
-            if (obj == NULL) {
-                return tcl_error_msg (interp, "Unable to get object \"%s\" from database for net lookup", parent_name);
-            }
-
-            struct ig_net *obj_net = NULL;
-
-            if (obj->type == IG_OBJ_PORT) {
-                obj_net = IG_PORT (obj)->net;
-            } else if (obj->type == IG_OBJ_PIN) {
-                obj_net = IG_PIN (obj)->net;
-            } else if (obj->type == IG_OBJ_DECLARATION) {
-                obj_net = IG_DECL (obj)->net;
-            } else {
-                return tcl_error_msg (interp, "Object \"%s\" does not have a net", parent_name);
-            }
-            if (obj_net != NULL) {
-                child_list = g_list_prepend (child_list, obj);
-            }
-        } else if (child_name != NULL) {
-            if (g_hash_table_contains (db->nets_by_name, child_name)) {
-                child_list = g_list_prepend (child_list, g_hash_table_lookup (db->nets_by_name, child_name));
-            }
-        } else {
-            child_list = g_hash_table_get_values (db->nets_by_id);
+        struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, parent_name));
+        if (obj == NULL) {
+            return tcl_error_msg (interp, "Unable to get object \"%s\" from database for net lookup", parent_name);
         }
+
+        struct ig_net *obj_net = NULL;
+
+        if (obj->type == IG_OBJ_PORT) {
+            obj_net = IG_PORT (obj)->net;
+        } else if (obj->type == IG_OBJ_PIN) {
+            obj_net = IG_PIN (obj)->net;
+        } else if (obj->type == IG_OBJ_DECLARATION) {
+            obj_net = IG_DECL (obj)->net;
+        } else {
+            return tcl_error_msg (interp, "Object \"%s\" does not have a net", parent_name);
+        }
+        if (obj_net != NULL) {
+            child_list = g_list_prepend (child_list, obj);
+        }
+
         child_list_free = true;
     }
 
