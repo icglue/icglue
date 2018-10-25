@@ -489,7 +489,7 @@ namespace eval ig {
     #      <tr><td><i> &ensp; &ensp; <(-)-               </i></td><td>  last element is interpreted as input source  <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -p(in)              </i></td><td>  add a pin to a resource module               <br></td></tr>
     #
-    # @return Object-IDs of the newly created objects of newly created signal.
+    # @return Object-ID of net object of the newly created signal.
     #
     # Source and target-lists will be expanded and can contain local signal-name specifications after a ":" symbol
     # (local signal-name suffixes can be generated when the signal-name is followed by "!")
@@ -589,13 +589,14 @@ namespace eval ig {
             set con_left_e  [construct::expand_instances $con_left  "true" "true"]
 
             if {$bidir} {
-                set retval [ig::db::connect -bidir $con_left_e -signal-name $name -signal-size $width]
+                set net [ig::db::connect -bidir $con_left_e -signal-name $name -signal-size $width]
             } else {
                 set con_right_e [construct::expand_instances $con_right "true" "true"]
-                set retval [ig::db::connect -from {*}$con_left_e -to $con_right_e -signal-name $name -signal-size $width]
+                set net [ig::db::connect -from {*}$con_left_e -to $con_right_e -signal-name $name -signal-size $width]
             }
 
-            foreach obj $retval {
+            ig::db::set_attribute -object $net -attribute "dimension" -value $dimension
+            foreach obj [ig::db::get_net_objects -of $net] {
                 ig::db::set_attribute -object $obj -attribute "dimension" -value $dimension
             }
 
@@ -607,7 +608,7 @@ namespace eval ig {
             log -error -abort "S (signal ${name}): error while creating signal:\n${emsg}"
         }
 
-        return $retval
+        return $net
     }
 
     ## @brief Create a new parameter.

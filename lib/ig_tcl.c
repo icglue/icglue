@@ -1018,7 +1018,7 @@ static void ig_tclc_check_name_and_warn (const char *name)
 # |-from \<startpoint\><br>
 #  -to {\<endpoint1\> \<endpoint2\> ...})<br>
 #
-# @return List of objects being part of the newly created signal or an error
+# @return Net object of the newly created signal or an error
 #
 # Start-/Endpoints must be of the form "<Object-ID>[-><local name>[!]]"
 # where \<Object-ID\> is a module or instance object and optionally
@@ -1131,17 +1131,14 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     }
     log_debug ("TCCon", "... finished connection");
 
-    /* TODO: return net object id instead of list and provide get-objects of net function */
     ig_obj_attr_set (IG_OBJECT (gen_net), "size", size, true);
-    Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
     for (GList *li = gen_net->objects->head; li != NULL; li = li->next) {
         struct ig_object *i_obj = PTR_TO_IG_OBJECT (li->data);
 
         ig_obj_attr_set (i_obj, "size", size, true);
-
-        Tcl_Obj *t_obj = Tcl_NewStringObj (i_obj->id, -1);
-        Tcl_ListObjAppendElement (interp, retval, t_obj);
     }
+
+    Tcl_Obj *retval = Tcl_NewStringObj (IG_OBJECT (gen_net)->id, -1);
 
     log_debug ("TCCon", "freeing results...");
 
