@@ -97,6 +97,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfiles",        ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_entries", ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_regs",    ig_tclc_get_objs_of_obj, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_nets",            ig_tclc_get_objs_of_obj, lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "connect",             ig_tclc_connect,         lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "parameter",           ig_tclc_parameter,       lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_pin",          ig_tclc_create_pin,      lib_db, NULL);
@@ -580,6 +581,7 @@ enum ig_tclc_get_objs_of_obj_version {
     IG_TOOOV_REGFILES,
     IG_TOOOV_RF_ENTRIES,
     IG_TOOOV_RF_REGS,
+    IG_TOOOV_NET,
 };
 
 static enum ig_tclc_get_objs_of_obj_version ig_tclc_get_objs_of_obj_version_from_cmd (const char *cmdname)
@@ -612,6 +614,8 @@ static enum ig_tclc_get_objs_of_obj_version ig_tclc_get_objs_of_obj_version_from
         version = IG_TOOOV_RF_ENTRIES;
     } else if (strcmp (cmdname, "get_regfile_regs") == 0) {
         version = IG_TOOOV_RF_REGS;
+    } else if (strcmp (cmdname, "get_nets") == 0) {
+        version = IG_TOOOV_NET;
     }
 
     return version;
@@ -674,7 +678,11 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     }
 
     if ((version == IG_TOOOV_CODE) && (child_name != NULL)) {
-        return tcl_error_msg (interp, "Invalid to specify name and for code sections");
+        return tcl_error_msg (interp, "Invalid to specify name for code sections");
+    }
+
+    if ((version == IG_TOOOV_NET) && (child_name != NULL) && (parent_name != NULL)) {
+        return tcl_error_msg (interp, "Invalid to specify -name and -of for net");
     }
 
     if (all && (child_name != NULL)) {
@@ -764,6 +772,35 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
 
         struct ig_rf_entry *entry = IG_RF_ENTRY (obj);
         child_list = entry->regs->head;
+    } else if (version == IG_TOOOV_NET) {
+        if (parent_name != NULL) {
+            struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, parent_name));
+            if (obj == NULL) {
+                return tcl_error_msg (interp, "Unable to get object \"%s\" from database for net lookup", parent_name);
+            }
+
+            struct ig_net *obj_net = NULL;
+
+            if (obj->type == IG_OBJ_PORT) {
+                obj_net = IG_PORT (obj)->net;
+            } else if (obj->type == IG_OBJ_PIN) {
+                obj_net = IG_PIN (obj)->net;
+            } else if (obj->type == IG_OBJ_DECLARATION) {
+                obj_net = IG_DECL (obj)->net;
+            } else {
+                return tcl_error_msg (interp, "Object \"%s\" does not have a net", parent_name);
+            }
+            if (obj_net != NULL) {
+                child_list = g_list_prepend (child_list, obj_net);
+            }
+        } else if (child_name != NULL) {
+            if (g_hash_table_contains (db->nets_by_name, child_name)) {
+                child_list = g_list_prepend (child_list, g_hash_table_lookup (db->nets_by_name, child_name));
+            }
+        } else {
+            child_list = g_hash_table_get_values (db->nets_by_id);
+        }
+        child_list_free = true;
     }
 
     /* generate result */
@@ -820,6 +857,10 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             struct ig_rf_reg *rf_reg = IG_RF_REG (li->data);
             i_name = rf_reg->name;
             i_obj  = IG_OBJECT (rf_reg);
+        } else if (version == IG_TOOOV_NET) {
+            struct ig_net *net = IG_NET (li->data);
+            i_name = net->name;
+            i_obj  = IG_OBJECT (net);
         }
 
         if (all) {
