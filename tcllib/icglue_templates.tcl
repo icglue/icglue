@@ -432,8 +432,8 @@ namespace eval ig::templates {
             # ports
             set port_data {}
             foreach i_port [ig::db::get_ports -of $module_id] {
-                set dimension_bitrange ""
-                foreach dimension [ig::db::get_attribute -object $i_port -attribute "dimension"] {
+                set dimension_bitrange {}
+                foreach dimension [ig::db::get_attribute -object $i_port -attribute "dimension" -default {}] {
                     append dimension_bitrange [ig::vlog::bitrange $dimension]
                 }
                 lappend port_data [list \
@@ -464,8 +464,8 @@ namespace eval ig::templates {
             # delarations
             set decl_data {}
             foreach i_decl [ig::db::get_declarations -of $module_id] {
-                set dimension_bitrange ""
-                foreach dimension [ig::db::get_attribute -object $i_decl -attribute "dimension"] {
+                set dimension_bitrange {}
+                foreach dimension [ig::db::get_attribute -object $i_decl -attribute "dimension" -default {}] {
                     append dimension_bitrange [ig::vlog::bitrange $dimension]
                 }
                 lappend decl_data [list \

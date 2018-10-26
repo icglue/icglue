@@ -104,13 +104,13 @@ namespace eval ig::checks {
         set lang  [ig::db::get_attribute -object $module_id -attribute "language"]
         if {$lang ne "systemverilog"} {
             foreach i_port [ig::db::get_ports -of $module_id] {
-                set dimension [ig::db::get_attribute -object $i_port -attribute "dimension"]
+                set dimension [ig::db::get_attribute -object $i_port -attribute "dimension" -default {}]
                 if {[llength $dimension] ne 0} {
                     ig::log -warn -id "ChkMD" "Port \"${i_port}\" in module \"${mname}\" has dimension \"${dimension}\". This is not supported in \"${lang}\"."
                 }
             }
             foreach i_decl [ig::db::get_declarations -of $module_id] {
-                set dimension [ig::db::get_attribute -object $i_decl -attribute "dimension"]
+                set dimension [ig::db::get_attribute -object $i_decl -attribute "dimension" -default {}]
                 if {[llength $dimension] ne 0} {
                     ig::log -warn -id "ChkMD" "Declarations \"${i_decl}\" in module \"${mname}\" has dimension \"${dimension}\". This is not supported in \"${lang}\"."
                 }
