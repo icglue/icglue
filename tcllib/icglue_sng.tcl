@@ -524,7 +524,7 @@ namespace eval ig::sng {
                 set unit $i_mod
             }
 
-            lappend result "M -unit \"${unit}\" -tree {"
+            lappend result "M -unit \"${unit}\" -tree \{"
 
             # fill dots
             set midx 0
@@ -544,7 +544,7 @@ namespace eval ig::sng {
                     lappend result {}
                 }
             }
-            lappend result "}"
+            lappend result "\}"
             lappend result {}
         }
 
