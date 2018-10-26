@@ -588,8 +588,12 @@ namespace eval ig::templates {
             append code "set _filename [list $filename]\n"
             append code "set _linenr $linenr\n"
 
-            # search  delimiter -- \x5b is open square bracket
-            while {[regexp -indices {<(%|\x5b)([+-])?} $txt indices m_type m_chomp]} {
+            set re_delim_open     {<(%|\[)([+-])?}
+            set delim_close       "%>"
+            set delim_close_brack "\]>"
+
+            # search  delimiter
+            while {[regexp -indices $re_delim_open $txt indices m_type m_chomp]} {
                 lassign $indices i_delim_start i_delim_end
 
                 # include tag
@@ -597,10 +601,9 @@ namespace eval ig::templates {
 
                 set opening_char [string index $txt [lindex $m_type 0]]
                 if {$opening_char eq "%"} {
-                    set closing_delim "%>"
+                    set closing_delim $delim_close
                 } else {
-                    # \x5d is close square bracket
-                    set closing_delim "\x5d>"
+                    set closing_delim $delim_close_brack
                 }
 
                 # check for right chomp
