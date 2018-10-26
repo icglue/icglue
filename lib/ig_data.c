@@ -39,12 +39,29 @@ static const char          *ig_port_dir_name (enum ig_port_dir dir);
 
 
 /*******************************************************
+ * memory management debugging
+ *******************************************************/
+/*
+ * define DEBUG_IG_MMAN to log debug-messages (id="MManC")
+ * for every newly created/freed ig_object/ig_attribute
+ * with the current object/attribute count.
+ */
+#ifdef DEBUG_IG_MMAN
+static int ig_mman_cnt_attributes = 0;
+static int ig_mman_cnt_objects    = 0;
+#endif
+
+/*******************************************************
  * object data
  *******************************************************/
 
 static struct ig_attribute *ig_attribute_new (const char *value, bool constant)
 {
     struct ig_attribute *result = g_slice_new (struct ig_attribute);
+
+#ifdef DEBUG_IG_MMAN
+    log_debug ("MManC", "memory management: created attribute - current total: %d", ++ig_mman_cnt_attributes);
+#endif
 
     result->constant = constant;
     result->value    = value;
@@ -54,7 +71,13 @@ static struct ig_attribute *ig_attribute_new (const char *value, bool constant)
 
 static inline void ig_attribute_free (struct ig_attribute *attr)
 {
+    if (attr == NULL) return;
+
     g_slice_free (struct ig_attribute, attr);
+
+#ifdef DEBUG_IG_MMAN
+    log_debug ("MManC", "memory management: freed attribute - current total: %d", --ig_mman_cnt_attributes);
+#endif
 }
 
 static void ig_attribute_free_gpointer (gpointer attr)
@@ -88,6 +111,9 @@ void ig_obj_init (enum ig_object_type type, const char *name, struct ig_object *
     if (name == NULL) return;
     if (obj  == NULL) return;
 
+#ifdef DEBUG_IG_MMAN
+    log_debug ("MManC", "memory management: created object - current total: %d", ++ig_mman_cnt_objects);
+#endif
 
     /* id/parent */
     GString *s_id = g_string_new (NULL);
@@ -165,6 +191,10 @@ void ig_obj_free_full (struct ig_object *obj)
         case IG_OBJ_NET:           ig_net_free        (IG_NET        (obj)); break;
         case IG_OBJ_GENERIC:       ig_generic_free    (IG_GENERIC    (obj)); break;
     }
+
+#ifdef DEBUG_IG_MMAN
+    log_debug ("MManC", "memory management: freed object - current total: %d", --ig_mman_cnt_objects);
+#endif
 }
 
 void ig_obj_ref (struct ig_object *obj)

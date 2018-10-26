@@ -44,6 +44,18 @@ static char *ig_lib_gen_name_pinport (struct ig_lib_db *db, const char *basename
 static char *ig_lib_rm_suffix_pinport (struct ig_lib_db *db, const char *pinportname);
 static bool  ig_lib_gen_name_iscaps (const char *name);
 
+/*******************************************************
+ * memory management debugging
+ *******************************************************/
+/*
+ * define DEBUG_IG_MMAN to log debug-messages (id="MManC")
+ * for every newly created/freed ig_lib_connection_info
+ * with the current connection_info count.
+ */
+#ifdef DEBUG_IG_MMAN
+static int ig_mman_cnt_coninfo = 0;
+#endif
+
 /* header functions */
 struct ig_lib_db *ig_lib_db_new ()
 {
@@ -100,6 +112,8 @@ void ig_lib_db_free (struct ig_lib_db *db)
     g_hash_table_destroy (db->objects_by_id);
 
     g_string_chunk_free (db->str_chunks);
+
+    g_slice_free (struct ig_lib_db, db);
 }
 
 struct ig_module *ig_lib_add_module (struct ig_lib_db *db, const char *name, bool ilm, bool resource)
@@ -766,6 +780,10 @@ struct ig_lib_connection_info *ig_lib_connection_info_new (GStringChunk *str_chu
 
     struct ig_lib_connection_info *result = g_slice_new (struct ig_lib_connection_info);
 
+#ifdef DEBUG_IG_MMAN
+    log_debug ("MManC", "memory management: created connection-info - current total: %d", ++ig_mman_cnt_coninfo);
+#endif
+
     result->obj         = obj;
     result->dir         = dir;
     result->is_explicit = false;
@@ -789,6 +807,10 @@ struct ig_lib_connection_info *ig_lib_connection_info_copy (GStringChunk *str_ch
     if ((str_chunks == NULL) && ((original->local_name != NULL) || (original->parent_name != NULL))) return NULL;
 
     struct ig_lib_connection_info *result = g_slice_new (struct ig_lib_connection_info);
+
+#ifdef DEBUG_IG_MMAN
+    log_debug ("MManC", "memory management: created connection-info - current total: %d", ++ig_mman_cnt_coninfo);
+#endif
 
     result->obj         = original->obj;
     result->dir         = original->dir;
@@ -815,6 +837,10 @@ void ig_lib_connection_info_free (struct ig_lib_connection_info *cinfo)
 {
     if (cinfo == NULL) return;
     g_slice_free (struct ig_lib_connection_info, cinfo);
+
+#ifdef DEBUG_IG_MMAN
+    log_debug ("MManC", "memory management: freed connection-info - current total: %d", --ig_mman_cnt_coninfo);
+#endif
 }
 
 static void ig_lib_htree_print (GNode *hier_tree)
