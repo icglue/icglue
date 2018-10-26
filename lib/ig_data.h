@@ -52,7 +52,8 @@ enum ig_object_type {
     IG_OBJ_REGFILE_REG,
     IG_OBJ_REGFILE_ENTRY,
     IG_OBJ_REGFILE,
-    IG_OBJ_NET
+    IG_OBJ_NET,
+    IG_OBJ_GENERIC
 };
 
 /**
@@ -112,12 +113,13 @@ struct ig_port {
  * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_param {
-    struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
+    struct ig_object object;    /**< @brief Inherited @ref ig_object struct. */
 
-    const char *value;        /**< @brief Default value of parameter. */
-    bool        local;        /**< @brief Set if local parameter. */
+    const char *value;          /**< @brief Default value of parameter. */
+    bool        local;          /**< @brief Set if local parameter. */
 
-    struct ig_module *parent; /**< @brief Module containing parameter. */
+    struct ig_module  *parent;  /**< @brief Module containing parameter. */
+    struct ig_generic *generic; /**< @brief Generic belonging to parameter or @c NULL. */
 };
 
 /**
@@ -239,11 +241,12 @@ struct ig_pin {
  * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
  */
 struct ig_adjustment {
-    struct ig_object object;    /**< @brief Inherited @ref ig_object struct. */
+    struct ig_object object;     /**< @brief Inherited @ref ig_object struct. */
 
-    const char *value;          /**< @brief Adjusted value. */
+    const char *value;           /**< @brief Adjusted value. */
 
-    struct ig_instance *parent; /**< @brief Instance containing adjustment. */
+    struct ig_instance *parent;  /**< @brief Instance containing adjustment. */
+    struct ig_generic  *generic; /**< @brief Generic belonging to adjustment or @c NULL. */
 };
 
 /**
@@ -274,6 +277,18 @@ struct ig_net {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
     GQueue *objects;          /**< @brief Objects of net. */
+};
+
+/**
+ * @brief Generic data.
+ *
+ * For memory allocation/free see @ref ig_generic_new and @ref ig_generic_free.
+ * For reference counted memory management see @ref ig_obj_ref and @ref ig_obj_unref.
+ */
+struct ig_generic {
+    struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
+
+    GQueue *objects;          /**< @brief Objects of generic. */
 };
 
 /*******************************************************
@@ -643,6 +658,24 @@ struct ig_net *ig_net_new (const char *name, GStringChunk *storage);
  */
 void ig_net_free (struct ig_net *net);
 
+/**
+ * @brief Create new generic data struct.
+ * @param name Name of generic.
+ * @param storage String storage to use or @c NULL.
+ * @return The newly allocated generic structure or @c NULL in case of an error.
+ *
+ * Default attributes are set in the related object.
+ */
+struct ig_generic *ig_generic_new (const char *name, GStringChunk *storage);
+
+/**
+ * @brief Free generic data struct.
+ * @param generic Pointer to generic data struct to free.
+ *
+ * Frees the generic data struct together with the related object.
+ */
+void ig_generic_free (struct ig_generic *generic);
+
 
 /*******************************************************
  * Cast inline functions
@@ -680,6 +713,7 @@ __IG_OBJECT_GEN_CAST (IG_RF_REG,     struct ig_rf_reg,     IG_OBJ_REGFILE_REG)
 __IG_OBJECT_GEN_CAST (IG_RF_ENTRY,   struct ig_rf_entry,   IG_OBJ_REGFILE_ENTRY)
 __IG_OBJECT_GEN_CAST (IG_RF_REGFILE, struct ig_rf_regfile, IG_OBJ_REGFILE)
 __IG_OBJECT_GEN_CAST (IG_NET,        struct ig_net,        IG_OBJ_NET)
+__IG_OBJECT_GEN_CAST (IG_GENERIC,    struct ig_generic,    IG_OBJ_GENERIC)
 
 #undef __IG_OBJECT_GEN_CAST
 

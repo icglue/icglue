@@ -77,6 +77,7 @@ const char *ig_obj_type_name (enum ig_object_type type)
         case IG_OBJ_REGFILE_ENTRY: return "regfile-entry";
         case IG_OBJ_REGFILE:       return "regfile";
         case IG_OBJ_NET:           return "net";
+        case IG_OBJ_GENERIC:       return "generic";
     }
 
     return "UNKNOWN";
@@ -162,6 +163,7 @@ void ig_obj_free_full (struct ig_object *obj)
         case IG_OBJ_REGFILE_ENTRY: ig_rf_entry_free   (IG_RF_ENTRY   (obj)); break;
         case IG_OBJ_REGFILE:       ig_rf_regfile_free (IG_RF_REGFILE (obj)); break;
         case IG_OBJ_NET:           ig_net_free        (IG_NET        (obj)); break;
+        case IG_OBJ_GENERIC:       ig_generic_free    (IG_GENERIC    (obj)); break;
     }
 }
 
@@ -303,9 +305,10 @@ struct ig_param *ig_param_new (const char *name, const char *value, bool local, 
     ig_obj_attr_set (IG_OBJECT (param), "value",  value, true);
     ig_obj_attr_set (IG_OBJECT (param), "local",  (local ? "true" : "false"), true);
 
-    param->value  = ig_obj_attr_get (IG_OBJECT (param), "value");
-    param->local  = local;
-    param->parent = parent;
+    param->value   = ig_obj_attr_get (IG_OBJECT (param), "value");
+    param->local   = local;
+    param->parent  = parent;
+    param->generic = NULL;
 
     return param;
 }
@@ -592,8 +595,9 @@ struct ig_adjustment *ig_adjustment_new (const char *name, const char *value, st
 
     ig_obj_attr_set (IG_OBJECT (adjustment), "value",  value, true);
 
-    adjustment->value  = ig_obj_attr_get (IG_OBJECT (adjustment), "value");
-    adjustment->parent = parent;
+    adjustment->value   = ig_obj_attr_get (IG_OBJECT (adjustment), "value");
+    adjustment->parent  = parent;
+    adjustment->generic = NULL;
 
     return adjustment;
 }
@@ -699,5 +703,53 @@ void ig_net_free (struct ig_net *net)
     }
 
     g_slice_free (struct ig_net, net);
+}
+
+/*******************************************************
+ * generic data
+ *******************************************************/
+
+struct ig_generic *ig_generic_new (const char *name, GStringChunk *storage)
+{
+    if (name == NULL) return NULL;
+
+    struct ig_generic *generic  = g_slice_new (struct ig_generic);
+    struct ig_object  *plist[1] = {NULL};
+    ig_obj_init (IG_OBJ_GENERIC, name, plist, IG_OBJECT (generic), storage);
+
+    generic->objects = g_queue_new ();
+
+    return generic;
+}
+
+void ig_generic_free (struct ig_generic *generic)
+{
+    if (generic == NULL) return;
+
+    ig_obj_free (IG_OBJECT (generic));
+
+    if (generic->objects != NULL) {
+        for (GList *li = generic->objects->head; li != NULL; li = li->next) {
+            struct ig_object   *obj             = PTR_TO_IG_OBJECT (li->data);
+            struct ig_generic **obj_generic_ptr = NULL;
+
+            if (obj->type == IG_OBJ_PARAMETER) {
+                obj_generic_ptr = &(IG_PARAM (obj)->generic);
+            } else if (obj->type == IG_OBJ_ADJUSTMENT) {
+                obj_generic_ptr = &(IG_ADJUSTMENT (obj)->generic);
+            } else {
+                log_errorint ("GnFre", "Generic %s contains object of invalid type %s.", IG_OBJECT (generic)->name, ig_obj_type_name (obj->type));
+            }
+
+            if ((obj_generic_ptr != NULL) && (*obj_generic_ptr == generic)) {
+                *obj_generic_ptr = NULL;
+            }
+
+            ig_obj_unref (obj);
+        }
+        g_queue_free (generic->objects);
+    }
+
+    g_slice_free (struct ig_generic, generic);
 }
 

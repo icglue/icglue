@@ -52,6 +52,9 @@ struct ig_lib_db {
     GHashTable *nets_by_name;      /**< @brief Mapping of net names to net object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
     GHashTable *nets_by_id;        /**< @brief Mapping of Object-ID to net object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
 
+    GHashTable *generics_by_name;  /**< @brief Mapping of generic names to generic object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
+    GHashTable *generics_by_id;    /**< @brief Mapping of Object-ID to generic object. Key: <tt> (const char *) </tt> -> value: <tt> (struct @ref ig_object *) </tt> */
+
     GStringChunk *str_chunks;      /**< @brief String container used for all generated objects. */
 };
 
@@ -208,12 +211,12 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
  * @param parname Parameter name.
  * @param defvalue Parameter default value.
  * @param targets List of parameter endpoints. List data: <tt> (struct @ref ig_lib_connection_info *) </tt>. Will be freed after usage.
- * @param[out] gen_objs List of newly created hierarchy parameter/adjustment elements of parameter. List data: <tt> (struct ig_object *) </tt>.
+ * @param[out] gen_generic Newly created generic data.
  * @return true on success.
  *
  * @c targets will be freed on return, @c *gen_objs must be freed by caller.
  */
-bool ig_lib_parameter  (struct ig_lib_db *db, const char *parname, const char *defvalue, GList *targets, GList **gen_objs);
+bool ig_lib_parameter  (struct ig_lib_db *db, const char *parname, const char *defvalue, GList *targets, struct ig_generic **gen_generic);
 
 #ifdef __cplusplus
 }

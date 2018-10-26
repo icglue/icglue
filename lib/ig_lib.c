@@ -36,7 +36,8 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
 static void     ig_lib_htree_free (GNode *hier_tree);
 static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data);
 
-static struct ig_net *ig_lib_add_net (struct ig_lib_db *db, const char *netname, GList *objs);
+static struct ig_net     *ig_lib_add_net     (struct ig_lib_db *db, const char *name, GList *objs);
+static struct ig_generic *ig_lib_add_generic (struct ig_lib_db *db, const char *name, GList *objs);
 
 static char *ig_lib_gen_name_signal  (struct ig_lib_db *db, const char *basename);
 static char *ig_lib_gen_name_pinport (struct ig_lib_db *db, const char *basename, enum ig_port_dir dir);
@@ -57,6 +58,8 @@ struct ig_lib_db *ig_lib_db_new ()
     result->regfiles_by_name  = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
     result->nets_by_id        = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
     result->nets_by_name      = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
+    result->generics_by_id    = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
+    result->generics_by_name  = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify)ig_obj_unref);
 
     result->str_chunks = g_string_chunk_new (128);
 
@@ -73,6 +76,8 @@ void ig_lib_db_clear (struct ig_lib_db *db)
     g_hash_table_remove_all (db->regfiles_by_name);
     g_hash_table_remove_all (db->nets_by_id);
     g_hash_table_remove_all (db->nets_by_name);
+    g_hash_table_remove_all (db->generics_by_id);
+    g_hash_table_remove_all (db->generics_by_name);
     g_hash_table_remove_all (db->objects_by_id);
 
     g_string_chunk_clear (db->str_chunks);
@@ -90,6 +95,8 @@ void ig_lib_db_free (struct ig_lib_db *db)
     g_hash_table_destroy (db->regfiles_by_name);
     g_hash_table_destroy (db->nets_by_id);
     g_hash_table_destroy (db->nets_by_name);
+    g_hash_table_destroy (db->generics_by_id);
+    g_hash_table_destroy (db->generics_by_name);
     g_hash_table_destroy (db->objects_by_id);
 
     g_string_chunk_free (db->str_chunks);
@@ -475,7 +482,7 @@ l_ig_lib_connection_final_free_hierlist:
     return result;
 }
 
-bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *defvalue, GList *targets, GList **gen_objs)
+bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *defvalue, GList *targets, struct ig_generic **gen_generic)
 {
     GList *hier_start_list = NULL;
 
@@ -501,6 +508,12 @@ bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *de
     bool result = true;
 
     if (error) {
+        result = false;
+        goto l_ig_lib_parameter_final_free_hierlist;
+    }
+
+    if (g_hash_table_contains (db->generics_by_name, parname)) {
+        log_error ("LParm", "parameter %s already exists", parname);
         result = false;
         goto l_ig_lib_parameter_final_free_hierlist;
     }
@@ -534,15 +547,14 @@ bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *de
     } else {
         log_warn ("LParm", "nothing created for parameter %s", parname);
     }
-    for (GList *li = gen_objs_res; li != NULL; li = li->next) {
-        struct ig_object *io = PTR_TO_IG_OBJECT (li->data);
-        ig_obj_attr_set (io, "parameter", parname, true);
+
+    struct ig_generic *generic = ig_lib_add_generic (db, parname, gen_objs_res);
+
+    if (gen_generic != NULL) {
+        *gen_generic = generic;
     }
-    if (gen_objs != NULL) {
-        *gen_objs = gen_objs_res;
-    } else {
-        g_list_free (gen_objs_res);
-    }
+
+    g_list_free (gen_objs_res);
 
     log_debug ("LParm", "deleting hierarchy tree...");
     ig_lib_htree_free (hier_tree);
@@ -1164,18 +1176,18 @@ static gboolean ig_lib_htree_free_tfunc (GNode *node, gpointer data)
     return false;
 }
 
-static struct ig_net *ig_lib_add_net (struct ig_lib_db *db, const char *netname, GList *objs)
+static struct ig_net *ig_lib_add_net (struct ig_lib_db *db, const char *name, GList *objs)
 {
     if (db == NULL) return NULL;
-    if (netname == NULL) return NULL;
+    if (name == NULL) return NULL;
 
-    struct ig_net *net = ig_net_new (netname, db->str_chunks);
+    struct ig_net *net = ig_net_new (name, db->str_chunks);
     if (net == NULL) return NULL;
 
     for (GList *li = objs; li != NULL; li = li->next) {
         struct ig_object *obj = PTR_TO_IG_OBJECT (li->data);
-        ig_obj_attr_set (obj, "signal",  netname,             true);
-        ig_obj_attr_set (obj, "net",     netname,             true);
+        ig_obj_attr_set (obj, "signal",  name,                true);
+        ig_obj_attr_set (obj, "net",     name,                true);
         ig_obj_attr_set (obj, "netid",   IG_OBJECT (net)->id, true);
 
         struct ig_net **obj_net_ptr = NULL;
@@ -1187,7 +1199,7 @@ static struct ig_net *ig_lib_add_net (struct ig_lib_db *db, const char *netname,
         } else if (obj->type == IG_OBJ_DECLARATION) {
             obj_net_ptr = &(IG_DECL (obj)->net);
         } else {
-            log_errorint ("NtFre", "Net %s contains object of invalid type %s.", IG_OBJECT (net)->name, ig_obj_type_name (obj->type));
+            log_errorint ("LNtAd", "Net %s contains object of invalid type %s.", IG_OBJECT (net)->name, ig_obj_type_name (obj->type));
         }
 
         if (obj_net_ptr != NULL) {
@@ -1209,6 +1221,51 @@ static struct ig_net *ig_lib_add_net (struct ig_lib_db *db, const char *netname,
     ig_obj_ref (IG_OBJECT (net));
 
     return net;
+}
+
+static struct ig_generic *ig_lib_add_generic (struct ig_lib_db *db, const char *name, GList *objs)
+{
+    if (db == NULL) return NULL;
+    if (name == NULL) return NULL;
+
+    struct ig_generic *generic = ig_generic_new (name, db->str_chunks);
+    if (generic == NULL) return NULL;
+
+    for (GList *li = objs; li != NULL; li = li->next) {
+        struct ig_object *obj = PTR_TO_IG_OBJECT (li->data);
+        ig_obj_attr_set (obj, "parameter",   name,                    true);
+        ig_obj_attr_set (obj, "generic",     name,                    true);
+        ig_obj_attr_set (obj, "genericid",   IG_OBJECT (generic)->id, true);
+
+        struct ig_generic **obj_generic_ptr = NULL;
+
+        if (obj->type == IG_OBJ_PARAMETER) {
+            obj_generic_ptr = &(IG_PARAM (obj)->generic);
+        } else if (obj->type == IG_OBJ_ADJUSTMENT) {
+            obj_generic_ptr = &(IG_ADJUSTMENT (obj)->generic);
+        } else {
+            log_errorint ("LGnAd", "Generic %s contains object of invalid type %s.", IG_OBJECT (generic)->name, ig_obj_type_name (obj->type));
+        }
+
+        if (obj_generic_ptr != NULL) {
+            *obj_generic_ptr = generic;
+        }
+
+        ig_obj_ref (obj);
+        g_queue_push_tail (generic->objects, obj);
+    }
+
+    char *l_name = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (generic)->name);
+    char *l_id   = g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (generic)->id);
+
+    g_hash_table_insert (db->generics_by_name, l_name, IG_OBJECT (generic));
+    g_hash_table_insert (db->generics_by_id,   l_id,   IG_OBJECT (generic));
+    g_hash_table_insert (db->objects_by_id,    l_id,   IG_OBJECT (generic));
+    ig_obj_ref (IG_OBJECT (generic));
+    ig_obj_ref (IG_OBJECT (generic));
+    ig_obj_ref (IG_OBJECT (generic));
+
+    return generic;
 }
 
 static bool ig_lib_gen_name_iscaps (const char *name)

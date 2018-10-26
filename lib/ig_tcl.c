@@ -51,22 +51,22 @@ static void ig_tclc_connection_parse (const char *input, GString *id, GString *n
 static void ig_tclc_check_name_and_warn (const char *name);
 
 /* tcl proc declarations */
-static int ig_tclc_create_module    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_create_instance  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_add_codesection  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_add_regfile      (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_set_attribute    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_get_attribute    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_get_objs_of_obj  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_get_net_objects  (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_connect          (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_parameter        (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_create_pin       (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_reset            (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_logger           (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_log              (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_log_stat         (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int ig_tclc_print_logo       (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_create_module      (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_create_instance    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_add_codesection    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_add_regfile        (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_set_attribute      (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_attribute      (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_objs_of_obj    (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_get_netgen_objects (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_connect            (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_parameter          (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_create_pin         (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_reset              (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_logger             (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_log                (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_log_stat           (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int ig_tclc_print_logo         (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 static int tcl_error_msg (Tcl_Interp *interp, const char *format, ...) __attribute__((format (printf, 2, 0)));
 static int tcl_verror_msg (Tcl_Interp *interp, const char *format, va_list args);
@@ -81,36 +81,38 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     struct ig_lib_db *lib_db = ig_lib_db_new ();
 
     Tcl_Namespace *db_ns = Tcl_CreateNamespace (interp, ICGLUE_LIB_NAMESPACE, NULL, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_module",       ig_tclc_create_module,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_instance",     ig_tclc_create_instance, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "add_codesection",     ig_tclc_add_codesection, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "add_regfile",         ig_tclc_add_regfile,     lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "set_attribute",       ig_tclc_set_attribute,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_attribute",       ig_tclc_get_attribute,   lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_modules",         ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_instances",       ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_ports",           ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_parameters",      ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_declarations",    ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_codesections",    ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_pins",            ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_adjustments",     ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfiles",        ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_entries", ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_regs",    ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_nets",            ig_tclc_get_objs_of_obj, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_net_objects",     ig_tclc_get_net_objects, lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "connect",             ig_tclc_connect,         lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "parameter",           ig_tclc_parameter,       lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_pin",          ig_tclc_create_pin,      lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "reset",               ig_tclc_reset,           lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_module",       ig_tclc_create_module,      lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_instance",     ig_tclc_create_instance,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "add_codesection",     ig_tclc_add_codesection,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "add_regfile",         ig_tclc_add_regfile,        lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "set_attribute",       ig_tclc_set_attribute,      lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_attribute",       ig_tclc_get_attribute,      lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_modules",         ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_instances",       ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_ports",           ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_parameters",      ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_declarations",    ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_codesections",    ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_pins",            ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_adjustments",     ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfiles",        ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_entries", ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_regfile_regs",    ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_nets",            ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_generics",        ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_net_objects",     ig_tclc_get_netgen_objects, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_generic_objects", ig_tclc_get_netgen_objects, lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "connect",             ig_tclc_connect,            lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "parameter",           ig_tclc_parameter,          lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_pin",          ig_tclc_create_pin,         lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "reset",               ig_tclc_reset,              lib_db, NULL);
     Tcl_Export (interp, db_ns, "*", true);
 
     Tcl_Namespace *log_ns = Tcl_CreateNamespace (interp, ICGLUE_LOG_NAMESPACE, NULL, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "logger",              ig_tclc_logger,          lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log",                 ig_tclc_log,             lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log_stat",            ig_tclc_log_stat,        lib_db, NULL);
-    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "print_logo",          ig_tclc_print_logo,      lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "logger",              ig_tclc_logger,             lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log",                 ig_tclc_log,                lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log_stat",            ig_tclc_log_stat,           lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "print_logo",          ig_tclc_print_logo,         lib_db, NULL);
     Tcl_Export (interp, log_ns, "*", true);
 }
 
@@ -583,7 +585,8 @@ enum ig_tclc_get_objs_of_obj_version {
     IG_TOOOV_REGFILES,
     IG_TOOOV_RF_ENTRIES,
     IG_TOOOV_RF_REGS,
-    IG_TOOOV_NET,
+    IG_TOOOV_NETS,
+    IG_TOOOV_GENERICS,
 };
 
 static enum ig_tclc_get_objs_of_obj_version ig_tclc_get_objs_of_obj_version_from_cmd (const char *cmdname)
@@ -617,7 +620,9 @@ static enum ig_tclc_get_objs_of_obj_version ig_tclc_get_objs_of_obj_version_from
     } else if (strcmp (cmdname, "get_regfile_regs") == 0) {
         version = IG_TOOOV_RF_REGS;
     } else if (strcmp (cmdname, "get_nets") == 0) {
-        version = IG_TOOOV_NET;
+        version = IG_TOOOV_NETS;
+    } else if (strcmp (cmdname, "get_generics") == 0) {
+        version = IG_TOOOV_GENERICS;
     }
 
     return version;
@@ -683,8 +688,8 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         return tcl_error_msg (interp, "Invalid to specify name for code sections");
     }
 
-    if ((version == IG_TOOOV_NET) && (child_name != NULL) && (parent_name != NULL)) {
-        return tcl_error_msg (interp, "Invalid to specify -name and -of for net");
+    if (((version == IG_TOOOV_NETS) || (version == IG_TOOOV_GENERICS)) && (child_name != NULL) && (parent_name != NULL)) {
+        return tcl_error_msg (interp, "Invalid to specify -name and -of");
     }
 
     if (all && (child_name != NULL)) {
@@ -726,12 +731,21 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             }
         }
         child_list_free = true;
-    } else if ((version == IG_TOOOV_NET) && (parent_name == NULL)) {
+    } else if ((version == IG_TOOOV_NETS) && (parent_name == NULL)) {
         if (all) {
             child_list = g_hash_table_get_values (db->nets_by_id);
         } else {
             if (g_hash_table_contains (db->nets_by_name, child_name)) {
                 child_list = g_list_prepend (child_list, g_hash_table_lookup (db->nets_by_name, child_name));
+            }
+        }
+        child_list_free = true;
+    } else if ((version == IG_TOOOV_GENERICS) && (parent_name == NULL)) {
+        if (all) {
+            child_list = g_hash_table_get_values (db->generics_by_id);
+        } else {
+            if (g_hash_table_contains (db->generics_by_name, child_name)) {
+                child_list = g_list_prepend (child_list, g_hash_table_lookup (db->generics_by_name, child_name));
             }
         }
         child_list_free = true;
@@ -792,7 +806,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
 
         struct ig_rf_entry *entry = IG_RF_ENTRY (obj);
         child_list = entry->regs->head;
-    } else if (version == IG_TOOOV_NET) {
+    } else if (version == IG_TOOOV_NETS) {
         struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, parent_name));
         if (obj == NULL) {
             return tcl_error_msg (interp, "Unable to get object \"%s\" from database for net lookup", parent_name);
@@ -810,7 +824,27 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             return tcl_error_msg (interp, "Object \"%s\" does not have a net", parent_name);
         }
         if (obj_net != NULL) {
-            child_list = g_list_prepend (child_list, obj);
+            child_list = g_list_prepend (child_list, obj_net);
+        }
+
+        child_list_free = true;
+    } else if (version == IG_TOOOV_GENERICS) {
+        struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, parent_name));
+        if (obj == NULL) {
+            return tcl_error_msg (interp, "Unable to get object \"%s\" from database for generic lookup", parent_name);
+        }
+
+        struct ig_generic *obj_generic = NULL;
+
+        if (obj->type == IG_OBJ_PARAMETER) {
+            obj_generic = IG_PARAM (obj)->generic;
+        } else if (obj->type == IG_OBJ_ADJUSTMENT) {
+            obj_generic = IG_ADJUSTMENT (obj)->generic;
+        } else {
+            return tcl_error_msg (interp, "Object \"%s\" does not belong to a generic", parent_name);
+        }
+        if (obj_generic != NULL) {
+            child_list = g_list_prepend (child_list, obj_generic);
         }
 
         child_list_free = true;
@@ -854,20 +888,51 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     return TCL_OK;
 }
 
+
+
+enum ig_tclc_get_netgen_objects_version {
+    IG_TNGOV_INVALID,
+    IG_TNGOV_NET,
+    IG_TNGOV_GENERIC,
+};
+
+static enum ig_tclc_get_netgen_objects_version ig_tclc_get_netgen_objects_version_from_cmd (const char *cmdname)
+{
+    while (true) {
+        const char *cmdchomp = strstr (cmdname, "::");
+        if (cmdchomp == NULL) break;
+        cmdname = cmdchomp + 2;
+    }
+    enum ig_tclc_get_netgen_objects_version version = IG_TNGOV_INVALID;
+    if (strcmp (cmdname, "get_net_objects") == 0) {
+        version = IG_TNGOV_NET;
+    } else if (strcmp (cmdname, "get_generic_objects") == 0) {
+        version = IG_TNGOV_GENERIC;
+    }
+
+    return version;
+}
+
 /* TCLDOC
 ##
-# @brief Return child object(s) of given net.
+# @brief Return child object(s) of given parent.
 #
 # @param args Parsed command arguments:<br>
 # -of \<net-object-id\>
 #
 # @return Object-ID(s) of child object(s) or an error
 */
-static int ig_tclc_get_net_objects (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+static int ig_tclc_get_netgen_objects (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct ig_lib_db *db = (struct ig_lib_db *)clientdata;
 
     if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
+
+    /* command version */
+    const char                             *cmdname = Tcl_GetString (objv[0]);
+    enum ig_tclc_get_netgen_objects_version version = ig_tclc_get_netgen_objects_version_from_cmd (cmdname);
+
+    if (version == IG_TNGOV_INVALID) return tcl_error_msg (interp, "Internal Error - Invalid command version generated (%s:%d)", __FILE__, __LINE__);
 
     /* arg parsing */
     char *parent_name = NULL;
@@ -884,19 +949,30 @@ static int ig_tclc_get_net_objects (ClientData clientdata, Tcl_Interp *interp, i
 
     /* sanity checks */
     if (parent_name == NULL) {
-        return tcl_error_msg (interp, "Flag -of <net> needs to be specified");
+        return tcl_error_msg (interp, "Flag -of <parent> needs to be specified");
     }
 
-    struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->nets_by_id, parent_name));
+    struct ig_object *obj = NULL;
+    if (version == IG_TNGOV_NET) {
+        obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->nets_by_id, parent_name));
+    } else if (version == IG_TNGOV_GENERIC) {
+        obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->generics_by_id, parent_name));
+    }
+
     if (obj == NULL) {
-        return tcl_error_msg (interp, "Unable to get net-object \"%s\" from database", parent_name);
+        return tcl_error_msg (interp, "Unable to get object \"%s\" from database", parent_name);
     }
 
-    struct ig_net *net = IG_NET (obj);
+    GList *children = NULL;
+    if (version == IG_TNGOV_NET) {
+        children = IG_NET (obj)->objects->head;
+    } else if (version == IG_TNGOV_GENERIC) {
+        children = IG_GENERIC (obj)->objects->head;
+    }
 
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
 
-    for (GList *li = net->objects->head; li != NULL; li = li->next) {
+    for (GList *li = children; li != NULL; li = li->next) {
         struct ig_object *i_obj = PTR_TO_IG_OBJECT (li->data);
 
         Tcl_Obj *t_obj = Tcl_NewStringObj (i_obj->id, -1);
@@ -1138,7 +1214,7 @@ l_ig_tclc_connect_nfexit:
 # -value \<parameter-value\><br>
 # -targets {\<endpoint1\> \<endpoint2\> ...}
 #
-# @return List of objects being part of the newly created parameterization or an error
+# @return Generic object of the newly created parametrization or an error
 #
 # Start-/Endpoints must be of the form "<Object-ID>[-><local name>]"
 # where \<Object-ID\> is a module or instance object and optionally
@@ -1203,23 +1279,19 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
     trg_list = g_list_reverse (trg_list);
 
     log_debug ("TCPar", "starting parametrization...");
-    GList *gen_objs = NULL;
+    struct ig_generic *gen_generic = NULL;
 
-    if (!ig_lib_parameter (db, name, value, trg_list, &gen_objs)) {
-        g_list_free (gen_objs);
+    if (!ig_lib_parameter (db, name, value, trg_list, &gen_generic)) {
+        ig_generic_free (gen_generic);
         result = tcl_error_msg (interp, "Parameter \"%s\", error while trying to create parameter", name);
     }
+    log_debug ("TCPar", "... finished parametrization");
 
-    Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
-    for (GList *li = gen_objs; li != NULL; li = li->next) {
-        struct ig_object *i_obj = PTR_TO_IG_OBJECT (li->data);
+    Tcl_Obj *retval = Tcl_NewStringObj (IG_OBJECT (gen_generic)->id, -1);
 
-        Tcl_Obj *t_obj = Tcl_NewStringObj (i_obj->id, -1);
-        Tcl_ListObjAppendElement (interp, retval, t_obj);
-    }
+    log_debug ("TCPar", "freeing results...");
 
     Tcl_SetObjResult (interp, retval);
-    g_list_free (gen_objs);
 
 l_ig_tclc_parameter_exit_pre:
     g_string_free (tstr_id, true);
