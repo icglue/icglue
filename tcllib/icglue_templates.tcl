@@ -985,6 +985,7 @@ namespace eval ig::templates {
         if {${_error} ne ""} {
             ig::log -error "Error while running template for object [ig::db::get_attribute -object ${obj_id} -attribute "name"] and output type ${type}\nstacktrace:\n${::errorInfo}"
             ig::log -error "template ${_filename} somewhere after line ${_linenr}"
+            return
         }
 
         file mkdir [file dirname ${_outf_name}]
