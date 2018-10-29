@@ -910,7 +910,18 @@ namespace eval ig {
             # get regfile
             set regfile_id {}
             set rf_module_name {}
-            set regfile_id [ig::db::get_regfiles -name $regfilename]
+            if {[catch {
+                set regfile_id [ig::db::get_regfiles -name $regfilename]
+            }]} {
+                if {![catch {
+                    set temp_mod [ig::db::get_modules -name $regfilename]
+                }]} {
+                    set temp_rfs [ig::db::get_regfiles -of $temp_mod]
+                    if {[llength $temp_rfs] > 0} {
+                        set regfile_id [lindex $temp_rfs 0]
+                    }
+                }
+            }
 
             set alignment 4
 
