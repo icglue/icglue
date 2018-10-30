@@ -838,7 +838,7 @@ namespace eval ig {
                 { {^-prot(ect(ed)?)?$}      "const=true"         protected      "register is protected for privileged-only access"                                  } \
                 { {^-s(ubst)?$}             "const=true"         do_var_subst   "perform Tcl-variable substition of REGISTERTABLE argument (default)"               } \
                 { {^-nosubst$}              "const=false"        do_var_subst   "do not perform Tcl-variable substition in REGISTERTABLE argument"                  } \
-                { {^-e((val)?ulate)?$}      "const=true"         do_subst       "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
+                { {^-e(val(uate)?)?$}       "const=true"         do_subst       "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
             ] -context "REGFILE-MODULE ENTRYNAME REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -1237,14 +1237,16 @@ namespace eval ig {
         set csvfile     {}
         set csvsep      {;}
         set nosubst_opt ""
+        set eval_opt    ""
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set arguments [ig::aux::parse_opts [list                                                                                    \
-                { {^-(rf|regf(ile)?)($|=)} "string"         regfilename "specify the regfile name"                                } \
-                { {^-csv$}                 "const=true"     csv         "specify entries as csv"                                  } \
-                { {^-csvfile($|=)}         "string"         csvfile     "specify entries as csvfile"                              } \
-                { {^-csvsep(arator)?($|=)} "string"         csvsep      "specify separator for csvfiles"                          } \
-                { {^-nosubst$}             "const=-nosubst" nosubst_opt "do not perform Tcl substition in REGISTERTABLE argument" } \
+        set arguments [ig::aux::parse_opts [list \
+                { {^-(rf|regf(ile)?)($|=)} "string"          regfilename "specify the regfile name"                                                          } \
+                { {^-csv$}                 "const=true"      csv         "specify entries as csv"                                                            } \
+                { {^-csvfile($|=)}         "string"          csvfile     "specify entries as csvfile"                                                        } \
+                { {^-csvsep(arator)?($|=)} "string"          csvsep      "specify separator for csvfiles"                                                    } \
+                { {^-nosubst$}             "const=-nosubst"  nosubst_opt "do not perform Tcl substition in REGISTERTABLE argument"                           } \
+                { {^-e(val(uate)?)?$}      "const=-evaluate" eval_opt    "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
             ] -context "REGFILE-MODULE REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -1372,6 +1374,9 @@ namespace eval ig {
             }
             if {$nosubst_opt ne ""} {
                 lappend opts $nosubst_opt
+            }
+            if {$eval_opt ne ""} {
+                lappend opts $eval_opt
             }
 
             R {*}${opts} $regfilename $e_name $e_table
