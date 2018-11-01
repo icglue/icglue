@@ -995,6 +995,10 @@ namespace eval ig::templates {
             {    variable _linenr 0} \
             {    variable _filename {}} \
             {    variable _error {}} \
+            "    proc echo {args} \{" \
+            {        variable _res} \
+            {        append _res {*}$args} \
+            "    \}" \
             "    variable obj_id [list $obj_id]" \
             "    if {\[catch {" \
             "        eval [list ${_tt_code}]" \
