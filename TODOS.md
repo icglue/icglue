@@ -2,9 +2,6 @@
 
 ## general
 - add check (nagelfar shell script)
-- README update:
-  - acknolwledgement?
-  - add description
 
 ## lib
 - library cleanup
@@ -31,9 +28,8 @@
 
 ## documentation
 - regfile / handshake direct connect
-- some markdown pages with explanations?
+- complete markdown pages with explanations:
   - how to write a construct script
   - how to write a template/template set
-  - how the software is organized (for developers)
   - ...?
   - minimal example that shows off most features (similar to initial SNG file)

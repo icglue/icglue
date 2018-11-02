@@ -23,7 +23,7 @@ M -unit "abc" -tree {
 ```
 
 The example will create a unit `abc` with a testbench (`tb`) `tb_abc`,
-an rtl module `abc` and an instance of a non-generated resource (`res`)
+an RTL module `abc` and an instance of a non-generated resource (`res`)
 `verifip` with instance identifier `tb`.
 The Module `abc` will contain multiple instances of two other non-generated
 resources `res1` (instance identifiers `inst1`, ..., `inst4`) and `res2`
@@ -55,7 +55,7 @@ Properties specify a view, a hardware description language or additional propert
 
 Views:
 * `tb` (testbench)
-* `rtl` (rtl description = default)
+* `rtl` (RTL description = default)
 * `beh` (behavioral description)
 
 Hardware description languages:
@@ -139,3 +139,10 @@ P GPIO_W -v 8 testbench pads
 # bidirectional
 S gpio -w {GPIO_W} pads <-> testbench
 ```
+
+## Codesections
+TBD
+
+## Regfiles
+TBD
+
