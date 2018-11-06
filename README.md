@@ -63,6 +63,6 @@ see [developers](AUTHORS.md).
 GNU GPLv3 (see [license](LICENSE.md)).
 
 ## Acknowledgement
-Large parts of the work for ICGlue was done at the Chair of Highly-Parallel VLSI Systems and Neuro-Microelectronics (HPSN) at TU Dresden
+After the initial phase, most of the work for ICGlue was done at the Chair of Highly-Parallel VLSI Systems and Neuro-Microelectronics (HPSN) at TU Dresden
 (see [HPSN](https://tu-dresden.de/ing/elektrotechnik/iee/hpsn "Chair of Highly-Parallel VLSI Systems and Neuro-Microelectronics")).
 It is inspired by its predecessor icsng developed by Jens-Uwe Schlüssler.

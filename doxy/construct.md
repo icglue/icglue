@@ -113,7 +113,7 @@ Additionally signals can be specified with a bus width.
 ### Signals
 General command structure:
 ```
-S <signal-identifier> [-w <bus-width>] [-v <assigned-value>] <endpoint-list> ... (<--|<->|-->) <endpoint-list> ...
+S <signal-identifier> [-w <bus-width>] [(-v|=) <assigned-value>] <endpoint-list> ... (<--|<->|-->) <endpoint-list> ...
 ```
 
 The arrow between the endpoint lists specifies the signal direction.
@@ -141,8 +141,33 @@ S gpio -w {GPIO_W} pads <-> testbench
 ```
 
 ## Codesections
-TBD
+In order to add code-snippets or larger parts of code within the constructions script
+the `C` command is provided to add a code-snippet `<code>` into a module specified by `<module-name>`:
+```
+C [-a[dapt]|-noa[dapt]|-a[dapt-]s[electively]] [-s[ubst]|-nos[ubst]|-e[valuate]] [-v[erbatim]] [-align <align-string>] [-noi[ndentfix]] <module-name> <code>
+```
+
+The code can be adapted to replace signal-names used in the construction script by the actual wire/port names within the module:
+* `-adapt` (default): Whenever a substring in the code-snippet matches a signal-name in the construction script, it is replaced.
+* `-noadapt`: Nothing is replaced.
+* `-adapt-selectively`: Only substrings followed by an exclamation mark (`!`) are replaced. If they do not match a signal-name, a warning is issued.
+
+Tcl variables and sub-commands can be substituted within the code-snippet:
+* `-subst` (default): Tcl-Variables are substitutet.
+* `-evaluate`: Tcl-Variables and sub-commands are substituted by their (return) value.
+* `-nosubst`: Nothing is substitutet.
+
+In order to prevent adaption of signal-names and Tcl substitution, both can be disabled by `-verbatim`.
+
+Code-snippet indentation will be adapted by default so that it can be fitted to the construction script and also later in the
+template output. This can be disabled by `-noindentfix`.
+
+It is possible to align lines inside multiple consecutive codesections at e.g. a ` = ` string by specifying `-align " = "`.
+This happens independent of the semantics. So it is better to specify ` = ` instead of `=` because the latter will also align at `==`.
 
 ## Regfiles
+TBD
+
+## Keep Blocks
 TBD
 
