@@ -153,9 +153,9 @@ The code can be adapted to replace signal-names used in the construction script 
 * `-adapt-selectively`: Only substrings followed by an exclamation mark (`!`) are replaced. If they do not match a signal-name, a warning is issued.
 
 Tcl variables and sub-commands can be substituted within the code-snippet:
-* `-subst` (default): Tcl-Variables are substitutet.
+* `-subst` (default): Tcl-Variables are substituted.
 * `-evaluate`: Tcl-Variables and sub-commands are substituted by their (return) value.
-* `-nosubst`: Nothing is substitutet.
+* `-nosubst`: Nothing is substituted.
 
 In order to prevent adaption of signal-names and Tcl substitution, both can be disabled by `-verbatim`.
 
@@ -169,5 +169,23 @@ This happens independent of the semantics. So it is better to specify ` = ` inst
 TBD
 
 ## Keep Blocks
-TBD
+The generated outputs can contain keep-blocks.
+When the output is regenerated the part within those blocks is kept as it is.
+The sections are meant to be used for custom code or code that can be modified by the user and should not be
+modified by a new generate cycle.
+The blocks are surrounded by special comments in the form:
+```verilog
+    /* icglue keep begin <identifier> *//* icglue keep end */
+```
+For verilog or similar for other output languages.
+
+Code between those keep-comments is read in if a generated output already exists and put
+at the same logical position in the generated code again. The logical position is determined
+by the identifier of the keep begin comment.
+
+In case a non-empty keep block identifier vanishes (e.g. a custom block within generated register code)
+the default template will still output the code at the end of the generated output and a warning is issued.
+It can then be moved to a new location or deleted if no longer required.
+It is recommended to do this in templates where keep-identifiers are dynamically generated based on
+construction-script input.
 
