@@ -691,7 +691,7 @@ namespace eval ig {
     #      <tr><td><i> &ensp; &ensp; -nos(ubst)               </i></td><td>  do not perform Tcl-variable substition of CODE argument                                   <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -v(erbatim)              </i></td><td>  alias for -noadapt and -nosubst                                                           <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -e(val(ulate))           </i></td><td>  perform Tcl substition of CODE argument, do not forget to escape                          <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -noi(dentfix)            </i></td><td>  do not fix the indent of the codeblock                                                    <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -noi(ndentfix)           </i></td><td>  do not fix the indent of the codeblock                                                    <br></td></tr>
     #
     #    </table>
     #
@@ -723,7 +723,7 @@ namespace eval ig {
                 { {^-nos(ubst)?$}                 "const=false"     do_var_subst   "do not perform Tcl-variable substition of CODE argument"          } \
                 { {^-v(erbatim)$}                 "const=true"      verbatim       "alias for -noadapt and -nosubst"                                  } \
                 { {^-e(val(ulate)?)?$}            "const=true"      do_subst       "perform Tcl substition of CODE argument, do not forget to escape" } \
-                { {^-noi(dentfix)?$ }             "const=false"     do_indent_fix  "do not fix the indent of the codeblock"                           } \
+                { {^-noi(ndentfix)?$}             "const=false"     do_indent_fix  "do not fix the indent of the codeblock"                           } \
             ] -context "MODULENAME CODE" $args]
 
         # argument checks
