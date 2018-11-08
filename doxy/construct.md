@@ -165,7 +165,90 @@ template output. This can be disabled by `-noindentfix`.
 It is possible to align lines inside multiple consecutive codesections at e.g. a ` = ` string by specifying `-align " = "`.
 This happens independent of the semantics. So it is better to specify ` = ` instead of `=` because the latter will also align at `==`.
 
+Example:
+```tcl
+# make use of substitution, selective adaption and alignment
+set n 10
+for {set i 0} {$i < $n} {incr i} {
+    S signal${i} -w 4 top <-- core
+    C -adapt-selectively -align " = " core {
+        assign signal${i}! = 4'd${i};
+    }
+}
+```
+
 ## Regfiles
+
+### Regfile Entries
+Entries of a regfile (specified as module option in the `M` command) can be created using the `R` command.
+The definition is done one entry at a time with all of its containing registers.
+An entry has an address, which can be assigned explicitly or automatically with auto-incrementing of the last assigned address value.
+
+The registers within an entry are specified with
+* a name,
+* a size specified by width in bits or explicitly specifying sub-bits in the entry,
+* a type and optionally
+* a reset value,
+* a signal connected to the register,
+* a bit-range for the signal in case the signal is only partially connected and
+* a comment for documentation.
+
+The general `R` command is invoked in the form to add an entry `<entry-name>` to a register-file `<regfile-name>`:
+```
+R -regfile <regfile-name> [(@|-addr) <address>] [-prot[ected]] [-handshake <handshake-specification>] [-subst|-nosubst|-evaluate] <entry-name> <register-table>
+```
+
+An explicit address can be specified using the `-addr` or `@` option followed by the address.
+If no address is specified, the last address used of the specified register file is incremented and used instead.
+
+To set the protected property of the regfile entry you can specify the `-protected` option.
+
+In case a signal of another module is read via handshake-synchronization, this can be specified by the `-handshake` option.
+It expects a list of the form `{<trigger-out> <acknowledge-in> type}`, where `<trigger-out>` and `<acknowledge-in>` are
+the Signals to use for the handshake and `<type>` can be `"S"` for synchronization (so the acknowledgement will by synchronized
+into the regfile clock domain) or empty.
+
+Substitution in the register-table can be controlled by:
+* `-subst` (default): Tcl-Variables are substituted.
+* `-evaluate`: Tcl-Variables and sub-commands are substituted by their (return) value.
+* `-nosubst`: Nothing is substituted.
+
+The register-table is specified as a nested list of the form:
+```
+{
+    {name    width    entrybits    type    reset    signal    signalbits    comment   }
+    {<name1> <width1> <entrybits1> <type1> <reset1> <signal1> <signalbits1> <comment1>}
+    {<name2> <width2> <entrybits2> <type2> <reset2> <signal2> <signalbits2> <comment2>}
+    ...
+}
+```
+The first list contains the table headers and must contain in a matching order for the whole table:
+* `name`: the register name.
+* `width` or `entrybits`: the size of the register in bits or the bits the register uses within the entry.
+* `type`: the register type.
+Optionally (and depending on the register type):
+* `reset`: the reset value.
+* `signal`: a signal connected to the register.
+  It is also possible to directly specify a target module port here in the format accepted by the `S` command.
+* `signalbits`: subset of bits of the signal connected to the register; otherwise the whole signal is connected.
+* `comment`: a comment for documentation.
+
+Unused optional values (except comment) can be omitted by putting a `-` in the table or omitting the column if none of the registers use it.
+Unused columns can be omitted in the table.
+
+Register types are:
+* `RW`: a generated register with read/write-access.
+* `R`: a read-only register (e.g. input from another module).
+* `CRW`: a custom read/write-register: The hardware-description of the write-access is omitted and a keep-block is inserted for the user.
+* `FCRW`: a full-custom read/write-register: All register-specific description is omitted and keep-blocks are inserted for the user.
+
+### Registerfile-Table
+TBD
+
+### Combined Signal- and Register Definition
+TBD
+
+### Examples
 TBD
 
 ## Keep Blocks
