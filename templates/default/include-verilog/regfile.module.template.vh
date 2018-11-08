@@ -160,6 +160,7 @@
         set handshake_list {}
         set handshake_cond_req {}
         set handshake_sig_in_from_out {}
+        set handshake_sig_in_from_out_sync {}
 
         foreach_array entry $entry_list {
             foreach_array_with reg $entry(regs) {[read_reg_sync]} {
@@ -167,8 +168,7 @@
             }
         }
         foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
-            set handshake_sig_out [lindex $entry(handshake) 0]
-            set handshake_sig_in  [lindex $entry(handshake) 1]
+            lassign $entry(handshake) handshake_sig_out handshake_sig_in handshake_type
             foreach {handshake_sig_varname handshake_sig} [list handshake_sig_in $handshake_sig_in handshake_sig_out $handshake_sig_out] {
                 if {[string first ":" $handshake_sig] > -1} {
                     set $handshake_sig_varname [lindex [split $handshake_sig ":"] 1]
@@ -177,8 +177,12 @@
             if {[lsearch $handshake_list $handshake_sig_out] < 0} {
                 lappend handshake_list $handshake_sig_out
                 dict set handshake_sig_in_from_out $handshake_sig_out $handshake_sig_in
-                # TODO: if {type == XXX} {...}
-                lappend sig_syncs $handshake_sig_in $handshake_sig_in "       " {}
+                if {$handshake_type eq "S"} {
+                    lappend sig_syncs $handshake_sig_in $handshake_sig_in "       " {}
+                    dict set handshake_sig_in_from_out_sync $handshake_sig_out ${handshake_sig_in}_sync
+                } else {
+                    dict set handshake_sig_in_from_out_sync $handshake_sig_out ${handshake_sig_in}
+                }
             } else {
                 if {[dict get $handshake_sig_in_from_out $handshake_sig_out] ne $handshake_sig_in} {
                     log -warn -id RFTP "Handshake signal $handshake_sig_out is used with different feedback signals -- " \
@@ -266,11 +270,11 @@
             reg_<%=$handshake%> <= 1'b0;<% } %>
         end else begin
             if (<[rf_sel]> && <[rf_enable]>) begin<% foreach handshake $handshake_list { %>
-                if ((<[join [dict get $handshake_cond_req $handshake] " || "]>) && (<[dict get $handshake_sig_in_from_out $handshake]>_sync == 1'b0)) begin
+                if ((<[join [dict get $handshake_cond_req $handshake] " || "]>) && (<[dict get $handshake_sig_in_from_out_sync $handshake]> == 1'b0)) begin
                     reg_<%=$handshake%> <= 1'b1;
                 end<% } %>
             end<% foreach handshake $handshake_list { %>
-            if ((reg_<%=$handshake%> == 1'b1) && (<[dict get $handshake_sig_in_from_out $handshake]>_sync == 1'b1)) begin
+            if ((reg_<%=$handshake%> == 1'b1) && (<[dict get $handshake_sig_in_from_out_sync $handshake]> == 1'b1)) begin
                 reg_<%=$handshake%> <= 1'b0;
             end<% }  %>
         end
@@ -376,7 +380,7 @@
         }
         foreach handshake $handshake_list { %>
         if (<[join [dict get $handshake_cond_req $handshake] " || "]>) begin
-            <[rf_ready_sig]> = <[dict get $handshake_sig_in_from_out $handshake]>_sync & reg_<%=$handshake%>;
+            <[rf_ready_sig]> = <[dict get $handshake_sig_in_from_out_sync $handshake]> & reg_<%=$handshake%>;
         end<% } %>
         <[rf_err_sig]> = 1'b0;
         if (<[rf_w_sel]> && <[rf_enable]>) begin
