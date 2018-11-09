@@ -43,6 +43,8 @@ Mandatory arguments to long options are mandatory for short options too.
 
     -a, --args=K[=V]         Set K to V before running icglue construction script
 
+    -n, --dryrun             Do not modify/writeout results, just run script and checks
+
     -q, --quiet              Show errors only
     -v, --verbose            Be verbose
     -d, --debug              Show debug output
@@ -105,6 +107,7 @@ proc main {} {
     set debugdebug      "false"
     set print_version   "false"
     set nologo          "false"
+    set dryrun          "false"
 
     # flags with mandatory arguments
     set c_loglevel      "W"
@@ -123,6 +126,7 @@ proc main {} {
         {  {^(-d|--debug)$}        "const=D"    c_loglevel      {} } \
         {  {^(-dd|--debugdebug)$}  "const=true" debugdebug      {} } \
         {  {^(--version$)}         "const=true" print_version   {} } \
+        {  {^(-n|--dryrun)$}       "const=true" dryrun          {} } \
                                                                      \
         {  {^--template-dir(=|$)}  "list"       c_template_dirs {} } \
         {  {^(-t|--template)(=|$)} "string"     c_template      {} } \
@@ -242,16 +246,18 @@ proc main {} {
     # generate modules with template
     foreach i_module [ig::db::get_modules -all] {
         ig::checks::check_object $i_module
-        if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
+        if {(![ig::db::get_attribute -object $i_module -attribute "resource"]) && (!$dryrun)} {
             ig::log -info "generating module $i_module"
             ig::templates::write_object_all $i_module
         }
     }
     # generate regfiles with template
     foreach i_regfile [ig::db::get_regfiles -all] {
-        ig::log -info "generating regfiledoc $i_regfile"
         ig::checks::check_object $i_regfile
-        ig::templates::write_object_all $i_regfile
+        if {!$dryrun} {
+            ig::log -info "generating regfiledoc $i_regfile"
+            ig::templates::write_object_all $i_regfile
+        }
     }
 
     set exitcode 0
