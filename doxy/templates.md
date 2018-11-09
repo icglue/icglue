@@ -122,6 +122,8 @@ init::output_file $template {
 This way the proc bodies are registered for the given template name and can be used if the template is selected.
 
 
-## Template
-TBD
+## Template-Files
+The template files are written in a Tcl template language inspired by a code snipped in a comment on the Tcl wiki ([TemplaTcl](https://wiki.tcl-lang.org/page/TemplaTcl%3A+a+Tcl+template+engine "TemplaTcl: a Tcl template engine")).
+When the template code is invoked, the Tcl variable `obj_id` is set to the object for which output will be generated.
 
+TBD
