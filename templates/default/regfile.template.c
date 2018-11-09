@@ -89,8 +89,8 @@ foreach_array entry $entry_list {
 <%- if {$has_read} { +%>
 bool <%="rf_${rf_name}_${entry(name)}"%>_read (<[join $arguments_read ", "]>)
 {
-    uint32_t value = 0;
-    bool result = rf_<%=${rf_name}%>_read (<%=$userparamsft%><%=$address%>, &value);
+    uint32_t _value = 0;
+    bool result = rf_<%=${rf_name}%>_read (<%=$userparamsft%><%=$address%>, &_value);
 
 <%+
     set maxlen_name [expr {[max_array_entry_len $read_regs name] + 1}]
@@ -98,7 +98,7 @@ bool <%="rf_${rf_name}_${entry(name)}"%>_read (<[join $arguments_read ", "]>)
 
     foreach_array reg $read_regs {
 -%>
-    if (<[format "%-${maxlen_name}s" "${reg(name)}"]>!= NULL) <[format "%-${maxlen_name}s" "*${reg(name)}"]> = ((value >> <[format "%${maxlen_lsb}s" $reg(lsb)]>) & <%=$reg(mask)%>);
+    if (<[format "%-${maxlen_name}s" "${reg(name)}"]>!= NULL) <[format "%-${maxlen_name}s" "*${reg(name)}"]> = ((_value >> <[format "%${maxlen_lsb}s" $reg(lsb)]>) & <%=$reg(mask)%>);
 <%+ } -%>
 
     return result;
@@ -107,7 +107,7 @@ bool <%="rf_${rf_name}_${entry(name)}"%>_read (<[join $arguments_read ", "]>)
 <%- if {$has_write} { +%>
 bool <%="rf_${rf_name}_${entry(name)}"%>_write (<[join $arguments_write ", "]>)
 {
-    uint32_t value = 0;
+    uint32_t _value = 0;
 
 <%+
     set maxlen_name [max_array_entry_len $read_regs name]
@@ -115,10 +115,10 @@ bool <%="rf_${rf_name}_${entry(name)}"%>_write (<[join $arguments_write ", "]>)
 
     foreach_array reg $write_regs {
 -%>
-    value |= (((uint32_t) <[format "%-${maxlen_name}s" $reg(name)]> & <[format "%${maxlen_mask}s" $reg(mask)]>) << <%=$reg(lsb)%>);
+    _value |= (((uint32_t) <[format "%-${maxlen_name}s" $reg(name)]> & <[format "%${maxlen_mask}s" $reg(mask)]>) << <%=$reg(lsb)%>);
 <%+ } -%>
 
-    bool result = rf_<%=${rf_name}%>_write (<%=$userparamsft%><%=$address%>, value);
+    bool result = rf_<%=${rf_name}%>_write (<%=$userparamsft%><%=$address%>, _value);
     return result;
 }
 <%+ } -%>
