@@ -230,6 +230,7 @@ Optionally (and depending on the register type):
 * `reset`: the reset value.
 * `signal`: a signal connected to the register.
   It is also possible to directly specify a target module port here in the format accepted by the `S` command.
+  In this case the signal is created together with the register.
 * `signalbits`: subset of bits of the signal connected to the register; otherwise the whole signal is connected.
 * `comment`: a comment for documentation.
 
@@ -243,9 +244,31 @@ Register types are:
 * `FCRW`: a full-custom read/write-register: All register-specific description is omitted and keep-blocks are inserted for the user.
 
 ### Registerfile-Table
-TBD
+For simple regfile entries (e.g. no handshake synchronization) it is also possible to specify multiple entries as a table using the `RT` command.
+The table will then have additional columns for `entryname`, `address` and `protect`.
+For multiple registers of the same entry name, address and protection only need to be specified for the first one.
+The table will then look like this:
+```
+{
+    {entryname    address    protect    name      width      entrybits      type      reset      signal      signalbits      comment     }
+    {<entryname1> <address1> <protect1> <name1.1> <width1.1> <entrybits1.1> <type1.1> <reset1.1> <signal1.1> <signalbits1.1> <comment1.1>}
+    {{}           {}         {}         <name1.2> <width1.2> <entrybits1.2> <type1.2> <reset1.2> <signal1.2> <signalbits1.2> <comment1.2>}
+    ...
+    {<entryname2> <address2> <protect2> <name2.1> <width2.1> <entrybits2.1> <type2.1> <reset2.1> <signal2.1> <signalbits2.1> <comment2.1>}
+    {{}           {}         {}         <name2.2> <width2.2> <entrybits2.2> <type2.2> <reset2.2> <signal2.2> <signalbits2.2> <comment2.2>}
+    ...
+}
+```
 
-### Combined Signal- and Register Definition
+The command structure is:
+```
+RT -regfile <regfile-name> [-nosubst|-evaluate] [-csv] [-csvseparator <separator>] (-csvfile <filename>|<register-table>)
+```
+The `-nosubst` and `-evaluate` options are the same as for the `R` command.
+The table can alternatively be specified in csv-format (`-csv` option) with separator specified by `-csvseparator` option, default is `;`.
+In case of csv-format it is also possible to specify a csv-file instead of the table via the `-csvfile` option.
+
+### Combined Signal and Register Definition
 TBD
 
 ### Examples
