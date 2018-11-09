@@ -1,14 +1,18 @@
 <%
 ##########################################################################################
 # print header
+##########################################################################################
+set entry_list [regfile_to_arraylist $obj_id]
+set rf_name [object_name $obj_id]
+set userparams [ig::db::get_attribute -object $obj_id -attribute "accesscargs" -default {}]
+set header_name "rf_${rf_name}"
+##########################################################################################
 %>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
- "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-   <title> register file contend overview </title>
+<%="    <title> " $header_name " register file contend overview </title>"%>
 
    <style  type="text/css">
    .tooltip {
@@ -94,7 +98,7 @@
 <body>
    <div>
    <table frame="border" rules="all">
-   <tr bgcolor="#ffe0b3">
+   <tr style="background-color: #ffe0b3">
      <th><div class="tooltip">RegisterName<span class="tooltiptext">name of the register</span></div></th>
      <th><div class="tooltip">Address<span class="tooltiptext">local register address (hex)</span></div></th>
      <th></th>
@@ -110,11 +114,6 @@
    </tr>
 <%
 ##########################################################################################
-set entry_list [regfile_to_arraylist $obj_id]
-set rf_name [object_name $obj_id]
-set userparams [ig::db::get_attribute -object $obj_id -attribute "accesscargs" -default {}]
-set header_name "rf_${rf_name}"
-
 proc read_reg {} {
     return [uplevel 1 {regexp -nocase {^[^-W]*$} $reg(type)}]
 }
@@ -146,9 +145,7 @@ foreach i_entry $entry_list {
     # get number of subregs
     set num_sregs [llength $entry(regs)]
 
-    foreach i_reg $entry(regs) {
-
-        array set reg $i_reg
+    foreach_array reg $entry(regs) {
 
         if {[string is integer $reg(width)]} {
             if {$reg(width) <= 1} {
@@ -164,48 +161,63 @@ foreach i_entry $entry_list {
             set rtype "uint32_t"
         }
 
-        set reg_data [list name $reg(name) type $rtype]
-        set userparams_extra $userparams
-        lappend userparams_extra {}
-        set userparams_extra [join $userparams_extra ", "]
 
+            if {$sreg_idx == 0} {
+            set reg_data [list name $reg(name) type $rtype]
+            set userparams_extra $userparams
+            lappend userparams_extra {}
+            set userparams_extra [join $userparams_extra ", "]
 
-        foreach j_reg $entry(regs) {
-            array set reg_j $j_reg
+            foreach j_reg $entry(regs) {
+                array set reg_j $j_reg
+                if {[string is integer $reg(width)]} {
+                    if {$reg_j(width) <= 1} {
+                        set rtype_j "bool"
+                    } elseif {$reg_j(width) <= 8} {
+                        set rtype_j "uint8_t"
+                    } elseif {$reg_j(width) <= 16} {
+                        set rtype_j "uint16_t"
+                    } else {
+                        set rtype_j "uint32_t"
+                    }
+                } else {
+                    set rtype_j "uint32_t"
+                }
 
-            if {[write_reg_j]} {
-                lappend arguments_write "${rtype} ${reg_j(name)}"
-                lappend write_regs $reg_data
-            }
+                if {[write_reg_j]} {
+                    lappend arguments_write "${rtype_j} ${reg_j(name)}"
+                    lappend write_regs $reg_data
+                }
 
-            if {$reg_j(type) ne "-"} {
-                lappend arguments_read "${rtype} *${reg_j(name)}"
-                lappend read_regs $reg_data
-            }
+                if {$reg_j(type) ne "-"} {
+                    lappend arguments_read "${rtype_j} *${reg_j(name)}"
+                    lappend read_regs $reg_data
+                }
 
-            if {[llength $read_regs] > 0} {
-                set has_read 1
-            } else {
-                set has_read 0
-            }
-            if {[llength $write_regs] > 0} {
-                set has_write 1
-            } else {
-                set has_write 0
+                if {[llength $read_regs] > 0} {
+                    set has_read 1
+                } else {
+                    set has_read 0
+                }
+                if {[llength $write_regs] > 0} {
+                    set has_write 1
+                } else {
+                    set has_write 0
+                }
             }
         }
 
         if { ($reg_idx % 2) ==  0 } {
             if {$reg(type) ne "-"} {
-                %>   <tr bgcolor="#FFFFFF"><%="\n"%><%
+                %>   <tr style="background-color: #FFFFFF"><%="\n"%><%
             } else {
-                %>   <tr bgcolor="#F5F5F5"><%="\n"%><%
+                %>   <tr style="background-color: #F5F5F5"><%="\n"%><%
             }
         } else {
             if {$reg(type) ne "-"} {
-                %>   <tr bgcolor="#e6eeff"><%="\n"%><%
+                %>   <tr style="background-color: #e6eeff"><%="\n"%><%
             } else {
-                %>   <tr bgcolor="#F5F5F5"><%="\n"%><%
+                %>   <tr style="background-color: #F5F5F5"><%="\n"%><%
             }
         }
 
@@ -223,7 +235,7 @@ foreach i_entry $entry_list {
             %>          <span class="tooltiptext" style="background-color: black; color: white">click to copy CPP write function</span></div><%= "\n"
             %><%+ } -%>        </td><%="\n"%><%
             %>        <td rowspan="<%=$num_sregs %>"><%="\n"%><%
-            %>          <div class="tooltip"><button class="tex_button" style="font-family:'Courier New'" onclick="setClipboard('<%= "\\\\getReg\{" $rf_name ":" $entry(name) ".diag\};" %> ')">TEX</button><%="\n"
+            %>          <div class="tooltip"><button class="tex_button" style="font-family:'Courier New'" onclick="setClipboard('<%= "\\\\getReg\{" $rf_name ":" $entry(name) ".diag\}" %> ')">TEX</button><%="\n"
             %>          <span class="tooltiptext" style="background-color: black; color: white">click to copy latex diagram call</span></div><%= "\n"
             %>    </td><%= "\n"
         }
@@ -244,7 +256,7 @@ foreach i_entry $entry_list {
         %>      <td align="center"><%=    $reg(type)     %></td><%="\n"%><%
         %>      <td align="center"><%=    $reg(entrybits)%></td><%="\n"%><%
         %>      <td align="center"><%=    $reg(reset)    %></td><%="\n"%><%
-        %>      <td align="center"><%=    $reg(comment)  %></td><%="\n"%><%
+        %>      <td align="left"><%=    $reg(comment)  %></td><%="\n"%><%
         %>   </tr><%="\n"%><%
         incr sreg_idx
     }
