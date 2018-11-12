@@ -59,7 +59,7 @@ proc template_file {object type template_dir} {
     # proc body defining an absolute path to the template-file to be used
     # for the given object and output type
     # template_dir is the path to the template directory with the init script
-    if {type eq "verilog"}
+    if {type eq "verilog"} {
         set filename "${template_dir}/template.v"
     } else {
         #...
@@ -71,7 +71,7 @@ proc output_file {object type} {
     # proc body defining a path to the file to be written
     # for the given object and output type
     set object_name [ig::db::get_attribute -object $object -attribute "name"]
-    if {type eq "verilog"}
+    if {type eq "verilog"} {
         set filename "${object_name}.v"
     } else {
         #...
@@ -97,7 +97,7 @@ init::template_file $template {
     # proc body defining an absolute path to the template-file to be used
     # for the given object and output type
     # template_dir is the path to the template directory with the init script
-    if {type eq "verilog"}
+    if {type eq "verilog"} {
         set filename "${template_dir}/template.v"
     } else {
         #...
@@ -110,7 +110,7 @@ init::output_file $template {
     # proc body defining a path to the file to be written
     # for the given object and output type
     set object_name [ig::db::get_attribute -object $object -attribute "name"]
-    if {type eq "verilog"}
+    if {type eq "verilog"} {
         set filename "${object_name}.v"
     } else {
         #...
@@ -126,4 +126,44 @@ This way the proc bodies are registered for the given template name and can be u
 The template files are written in a Tcl template language inspired by a code snipped in a comment on the Tcl wiki ([TemplaTcl](https://wiki.tcl-lang.org/page/TemplaTcl%3A+a+Tcl+template+engine "TemplaTcl: a Tcl template engine")).
 When the template code is invoked, the Tcl variable `obj_id` is set to the object for which output will be generated.
 
-TBD
+### Block delimiters
+By default content in the template-file is written to the output file verbatim.
+Content between special delimiters is interpreted as Tcl code.
+Those blocks are:
+* `<% # tcl code %>`: Contains Tcl commands to be executed.
+  * `<%- # tcl code -%>`: Variant to remove line break on both sides.
+  * `<%+ # tcl code +%>`: Variant to explicitly keep line break on both sides (also default).
+* `<%= $tclvar %>`: Tcl value between delimiters (typically a variable or a Tcl string) is written to the output file.
+  * `<%-= $tclvar -%>`: Variant to remove line break on both sides.
+  * `<%+= $tclvar +%>`: Variant to explicitly keep line break on both sides (also default).
+* `<[tclcommand]>`: Return value of command is written to the output file.
+  * `<[-tclcommand-]>`: Variant to remove line break on both sides.
+  * `<[+tclcommand+]>`: Variant to explicitly keep line break on both sides (also default).
+
+It is possible to remove line breaks at beginning/end of lines by adding a `-` to the delimiters or explicitly add a `+` to indicate the line break is kept.
+This leads to the shown variants.
+
+### Commands
+There is a set of commands to simplify some template tasks.
+
+#### Data Preprocessing
+For preprocessing of object data to Tcl lists of arrays the commands to be used are:
+* `regfile_to_arraylist {object_id}`: Preprocess data of regfile object.
+* `module_to_arraylist {object_id}`: Preprocess data of module object.
+* `instance_to_arraylist {object_id}`: Preprocess data of instance object.
+
+#### Keep Block Management
+In order to manage content of ICGlue keep blocks a set of commands is provided.
+If the generated output file already exists, the keep blocks are parsed from the file into the `keep_block_data` variable.
+* `get_keep_block_content {block_data block_entry block_subentry {filesuffix ".v"} {default_content {}}}`:
+  Return the content of given keep block entry. Optionally a default content can be provided if nothing has been parsed.
+* `pop_keep_block_content {block_data_var block_entry block_subentry {filesuffix ".v"} {default_content {}}}`
+  Return and remove the content of given keep block entry. Optionally a default content can be provided if nothing has been parsed.
+* `remaining_keep_block_contents {block_data {filesuffix ".v"} {nonempty "true"}}`
+  Return content of all keep blocks remaining in the keep block data set.
+  This is useful to prevent loss of keep blocks that are parsed in but not written out due to a name change.
+
+All those commands have an argument `filesuffix` which specifies the comment format.
+
+#### Direct Output
+For writing to the output file from a Tcl code segment, the command `echo` is provided.
