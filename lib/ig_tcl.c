@@ -1165,6 +1165,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     if (!ig_lib_connection (db, name, src, trg_list, &gen_net)) {
         ig_net_free (gen_net);
         result = tcl_error_msg (interp, "Signal \"%s\", error while trying to create connection", name);
+        goto l_ig_tclc_connect_exit_pre;
     }
     log_debug ("TCCon", "... finished connection");
 
@@ -1284,6 +1285,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
     if (!ig_lib_parameter (db, name, value, trg_list, &gen_generic)) {
         ig_generic_free (gen_generic);
         result = tcl_error_msg (interp, "Parameter \"%s\", error while trying to create parameter", name);
+        goto l_ig_tclc_parameter_exit_pre;
     }
     log_debug ("TCPar", "... finished parametrization");
 

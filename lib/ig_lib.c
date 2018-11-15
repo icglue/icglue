@@ -457,6 +457,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
     hier_tree = ig_lib_htree_reduce (hier_tree);
     if (hier_tree == NULL) {
         log_warn ("LConn", "Unable to create signal %s, because of insufficient hierarchy information.", signame);
+        result = false;
         goto l_ig_lib_connection_final_free_hierlist;
     }
 
@@ -549,6 +550,7 @@ bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *de
     hier_tree = ig_lib_htree_reduce (hier_tree);
     if (hier_tree == NULL) {
         log_warn ("LParm", "Unable to create parameter %s, because of insufficient hierarchy information.", parname);
+        result = false;
         goto l_ig_lib_parameter_final_free_hierlist;
     }
 
