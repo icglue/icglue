@@ -1030,6 +1030,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     if (!ig_lib_connection (db, name, src, trg_list, &gen_objs)) {
         g_list_free (gen_objs);
         result = tcl_error_msg (interp, "Signal \"%s\", error while trying to create connection", name);
+        goto l_ig_tclc_connect_exit_pre;
     }
     log_debug ("TCCon", "... finished connection");
 
@@ -1151,6 +1152,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
     if (!ig_lib_parameter (db, name, value, trg_list, &gen_objs)) {
         g_list_free (gen_objs);
         result = tcl_error_msg (interp, "Parameter \"%s\", error while trying to create parameter", name);
+        goto l_ig_tclc_parameter_exit_pre;
     }
 
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
