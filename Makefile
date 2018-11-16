@@ -101,7 +101,7 @@ doclib: $(DOXYFILELIB) | $(DOCDIRLIB)
 
 
 $(MD2HTMLDIR)/%.html: doxy/%.md | $(MD2HTMLDIR)
-	@cat $(HTML_HEAD) >> $@
+	@cat $(HTML_HEAD) > $@
 	$(CMARK) $^ >> $@
 	@cat $(HTML_FOOT) >> $@
 	@sed -i -e 's/\.md\>/\.html/g' $@
