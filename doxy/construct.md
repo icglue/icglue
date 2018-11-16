@@ -213,15 +213,33 @@ Substitution in the register-table can be controlled by:
 * `-evaluate`: Tcl-Variables and sub-commands are substituted by their (return) value.
 * `-nosubst`: Nothing is substituted.
 
-The register-table is specified as a nested list of the form:
+The register-table is specified as
 ```
 {
-    {name    width    entrybits    type    reset    signal    signalbits    comment   }
-    {<name1> <width1> <entrybits1> <type1> <reset1> <signal1> <signalbits1> <comment1>}
-    {<name2> <width2> <entrybits2> <type2> <reset2> <signal2> <signalbits2> <comment2>}
+    "name"  | "width" or "entrybits"  | "type"  | "reset"  | "signal"  | ["signalbits" ] | "comment"
+    ------  | ----------------------  | ------  | -------  | --------  | [------------ ] | ---------
+    <name1> | <width1 or <entrybits1> | <type1> | <reset1> | <signal1> | [<signalbits1>] | <comment1>
+    <name2> | <width2 or <entrybits2> | <type2> | <reset2> | <signal2> | [<signalbits2>] | <comment2>
+
+    ...
+}
+
+```
+
+alternatively a nested list of the form is possible:
+
+```
+{
+    {name    width    or entrybits    type    [reset   ] signal    [signalbits   ] comment   }
+    {<name1> <width1> or <entrybits1> <type1> [<reset1>] <signal1> [<signalbits1>] <comment1>}
+    {<name2> <width2> or< entrybits2> <type2> [<reset2>] <signal2> [<signalbits2>] <comment2>}
     ...
 }
 ```
+
+- if `signalbits` is omitted the `signalbits` get their value of the entrybits column
+- if `reset` is omitted the value `0` is taken as default
+
 The first list contains the table headers and must contain in a matching order for the whole table:
 * `name`: the register name.
 * `width` or `entrybits`: the size of the register in bits or the bits the register uses within the entry.
@@ -243,6 +261,54 @@ Register types are:
 * `TRW`: a generated register with read/write-access that toggles back to its reset value directly after its write-cycle (can be used for synchronous trigger signals).
 * `CRW`: a custom read/write-register: The hardware-description of the write-access is omitted and a keep-block is inserted for the user.
 * `FCRW`: a full-custom read/write-register: All register-specific description is omitted and keep-blocks are inserted for the user.
+
+
+### Examples
+
+
+explicit way (component view) - signal connection in done seperately:
+```
+    S "entry_name0_s_cfg"    -w 5  submod:s_cfg_i     <--  submod_regfile
+    S "entry_name0_s_status" -w 16 submod:s_status_o  -->  submod_regfile
+    R submod_regfile "entry_name0" -protected {
+        "name"   | "entrybits" | "type" | "reset" | "signal"             | "comment"
+        -----    | ----------- | -----  | ------- | --------             | ---------
+        s_cfg    | 4:0         | RW     | 5'h0    | entry_name0_s_cfg    | "Configure component"
+        s_status | 31:16       | R      | 16'h0   | entry_name0_s_status | "Component status"
+    }
+```
+
+same with inline connection (toplevel integration view):
+```
+    R submod_regfile "entry_name0" {
+        "name"   | "entrybits" | "type" | "reset" | "signal"          | "comment"
+        -----    | ----------- | -----  | ------- | --------          | ---------
+        s_cfg    | 4:0         | RW     | 5'h0    | submod:s_cfg_i    | "Configure component"
+        s_status | 31:16       | R      | 16'h0   | submod:s_status_o | "Component status"
+    }
+}
+
+- use `logger -level I -id RCon` in order to see the generated signals of the command
+
+```
+
+
+if the signal-width exceeds the the regfile data width you can split signals with the `signalbits` column
+this is also useful for part selection and register subfield creation
+
+```
+S "s_cfg_large" -w 40 submod_regfile  -->  submod
+R submod_regfile "entry_name1_low" {
+    "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
+    -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
+    s_cfg  | 31:0        | RW     | 32'h0   | s_cfg_large | 31:0         | "Configure submod part 0"
+}
+R submod_regfile "entry_name1_high" {
+    "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
+    -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
+    s_cfg  | 7:0         | RW     | 8'h0    | s_cfg_large | 39:32        | "Configure submod part 1"
+}
+```
 
 ### Registerfile-Table
 For simple regfile entries (e.g. no handshake synchronization) it is also possible to specify multiple entries as a table using the `RT` command.
