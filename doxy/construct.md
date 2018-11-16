@@ -270,10 +270,53 @@ The table can alternatively be specified in csv-format (`-csv` option) with sepa
 In case of csv-format it is also possible to specify a csv-file instead of the table via the `-csvfile` option.
 
 ### Combined Signal and Register Definition
-TBD
+
+The `SR` command is a short cut for signal connection and register creation on a register file.
+The register type (RW) is derived from the direction of the connection.
+
+If you want to see the `S` and `R` command issued, you can turn on the log-level by
+```
+logger -level I -id SRCmd
+```
+
+The signalname is prefixed by the regfile-name in order to avoid collisions.
+
+The command usage is as follows
+```
+SR [OPTION]... SIGNALNAME CONNECTIONPORTS...
+  -w(idth)(=)                set signal width
+  -(-)\>                     first element is interpreted as input source
+  <(-)-                      last element is interpreted as input source
+  (@|-addr($|=))             specify the address
+  -c(omment)($|=)            specify comment for the register
+  -handshake($|=)            specify signals and type for handshake {signal-out signal-in type}
+  -prot(ect(ed))             register is protected for privileged-only access
+  (=|-v(alue)|-r(eset(val))) specify reset value for the register
+```
 
 ### Examples
-TBD
+
+```
+I,SRCmd     SR submod_start_seed -w 32 = 32'hCAFEBABE submod_regfile --> submod:start_seed_i -comment {Submodule start seed}
+                S "submod_regfile_submod_start_seed" -w 32 submod_regfile --> submod:start_seed_i
+                R -rf=submod_regfile "submod_start_seed" -nosubst {
+                    "name" | "width" | "type" | "reset"      | "signal"                         | "comment"
+                    val    | 32      | RW     | 32'hCAFEBABE | submod_regfile_submod_start_seed | "Submodule start seed"
+                }
+I,SRCmd     SR submod_state -w 32 submod_regfile <-- submod:state_o -handshake {"state_trigger" "state_trigger_ack" "S"} -protected -comment {Submodule read state}
+                S "submod_regfile_submod_state" -w 32 submod_regfile <-- submod:state_o
+                R -rf=submod_regfile "submod_state" -nosubst -handshake {"state_trigger" "state_trigger_ack" "S"} -protected {
+                    "name" | "width" | "type" | "reset" | "signal"                    | "comment"
+                    val    | 32      | R      | -       | submod_regfile_submod_state | "Submodule read state"
+                }
+I,SRCmd     SR rf_protect -w 1 = 1'b0 submod_regfile:rf_protect_ctl! --> submod_regfile:apb_prot_en! -comment {protection enable}
+                S "submod_regfile_rf_protect" -w 1 submod_regfile:rf_protect_ctl! --> submod_regfile:apb_prot_en!
+                R -rf=submod_regfile "rf_protect" -nosubst {
+                    "name" | "width" | "type" | "reset" | "signal"                  | "comment"
+                    val    | 1       | RW     | 1'b0    | submod_regfile_rf_protect | "protection enable"
+                }
+```
+
 
 ## Keep Blocks
 The generated outputs can contain keep-blocks.
