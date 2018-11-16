@@ -52,6 +52,13 @@ PREFIX               ?= $(CURDIR)/install
 DESTDIR              ?=
 INSTDIR              := $(DESTDIR)$(PREFIX)
 
+CMARK                := cmark
+HTML_HEAD            := html/html_head.html
+HTML_FOOT            := html/html_foot.html
+MD2HTMLDIR           := md2html
+MDFILES              := $(wildcard doxy/*.md)
+MD2HTMLFILES         := $(addprefix $(MD2HTMLDIR)/,$(addsuffix .html,$(basename $(MDFILES:doxy/%=%))))
+
 LOCTOOL              ?= cloc
 LOCSOURCES           := $(wildcard tcllib/*.tcl bin/* lib/*.c lib/*.h)
 LOCTEMPLATES         := $(wildcard templates/*/*)
@@ -92,6 +99,15 @@ doctcl: $(DOXYFILETCL) | $(DOCDIRTCL)
 doclib: $(DOXYFILELIB) | $(DOCDIRLIB)
 	-doxygen $(DOXYFILELIB)
 
+
+$(MD2HTMLDIR)/%.html: doxy/%.md | $(MD2HTMLDIR)
+	@cat $(HTML_HEAD) >> $@
+	$(CMARK) $^ >> $@
+	@cat $(HTML_FOOT) >> $@
+	@sed -i -e 's/\.md\>/\.html/g' $@
+
+docmd2html: $(MD2HTMLFILES)
+
 docs: doctcl doclib
 
 showdocs:
@@ -106,7 +122,7 @@ $(MANDIR)/%.$(MANSEC): ./h2m/%.h2m ./bin/% | $(MANDIR)
 
 man: $(addprefix $(MANDIR)/, $(addsuffix .$(MANSEC), $(H2MBASENAMES)))
 
-.PHONY: doctcl doclib docs man
+.PHONY: doctcl doclib docs man docmd2html
 
 #-------------------------------------------------------
 # syntax check
@@ -175,9 +191,8 @@ locall:
 
 #-------------------------------------------------------
 # directories
-$(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB) $(SYNTAXDIR):
+$(MD2HTMLDIR) $(PKGDIR) $(DOCDIR) $(DOCDIRTCL) $(DOCDIRLIB) $(SYNTAXDIR):
 	mkdir -p $@
-
 
 #-------------------------------------------------------
 # cleanup targets
@@ -187,6 +202,7 @@ clean:
 
 cleandoc:
 	rm -rf $(DOCDIR)
+	rm -rf $(MD2HTMLDIR)
 
 cleansyntax:
 	rm -rf $(SYNTAXDIR)
