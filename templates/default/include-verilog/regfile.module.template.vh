@@ -139,6 +139,9 @@
     proc fullcustom_reg {} {
         return [uplevel 1 {regexp -nocase {FC} $reg(type)}]
     }
+    proc sctrigger_reg {} {
+        return [uplevel 1 {regexp -nocase {T} $reg(type)}]
+    }
     proc read_reg_sync {} {
         return [uplevel 1 {regexp -nocase {RS} $reg(type)}]
     }
@@ -322,7 +325,10 @@
             "]><% } elseif {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} { %>
             <[pop_keep_block_content keep_block_data "keep" "custom_reset_${entry(name)}" ".v" ""]><%
             } %>
-        end else begin
+        end else begin<%
+            foreach_array_with reg $entry(regs) {[write_reg] && [sctrigger_reg] && ![custom_reg]} { %>
+            <[reg_name]> <= <%=$reg(reset)%>;<% }
+            %>
             if (<[rf_w_sel]> && <[rf_enable]>) begin
                 if (<% if {$entry(protected)} {%>(<%}%><[rf_addr]> == <[string trim [param]]><% if {$entry(protected)} {%>) && <[rf_prot_ok]><%}%>) begin<%
                     for {set byte 0} {$byte < 4} {incr byte} {

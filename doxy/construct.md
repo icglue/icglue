@@ -240,6 +240,7 @@ Unused columns can be omitted in the table.
 Register types are:
 * `RW`: a generated register with read/write-access.
 * `R`: a read-only register (e.g. input from another module).
+* `TRW`: a generated register with read/write-access that toggles back to its reset value directly after its write-cycle (can be used for synchronous trigger signals).
 * `CRW`: a custom read/write-register: The hardware-description of the write-access is omitted and a keep-block is inserted for the user.
 * `FCRW`: a full-custom read/write-register: All register-specific description is omitted and keep-blocks are inserted for the user.
 
