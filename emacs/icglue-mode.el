@@ -5,32 +5,42 @@
 ;;; Commentary:
 
 ;; add to load-path and use require
+;; add the following to your emacs config for verilog syntax highlighting in code sections:
+;; (add-hook 'icglue-mode-hook
+;;          (lambda () (add-hook 'after-save-hook 'icglue-fontify-code-sections nil 'local)))
 
-;; possible extensions: better highlighting, auto-indent, menu, completion, verilog highlighting in code sections
+;; possible extensions: even better highlighting, auto-indent, menu, completion
 
-;; available faces
-;; font-lock-constant-face
-;; font-lock-type-face
-;; font-lock-builtin-face
-;; font-lock-preprocessor-face
-;; font-lock-string-face
-;; font-lock-doc-face
-;; font-lock-negation-char-face
-;; font-lock-keyword-face
-;; font-lock-variable-name-face
-;; font-lock-function-name-face
 
 ;;; Code:
-
 (defconst icglue-keywords
-      '(
-        (".*\#.*\\|//.*$"                                                             . font-lock-comment-face)
-        ("^ *M \\|^ *P \\|^ *S \\|^ *C \\|^ *R "                                      . font-lock-type-face)
-        ("-+>\\|<-+>\\|<-+"                                                           . font-lock-function-name-face)
-        ("-w\\|-width\\|-v\\|-value\\|-d\\|-dimension\\|-unit\\|-tree\\|-verbatim"    . font-lock-keyword-face)
-        )
-      ;; "Keywords for ICGlue"
-       )
+  '(
+    (".*\#.*$"                                                  . font-lock-comment-face)
+    ("^ *M \\|^ *P \\|^ *S \\|^ *C \\|^ *R \\|^ *SR \\|^ *RT "  . font-lock-type-face)
+    ("-+>\\|<-+>\\|<-+"                                         . font-lock-function-name-face)
+    ;; proc S
+    ("-w\\(idth\\)?"                                            . font-lock-keyword-face)
+    ;; -value (proc S) and -verbatim (proc C)
+    ("-v\\(alue\\|erbatim\\)?"                                  . font-lock-keyword-face)
+    ("-d\\(imension\\)?"                                        . font-lock-keyword-face)
+    ("-b\\(idir\\(ectional\\)?\\)?"                             . font-lock-keyword-face)
+    ;; -pin (proc S) and -protected (proc R)
+    ("-p\\(in\\|rot\\(ect\\(ed\\)?\\)?\\)?"                     . font-lock-keyword-face)
+    ;; proc M
+    ("-unit"                                                    . font-lock-keyword-face)
+    ("-tree"                                                    . font-lock-keyword-face)
+    ;; proc C
+    ("-noa\\(dapt\\)?"                                          . font-lock-keyword-face)
+    ;; -adapt -align -adapt-selectively -addr
+    ("-a\\(dapt\\|l\\(ign\\)?\\|s\\|dapt-selectively\\|ddr\\)?" . font-lock-keyword-face)
+    ("-s\\(ubst\\)?"                                            . font-lock-keyword-face)
+    ("-nos\\(ubst\\)?"                                          . font-lock-keyword-face)
+    ("-e\\(val\\(uate\\)?\\)?"                                  . font-lock-keyword-face)
+    ("-noi\\(ndentfix\\)?"                                      . font-lock-keyword-face)
+    ;; proc R (-evaluate and -nosubst shared with proc C)
+    ("-\\(rf\\|regf\\(ile\\)?\\)"                               . font-lock-keyword-face)
+    ("@"                                                        . font-lock-keyword-face)
+    ("-handshake"                                               . font-lock-keyword-face)))
 
 (defvar icglue-mode-syntax-table
   (let ((table (make-syntax-table)))
@@ -158,7 +168,7 @@
   (set (make-local-variable 'comment-start-skip)
        (concat (regexp-quote comment-start) "+\\s *"))
   (set (make-local-variable 'compile-command) (format "icglue %s " (file-name-nondirectory buffer-file-name)))
-  (let ((map (make-sparse-keymap))) ; as described in info pages, make a map
+  (let ((map (make-sparse-keymap)))
     (set-keymap-parent map icglue-mode-map)
     )
   (set-syntax-table icglue-mode-syntax-table)
