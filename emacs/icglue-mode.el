@@ -15,7 +15,7 @@
 ;;; Code:
 (defconst icglue-keywords
   '(
-    (".*\#.*$"                                                  . font-lock-comment-face)
+    ("#.*"                                                      . font-lock-comment-face)
     ("^ *M \\|^ *P \\|^ *S \\|^ *C \\|^ *R \\|^ *SR \\|^ *RT "  . font-lock-type-face)
     ("-+>\\|<-+>\\|<-+"                                         . font-lock-function-name-face)
     ;; proc S
