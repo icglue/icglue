@@ -690,7 +690,7 @@ namespace eval ig {
     #      <tr><td><i> &ensp; &ensp; -s(ubst)                 </i></td><td>  perform Tcl-variable substition of CODE argument, do not forget to escape, esp \[ and \]  <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -nos(ubst)               </i></td><td>  do not perform Tcl-variable substition of CODE argument                                   <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -v(erbatim)              </i></td><td>  alias for -noadapt and -nosubst                                                           <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -e(val(ulate))           </i></td><td>  perform Tcl substition of CODE argument, do not forget to escape                          <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -e(val(uate))            </i></td><td>  perform Tcl substition of CODE argument, do not forget to escape                          <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -noi(ndentfix)           </i></td><td>  do not fix the indent of the codeblock                                                    <br></td></tr>
     #
     #    </table>
@@ -722,7 +722,7 @@ namespace eval ig {
                 { {^-s(ubst)?$}                   "const=true"      do_var_subst   "perform Tcl-variable substition of CODE argument (default)"       } \
                 { {^-nos(ubst)?$}                 "const=false"     do_var_subst   "do not perform Tcl-variable substition of CODE argument"          } \
                 { {^-v(erbatim)$}                 "const=true"      verbatim       "alias for -noadapt and -nosubst"                                  } \
-                { {^-e(val(ulate)?)?$}            "const=true"      do_subst       "perform Tcl substition of CODE argument, do not forget to escape" } \
+                { {^-e(val(uate)?)?$}             "const=true"      do_subst       "perform Tcl substition of CODE argument, do not forget to escape" } \
                 { {^-noi(ndentfix)?$}             "const=false"     do_indent_fix  "do not fix the indent of the codeblock"                           } \
             ] -context "MODULENAME CODE" $args]
 
@@ -794,13 +794,13 @@ namespace eval ig {
     #      <tr><td><b> ENTRYNAME </b></td><td> unique name for the register entry </td></tr>
     #      <tr><td><b> REGISTERTABLE </b></td><td> specification of the register table </td></tr>
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))($|=)  </i></td><td>  DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument      <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; (@|-addr($|=))        </i></td><td>  specify the address                                                          <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -handshake($|=)       </i></td><td>  specify sig-variablenals and type for handshake {signal-out signal-in type}  <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -prot(ect(ed)?)?      </i></td><td>  register is protected for privileged-only access                             <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -subst                </i></td><td>  perform Tcl-variable substition in REGISTERTABLE argument (default for now)  <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -nosubst              </i></td><td>  do not perform Tcl-variable substition in REGISTERTABLE argument             <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -nosubst              </i></td><td>  do not perform Tcl-command substition in REGISTERTABLE argument              <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(rf|regf(ile))($|=)  </i></td><td>  DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument           <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; (@|-addr($|=))        </i></td><td>  specify the address                                                               <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -handshake($|=)       </i></td><td>  specify sig-variablenals and type for handshake {signal-out signal-in type}       <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -prot(ect(ed)?)?      </i></td><td>  register is protected for privileged-only access                                  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -subst                </i></td><td>  perform Tcl-variable substition in REGISTERTABLE argument (default for now)       <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -nosubst              </i></td><td>  do not perform Tcl-variable substition in REGISTERTABLE argument                  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -e(val(uate)?)?       </i></td><td>  perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape <br></td></tr>
     #    </table>
     #
     # @return Object-ID of the newly created regfile-entry.
@@ -837,7 +837,7 @@ namespace eval ig {
                 { {^-handshake($|=)}        "string"             handshake      "specify signals and type for handshake {signal-out signal-in type} "               } \
                 { {^-prot(ect(ed)?)?$}      "const=true"         protected      "register is protected for privileged-only access"                                  } \
                 { {^-s(ubst)?$}             "const=true"         do_var_subst   "perform Tcl-variable substition of REGISTERTABLE argument (default)"               } \
-                { {^-nosubst$}              "const=false"        do_var_subst   "do not perform Tcl-variable substition in REGISTERTABLE argument"                  } \
+                { {^-nos(ubst)?$}           "const=false"        do_var_subst   "do not perform Tcl-variable substition in REGISTERTABLE argument"                  } \
                 { {^-e(val(uate)?)?$}       "const=true"         do_subst       "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
             ] -context "REGFILE-MODULE ENTRYNAME REGISTERTABLE" $args]
 
