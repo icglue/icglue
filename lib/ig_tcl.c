@@ -480,9 +480,11 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
 # -object \<object-id\><br>
 # ( -attribute \<attribute-name\><br>
 # [ -default \<default-value\>]<br>
-# | -attributes {\<name1\> \<name2\> ...})
+# | -attributes {\<name1\> \<name2\> ...})<br>
+# [ -exists]
 #
-# @return Value(s) of the specified attribute(s) or if not argument is given a list with alle attribute names and values
+# @return Value(s) of the specified attribute(s) or if not argument is given a list with alle attribute names and values.
+# In case @c -exists is specified, a boolean stating whether the attribute exists is returned instead of a value.
 */
 static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
@@ -490,11 +492,15 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
+    int int_true  = true;
+    int int_false = false;
+
     char  *obj_name        = NULL;
     char  *attr_name       = NULL;
     char  *defaultval      = NULL;
     GList *attr_list       = NULL;
     bool   print_attr_name = false;
+    int    check_exists    = int_false;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-object",      NULL, (void *)&obj_name,    "object id", NULL},
@@ -502,6 +508,8 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
         {TCL_ARGV_STRING,   "-default",     NULL, (void *)&defaultval,  "default value for single attribute if attribute does not exist", NULL},
 
         {TCL_ARGV_FUNC,     "-attributes",  (void *)(Tcl_ArgvFuncProc *)ig_tclc_tcl_string_list_parse, (void *)&attr_list, "attributes as list of form <name1> <name2> ...", NULL},
+
+        {TCL_ARGV_CONSTANT, "-exists",      GINT_TO_POINTER (int_true), (void *)&check_exists,  "check if attribute exists", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -532,6 +540,11 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     if (attr_name != NULL) {
         const char *val = ig_obj_attr_get (obj, attr_name);
+        if (check_exists) {
+            Tcl_SetObjResult (interp, Tcl_NewBooleanObj (val != NULL));
+            return TCL_OK;
+        }
+
         if (val == NULL) {
             if (defaultval != NULL) {
                 val = defaultval;
@@ -545,11 +558,13 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
     }
 
     /* check */
-    for (GList *li = attr_list; li != NULL; li = li->next) {
-        char *attr = (char *)li->data;
-        if (ig_obj_attr_get (obj, attr) == NULL) {
-            g_list_free (attr_list);
-            return tcl_error_msg (interp, "Could not get attribute \"%s\" of object \"%s\"", attr, obj_name);
+    if (!check_exists) {
+        for (GList *li = attr_list; li != NULL; li = li->next) {
+            char *attr = (char *)li->data;
+            if (ig_obj_attr_get (obj, attr) == NULL) {
+                g_list_free (attr_list);
+                return tcl_error_msg (interp, "Could not get attribute \"%s\" of object \"%s\"", attr, obj_name);
+            }
         }
     }
 
@@ -559,7 +574,12 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
         char       *attr = (char *)li->data;
         const char *val  = ig_obj_attr_get (obj, attr);
 
-        Tcl_Obj *val_obj = Tcl_NewStringObj (val, -1);
+        Tcl_Obj *val_obj = NULL;
+        if (check_exists) {
+            val_obj = Tcl_NewBooleanObj (val != NULL);
+        } else {
+            val_obj = Tcl_NewStringObj (val, -1);
+        }
         if (print_attr_name) {
             Tcl_ListObjAppendElement (interp, retval, Tcl_NewStringObj (attr, -1));
         }
