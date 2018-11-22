@@ -246,18 +246,16 @@ proc main {} {
     # generate modules with template
     foreach i_module [ig::db::get_modules -all] {
         ig::checks::check_object $i_module
-        if {(![ig::db::get_attribute -object $i_module -attribute "resource"]) && (!$dryrun)} {
+        if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
             ig::log -info "generating module $i_module"
-            ig::templates::write_object_all $i_module
+            ig::templates::write_object_all $i_module $dryrun
         }
     }
     # generate regfiles with template
     foreach i_regfile [ig::db::get_regfiles -all] {
         ig::checks::check_object $i_regfile
-        if {!$dryrun} {
-            ig::log -info "generating regfiledoc $i_regfile"
-            ig::templates::write_object_all $i_regfile
-        }
+        ig::log -info "generating regfiledoc $i_regfile"
+        ig::templates::write_object_all $i_regfile $dryrun
     }
 
     set exitcode 0

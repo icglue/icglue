@@ -947,9 +947,10 @@ namespace eval ig::templates {
     ## @brief Generate output for given object of specified type.
     # @param obj_id Object-ID to write output for.
     # @param type Type of template as delivered by @ref ig::templates::current::get_output_types.
+    # @param dryrun If set to true, no actual files are written.
     #
     # The output is written to the file specified by the template callback @ref ig::templates::current::get_output_file.
-    proc write_object {obj_id type} {
+    proc write_object {obj_id type {dryrun false}} {
         if {[catch {set _tt_name [current::get_template_file $obj_id $type]}]} {
             return
         }
@@ -1020,20 +1021,23 @@ namespace eval ig::templates {
             return
         }
 
-        file mkdir [file dirname ${_outf_name}]
-        set _outf [open ${_outf_name} "w"]
-        puts -nonewline ${_outf} ${_res}
-        close ${_outf}
+        if {!$dryrun} {
+            file mkdir [file dirname ${_outf_name}]
+            set _outf [open ${_outf_name} "w"]
+            puts -nonewline ${_outf} ${_res}
+            close ${_outf}
+        }
     }
 
     ## @brief Generate output for given object for all output types provided by template.
     # @param obj_id Object-ID to write output for.
+    # @param dryrun If set to true, no actual files are written.
     #
     # Iterates over all output types provided by template callback @ref ig::templates::current::get_output_file
     # and writes output via the template.
-    proc write_object_all {obj_id} {
+    proc write_object_all {obj_id {dryrun false}} {
         foreach i_type [current::get_output_types $obj_id] {
-            write_object $obj_id $i_type
+            write_object $obj_id $i_type $dryrun
         }
     }
 
