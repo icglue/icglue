@@ -633,11 +633,16 @@ namespace eval ig::aux {
         return [expr {[string length $str]-[string length [string map {\n {}} $str]]}]
     }
 
+    ## @brief Set varName to maximum of ($varName, $value)
+    #
+    # @param varName variable name to set
+    # @param value value to compare against and set if larger than current value
     proc max_set {varName value} {
+        upvar $varName var
         if {[uplevel info exists $varName]} {
-            uplevel set $varName {[expr max( } "\$$varName," $value) {]}
+            set var [expr {max ($var, $value)}]
         } else {
-            uplevel set $varName $value
+            set var $value
         }
     }
 
