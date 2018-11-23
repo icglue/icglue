@@ -270,8 +270,13 @@ proc main {} {
             if {$log_count > 0} {
                 lappend msg [format $stat_fmt $level $log_count]
 
-                if {($stat_opt eq "") && (($level eq "W") || ($level eq "E"))} {
-                    set exitcode 1
+                if {($stat_opt eq "")} {
+                    if {($level eq "W") && ($exitcode == 0)} {
+                        set exitcode 2
+                    }
+                    if {($level eq "E")} {
+                        set exitcode 1
+                    }
                 }
             }
         }
