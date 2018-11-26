@@ -480,7 +480,10 @@ namespace eval ig {
     #
     # @param args <b> [OPTION]... SIGNALNAME CONNECTIONPORTS...</b><br>
     #    <table style="border:0px; border-spacing:40px 0px;">
-    #      <tr><td><b> __TODO__ HELPCONTEXT </b></td><td> __TODO__ ARGUMENT DESCRIPTION <br></td></tr>
+    #      <tr><td><b> SIGNALNAME      </b></td><td> The signalname must be a uniq indentifier of the whole icglue script <br></td></tr>
+    #      <tr><td><b> CONNECTIONPORTS </b></td><td> The connections ports are follow the syntax scheme MODULENAME[:PORTNAME].<br>
+    #                                                If PORTNAME is omitted the SIGNALNAME name is taken.<br>
+    #                                                If PORTNAME ends with "!" signal adaption is done by icglue ("_{i,s,o}")<br></td></tr>
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -w(idth)(=)         </i></td><td>  set signal width                             <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -b(idir(ectional))  </i></td><td>  bidirectional connection                     <br></td></tr>
@@ -1071,10 +1074,21 @@ namespace eval ig {
     #
     # @param args <b> [OPTION]... SIGNALNAME CONNECTIONPORTS...</b><br>
     #    <table style="border:0px; border-spacing:40px 0px;">
-    #      <tr><td><b> __TODO__ HELPCONTEXT </b></td><td> __TODO__ ARGUMENT DESCRIPTION <br></td></tr>
+    #      <tr><td><b> SIGNALNAME      </b></td><td> The signalname must be a uniq indentifier of the whole icglue script <br></td></tr>
+    #      <tr><td><b> CONNECTIONPORTS </b></td><td> The connections ports are follow the syntax scheme MODULENAME[:PORTNAME].<br>
+    #                                                If PORTNAME is omitted the SIGNALNAME name is taken.<br>
+    #                                                If PORTNAME ends with "!" signal adaption is done by icglue ("_{i,s,o}")<br></td></tr>
     #      <tr><td><b> OPTION </b></td><td><br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; -(-)>               </i></td><td>  first element is interpreted as input source <br></td></tr>
-    #      <tr><td><i> &ensp; &ensp; <(-)-               </i></td><td>  last element is interpreted as input source  <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -w(idth)(=)                 </i></td><td>  set signal width                                                   <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(-)\>                      </i></td><td>  first element is interpreted as input source                       <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; <(-)-                       </i></td><td>  last element is interpreted as input source                        <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; (@|-addr($|=))              </i></td><td>  specify the address                                                <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -c(omment)($|=)             </i></td><td>  specify comment for the register                                   <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -t(ype)($|=)                </i></td><td>  specify regfile type                                               <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -handshake($|=)             </i></td><td>  specify signals and type for handshake {signal-out signal-in type} <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -prot(ect(ed))              </i></td><td>  register is protected for privileged-only access                   <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; (=|-v(alue)|-r(eset(val)))  </i></td><td>  specify reset value for the register                               <br></td></tr>
+    #    </table
     #
     # @return Object-IDs of the newly created objects of newly created signal.
     #
@@ -1083,18 +1097,18 @@ namespace eval ig {
     # and multi-instance-expressions e.g. module\<1,4..9,a,b\>.
     proc SR args {
         # defaults
-        set name          ""
-        set width         1
-        set value         ""
-        set dir           "-->"
-        set resource_pin  "false"
-        set retval        {}
-        set reg_type      {}
-        set address       {}
-        set handshake     {}
-        set protected     "false"
-        set resetval      {}
-        set comment "-"
+        set name         ""
+        set width        1
+        set value        ""
+        set dir          "-->"
+        set resource_pin "false"
+        set retval       {}
+        set reg_type     {}
+        set address      {}
+        set handshake    {}
+        set protected    "false"
+        set resetval     {}
+        set comment      "-"
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
@@ -1103,6 +1117,7 @@ namespace eval ig {
                 { {^<(-)?-$}                       "const=<--"    dir       "last element is interpreted as input source"                         } \
                 { {^(@|-addr($|=))}                "string"       address   "specify the address"                                                 } \
                 { {^-c(omment)?($|=)}              "string"       comment   "specify comment for the register"                                    } \
+                { {^-t(ype)?($|=)}                 "string"       reg_type  "specify regfile type"                                                } \
                 { {^-handshake($|=)}               "string"       handshake "specify signals and type for handshake {signal-out signal-in type}"  } \
                 { {^-prot(ect(ed)?)?$}             "const=true"   protected "register is protected for privileged-only access"                    } \
                 { {^(=|-v(alue)?|-r(eset(val)?)?)} "string"       resetval  "specify reset value for the register"                                } \
