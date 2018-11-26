@@ -29,6 +29,8 @@
     proc rf_read_permitted       {} { return "rf_read_permitted"       }
     proc rf_next_read_permitted  {} { return "rf_next_read_permitted"  }
 
+    set fpga_impl [ig::db::get_attribute -object $obj_id -attribute "fpga" -default "false"]
+
     proc rf_comment_block {blockname {pre "    "}} {
         return [string cat \
                    "$pre/*************************************************************************/\n" \
@@ -268,8 +270,13 @@
     ###########################################
     ## <handshake>
     if {$handshake_list ne ""} {
-    %><%=[rf_comment_block "handshake"]-%>
-    always @(posedge <[clk]> or negedge <[reset]>) begin
+    %><%=[rf_comment_block "handshake"]%><%="\n"%><%-
+    if {$fpga_impl} {-%>
+    initial begin
+        <% foreach handshake $handshake_list { -%>
+            reg_<%=$handshake%> = 1'b0;<% } %>
+    end<%="\n"%><% } -%>
+    always @(posedge <[clk]><% if {!$fpga_impl} { %> or negedge <[reset]><% } %>) begin
         if (<[reset]> == 1'b0) begin<% foreach handshake $handshake_list { %>
             reg_<%=$handshake%> <= 1'b0;<% } %>
         end else begin
@@ -293,8 +300,13 @@
     ## <register-write>
     %><[rf_comment_block "Regfile - registers (write-logic & read value assignmment)"]>
     assign <[rf_r_sel]> = ~<[rf_write]> & <[rf_sel]>;
-    assign <[rf_w_sel]> =  <[rf_write]> & <[rf_sel]>;
-    always @(posedge <[clk]> or negedge <[reset]>) begin
+    assign <[rf_w_sel]> =  <[rf_write]> & <[rf_sel]>;<%="\n"%><%-
+    if {$fpga_impl} {-%>
+    initial begin
+        <[rf_write_permitted]> = 1'b0;
+        <[rf_read_permitted]>  = 1'b0;
+    end<%="\n"%><% } -%>
+    always @(posedge <[clk]><% if {!$fpga_impl} { %> or negedge <[reset]><% } %>) begin
         if (<[reset]> == 1'b0) begin
             <[rf_write_permitted]> <= 1'b0;
             <[rf_read_permitted]>  <= 1'b0;
@@ -312,8 +324,24 @@
         set maxlen_signalname [expr [max_array_entry_len $entry(regs) signal] + 2]
     %>
     <[format "// %s @ %s" $entry(name)  $entry(address)]><% if {[info exists entry(handshake)]} { %><[format " (%s)" [regsub -all {\m\S+:} $entry(handshake) {}]]><% }
-    if {[foreach_array_contains reg $entry(regs) {[write_reg] && ![fullcustom_reg]}]} {%>
-    always @(posedge <[clk]> or negedge <[reset]>) begin
+    echo "\n"
+    if {[foreach_array_contains reg $entry(regs) {[write_reg] && ![fullcustom_reg]}]} { 
+       if {$fpga_impl} {-%>
+    initial begin<%-
+        foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} { %>
+        <[reg_name]> = <%=$reg(reset)%>;<% }
+            if {[foreach_array_contains reg $entry(regs) {[fullcustom_reg]}]} {
+                set fc_reset_list {}
+                foreach_array_with reg $entry(regs) {[write_reg] && [fullcustom_reg]} {
+                    lappend fc_reset_list [format "%12s// TODO: [reg_name] <= $reg(reset);" {}]
+                }
+            %>
+            <[pop_keep_block_content keep_block_data "keep" "fullcustom_reset_${entry(name)}_fpga" ".v" "\n[join $fc_reset_list "\n"]
+            "]><% } elseif {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} { %>
+            <[pop_keep_block_content keep_block_data "keep" "custom_reset_${entry(name)}_fpga" ".v" ""]><%
+            } %>
+    end<%="\n"%><% } -%>
+    always @(posedge <[clk]><% if {!$fpga_impl} { %> or negedge <[reset]><% } %>) begin
         if (<[reset]> == 1'b0) begin<% foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} { %>
             <[reg_name]> <= <%=$reg(reset)%>;<% }
             if {[foreach_array_contains reg $entry(regs) {[fullcustom_reg]}]} {
@@ -358,10 +386,10 @@
         } elseif {[read_reg]} {
             set _reg_val_output "[string trim [signal_name][signal_entrybits]]"
         } elseif {$reg(type) eq "-"} {
-            set _reg_val_output "$reg(width)'h0"
+            set _reg_val_output "$reg(width)'b0"
         } else {
             log -warn -id RFOUT "Unkown regfile type for $entry(name) - $reg(name)-- set to zero"
-            set _reg_val_output "$reg(width)'h0"
+            set _reg_val_output "$reg(width)'b0"
         }
         if {![custom_reg]} {%>
     assign <[reg_val]>[<[reg_entrybits]>] = <%=$_reg_val_output%>;<%
