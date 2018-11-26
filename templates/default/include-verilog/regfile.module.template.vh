@@ -29,8 +29,6 @@
     proc rf_read_permitted       {} { return "rf_read_permitted"       }
     proc rf_next_read_permitted  {} { return "rf_next_read_permitted"  }
 
-
-
     proc rf_comment_block {blockname {pre "    "}} {
         return [string cat \
                    "$pre/*************************************************************************/\n" \
@@ -39,36 +37,37 @@
             ]
     }
     proc param     {} {
-        return [uplevel 1 {format "RA_%-${maxlen_name}s" [string toupper $entry(name)]}]
+        upvar entry(name) name maxlen_name maxlen_name
+        return [format "RA_%-${maxlen_name}s" [string toupper $name]]
     }
     proc addr_vlog {} {
-        return [uplevel 1 {format "32'h%08X" $entry(address)}]
+        upvar entry(address) address
+        return [format "32'h%08X" $address]
     }
 
     proc reg_name {} {
-        uplevel 1 {set maxlen_reg_name [expr {[string length $entry(name)] + 1 + $maxlen_signame}]}
-        return [uplevel 1 {format "reg_%-${maxlen_reg_name}s" "${entry(name)}_${reg(name)}"}]
+        upvar entry(name) name maxlen_signame maxlen_signame reg(name) regname
+        set maxlen_reg_name [expr {[string length $name] + 1 + $maxlen_signame}]
+        return [format "reg_%-${maxlen_reg_name}s" "${name}_${regname}"]
     }
     proc reg_range {} {
-        if {[uplevel 1 expr {$reg(width) == 1}]} {
+        upvar reg(width) width
+        if {$width == 1} {
             return [format "%7s"  {}]
         } else {
-            return [uplevel 1 {format "\[%2d:%2d\]" [expr {$reg(width)-1}] 0 }]
+            return [format "\[%2d: 0\]" [expr {${width}-1}]]
         }
     }
     proc reg_entrybits {} {
-        set bits [uplevel {split $reg(entrybits) ":"}]
-        if {[llength $bits] == 2} {
-            return [format "%2d:%2d" {*}$bits]
+        upvar reg(bit_high) ubit reg(bit_low) lbit
+        if {$ubit != $lbit} {
+            return [format "%2d:%2d" $ubit $lbit]
         } else {
-            return [format "%5d" {*}$bits]
+            return [format "%5d" $ubit]
         }
     }
     proc reg_entrybits_in_bytesel {byte} {
-        lassign [uplevel {split $reg(entrybits) ":"}] ubit lbit
-        if {$lbit eq ""} {
-            set lbit $ubit
-        }
+        upvar reg(bit_high) ubit reg(bit_low) lbit
         if {$lbit >=8*($byte+1) || $ubit < 8*$byte} {
             return false
         } else {
@@ -76,10 +75,7 @@
         }
     }
     proc reg_entrybits_bytesel {byte} {
-        lassign [uplevel {split $reg(entrybits) ":"}] ubit lbit
-        if {$lbit eq ""} {
-            set lbit $ubit
-        }
+        upvar reg(bit_high) ubit reg(bit_low) lbit
         if {$ubit > 8*($byte+1)-1} {
             set ubit [expr {8*($byte+1)-1}]
         }
@@ -93,11 +89,7 @@
         }
     }
     proc reg_range_bytesel {byte} {
-        set reg_width [uplevel 1 expr {$reg(width)}]
-        lassign [uplevel {split $reg(entrybits) ":"}] ubit lbit
-        if {$lbit eq ""} {
-            set lbit $ubit
-        }
+        upvar reg(bit_high) ubit reg(bit_low) lbit reg(width) reg_width
         set offset $lbit
         if {$ubit > 8*($byte+1)-1} {
             set ubit [expr {8*($byte+1)-1}]
@@ -118,13 +110,16 @@
     }
 
     proc reg_val {} {
-        return [uplevel 1 {format "val_%s" $entry(name)}]
+        upvar entry(name) name
+        return [format "val_%s" $name]
     }
     proc signal_name {} {
-        return [uplevel 1 {format "%-${maxlen_signalname}s" [adapt_signalname $reg(signal) $obj_id]}]
+        upvar reg(signal) signal maxlen_signalname maxlen_signalname obj_id id
+        return [format "%-${maxlen_signalname}s" [adapt_signalname $signal $id]]
     }
     proc signal_entrybits {} {
-        set bits [uplevel {split $reg(signalbits) ":"}]
+        upvar reg(signalbits) signalbits
+        set bits [split $signalbits ":"]
         if {[llength $bits] == 2} {
             return [format "\[%2d:%2d\]" {*}$bits]
         } elseif {$bits eq "-"} {
@@ -134,22 +129,28 @@
         }
     }
     proc custom_reg {} {
-        return [uplevel 1 {regexp -nocase {C} $reg(type)}]
+        upvar reg(type) type
+        return [regexp -nocase {C} $type]
     }
     proc fullcustom_reg {} {
-        return [uplevel 1 {regexp -nocase {FC} $reg(type)}]
+        upvar reg(type) type
+        return [regexp -nocase {FC} $type]
     }
     proc sctrigger_reg {} {
-        return [uplevel 1 {regexp -nocase {T} $reg(type)}]
+        upvar reg(type) type
+        return [regexp -nocase {T} $type]
     }
     proc read_reg_sync {} {
-        return [uplevel 1 {regexp -nocase {RS} $reg(type)}]
+        upvar reg(type) type
+        return [regexp -nocase {RS} $type]
     }
     proc read_reg {} {
-        return [uplevel 1 {regexp -nocase {^[^-W]*$} $reg(type)}]
+        upvar reg(type) type
+        return [regexp -nocase {^[^-W]*$} $type]
     }
     proc write_reg {} {
-        return [uplevel 1 {regexp -nocase {W} $reg(type)}]
+        upvar reg(type) type
+        return [regexp -nocase {W} $type]
     }
     ###########################################
     ## <regfiles> ##
