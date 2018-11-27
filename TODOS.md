@@ -16,20 +16,15 @@
   - specify data width / address alignment?
   - specify regfile portnames (clk, ...)
 - codesections: make adapt-selectively the default?
+  - first step: deprecated warning for: code-blocks without explicit mode, adapted assignments in "S" command without "!".
 
 ## templates
 - support module attributes (fpga)
 - testbench -> regs
 - testbench to outside dummy module (see nowriteout function ?)
+- add warning to header (something with "generated file, only edit between keep-blocks").
 
 ## bin
 - allow multiple construction scripts?
 - add "nowriteout" function or similar? -> allows for construction with intermediate clean
 
-## documentation
-- regfile / handshake direct connect
-- complete markdown pages with explanations:
-  - how to write a construct script
-  - how to write a template/template set
-  - ...?
-  - minimal example that shows off most features (similar to initial SNG file)
