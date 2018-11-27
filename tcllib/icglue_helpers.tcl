@@ -490,9 +490,9 @@ namespace eval ig::aux {
     #
     # @return Modified codesection based on "adapt" property.
     proc adapt_codesection {codesection} {
-        set do_adapt [ig::db::get_attribute -object $codesection -attribute "adapt" -default "false"]
+        set do_adapt [ig::db::get_attribute -object $codesection -attribute "adapt" -default "none"]
         set code [ig::db::get_attribute -object $codesection -attribute "code"]
-        if {[string is boolean $do_adapt] && (!$do_adapt)} {
+        if {$do_adapt eq "none"} {
             return $code
         }
 
@@ -517,36 +517,67 @@ namespace eval ig::aux {
 
         # adapt signal-names
         if {$do_adapt eq "selective"} {
-            set re {^(.*?)(\m[[:alnum:]_]+\M)\!(.*)$}
-            set selective "true"
+            set code_out [adapt_codesection_replace $code $signal_replace true]
+        } elseif {$do_adapt eq "all"} {
+            set code_out [adapt_codesection_replace $code $signal_replace false]
+        } elseif {$do_adapt eq "signalcheck"} {
+            # TODO: remove signalcheck part when no longer necessary
+            set code_out1 [adapt_codesection_replace $code $signal_replace true]
+            set code_out2 [adapt_codesection_replace [ig::db::get_attribute -object $codesection -attribute "checkcode"] $signal_replace false]
+
+            if {$code_out1 eq $code_out2} {
+                set code_out $code_out1
+                puts "$code"
+            } else {
+                ig::log -warn -id "SCADp" "Signal [ig::db::get_attribute -object $codesection -attribute "signalname"] Deprecated to assign to adaptable signalname without using \"adapt-selective\" style with \"!\" after name"
+                set code_out $code_out2
+            }
         } else {
-            set re {^(.*?)(\m[[:alnum:]_]+\M)(.*)$}
-            set selective "false"
+            error "invalid adapt option: ${do_adapt}"
         }
 
         #set t_collect [clock microseconds]
+
+        #set t_replaced [clock microseconds]
+        #puts "t_collect: [expr {$t_collect - $t_start}]us, t_replace: [expr {$t_replaced - $t_collect}]us"
+
+        return $code_out
+    }
+
+    ## @brief Helper for code adaption of @ref adapt_codesection.
+    #
+    # @param code Raw code input.
+    # @param replace_list List of 2-element litsts with signal-names and replacements.
+    # @param selective If true use selective syntax with "!" after signal names.
+    #
+    # @return adapted code.
+    proc adapt_codesection_replace {code replace_list {selective true}} {
+        # adapt signal-names
+        if {$selective} {
+            set re {^(.*?)(\m[[:alnum:]_]+\M)\!(.*)$}
+        } else {
+            set re {^(.*?)(\m[[:alnum:]_]+\M)(.*)$}
+        }
+
         set code_out {}
         while {[string length $code] > 0} {
             if {[regexp $re $code m_whole m_pre m_var m_post]} {
                 append code_out $m_pre
                 set    code     $m_post
-                set    idx      [lsearch -exact -index 0 $signal_replace $m_var]
+                set    idx      [lsearch -exact -index 0 $replace_list $m_var]
                 if {$idx < 0} {
                     append code_out $m_var
                     if {$selective} {
-                        ig::log -warn -id "TACAd" "selective adaption in codesection failed: signal \"$m_var\" not found in module \"[ig::db::get_attribute -object $parent_mod -attribute "name"]\""
+                        ig::log -warn -id "TACAd" "selective adaption in codesection failed: signal \"$m_var\" not found"
                     }
                 } else {
-                    append code_out [lindex $signal_replace $idx 1]
+                    append code_out [lindex $replace_list $idx 1]
                 }
             } else {
                 append code_out $code
                 set code {}
             }
         }
-
-        #set t_replaced [clock microseconds]
-        #puts "t_collect: [expr {$t_collect - $t_start}]us, t_replace: [expr {$t_replaced - $t_collect}]us"
 
         return $code_out
     }
@@ -599,6 +630,41 @@ namespace eval ig::aux {
         }
 
         return $cslist
+    }
+
+    ## @brief Adapt code block indentation based on it's first line to a default indentation.
+    #
+    # @param code The code of the block.
+    # @param default_indent The indentation the first code line should have.
+    #
+    # @return Reindented code.
+    proc code_indent_fix {code {default_indent "    "}} {
+        set code_lines [split $code "\n"]
+        set file_indent 0
+        set lead_subst {}
+        set start_idx 0
+        foreach line $code_lines {
+            if {$line ne ""} {
+                regexp {^\s+} $line lead_subst
+                break
+            }
+            incr start_idx
+        }
+        set code_lines [lrange $code_lines $start_idx end]
+
+        set new_code {}
+        foreach line $code_lines {
+            if {$lead_subst ne ""} {
+                set line [regsub ^$lead_subst $line $default_indent]
+            } else {
+                set line "${default_indent}${line}"
+            }
+            set line [string trimright $line]
+            lappend new_code "$line\n"
+        }
+        set code [join $new_code {}]
+
+        return $code
     }
 
     ## @brief Adapt a signalname in given module to the local signal name.

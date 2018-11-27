@@ -358,9 +358,9 @@ namespace eval ig::sng {
                             ig::log -debug "sng signal assignment: get module..."
                             set mod [ig::db::get_modules -name $src_mod]
                             ig::log -debug "sng signal assignment: add codesection..."
-                            set cs [ig::db::add_codesection -parent-module $mod -code "    assign ${name} = ${assign};\n"]
+                            set cs [ig::db::add_codesection -parent-module $mod -code "    assign ${name}! = ${assign};\n"]
                             ig::log -debug "sng signal assignment: add codesection attributes..."
-                            ig::db::set_attribute -object $cs -attribute "adapt" -value "true"
+                            ig::db::set_attribute -object $cs -attribute "adapt" -value "selective"
                             ig::log -debug "sng signal assignment: ...done"
                         }
                     }

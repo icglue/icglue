@@ -604,8 +604,27 @@ namespace eval ig {
             }
 
             if {$value ne ""} {
-                set startmod [lindex [construct::expand_instances $con_left] 0 1]
-                C $startmod -a "assign ${name} = ${value};"
+                set startmod [lindex [construct::expand_instances $con_left true] 0 1]
+
+                # adaption... TODO: change to "selective" and remove signalcheck
+                if {[string first "!" $value] >= 0} {
+                    set adapt "selective"
+                    set code "assign ${name}! = ${value};"
+                    set checkcode {}
+                } else {
+                    set adapt "signalcheck"
+                    set code "assign ${name}! = ${value};"
+                    set checkcode "assign ${name} = ${value};"
+                    set checkcode [ig::aux::code_indent_fix $checkcode]
+                }
+
+                set code [ig::aux::code_indent_fix $code]
+                set cid [ig::db::add_codesection -parent-module $startmod -code $code]
+
+                ig::db::set_attribute -object $cid -attribute "adapt" -value $adapt
+                ig::db::set_attribute -object $cid -attribute "align" -value {}
+                ig::db::set_attribute -object $cid -attribute "checkcode" -value $checkcode
+                ig::db::set_attribute -object $cid -attribute "signalname" -value $name
             }
         } emsg]} {
             log -error -abort "S (signal ${name}): error while creating signal:\n${emsg}"
@@ -703,7 +722,7 @@ namespace eval ig {
     # If adapt is specified (default), signal names in the code-block will be adapted by their local names.
     proc C args {
         # defaults
-        set adapt         "true"
+        set adapt         "default"
         set align         {}
         #TODO: review, if do_var_subst = true is a good choice here...
         #      -> what about $clog, $time, $strobe, $display, etc. -> not likely to be used compared to code generation with var's but still...
@@ -713,13 +732,11 @@ namespace eval ig {
         set verbatim      "false"
 
         set do_subst      "false"
-        #TODO: should this be a parameter?
-        set default_indent "    "
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
-                { {^-a(dapt)?$}                   "const=true"      adapt          "adapt signal names"                                               } \
-                { {^-noa(dapt)?$}                 "const=false"     adapt          "do not adapt signal names"                                        } \
+                { {^-a(dapt)?$}                   "const=all"       adapt          "adapt signal names"                                               } \
+                { {^-no(-)?a(dapt)?$}             "const=none"      adapt          "do not adapt signal names"                                        } \
                 { {^-a(dapt-)?s(elective(ly)?)?$} "const=selective" adapt          "selectively adapt signal names followed by \"!\""                 } \
                 { {^-al(ign)?$}                   "string"          align          "align codesections at given string"                               } \
                 { {^-s(ubst)?$}                   "const=true"      do_var_subst   "perform Tcl-variable substition of CODE argument (default)"       } \
@@ -735,45 +752,26 @@ namespace eval ig {
             log -error -abort "C: no module name specified"
         }
 
-
         set code [lindex $arguments 1]
         if {$code eq ""} {
             log -error -abort "C (module ${modname}): no code section specified"
         }
 
         if {$verbatim} {
-            set adapt "false"
+            set adapt "none"
         } elseif {$do_subst} {
             set code [uplevel 1 subst [list $code]]
         } elseif {$do_var_subst} {
             set code [uplevel 1 subst -nocommands [list $code]]
         }
 
-        if {$do_indent_fix} {
-            set code_lines [split $code "\n"]
-            set file_indent 0
-            set lead_subst {}
-            set start_idx 0
-            foreach line $code_lines {
-                if {$line ne ""} {
-                    regexp {^\s+} $line lead_subst
-                    break
-                }
-                incr start_idx
-            }
-            set code_lines [lrange $code_lines $start_idx end]
+        if {$adapt eq "default"} {
+            set adapt "all"
+            log -warn -id "CAdDp" "Deprecated to specify codesections without adaption mode. Use one of (-adapt|-adapt-selectively|-noadapt|-verbatim)."
+        }
 
-            set new_code {}
-            foreach line $code_lines {
-                if {$lead_subst ne ""} {
-                    set line [regsub ^$lead_subst $line $default_indent]
-                } else {
-                    set line "${default_indent}${line}"
-                }
-                set line [string trimright $line]
-                lappend new_code "$line\n"
-            }
-            set code [join $new_code {}]
+        if {$do_indent_fix} {
+            set code [ig::aux::code_indent_fix $code]
         }
 
         # actual code creation

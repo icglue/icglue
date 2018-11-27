@@ -16,7 +16,6 @@
   - specify data width / address alignment?
   - specify regfile portnames (clk, ...)
 - codesections: make adapt-selectively the default?
-  - first step: deprecated warning for: code-blocks without explicit mode, adapted assignments in "S" command without "!".
 
 ## templates
 - support module attributes (fpga)
