@@ -529,7 +529,8 @@ namespace eval ig::aux {
                 set code_out $code_out1
                 puts "$code"
             } else {
-                ig::log -warn -id "SCADp" "Signal [ig::db::get_attribute -object $codesection -attribute "signalname"] Deprecated to assign to adaptable signalname without using \"adapt-selective\" style with \"!\" after name"
+                set origin [ig::db::set_attribute -object $cid -attribute "origin" -value "${filename}:${line}"]
+                ig::log -warn -id "SCADp" "Signal [ig::db::get_attribute -object $codesection -attribute "signalname"] Deprecated to assign to adaptable signalname without using \"adapt-selective\" style with \"!\" after name ($origin)"
                 set code_out $code_out2
             }
         } else {

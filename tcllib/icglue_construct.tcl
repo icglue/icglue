@@ -617,6 +617,9 @@ namespace eval ig {
                     set checkcode "assign ${name} = ${value};"
                     set checkcode [ig::aux::code_indent_fix $checkcode]
                 }
+                set frame_dict [info frame -1]
+                set filename [file tail [dict get $frame_dict file]]
+                set line [dict get $frame_dict line]
 
                 set code [ig::aux::code_indent_fix $code]
                 set cid [ig::db::add_codesection -parent-module $startmod -code $code]
@@ -625,6 +628,7 @@ namespace eval ig {
                 ig::db::set_attribute -object $cid -attribute "align" -value {}
                 ig::db::set_attribute -object $cid -attribute "checkcode" -value $checkcode
                 ig::db::set_attribute -object $cid -attribute "signalname" -value $name
+                ig::db::set_attribute -object $cid -attribute "origin" -value "${filename}:${line}"
             }
         } emsg]} {
             log -error -abort "S (signal ${name}): error while creating signal:\n${emsg}"
@@ -767,7 +771,10 @@ namespace eval ig {
 
         if {$adapt eq "default"} {
             set adapt "all"
-            log -warn -id "CAdDp" "Deprecated to specify codesections without adaption mode. Use one of (-adapt|-adapt-selectively|-noadapt|-verbatim)."
+            set frame_dict [info frame -1]
+            set filename [file tail [dict get $frame_dict file]]
+            set line [dict get $frame_dict line]
+            log -warn -id "CAdDp" "Deprecated to specify codesections without adaption mode. Use one of (-adapt|-adapt-selectively|-noadapt|-verbatim) (${filename}:${line})."
         }
 
         if {$do_indent_fix} {
