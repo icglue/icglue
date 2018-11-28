@@ -759,4 +759,4 @@ proc ::tcl::mathfunc::clog2 {x} {
 }
 
 
-# vim: set filetype=icgluetcl syntax=tcl:
+# vim: set filetype=icgluetcl syntax=tcl
