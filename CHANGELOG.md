@@ -10,3 +10,5 @@ Initial release.
 * Getters for Regfiles, Nets and Generics in lib
 * Dry run for checking only
 * Extended Documentation
+* Code-Blocks without substitution mode deprecated (prepare -as as default)
+* Added warning header in templates (that the file is generated and will be overwritten)

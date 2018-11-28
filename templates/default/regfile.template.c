@@ -17,7 +17,7 @@ proc write_reg {} {
 }
 
 -%>
-
+/* ICGLUE GENERATED FILE - manual changes out of prepared *icglue keep begin/end* blocks will be overwritten */
 
 <[pop_keep_block_content keep_block_data "keep" "include" ".c" "
 #ifndef RF_DIRECT_INC

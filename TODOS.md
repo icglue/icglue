@@ -22,7 +22,6 @@
 - support module attributes (fpga)
 - testbench -> regs
 - testbench to outside dummy module (see nowriteout function ?)
-- add warning to header (something with "generated file, only edit between keep-blocks").
 
 ## bin
 - allow multiple construction scripts?

@@ -11,6 +11,7 @@ proc write_reg {} {
     return [uplevel 1 {regexp -nocase {W} $reg(type)}]
 }
 -%>
+/* ICGLUE GENERATED FILE - manual changes out of prepared *icglue keep begin/end* blocks will be overwritten */
 #ifndef __<[string toupper ${header_name}]>_H__
 #define __<[string toupper ${header_name}]>_H__
 

@@ -1,6 +1,7 @@
 <%
     ##  icglue - SystemVerilog module template
 -%>
+/* ICGLUE GENERATED FILE - manual changes out of prepared *icglue keep begin/end* blocks will be overwritten */
 <%I include-systemverilog/header.module.template.svh -%>
 <%-
     ###########################################
