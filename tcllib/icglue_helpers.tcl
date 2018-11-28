@@ -730,6 +730,33 @@ namespace eval ig::aux {
         return [ig::db::get_attribute -obj $rfid -attribute "_save_reg_addr" -default "0x0000"]
     }
 
+    ## @brief Get origin of where a command was invoked
+    #
+    # @param fstart relative frame to start looking for source file
+    # @return the origin in form "file-basename:line"
+    proc get_origin_here {{fstart -1}} {
+        set origin {}
+
+        set imin [expr {-[info frame]}]
+        for {set i [expr {$fstart - 1}]} {$i > $imin} {incr i -1} {
+            set fdict [info frame $i]
+            if {[dict get $fdict type] eq "source"} {
+                set filename [file tail [dict get $fdict file]]
+                set line     [dict get $fdict line]
+                set cmd      [split [dict get $fdict cmd] "\n"]
+                if {[llength $cmd] > 1} {
+                    set cmd "[lindex $cmd 0] (...)"
+                } else {
+                    set cmd [lindex $cmd 0]
+                }
+                set origin   "${filename}:${line} {${cmd}}"
+                break
+            }
+        }
+
+        return $origin
+    }
+
     namespace export *
 }
 

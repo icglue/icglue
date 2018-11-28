@@ -16,7 +16,7 @@
   - specify data width / address alignment?
   - specify regfile portnames (clk, ...)
 - codesections: make adapt-selectively the default?
-- construct: add "origin" information to constructed parts for logging of warnings in later stages
+- checks: use "origin" information of constructed parts for logging of warnings
 
 ## templates
 - support module attributes (fpga)

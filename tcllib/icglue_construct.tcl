@@ -182,6 +182,7 @@ namespace eval ig {
         set regfiles      {}
         set attributes    {}
         set rfattributes  {}
+        set origin        [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set name [ig::aux::parse_opts [list                                                                                           \
@@ -204,11 +205,13 @@ namespace eval ig {
                                                                                                                                       \
                    { {^-attr(ibutes?)?(=|$)}          "string"              attributes    "pass a module arribute dict to icglue" }   \
                    { {^-rfattr(ibutes?)?(=|$)}        "string"              rfattributes  "pass a regfile arribute dict to icglue"}   \
+                                                                                                                                      \
+                   { {^-cmdorigin(=|$)}               "string"              origin        "origin of command call for logging"    }   \
             ] -context "MODULENAME" $args]
 
         # argument checks
         if {[llength $name] > 1} {
-            log -error -abort "M: too many arguments ($name)"
+            log -error -abort "M: too many arguments ($name) ($origin)"
         }
 
         set instance_tree [regsub -all -lineanchor -linestop {#.*$} $instance_tree {}]
@@ -249,7 +252,7 @@ namespace eval ig {
                 }
 
                 if {$level != 0  && $len_modname == 0} {
-                    log -error -abort "M: Can't match instance_name - syntax error in instance tree"
+                    log -error -abort "M: Can't match instance_name - syntax error in instance tree ($origin)"
                 }
 
                 if {$level > $cur_level} {
@@ -321,7 +324,7 @@ namespace eval ig {
                 } else {
                     if {!$fres && !$finc} {
                         if {[lsearch $module_inc_list $module_name] == 0} {
-                            log -error -abort "M (module = $module_name): exists multiple times and is neither resource nor included."
+                            log -error -abort "M (module = $module_name): exists multiple times and is neither resource nor included. ($origin)"
                         }
                     }
                 }
@@ -369,7 +372,7 @@ namespace eval ig {
                     ] [split $moduleflags "\n"]]
 
                 if {[llength $funknown] != 0} {
-                    log -warn -id MTree "M (instance $instance_name): Unknown flag(s) - $funknown"
+                    log -warn -id MTree "M (instance $instance_name): Unknown flag(s) - $funknown ($origin)"
                 }
 
                 set module_name [lindex [split $instance_name <] 0]
@@ -389,6 +392,7 @@ namespace eval ig {
                             set fregfilename $module_name
                         }
                         set rfid [ig::db::add_regfile -regfile $fregfilename -to $modid]
+                        ig::db::set_attribute -object $rfid -attribute "origin" -value $origin
                         foreach attr $frfattributes {
                             #set attr [string trim $attr {"{" "}"}]
                             lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
@@ -409,22 +413,27 @@ namespace eval ig {
 
                         log -debug -id MTree "M (module = $instance_name): creating instance $i_name of module $moduleparent"
 
-                        ig::db::create_instance \
+                        set instid [ig::db::create_instance \
                             -name $i_name \
                             -of-module [ig::db::get_modules -name $i_mod] \
-                            -parent-module [ig::db::get_modules -name $moduleparent]
+                            -parent-module [ig::db::get_modules -name $moduleparent]]
+
+                        ig::db::set_attribute -object $instid -attribute "origin" -value $origin
                     }
                 }
             }
 
+            foreach modid $modids {
+                ig::db::set_attribute -object $modid -attribute "origin" -value $origin
+            }
             return $modids
         }
         if {$unit eq ""} {set unit $name}
         if {$name eq ""} {
-            log -error -abort "M: need a module name"
+            log -error -abort "M: need a module name ($origin)"
         }
         if {$resource && ([llength $instances] > 0)} {
-            log -error -abort "M (module ${name}): a resource cannot have instances"
+            log -error -abort "M (module ${name}): a resource cannot have instances ($origin)"
         }
 
         # actual module creation
@@ -470,9 +479,10 @@ namespace eval ig {
                 }
             }
         } emsg]} {
-            log -error -abort "M (module ${name}): error while creating module:\n${emsg}"
+            log -error -abort "M (module ${name}): error while creating module:\n${emsg} ($origin)"
         }
 
+        ig::db::set_attribute -object $modid -attribute "origin" -value $origin
         return $modid
     }
 
@@ -506,6 +516,7 @@ namespace eval ig {
         set invert       {}
         set resource_pin "false"
         set dimension    {}
+        set origin       [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list                                                                      \
@@ -517,12 +528,13 @@ namespace eval ig {
                 { {^-(-)?>$}               "const=false" invert       "first element is interpreted as input source"} \
                 { {^<(-)?-$}               "const=true"  invert       "last element is interpreted as input source"}  \
                 { {^-p(in)?$}              "const=true"  resource_pin "add a pin to a resource module"}               \
+                { {^-cmdorigin(=|$)}       "string"      origin       "origin of command call for logging"}           \
             ] -context "SIGNALNAME CONNECTIONPORTS..." $args]
 
         set name [lindex $arguments 0]
         # argument checks
         if {$name eq ""} {
-            log -error -abort "S: no signal name specified"
+            log -error -abort "S: no signal name specified ($origin)"
         }
 
         if {$resource_pin} {
@@ -534,7 +546,7 @@ namespace eval ig {
 
             set instance_names [lrange $arguments 1 end]
             if {[llength $instance_names] == 0} {
-                log -error -abort "S: no instance names specified"
+                log -error -abort "S: no instance names specified ($origin)"
             }
 
             set retval {}
@@ -584,7 +596,7 @@ namespace eval ig {
             }
             set con_right {}
         } else {
-            log -error -abort "S: no connection direction specified"
+            log -error -abort "S: no connection direction specified ($origin)"
         }
 
         # actual module creation
@@ -617,9 +629,6 @@ namespace eval ig {
                     set checkcode "assign ${name} = ${value};"
                     set checkcode [ig::aux::code_indent_fix $checkcode]
                 }
-                set frame_dict [info frame -1]
-                set filename [file tail [dict get $frame_dict file]]
-                set line [dict get $frame_dict line]
 
                 set code [ig::aux::code_indent_fix $code]
                 set cid [ig::db::add_codesection -parent-module $startmod -code $code]
@@ -628,11 +637,13 @@ namespace eval ig {
                 ig::db::set_attribute -object $cid -attribute "align" -value {}
                 ig::db::set_attribute -object $cid -attribute "checkcode" -value $checkcode
                 ig::db::set_attribute -object $cid -attribute "signalname" -value $name
-                ig::db::set_attribute -object $cid -attribute "origin" -value "${filename}:${line}"
+                ig::db::set_attribute -object $cid -attribute "origin" -value $origin
             }
         } emsg]} {
-            log -error -abort "S (signal ${name}): error while creating signal:\n${emsg}"
+            log -error -abort "S (signal ${name}): error while creating signal:\n${emsg} ($origin)"
         }
+
+        ig::db::set_attribute -object $net -attribute "origin" -value $origin
 
         return $net
     }
@@ -659,10 +670,12 @@ namespace eval ig {
         #set value     0
         set endpoints {}
         set ilist     0
+        set origin    [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
-        set params [ig::aux::parse_opts [list                                        \
-                   { {^(=|-v(alue)?)(=)?} "string" value "specify parameter value" } \
+        set params [ig::aux::parse_opts [list                                                   \
+                   { {^(=|-v(alue)?)(=)?} "string" value  "specify parameter value" }           \
+                   { {^-cmdorigin(=|$)}   "string" origin "origin of command call for logging"} \
             ] -context "PARAMETERNAME MODULENAME..." $args]
 
         set name [lindex $params 0]
@@ -678,10 +691,10 @@ namespace eval ig {
 
         # argument checks
         if {$name eq ""} {
-            log -error -abort "P: no parameter name specified"
+            log -error -abort "P: no parameter name specified ($origin)"
         }
         if {$value eq ""} {
-            log -error -abort "P (parameter ${name}): no value specified"
+            log -error -abort "P (parameter ${name}): no value specified ($origin)"
         }
 
         # actual parameter creation
@@ -690,15 +703,17 @@ namespace eval ig {
 
             set paramid [ig::db::parameter -name $name -value $value -targets $endpoints]
         } emsg]} {
-            log -error -abort "P (parameter ${name}): error while creating parameter:\n\t${emsg}"
+            log -error -abort "P (parameter ${name}): error while creating parameter:\n\t${emsg} ($origin)"
         }
 
         # provide paramname/-value as tcl variable
         if {![uplevel 1 [list info exists $name]]} {
             uplevel 1 [list set $name $value]
         } else {
-            log -warn -id "PVar" "Refuse to TCL-variable $name to parameter value - Already exists ([uplevel 1 [list format "%s" $name]])"
+            log -warn -id "PVar" "Refuse to set TCL-variable $name to parameter value - Already exists ([uplevel 1 [list format "%s" $name]]) ($origin)"
         }
+
+        ig::db::set_attribute -object $paramid -attribute "origin" -value $origin
         return $paramid
     }
 
@@ -732,10 +747,9 @@ namespace eval ig {
         #      -> what about $clog, $time, $strobe, $display, etc. -> not likely to be used compared to code generation with var's but still...
         set do_var_subst  "true"
         set do_indent_fix "true"
-
         set verbatim      "false"
-
         set do_subst      "false"
+        set origin        [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
@@ -748,17 +762,18 @@ namespace eval ig {
                 { {^-v(erbatim)$}                 "const=true"      verbatim       "alias for -noadapt and -nosubst"                                  } \
                 { {^-e(val(uate)?)?$}             "const=true"      do_subst       "perform Tcl substition of CODE argument, do not forget to escape" } \
                 { {^-noi(ndentfix)?$}             "const=false"     do_indent_fix  "do not fix the indent of the codeblock"                           } \
+                { {^-cmdorigin(=|$)}              "string"          origin         "origin of command call for logging"                               } \
             ] -context "MODULENAME CODE" $args]
 
         # argument checks
         set modname [lindex $arguments 0]
         if {$modname eq ""} {
-            log -error -abort "C: no module name specified"
+            log -error -abort "C: no module name specified ($origin)"
         }
 
         set code [lindex $arguments 1]
         if {$code eq ""} {
-            log -error -abort "C (module ${modname}): no code section specified"
+            log -error -abort "C (module ${modname}): no code section specified ($origin)"
         }
 
         if {$verbatim} {
@@ -771,10 +786,7 @@ namespace eval ig {
 
         if {$adapt eq "default"} {
             set adapt "all"
-            set frame_dict [info frame -1]
-            set filename [file tail [dict get $frame_dict file]]
-            set line [dict get $frame_dict line]
-            log -warn -id "CAdDp" "Deprecated to specify codesections without adaption mode. Use one of (-adapt|-adapt-selectively|-noadapt|-verbatim) (${filename}:${line})."
+            log -warn -id "CAdDp" "Deprecated to specify codesections without adaption mode. Use one of (-adapt|-adapt-selectively|-noadapt|-verbatim) ($origin)."
         }
 
         if {$do_indent_fix} {
@@ -788,8 +800,10 @@ namespace eval ig {
             ig::db::set_attribute -object $cid -attribute "adapt" -value $adapt
             ig::db::set_attribute -object $cid -attribute "align" -value $align
         } emsg]} {
-            log -error -abort "C (module ${modname}): error while creating codesection:\n${emsg}"
+            log -error -abort "C (module ${modname}): error while creating codesection:\n${emsg} ($origin)"
         }
+
+        ig::db::set_attribute -object $cid -attribute "origin" -value $origin
 
         return $cid
     }
@@ -837,6 +851,7 @@ namespace eval ig {
         set protected    "false"
         set do_var_subst "true"
         set do_subst     "false"
+        set origin       [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
@@ -847,6 +862,7 @@ namespace eval ig {
                 { {^-s(ubst)?$}             "const=true"         do_var_subst   "perform Tcl-variable substition of REGISTERTABLE argument (default)"               } \
                 { {^-nos(ubst)?$}           "const=false"        do_var_subst   "do not perform Tcl-variable substition in REGISTERTABLE argument"                  } \
                 { {^-e(val(uate)?)?$}       "const=true"         do_subst       "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
+                { {^-cmdorigin(=|$)}        "string"             origin         "origin of command call for logging"                                                } \
             ] -context "REGFILE-MODULE ENTRYNAME REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -866,19 +882,19 @@ namespace eval ig {
         }
 
         if {[llength $arguments] < 2} {
-            log -error "R : not enough arguments"
+            log -error "R : not enough arguments ($origin)"
             return {}
         } elseif {[llength $arguments] > 3} {
-            log -error "R (regfile-entry ${entryname}): too many arguments\nPassed arguments are:\n $arguments"
+            log -error "R (regfile-entry ${entryname}): too many arguments\nPassed arguments are:\n $arguments ($origin)"
             return {}
         }
 
         if {$entryname eq ""} {
-            log -error -abort "R: no regfile-entry name specified"
+            log -error -abort "R: no regfile-entry name specified ($origin)"
         } elseif {$regfilename eq ""} {
-            log -error -abort "R (regfile-entry ${entryname}): no regfile name specified"
+            log -error -abort "R (regfile-entry ${entryname}): no regfile name specified ($origin)"
         } elseif {[llength $regdef] <= 1} {
-            log -error -abort "R (regfile-entry ${entryname}): no registers specified"
+            log -error -abort "R (regfile-entry ${entryname}): no registers specified ($origin)"
         }
 
         if {[llength [lindex $regdef 0]] < 2} {
@@ -902,7 +918,7 @@ namespace eval ig {
             }
             set idx_def [lsearch -glob $entry_default_map "${i_entry}*"]
             if {$idx_def < 0} {
-                log -error -abort "R (regfile-entry ${entryname}): invalid register attribute-name: ${i_entry}"
+                log -error -abort "R (regfile-entry ${entryname}): invalid register attribute-name: ${i_entry} ($origin)"
             }
             lappend entry_map [lindex $entry_default_map $idx_def]
         }
@@ -934,7 +950,7 @@ namespace eval ig {
             set alignment 4
 
             if {$regfile_id eq ""} {
-                log -error -abort "R (regfile-entry ${entryname}): invalid regfile name specified: ${regfilename}"
+                log -error -abort "R (regfile-entry ${entryname}): invalid regfile name specified: ${regfilename} ($origin)"
             }
             # set the "real" regfilename
             set regfilename [ig::db::get_attribute -obj $regfile_id -attribute "name"]
@@ -947,10 +963,11 @@ namespace eval ig {
                 set address [ig::aux::regfile_next_addr $regfile_id]
             }
             if {(![string is integer $address]) || ($address < 0)} {
-                log -error -abort "R (regfile-entry ${entryname}): no/invalid address"
+                log -error -abort "R (regfile-entry ${entryname}): no/invalid address ($origin)"
             }
             ig::db::set_attribute -object $entry_id -attribute "address"   -value $address
             ig::db::set_attribute -object $entry_id -attribute "protected" -value $protected
+            ig::db::set_attribute -object $entry_id -attribute "origin   " -value $origin
             # set handshake
             if {$handshake ne ""} {
                 set handshakelist {}
@@ -993,10 +1010,11 @@ namespace eval ig {
                 }
 
                 if {$i_name eq ""} {
-                    log -error -abort "R (regfile-entry ${entryname}): reg defined without name"
+                    log -error -abort "R (regfile-entry ${entryname}): reg defined without name ($origin)"
                 }
 
                 set reg_id [ig::db::add_regfile -reg $i_name -to $entry_id]
+                ig::db::set_attribute -object $reg_id -attribute "origin" -value $origin
                 set s_modules {}
                 set s_signal  {}
                 set s_width   0
@@ -1063,13 +1081,15 @@ namespace eval ig {
                     }
                     set rf_port [regsub "^${regfilename}_" ${s_signal} {}]
                     set connect_cmd "S \"${s_signal}\" -w $s_width ${rf_module_name}:${rf_port}! $conn $s_modules"
-                    eval $connect_cmd
+                    set sid [eval $connect_cmd]
+                    ig::db::set_attribute -object $sid -attribute "origin" -value $origin
+
                     ig::log -info -id "RCon" "$connect_cmd"
                 }
             }
             ig::aux::regfile_next_addr $regfile_id [format "0x%04X" [expr {$address + $alignment}]]
         } emsg]} {
-            log -error -abort "R (regfile-entry ${entryname}): error while creating regfile-entry:\n${emsg}"
+            log -error -abort "R (regfile-entry ${entryname}): error while creating regfile-entry:\n${emsg} ($origin)"
         }
 
         return $entry_id
@@ -1114,6 +1134,7 @@ namespace eval ig {
         set protected    "false"
         set resetval     {}
         set comment      "-"
+        set origin       [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
@@ -1126,6 +1147,7 @@ namespace eval ig {
                 { {^-handshake($|=)}               "string"       handshake "specify signals and type for handshake {signal-out signal-in type}"  } \
                 { {^-prot(ect(ed)?)?$}             "const=true"   protected "register is protected for privileged-only access"                    } \
                 { {^(=|-v(alue)?|-r(eset(val)?)?)} "string"       resetval  "specify reset value for the register"                                } \
+                { {^-cmdorigin(=|$)}               "string"       origin    "origin of command call for logging"                                  } \
             ] -context "SIGNALNAME CONNECTIONPORTS..." $args]
 
         set rf_args {"-nosubst"}
@@ -1176,8 +1198,7 @@ namespace eval ig {
             }
         }
         if {[llength $rf_list] == 0} {
-            set frame_dict [info frame -1]
-            ig::log -warn -id RSCon "No regfile found -- \n[file tail [dict get $frame_dict "file"]]:[dict get $frame_dict "line"] [dict get $frame_dict "cmd"]"
+            ig::log -warn -id RSCon "No regfile found -- \n[ig::aux::get_origin_here -1] ($origin)"
             return $retval
         } else {
             ig::log -debug -id RSCon "Found regfile: $rf_list"
@@ -1185,11 +1206,10 @@ namespace eval ig {
 
         set signalname "[lindex $rf_list 0]_${signalname}"
         if {$dir eq "-->"} {
-            set connect_cmd "S \"$signalname\" -w $width [lindex $arguments 1] --> [lrange $arguments 2 end]"
+            set connect_cmd "S \"$signalname\" -w $width -cmdorigin [list $origin] [lindex $arguments 1] --> [lrange $arguments 2 end]"
         } else {
-            set connect_cmd "S \"$signalname\" -w $width [lrange $arguments 1 end-1] <-- [lindex $arguments end]"
+            set connect_cmd "S \"$signalname\" -w $width -cmdorigin [list $origin] [lrange $arguments 1 end-1] <-- [lindex $arguments end]"
         }
-
 
         set regfile_cmd {}
         foreach {rf_name entryname type reset} $rf_list {
@@ -1207,6 +1227,7 @@ namespace eval ig {
             ig::aux::max_set commentlen    [string length $comment]
 
             set rf_table "%-${namelen}s | %-${widthlen}s | %-${typelen}s | %-${resetlen}s | %-${signalnamelen}s | %-${commentlen}s\n"
+            lappend rf_args "-cmdorigin" [list $origin]
             lappend regfile_cmd [string cat "R -rf=${rf_name} \"${entryname}\" [join $rf_args] \{\n" \
                 [format "    $rf_table" {"name"} {"width"} {"type"} {"reset"} {"signal"}     {"comment"} ] \
                 [format "    $rf_table" "val"    "$width"  "$type"  "$reset"  "$signalname"  "\"$comment\""  ] \
@@ -1214,8 +1235,8 @@ namespace eval ig {
         }
         set regfile_cmd [join $regfile_cmd]
         ig::log -id SRCmd "[info level 0]\n${connect_cmd}\n${regfile_cmd}"
-        set retval [eval "$connect_cmd"]
-        eval "$regfile_cmd"
+        set retval [eval $connect_cmd]
+        eval $regfile_cmd
         return $retval
     }
 
@@ -1258,6 +1279,7 @@ namespace eval ig {
         set csvsep      {;}
         set nosubst_opt ""
         set eval_opt    ""
+        set origin      [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
@@ -1267,6 +1289,7 @@ namespace eval ig {
                 { {^-csvsep(arator)?($|=)} "string"          csvsep      "specify separator for csvfiles"                                                    } \
                 { {^-nosubst$}             "const=-nosubst"  nosubst_opt "do not perform Tcl substition in REGISTERTABLE argument"                           } \
                 { {^-e(val(uate)?)?$}      "const=-evaluate" eval_opt    "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
+                { {^-cmdorigin(=|$)}       "string"          origin      "origin of command call for logging"                                                } \
             ] -context "REGFILE-MODULE REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -1277,13 +1300,13 @@ namespace eval ig {
         }
 
         if {([llength $arguments] < 1) && ($csvfile eq "")} {
-            log -error -abort "RT : not enough arguments"
+            log -error -abort "RT : not enough arguments ($origin)"
         } elseif {[llength $arguments] > 2} {
-            log -error -abort "RT (regfile ${regfilename}): too many arguments"
+            log -error -abort "RT (regfile ${regfilename}): too many arguments ($origin)"
         }
 
         if {$regfilename eq ""} {
-            log -error -abort "RT (regfile ${regfilename}): no regfile name specified"
+            log -error -abort "RT (regfile ${regfilename}): no regfile name specified ($origin)"
         }
 
         if {$csvfile ne ""} {
@@ -1306,7 +1329,7 @@ namespace eval ig {
         }
 
         if {[llength $regtable] <= 1} {
-            log -error -abort "RT (regfile ${regfilename}): no registers specified"
+            log -error -abort "RT (regfile ${regfilename}): no registers specified ($origin)"
         }
 
         #order: {entryname ?address? ?protect? ...}
@@ -1334,7 +1357,7 @@ namespace eval ig {
         foreach i_row $regtable {
             if {[llength $i_row] < [llength $r_head]} {
                 if {[llength $i_row] > 0} {
-                    log -warn "register table row \"${i_row}\" contains too few columns"
+                    log -warn "register table row \"${i_row}\" contains too few columns ($origin)"
                 }
                 continue
             }
@@ -1358,7 +1381,7 @@ namespace eval ig {
 
             if {$e_name eq ""} {set e_name $e_last_name}
             if {$e_name eq ""} {
-                log -warn "register table row \"${i_row}\" has no entry name"
+                log -warn "register table row \"${i_row}\" has no entry name ($origin)"
             }
             if {$e_name eq $e_last_name} {
                 if {$e_addr eq ""} {set e_addr $e_last_addr}
@@ -1399,7 +1422,7 @@ namespace eval ig {
                 lappend opts $eval_opt
             }
 
-            R {*}${opts} $regfilename $e_name $e_table
+            R -cmdorigin $origin {*}${opts} $regfilename $e_name $e_table
         }
     }
 
