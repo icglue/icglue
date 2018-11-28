@@ -126,11 +126,6 @@ namespace eval ig {
                     set $k $v
                 }
 
-                #  Slurp up the data file
-                set fp [open $filename r]
-                set script [read $fp]
-                close $fp
-
                 set source_cmd {source $filename}
                 if {[catch $source_cmd emsg eopts]} {
                     set error_list [split $::errorInfo "\n"]
