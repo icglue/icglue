@@ -241,4 +241,4 @@ namespace eval ig::checks {
     namespace export check_object
 }
 
-# vim: set filetype=icgluetcl syntax=tcl
+# vim: set filetype=icgluetcl syntax=tcl:
