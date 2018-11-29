@@ -797,4 +797,3 @@ namespace eval ig::sng {
     namespace export evaluate_file convert_file update_file_pragmas
 }
 
-# vim: set filetype=icgluetcl syntax=tcl:
