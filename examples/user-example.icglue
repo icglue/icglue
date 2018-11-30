@@ -5,14 +5,14 @@
 
 # Generate hierarchie in unit submodule
 M -unit "component" -tree {
-    tb_component ................ (tb,v)
-    \- component_wrap ........... (rtl)
-       \- component_top ......... (rtl)
+    tb_component .................. (tb,v)
+    \- component_wrap ............. (rtl)
+       \- component_top ........... (rtl)
           |
-          +- anothersubmod_wrap ..(rtl,unit=anothersubmod)
-          |  \- anothersubmod     (rtl)
+          +- anothersubmod_wrap ... (rtl,unit=anothersubmod)
+          |  \- anothersubmod ..... (rtl)
           |
-          \- submod_wrap ........ (inc)
+          \- submod_wrap .......... (inc)
 }
 
 M -unit "submod" -tree {
@@ -53,14 +53,14 @@ S "scan_mode"           -pin = 1'b0        -->  common_reset_combiner<ref_core>:
 # - use -nosubst to disable variable substitution
 # - use -verbatim as alias of both (-noadapt -nosubst)
 set rf_addr_range 5
-C component_wrap {
-    assign rf_addr[31  : ${rf_addr_range}] = 'h0;
-    assign rf_addr[ 0 +: ${rf_addr_range}] = rf_address[ 0 :+ ${rf_addr_range}];
-    assign rf_sel = (addr[31:28] == RF_ADDR_SEL) ? 1'b1 : 1'b0;
+C component_wrap -as {
+    assign rf_addr![31  : ${rf_addr_range}] = 'h0;
+    assign rf_addr![ 0 +: ${rf_addr_range}] = rf_address![ 0 :+ ${rf_addr_range}];
+    assign rf_sel! = (rf_addr![31:28] == RF_ADDR_SEL) ? 1'b1 : 1'b0;
 
     // debugging:
-    always @(posedge clk_i) begin
-        if (rf_sel && rf_enable) begin
+    always @(posedge apb_clk_i) begin
+        if (rf_sel! && rf_enable!) begin
             \$display ("Regfile access at address 0x%08x(%d)", rf_addr, \$time);
         end
     end
@@ -102,7 +102,7 @@ variable resetn_mods
 # see above for the variable names
 ### REF-clock/reset ###
 set clk_resetn_mods(ref) {
-    submod_regfile clkref_i resetref_n_i
+    submod_regfile apb_clk_i apb_resetn_i
 }
 # special cases can go in those variables
 # set single & create single clock lists
@@ -232,17 +232,17 @@ R submod_regfile "entry_sync0"  $rf_submod_table
 ### Connect fixed ports of the apb regfile template                  ###
 ########################################################################
 set rf_apb_ports {
-        rf_addr    --> apb_addr    32 component_wrap
-        rf_sel     --> apb_sel     1  component_wrap
-        rf_enable  --> apb_enable  1
-        rf_write   --> apb_write   1
-        rf_strb    --> apb_strb    4
-        rf_prot    --> apb_prot    3
-        rf_wdata   --> apb_wdata   32
+        rf_addr    --> apb_addr       32 component_wrap
+        rf_sel     --> apb_sel        1  component_wrap
+        rf_enable  --> apb_enable     1
+        rf_write   --> apb_write      1
+        rf_strb    --> apb_strb       4
+        rf_prot    --> apb_prot       3
+        rf_wdata   --> apb_wdata      32
 
-        rf_ready   <-- apb_ready   1
-        rf_rdata   <-- apb_rdata   32
-        rf_slverr  <-- apb_slver   1
+        rf_ready   <-- apb_ready      1
+        rf_rdata   <-- apb_rdata      32
+        rf_slverr  <-- apb_slverr     1
 }
 
 foreach rf_conn [split $rf_apb_ports "\n"] {
