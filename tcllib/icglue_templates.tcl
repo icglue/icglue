@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-package provide ICGlue 2.0a1
+package provide ICGlue 2.0
 
 ## @brief Template related functionality
 namespace eval ig::templates {
