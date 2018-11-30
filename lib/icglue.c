@@ -40,12 +40,12 @@ int Icglue_Init (Tcl_Interp *interp)
             (strcmp (icglue_silent_load, "true") != 0) &&
             (strcmp (icglue_silent_load, "yes")  != 0))) {
         ig_print_logo (stderr);
-        log_info ("PLoad", "ICGlue v2.0 loaded");
+        log_info ("PLoad", "ICGlue v3.0a1 loaded");
     }
 
     ig_add_tcl_commands (interp);
 
-    Tcl_PkgProvide (interp, "ICGlue", "2.0");
+    Tcl_PkgProvide (interp, "ICGlue", "3.0a1");
 
     return TCL_OK;
 }
