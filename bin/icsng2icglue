@@ -138,7 +138,7 @@ proc main {} {
     }
     set c_infile [lindex $arguments 0]
     if {$c_infile eq ""} {
-
+        printhelp 1
     }
 
     if {[set c_outfile [lindex $arguments 1]] eq ""} {
