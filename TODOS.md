@@ -19,7 +19,6 @@
 - checks: use "origin" information of constructed parts for logging of warnings
 
 ## templates
-- support module attributes (fpga)
 - testbench -> regs
 - testbench to outside dummy module (see nowriteout function ?)
 
