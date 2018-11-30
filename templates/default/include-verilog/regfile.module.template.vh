@@ -1,33 +1,63 @@
 <%
     ##  icglue - template regfile
 
-    proc clk                     {} { return "apb_clk_i"               }
-    proc reset                   {} { return "apb_resetn_i"            }
-    proc rf_addr                 {} { return "apb_addr_i"              }
-    proc rf_sel                  {} { return "apb_sel_i"               }
-    proc rf_enable               {} { return "apb_enable_i"            }
-    proc rf_write                {} { return "apb_write_i"             }
-    proc rf_w_data               {} { return "apb_wdata_i"             }
-    proc rf_bytesel              {} { return "apb_strb_i"              }
-    proc rf_prot                 {} { return "apb_prot_i\[1\]"         }
-    proc rf_prot_enable          {} { return "apb_prot_en_i"           }
-    proc rf_prot_ok              {} { return "rf_apb_prot_ok"          }
+    proc warn_rftp {msg} {
+        upvar mod_data(name) rfname
+        log -warn -id RFTP "$rfname: $msg"
+    }
+    proc clk                     {} { return {apb_clk_i}               }
+    proc reset                   {} { return {apb_resetn_i}            }
+    proc rf_addr                 {} { return {apb_addr_i}              }
+    proc rf_sel                  {} { return {apb_sel_i}               }
+    proc rf_enable               {} { return {apb_enable_i}            }
+    proc rf_write                {} { return {apb_write_i}             }
+    proc rf_w_data               {} { return {apb_wdata_i}             }
+    proc rf_bytesel              {} { return {apb_strb_i}              }
+    proc rf_prot                 {} { return {apb_prot_i[1]}           }
+    proc rf_prot_enable          {} { return {apb_prot_en_i}           }
 
-    proc rf_r_data               {} { return "apb_rdata_o"             }
-    proc rf_ready                {} { return "apb_ready_o "            }
-    proc rf_err                  {} { return "apb_slverr_o"            }
+    proc rf_r_data               {} { return {apb_rdata_o}             }
+    proc rf_ready                {} { return {apb_ready_o}             }
+    proc rf_err                  {} { return {apb_slverr_o}            }
 
-    proc rf_r_data_sig           {} { return "apb_rf_r_data"           }
+    # check if template ports existing in the current module
+    set template_ports {
+        clk reset
+        rf_addr rf_sel rf_enable rf_write rf_w_data rf_bytesel
+        rf_prot rf_prot_enable
+        rf_r_data rf_ready rf_err
+    }
 
-    proc rf_w_sel                {} { return "rf_w_sel"                }
-    proc rf_r_sel                {} { return "rf_r_sel"                }
+    set tp_names {}
+    foreach p $template_ports {
+        set port_name [$p]
+        set port_name [regsub {\[\d+\]} $port_name {}]
+        lappend tp_names $port_name
+    }
 
-    proc rf_ready_sig            {} { return "apb_ready"               }
-    proc rf_err_sig              {} { return "apb_slverr"              }
-    proc rf_write_permitted      {} { return "rf_write_permitted"      }
-    proc rf_next_write_permitted {} { return "rf_next_write_permitted" }
-    proc rf_read_permitted       {} { return "rf_read_permitted"       }
-    proc rf_next_read_permitted  {} { return "rf_next_read_permitted"  }
+    foreach_array port $mod_data(ports) {
+        set idx [lsearch $tp_names "$port(name)"]
+        if {$idx >= 0} {
+            set tp_names [lreplace $tp_names $idx $idx]
+        }
+    }
+    foreach mis $tp_names {
+        warn_rftp "Missing port $mis"
+    }
+
+    proc rf_r_data_sig           {} { return {apb_rf_r_data}           }
+
+    proc rf_w_sel                {} { return {rf_w_sel}                }
+    proc rf_r_sel                {} { return {rf_r_sel}                }
+
+    proc rf_ready_sig            {} { return {apb_ready}               }
+    proc rf_err_sig              {} { return {apb_slverr}              }
+    proc rf_write_permitted      {} { return {rf_write_permitted}      }
+    proc rf_next_write_permitted {} { return {rf_next_write_permitted} }
+    proc rf_read_permitted       {} { return {rf_read_permitted}       }
+    proc rf_next_read_permitted  {} { return {rf_next_read_permitted}  }
+
+    proc rf_prot_ok              {} { return {rf_apb_prot_ok}          }
 
     set fpga_impl [ig::db::get_attribute -object $obj_id -attribute "fpga" -default "false"]
 
@@ -191,7 +221,7 @@
                 }
             } else {
                 if {[dict get $handshake_sig_in_from_out $handshake_sig_out] ne $handshake_sig_in} {
-                    log -warn -id RFTP "Handshake signal $handshake_sig_out is used with different feedback signals -- " \
+                    warn_rftp "Handshake signal $handshake_sig_out is used with different feedback signals -- " \
                         "first occurence: [dict get $handshake_sig_in_from_out $handshake_sig_out] / redeclared $handshake_sig_in (ignored)"
                 }
             }
@@ -388,7 +418,7 @@
         } elseif {$reg(type) eq "-"} {
             set _reg_val_output "$reg(width)'b0"
         } else {
-            log -warn -id RFOUT "Unkown regfile type for $entry(name) - $reg(name)-- set to zero"
+            warn_rftp "Unkown regfile type for $entry(name) - $reg(name)-- set to zero"
             set _reg_val_output "$reg(width)'b0"
         }
         if {![custom_reg]} {%>
