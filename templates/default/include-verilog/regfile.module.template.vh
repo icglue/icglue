@@ -200,7 +200,7 @@
 
         foreach_array entry $entry_list {
             foreach_array_with reg $entry(regs) {[read_reg_sync]} {
-                lappend sig_syncs "$reg(signal)" "$reg(name)" "[reg_range]" "[signal_entrybits]"
+                lappend sig_syncs "$reg(signal)" "_${entry(name)}_${reg(name)}" "[reg_range]" "[signal_entrybits]"
             }
         }
         foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
@@ -412,7 +412,7 @@
         if {[write_reg]} {
             set _reg_val_output "[string trim [reg_name]]"
         } elseif {[read_reg_sync]} {
-            set _reg_val_output "$reg(name)_sync"
+            set _reg_val_output "_${entry(name)}_${reg(name)}_sync"
         } elseif {[read_reg]} {
             set _reg_val_output "[string trim [signal_name][signal_entrybits]]"
         } elseif {$reg(type) eq "-"} {
