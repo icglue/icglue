@@ -1131,6 +1131,7 @@ namespace eval ig {
         set resetval     {}
         set comment      "-"
         set origin       [ig::aux::get_origin_here]
+        set regname      "value"
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
@@ -1144,6 +1145,7 @@ namespace eval ig {
                 { {^-prot(ect(ed)?)?$}             "const=true"   protected "register is protected for privileged-only access"                    } \
                 { {^(=|-v(alue)?|-r(eset(val)?)?)} "string"       resetval  "specify reset value for the register"                                } \
                 { {^-cmdorigin(=|$)}               "string"       origin    "origin of command call for logging"                                  } \
+                { {^-(reg)?n(ame)?(=|$)}           "string"       origin    "name of register (default: value)"                                   } \
             ] -context "SIGNALNAME CONNECTIONPORTS..." $args]
 
         set rf_args {"-nosubst"}
@@ -1225,8 +1227,8 @@ namespace eval ig {
             set rf_table "%-${namelen}s | %-${widthlen}s | %-${typelen}s | %-${resetlen}s | %-${signalnamelen}s | %-${commentlen}s\n"
             lappend rf_args "-cmdorigin" [list $origin]
             lappend regfile_cmd [string cat "R -rf=${rf_name} \"${entryname}\" [join $rf_args] \{\n" \
-                [format "    $rf_table" {"name"} {"width"} {"type"} {"reset"} {"signal"}     {"comment"} ] \
-                [format "    $rf_table" "val"    "$width"  "$type"  "$reset"  "$signalname"  "\"$comment\""  ] \
+                [format "    $rf_table" {"name"}   {"width"} {"type"} {"reset"} {"signal"}     {"comment"} ] \
+                [format "    $rf_table" "$regname"    "$width"  "$type"  "$reset"  "$signalname"  "\"$comment\""  ] \
                 "\}"]
         }
         set regfile_cmd [join $regfile_cmd]
