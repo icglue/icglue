@@ -729,7 +729,7 @@ namespace eval ig {
     #      <tr><td><i> &ensp; &ensp; -v(erbatim)              </i></td><td>  alias for -noadapt and -nosubst                                                           <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -e(val(uate))            </i></td><td>  perform Tcl substition of CODE argument, do not forget to escape                          <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -noi(ndentfix)           </i></td><td>  do not fix the indent of the codeblock                                                    <br></td></tr>
-    #
+    #      <tr><td><i> &ensp; &ensp; -cmdorigin(=|$)          </i></td><td>  origin of command call for logging                                                        <br></td></tr>
     #    </table>
     #
     # @return Object-ID of the newly created codesection.
@@ -1092,7 +1092,6 @@ namespace eval ig {
     }
 
     ## @brief Create a new signal and connect it to a regfile
-    #
     # @param args <b> [OPTION]... SIGNALNAME CONNECTIONPORTS...</b><br>
     #    <table style="border:0px; border-spacing:40px 0px;">
     #      <tr><td><b> SIGNALNAME      </b></td><td> The signalname must be a uniq indentifier of the whole icglue script <br></td></tr>
@@ -1109,7 +1108,9 @@ namespace eval ig {
     #      <tr><td><i> &ensp; &ensp; -handshake($|=)             </i></td><td>  specify signals and type for handshake {signal-out signal-in type} <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; -prot(ect(ed))              </i></td><td>  register is protected for privileged-only access                   <br></td></tr>
     #      <tr><td><i> &ensp; &ensp; (=|-v(alue)|-r(eset(val)))  </i></td><td>  specify reset value for the register                               <br></td></tr>
-    #    </table
+    #      <tr><td><i> &ensp; &ensp; -cmdorigin(=|$)             </i></td><td>  origin of command call for logging                                 <br></td></tr>
+    #      <tr><td><i> &ensp; &ensp; -(reg)n(ame)(=|$)           </i></td><td>  name of register (default value)                                   <br></td></tr>
+    #    </table>
     #
     # @return Object-IDs of the newly created objects of newly created signal.
     #
