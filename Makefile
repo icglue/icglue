@@ -19,7 +19,8 @@
 LIBDIR               := lib
 LIBSOURCES           := $(LIBDIR)/binaries/icglue.so
 TCLSOURCES           := $(wildcard tcllib/*.tcl)
-PKGDIR               := ICGlue
+PKGNAME              := ICGlue
+PKGDIR               := lib/icglue/$(PKGNAME)
 
 PKGIDX               := $(PKGDIR)/pkgIndex.tcl
 PKGGENSCR            := scripts/tcl_pkggen.tcl
@@ -29,8 +30,8 @@ VERSIONSCR           := scripts/update_version.sh
 VERSIONSCRINSTALL    := scripts/install-version.sh
 
 DOCDIR               := doc
-DOCDIRTCL            := $(DOCDIR)/ICGlue
-DOCDIRLIB            := $(DOCDIR)/ICGlue-Lib
+DOCDIRTCL            := $(DOCDIR)/$(PKGNAME)
+DOCDIRLIB            := $(DOCDIR)/$(PKGNAME)-Lib
 DOXYFILETCL          := doxy/tcl.doxyfile
 DOXYFILELIB          := doxy/lib.doxyfile
 
@@ -41,8 +42,8 @@ MANDIR               := share/man/man$(MANSEC)
 H2MBASENAMES         := icglue icsng2icglue
 
 SYNTAXDIR            := nagelfar
-SYNTAXFILE_LIB       := $(SYNTAXDIR)/ICGlue.nagelfar.db.tcl
-SYNTAXFILE_CNSTR     := $(SYNTAXDIR)/ICGlue_construct.nagelfar.db.tcl
+SYNTAXFILE_LIB       := $(SYNTAXDIR)/$(PKGNAME).nagelfar.db.tcl
+SYNTAXFILE_CNSTR     := $(SYNTAXDIR)/$(PKGNAME)_construct.nagelfar.db.tcl
 NAGELFAR_SYNTAXBUILD := /usr/lib/nagelfar/syntaxbuild.tcl
 SYNTAXGEN_LIB        := scripts/gen_nagelfar_db.tcl
 SYNTAXGEN_CNSTR      := scripts/gen_nagelfar_db_construct.tcl
@@ -75,8 +76,8 @@ prebuild $(LIBSOURCES):
 $(PKGIDX): $(TCLSOURCES) $(LIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 	rm -f $(PKGIDX)
 	@for S in  $(LIBSOURCES) $(TCLSOURCES); do  \
-		echo "ln -sft $(PKGDIR) ../$$S"; \
-		ln -sft $(PKGDIR) ../$$S; \
+		echo "ln -sft $(PKGDIR) ../../../$$S"; \
+		ln -sft $(PKGDIR) ../../../$$S; \
 	done
 	$(PKGGENSCR) $(PKGDIR)
 
@@ -153,14 +154,14 @@ memcheck:
 install: install_bin install_doc install_helpers
 
 install_bin:
-	install -m755 -d $(INSTDIR)/lib/icglue/$(PKGDIR)
-	install -m644    $(PKGDIR)/*.tcl -t                $(INSTDIR)/lib/icglue/$(PKGDIR)
-	install -m755 -s $(PKGDIR)/*.so -t                 $(INSTDIR)/lib/icglue/$(PKGDIR)
+	install -m755 -d $(INSTDIR)/$(PKGDIR)
+	install -m644    $(PKGDIR)/*.tcl -t                $(INSTDIR)/lib/icglue/$(PKGNAME)
+	install -m755 -s $(PKGDIR)/*.so -t                 $(INSTDIR)/lib/icglue/$(PKGNAME)
 	$(VERSIONSCRINSTALL) ./bin/icglue                  $(INSTDIR)/lib/icglue/icglue
 	install -m755 -D ./bin/icsng2icglue -T             $(INSTDIR)/lib/icglue/icsng2icglue
 	install -m755 -d $(INSTDIR)/bin
-	ln -sf           $(PREFIX)/lib/icglue/icglue       $(INSTDIR)/bin/icglue
-	ln -sf           $(PREFIX)/lib/icglue/icsng2icglue $(INSTDIR)/bin/icsng2icglue
+	ln -sf           ../lib/icglue/icglue              $(INSTDIR)/bin/icglue
+	ln -sf           ../lib/icglue/icsng2icglue        $(INSTDIR)/bin/icsng2icglue
 	install -m755 -d $(INSTDIR)/share/icglue
 	cp -r            $(TEMPLATES)                      $(INSTDIR)/share/icglue
 
