@@ -70,9 +70,15 @@ hi def link igSignal     igModuleIdentifier
 syn keyword igSigRegcmd SR                               contained
 syn match   igSRFlags "\v-addr\=?"                       contained
 syn match   igSRFlags "@"                                contained
-syn match   igSRFlags "\v-c(omment)?\=?"                 contained
-syn match   igSRFlags "\v-handshake\=?"                  contained
+syn match   igSRFlags "\v-w(idth)?(\=)?"                 contained
+syn match   igSRFlags "\v-c(omment)?(\=)?"               contained
+syn match   igSRFlags "\v-t(ype)?(\=)?"                  contained
+syn match   igSRFlags "\v-handshake(\=)?"                contained
+syn match   igSRFlags "\v-prot(ect(ed)?)?$"              contained
 syn match   igSRFlags "\v(-v(alue)?|\=|-r(eset(val)?)?)" contained
+syn match   igSRFlags "\v-cmdorigin(\=)?"                contained
+syn match   igSRFlags "\v-(reg)?n(ame)?(\=)?"            contained
+
 syn region  igSRlistblock start="\s{"ms=e end="}"        contained contains=tclVarRef,igPort,tclNumber,tclString,igSRlistblock
 syn region  igSignalReg start=/^\s*SR\>/ms=e-1 end=/$/             contains=igSigRegcmd,igSigwidth,igCon,igSRFlags,igPort,igSRlistblock,@igtclExtensions
 
@@ -102,10 +108,14 @@ syn region  igClistblock start="{"ms=e end="}"        contained contains=igClist
 syn match   igCFlags "\v-a(dapt)?>"                   contained
 syn match   igCFlags "\v-noa(dapt)?>"                 contained
 syn match   igCFlags "\v-a(dapt-)?s(elective(ly)?)?>" contained
+syn match   igCFlags "\v-al(ign)?>"                   contained
 syn match   igCFlags "\v-v(erbatim)?>"                contained
 syn match   igCFlags "\v-s(ubst)?>"                   contained
 syn match   igCFlags "\v-nos(ubst)?>"                 contained
 syn match   igCFlags "\v-e(val(ulate)?)?>"            contained
+syn match   igCFlags "\v-noi(ndentfix)>"              contained
+syn match   igCFlags "\v-cmdorigin(\=)?"              contained
+
 syn region  igCode start=/^\s*C\>/ end=/$/me=s-1                contains=igCodecmd,igCFlags,igClistblock,tclLineContinue,tclString
 
 hi def link igCTODO      Todo
