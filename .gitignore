@@ -3,7 +3,7 @@
 *.o
 *.so
 .*.sw*
-/ICGlue
+lib/icglue
 /doc
 /examples/test
 /nagelfar

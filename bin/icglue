@@ -20,9 +20,7 @@
 
 # try to set package path and load ICGlue package for typical cases
 set binpath $::argv0
-# in case script is a relative symlink, get to absolute path of script
-catch {set binpath [file normalize [file join [file dirname $binpath] [file readlink $binpath]]]}
-lappend auto_path [file normalize [file dirname [file normalize $binpath]]/..]
+lappend auto_path "[file join [file dirname [file dirname [file normalize $binpath]]] lib icglue]"
 
 set icglue_silent_load "true"
 package require ICGlue
