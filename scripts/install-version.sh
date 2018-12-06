@@ -14,7 +14,7 @@ install -m755 -D -T $src $dest
 
 version=""
 if [[ $(which git 2> /dev/null) ]] ; then
-    if [[ -n "$(git ls-files $src)" ]]; then
+    if [[ -n "$(git ls-files $src 2> /dev/null)" ]]; then
         gitrev=$(git rev-parse --short HEAD)
         gitdirty=""
         [[ -n "$(git diff --shortstat)" ]] && gitdirty="-dirty"
