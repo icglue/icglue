@@ -1,0 +1,10 @@
+#!/bin/bash
+
+prog=$(sed -rne '1s|#!(/usr)?/bin/env\s+(.*)|\2|p' $1)
+
+full_path=$(which $prog 2> /dev/null)
+
+if [[ $? -eq 0 ]] && [[ -e $full_path ]] ; then
+    echo "Fixing shebang of $1 to $full_path"
+    sed -ie '1s|#!.*|#!'"${full_path}"'|' $1
+fi
