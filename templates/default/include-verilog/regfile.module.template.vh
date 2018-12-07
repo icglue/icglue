@@ -150,13 +150,19 @@
         return [format "%-${maxlen_signalname}s" [adapt_signalname $signal $id]]
     }
     proc signal_entrybits {} {
-        upvar reg(signalbits) signalbits
+        upvar reg(signalbits) signalbits reg(signal) signal obj_id id
         set bits [split $signalbits ":"]
         if {[llength $bits] == 2} {
             return [format "\[%2d:%2d\]" {*}$bits]
         } elseif {$bits eq "-"} {
             return [format "%7s" {}]
         } else {
+            if {$bits == 0} {
+                set sigid [get_signal_id_by_name $signal $id]
+                if {[ig::db::get_attribute -object $sigid -attribute size] == 1} {
+                    return [format "%7s" {}]
+                }
+            }
             return [format "\[%5d\]" $bits]
         }
     }
