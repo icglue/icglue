@@ -298,6 +298,7 @@ namespace eval ig {
                 set film "false"
                 set fres "false"
                 set finc "false"
+                set moduleflags [regsub -all {\s+} ${moduleflags} {}]
                 ig::aux::parse_opts [list                    \
                     { {^(ilm|macro)$} "const=true" film {} } \
                     { {^res(ource)?$} "const=true" fres {} } \
