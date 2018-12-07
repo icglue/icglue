@@ -667,6 +667,25 @@ namespace eval ig::aux {
         return $code
     }
 
+    ## @brief Get the signalid relate to the signalname with one module (mod_id)
+    #
+    # @param signalname Name of the signal to check.
+    # @param mod_id Object-ID of the module to adapt for.
+    #
+    # @return Adapted signal name if found in specified module.
+    proc get_signal_id_by_name {signalname mod_id} {
+        foreach id [concat \
+            [ig::db::get_ports -of $mod_id -all] \
+            [ig::db::get_declarations -of $mod_id -all] \
+        ] {
+            if {[ig::db::get_attribute -object $id -attribute "signal"] eq $signalname} {
+                return "$id"
+            }
+        }
+        ig::log -warning "Signal $signalname not defined in module [ig::db::get_attribute -object $mod_id -attribute "name"]"
+            return {}
+    }
+
     ## @brief Adapt a signalname in given module to the local signal name.
     #
     # @param signalname Name of the signal to check.
@@ -674,20 +693,14 @@ namespace eval ig::aux {
     #
     # @return Adapted signal name if found in specified module.
     proc adapt_signalname {signalname mod_id} {
-        foreach i_port [ig::db::get_ports -of $mod_id -all] {
-            if {[ig::db::get_attribute -object $i_port -attribute "signal"] eq $signalname} {
-                return [ig::db::get_attribute -object $i_port -attribute "name"]
-            }
-        }
-        foreach i_decl [ig::db::get_declarations -of $mod_id -all] {
-            if {[ig::db::get_attribute -object $i_decl -attribute "signal"] eq $signalname} {
-                return [ig::db::get_attribute -object $i_decl -attribute "name"]
-            }
-        }
-        ig::log -warning "Signal $signalname not defined in module [ig::db::get_attribute -object $mod_id -attribute "name"]"
-        return $signalname
-    }
+        set sigid [get_signal_id_by_name ${signalname} ${mod_id}]
 
+        if {$sigid ne ""} {
+            return [ig::db::get_attribute -object $sigid -attribute "name"]
+        } else {
+            return $signalname
+        }
+    }
 
     ## @brief Count amount of newlines in a string.
     #
