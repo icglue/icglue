@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-package provide ICGlue 1.2
+package provide ICGlue 1.3
 
 ## @brief Main namespace of ICGlue.
 # Contains functionality needed in construction scripts.

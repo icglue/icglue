@@ -35,7 +35,7 @@ DOCDIR                = doc
 PKGIDX                = $(PKGDIR)/pkgIndex.tcl
 PKGGENSCR             = scripts/tcl_pkggen.tcl
 
-VERSION               = 1.2
+VERSION               = 1.3
 VERSIONSCR            = scripts/update_version.sh
 VERSIONSCRINSTALL     = scripts/install-version.sh
 
