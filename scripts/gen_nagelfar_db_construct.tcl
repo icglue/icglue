@@ -19,7 +19,7 @@
 #
 
 # set package path and load ICGlue package
-lappend auto_path [file normalize [file join [file dirname [file dirname [file normalize $::argv0]]] lib icglue]]
+lappend auto_path [file normalize [file join [file dirname [file dirname [file normalize $::argv0]]] lib]]
 
 set icglue_silent_load "true"
 package require ICGlue

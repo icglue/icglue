@@ -17,58 +17,59 @@
 #
 
 PROGS                ?= $(notdir $(wildcard bin/*))
-STATIC_SHEBANG       := 1
+STATIC_SHEBANG        = 1
 
-LIBDIR               := lib
-LIBNAME              := icglue.so
-LIBSOURCES           := $(LIBDIR)/binaries/$(LIBNAME)
-TCLSOURCES           := $(wildcard tcllib/*.tcl)
-PKGNAME              := ICGlue
-PKGLOC               := lib/icglue
-PKGDIR               := $(PKGLOC)/$(PKGNAME)
+DESTDIR              ?= $(CURDIR)/install
+PREFIX               ?= /usr/local
+LIBDIR                = lib
+PKGNAME               = ICGlue
+LIBNAME               = icglue.so
 
-PKGIDX               := $(PKGDIR)/pkgIndex.tcl
-PKGGENSCR            := scripts/tcl_pkggen.tcl
+CLIBDIR               = lib
+CLIBSOURCES           = $(CLIBDIR)/binaries/$(LIBNAME)
+TCLSOURCES            = $(wildcard tcllib/*.tcl)
+PKGDIR                = $(LIBDIR)/$(PKGNAME)
+MANDIR                = share/man/man$(MANSEC)
+DOCDIR                = doc
 
-VERSION              := 2.0
-VERSIONSCR           := scripts/update_version.sh
-VERSIONSCRINSTALL    := scripts/install-version.sh
+PKGIDX                = $(PKGDIR)/pkgIndex.tcl
+PKGGENSCR             = scripts/tcl_pkggen.tcl
 
-DOCDIR               := doc
-DOCDIRTCL            := $(DOCDIR)/$(PKGNAME)
-DOCDIRLIB            := $(DOCDIR)/$(PKGNAME)-Lib
-DOXYFILETCL          := doxy/tcl.doxyfile
-DOXYFILELIB          := doxy/lib.doxyfile
+VERSION               = 2.0
+VERSIONSCR            = scripts/update_version.sh
+VERSIONSCRINSTALL     = scripts/install-version.sh
+
+DOCDIRTCL             = $(DOCDIR)/$(PKGNAME)
+DOCDIRLIB             = $(DOCDIR)/$(PKGNAME)-Lib
+DOXYFILETCL           = doxy/tcl.doxyfile
+DOXYFILELIB           = doxy/lib.doxyfile
 
 BROWSER              ?= firefox
 
-MANSEC               := 1
-MANDIR               := share/man/man$(MANSEC)
+MANSEC                = 1
 H2MBASENAMES         ?= $(filter-out icsng2icglue_filtersvndiff, $(PROGS))
 
-SYNTAXDIR            := nagelfar
-SYNTAXFILE_LIB       := $(SYNTAXDIR)/$(PKGNAME).nagelfar.db.tcl
-SYNTAXFILE_CNSTR     := $(SYNTAXDIR)/$(PKGNAME)_construct.nagelfar.db.tcl
-NAGELFAR_SYNTAXBUILD := /usr/lib/nagelfar/syntaxbuild.tcl
-SYNTAXGEN_LIB        := scripts/gen_nagelfar_db.tcl
-SYNTAXGEN_CNSTR      := scripts/gen_nagelfar_db_construct.tcl
+SYNTAXDIR             = nagelfar
+SYNTAXFILE_LIB        = $(SYNTAXDIR)/$(PKGNAME).nagelfar.db.tcl
+SYNTAXFILE_CNSTR      = $(SYNTAXDIR)/$(PKGNAME)_construct.nagelfar.db.tcl
+NAGELFAR_SYNTAXBUILD  = /usr/lib/nagelfar/syntaxbuild.tcl
+SYNTAXGEN_LIB         = scripts/gen_nagelfar_db.tcl
+SYNTAXGEN_CNSTR       = scripts/gen_nagelfar_db_construct.tcl
 
-TEMPLATES            := templates
-PREFIX               ?= $(CURDIR)/install
-DESTDIR              ?=
-INSTDIR              := $(DESTDIR)$(PREFIX)
+TEMPLATES             = templates
+INSTDIR               = $(DESTDIR)$(PREFIX)
 
-CMARK                := cmark
-HTML_HEAD            := html/html_head.html
-HTML_FOOT            := html/html_foot.html
-MD2HTMLDIR           := md2html
-MDFILES              := $(wildcard doxy/*.md)
-MD2HTMLFILES         := $(addprefix $(MD2HTMLDIR)/,$(addsuffix .html,$(basename $(MDFILES:doxy/%=%))))
+CMARK                 = cmark
+HTML_HEAD             = html/html_head.html
+HTML_FOOT             = html/html_foot.html
+MD2HTMLDIR            = md2html
+MDFILES               = $(wildcard doxy/*.md)
+MD2HTMLFILES          = $(addprefix $(MD2HTMLDIR)/,$(addsuffix .html,$(basename $(MDFILES:doxy/%=%))))
 
 LOCTOOL              ?= cloc
-LOCSOURCES           := $(wildcard tcllib/*.tcl bin/* lib/*.c lib/*.h)
-LOCTEMPLATES         := $(wildcard templates/*/*)
-LOCEXTRA             := $(wildcard scripts/* vim/*/*.vim vim/*/*/*.vim) Makefile lib/Makefile
+LOCSOURCES            = $(wildcard tcllib/*.tcl bin/* lib/*.c lib/*.h)
+LOCTEMPLATES          = $(wildcard templates/*/*)
+LOCEXTRA              = $(wildcard scripts/* vim/*/*.vim vim/*/*/*.vim) Makefile lib/Makefile
 
 #-------------------------------------------------------
 # Tcl Package
@@ -79,14 +80,14 @@ all: prebuild
 
 everything: all syntaxdb docs man
 
-prebuild $(LIBSOURCES):
-	@$(MAKE) -C $(LIBDIR)
+prebuild $(CLIBSOURCES):
+	@$(MAKE) -C $(CLIBDIR)
 
-$(PKGIDX): $(TCLSOURCES) $(LIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
+$(PKGIDX): $(TCLSOURCES) $(CLIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 	rm -f $(PKGIDX)
-	@for S in  $(LIBSOURCES) $(TCLSOURCES); do  \
-		echo "ln -sft $(PKGDIR) ../../../$$S"; \
-		ln -sft $(PKGDIR) ../../../$$S; \
+	@for S in  $(CLIBSOURCES) $(TCLSOURCES); do  \
+		echo "ln -sft $(PKGDIR) ../../$$S"; \
+		ln -sft $(PKGDIR) ../../$$S; \
 	done
 	$(PKGGENSCR) $(PKGDIR)
 
@@ -130,7 +131,7 @@ $(MANDIR)/%.$(MANSEC): ./h2m/%.h2m ./bin/% $(PKGIDX) | $(MANDIR)
 	-help2man -N -i ./h2m/$*.h2m ./bin/$* > $@
 	-sed -i -e 's/(INSTALLED-VERSION)//' $@
 
-man: $(addprefix $(MANDIR)/, $(addsuffix .$(MANSEC), $(H2MBASENAMES)))
+man: $(addprefix $(MANDIR)/,$(addsuffix .$(MANSEC),$(H2MBASENAMES)))
 
 
 #-------------------------------------------------------
@@ -164,37 +165,44 @@ $(INSTDIR)/$(PKGDIR) $(INSTDIR)/bin $(INSTDIR)/share/icglue $(INSTDIR)/$(MANDIR)
 	install -m755 -d $@
 
 $(INSTDIR)/$(PKGDIR)/%.so: $(PKGDIR)/%.so | $(INSTDIR)/$(PKGDIR)
-	install -m755 $< $@ 
+	install -m755 $< $@
 
 $(INSTDIR)/$(PKGDIR)/%.tcl: $(PKGDIR)/%.tcl | $(INSTDIR)/$(PKGDIR)
 	install -m644  $< $@
 
-$(INSTDIR)/$(PKGLOC)/%: bin/% | $(INSTDIR)/bin
+$(INSTDIR)/bin/%: bin/% | $(INSTDIR)/bin
 	$(VERSIONSCRINSTALL) $< $@
-	ln -sf ../lib/icglue/$(notdir $@) $(INSTDIR)/bin/$(notdir $@)
 ifeq ($(STATIC_SHEBANG),1)
 	scripts/static_shebang $@
 endif
 
 install_core: \
     $(addprefix $(INSTDIR)/$(PKGDIR)/,$(notdir $(TCLSOURCES)) $(LIBNAME) pkgIndex.tcl) \
-    $(addprefix $(INSTDIR)/$(PKGLOC)/,$(PROGS)) \
+    $(addprefix $(INSTDIR)/bin/,$(PROGS)) \
     install_templates
 
 install_templates: |  $(INSTDIR)/share/icglue
 	cp -r $(TEMPLATES) $(INSTDIR)/share/icglue
 
-$(INSTDIR)/$(MANDIR)/%.$(MANSEC): $(CURDIR)/$(MANDIR)/%.$(MANSEC) | $(INSTDIR)/$(MANDIR)
-	install -m644 $< $@
+$(INSTDIR)/$(MANDIR)/%.$(MANSEC): | $(INSTDIR)/$(MANDIR)
+	install -m644 $(MANDIR)/$(notdir $@) $@
 	sed -i -e 's#%DOCDIRTCL%#$(PREFIX)/share/icglue#' $@
 
-install_doc: $($(INSTDIR)/$(MANDIR)/$(H2MBASENAMES).$(MANSEC) | $(INSTDIR)/share/icglue
-	-cp     -r       $(DOCDIRTCL)/html                $(INSTDIR)/share/icglue
+install_doc: $(addprefix $(INSTDIR)/$(MANDIR)/,$(addsuffix .$(MANSEC),$(H2MBASENAMES))) | $(INSTDIR)/share/icglue
+	@if [ -e $(DOCDIRTCL)/html ]; then \
+		cp -r $(DOCDIRTCL)/html $(INSTDIR)/share/icglue ; \
+	else  \
+		echo "!! Documentation has not been build. !!" ; \
+	fi
 
 install_helpers: | $(INSTDIR)/share/icglue
-	cp -r            $(CURDIR)/vim            $(INSTDIR)/share/icglue     # vim
-	-cp -r           $(SYNTAXDIR)             $(INSTDIR)/share/icglue     # nagelfar
-
+	cp -r $(CURDIR)/vim $(INSTDIR)/share/icglue
+	@if [ -e $(SYNTAXDIR) ]; then \
+		cp -r $(SYNTAXDIR)  $(INSTDIR)/share/icglue ; \
+	else \
+		rm -r $(INSTDIR)/share/icglue/vim/syntax_checkers; \
+		echo "!! Nagelfar syntaxdb has not been build !!" ; \
+	fi
 
 #-------------------------------------------------------
 # LoC
@@ -205,7 +213,6 @@ loc:
 
 locall:
 	@$(LOCTOOL) $(LOCSOURCES) $(LOCEXTRA) $(LOCTEMPLATES)
-
 
 #-------------------------------------------------------
 # directories
@@ -228,5 +235,5 @@ cleansyntax:
 	rm -rf $(SYNTAXDIR)
 
 mrproper cleanall: clean cleandoc cleansyntax
-	@$(MAKE) -C $(LIBDIR) clean
+	@$(MAKE) -C $(CLIBDIR) clean
 

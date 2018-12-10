@@ -6,5 +6,5 @@ full_path=$(which $prog 2> /dev/null)
 
 if [[ $? -eq 0 ]] && [[ -e $full_path ]] ; then
     echo "Fixing shebang of $1 to $full_path"
-    sed -ie '1s|#!.*|#!'"${full_path}"'|' $1
+    sed -i -e '1s|#!.*|#!'"${full_path}"'|' $1
 fi
