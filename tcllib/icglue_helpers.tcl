@@ -682,8 +682,9 @@ namespace eval ig::aux {
                 return "$id"
             }
         }
+
         ig::log -warning "Signal $signalname not defined in module [ig::db::get_attribute -object $mod_id -attribute "name"]"
-            return {}
+        return {}
     }
 
     ## @brief Adapt a signalname in given module to the local signal name.
