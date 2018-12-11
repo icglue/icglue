@@ -1146,7 +1146,7 @@ namespace eval ig {
                 { {^-prot(ect(ed)?)?$}             "const=true"   protected "register is protected for privileged-only access"                    } \
                 { {^(=|-v(alue)?|-r(eset(val)?)?)} "string"       resetval  "specify reset value for the register"                                } \
                 { {^-cmdorigin(=|$)}               "string"       origin    "origin of command call for logging"                                  } \
-                { {^-(reg)?n(ame)?(=|$)}           "string"       origin    "name of register (default: value)"                                   } \
+                { {^-(reg)?n(ame)?(=|$)}           "string"       regname    "name of register (default: value)"                                  } \
             ] -context "SIGNALNAME CONNECTIONPORTS..." $args]
 
         set rf_args {"-nosubst"}
@@ -1205,9 +1205,9 @@ namespace eval ig {
 
         set signalname "[lindex $rf_list 0]_${signalname}"
         if {$dir eq "-->"} {
-            set connect_cmd "S \"$signalname\" -w $width -cmdorigin [list $origin] [lindex $arguments 1] --> [lrange $arguments 2 end]"
+            set connect_cmd "S \"$signalname\" -w $width [lindex $arguments 1] --> [lrange $arguments 2 end]"
         } else {
-            set connect_cmd "S \"$signalname\" -w $width -cmdorigin [list $origin] [lrange $arguments 1 end-1] <-- [lindex $arguments end]"
+            set connect_cmd "S \"$signalname\" -w $width [lrange $arguments 1 end-1] <-- [lindex $arguments end]"
         }
 
         set regfile_cmd {}
@@ -1226,7 +1226,6 @@ namespace eval ig {
             ig::aux::max_set commentlen    [string length $comment]
 
             set rf_table "%-${namelen}s | %-${widthlen}s | %-${typelen}s | %-${resetlen}s | %-${signalnamelen}s | %-${commentlen}s\n"
-            lappend rf_args "-cmdorigin" [list $origin]
             lappend regfile_cmd [string cat "R -rf=${rf_name} \"${entryname}\" [join $rf_args] \{\n" \
                 [format "    $rf_table" {"name"}   {"width"} {"type"} {"reset"} {"signal"}     {"comment"} ] \
                 [format "    $rf_table" "$regname"    "$width"  "$type"  "$reset"  "$signalname"  "\"$comment\""  ] \
@@ -1234,8 +1233,8 @@ namespace eval ig {
         }
         set regfile_cmd [join $regfile_cmd]
         ig::log -id SRCmd "[info level 0]\n${connect_cmd}\n${regfile_cmd}"
-        set retval [eval $connect_cmd]
-        eval $regfile_cmd
+        set retval [eval "$connect_cmd -cmdorigin [list $origin]"]
+        eval "$regfile_cmd -cmdorigin [list $origin]"
         return $retval
     }
 
