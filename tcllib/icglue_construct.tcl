@@ -1239,7 +1239,7 @@ namespace eval ig {
             set rf_table "%-${namelen}s | %-${widthlen}s | %-${typelen}s | %-${resetlen}s | %-${signalnamelen}s | %-${commentlen}s\n"
             lappend regfile_cmd [string cat "R -rf=${rf_name} \"${entryname}\" [join $rf_args] \{\n" \
                 [format "    $rf_table" {"name"}   {"width"} {"type"} {"reset"} {"signal"}     {"comment"} ] \
-                [format "    $rf_table" "$regname"    "$width"  "$type"  "$reset"  "$signalname"  "\"$comment\""  ] \
+                [format "    $rf_table" [list $regname]    [list $width] [list $type]  [list $reset]  [list $signalname]  [list $comment]  ] \
                 "\}"]
         }
         set regfile_cmd [join $regfile_cmd]
