@@ -395,10 +395,12 @@ namespace eval ig {
                             ig::db::set_attribute -object $rfid -attribute $attr_name -value $attr_val
                         }
                     }
-                    foreach attr $fattributes {
-                        set attr [string trim $attr {"{" "}"}]
-                        lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                        ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_val
+                    if {!$fres} {
+                        foreach attr $fattributes {
+                            set attr [string trim $attr {"{" "}"}]
+                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
+                            ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_val
+                        }
                     }
                 }
 
@@ -416,6 +418,13 @@ namespace eval ig {
 
                         ig::db::set_attribute -object $instid -attribute "origin" -value $origin
                     }
+                    if {$fres} {
+                        foreach attr $fattributes {
+                            set attr [string trim $attr {"{" "}"}]
+                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
+                            ig::db::set_attribute -object $instid -attribute $attr_name -value $attr_val
+                        }
+                    }
                 }
             }
 
@@ -424,7 +433,9 @@ namespace eval ig {
             }
             return $modids
         }
-        if {$unit eq ""} {set unit $name}
+        if {$unit eq ""} {
+            set unit $name
+        }
         if {$name eq ""} {
             log -error -abort "M: need a module name ($origin)"
         }
