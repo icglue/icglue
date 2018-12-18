@@ -1165,10 +1165,6 @@ namespace eval ig {
             lappend rf_args "@ [list $address]"
         }
 
-        if {$resetval eq ""} {
-            set resetval "$width'h0"
-        }
-
         if {$handshake ne ""} {
             lappend rf_args "-handshake" [list $handshake]
         }
@@ -1182,13 +1178,19 @@ namespace eval ig {
 
         set rf_list {}
 
+        set additional_connect_flags {}
+
         foreach i_rf [ig::db::get_regfiles -all] {
             set i_md [ig::db::get_attribute -obj $i_rf -attribute "parent"]
             set arg_idx 1
             foreach name [lrange $arguments 1 end] {
                 lassign [split $name ":"] name
                 if {($name eq [ig::db::get_attribute -obj $i_md -attribute "name"])} {
-                    set reset $resetval
+                    if {$resetval eq ""} {
+                        set reset "$width'h0"
+                    } else {
+                        set reset $resetval
+                    }
                     if {$reg_type eq ""} {
                         if {   (($dir eq "-->") && ($arg_idx == 1))
                             || (($dir eq "<--") && ($arg_idx == [llength $arguments]-1))} {
@@ -1196,6 +1198,9 @@ namespace eval ig {
                         } else {
                             set reg_type "R"
                             set reset "-"
+                            if {$resetval ne ""} {
+                                set additional_connect_flags "-v $resetval"
+                            }
                         }
                     }
                     set rf $i_rf
@@ -1216,9 +1221,9 @@ namespace eval ig {
 
         set signalname "[lindex $rf_list 0]_${signalname}"
         if {$dir eq "-->"} {
-            set connect_cmd "S \"$signalname\" -w $width [lindex $arguments 1] --> [lrange $arguments 2 end]"
+            set connect_cmd "S \"$signalname\" $additional_connect_flags -w $width [lindex $arguments 1]        -->  [lrange $arguments 2 end]"
         } else {
-            set connect_cmd "S \"$signalname\" -w $width [lrange $arguments 1 end-1] <-- [lindex $arguments end]"
+            set connect_cmd "S \"$signalname\" $additional_connect_flags -w $width [lrange $arguments 1 end-1]  <--  [lindex $arguments end]"
         }
 
         set regfile_cmd {}
