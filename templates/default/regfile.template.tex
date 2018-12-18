@@ -282,7 +282,7 @@ foreach_array reg $register_list {
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register file table
 <%=  "\\begin\{filecontents\}\{" $rf_name ":table.tex\}\n" %><%
-%><%= "    Register Name \& Address \& Name \& Width \& Access \& Align \& Reset \& Description \\\\n" %><%
+%><%="    Register Name \& Address \& Name \& Width \& Access \& Align \& Reset \& Description \\\\\n" %><%
 %><% foreach_array reg $register_list {
         set i_sreg 0
         foreach_array sreg $reg(regs) {
