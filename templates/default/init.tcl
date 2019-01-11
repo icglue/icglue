@@ -8,7 +8,7 @@ init::output_types $template {
         set lang [ig::db::get_attribute -object $object -attribute "language"]
         return $lang
     } elseif {$objtype eq "regfile"} {
-        return {csv txt tex html h c}
+        return {csv txt tex html h c hpp cpp}
     } else {
         ig::log -warning "No templates available for objects of type ${objtype}"
         return {}
