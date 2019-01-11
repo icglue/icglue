@@ -131,6 +131,7 @@ namespace eval ig::checks {
         check_regfile_addresses   $rfdata
         check_regfile_entrybits   $rfdata
         check_regfile_resetvalues $rfdata
+        check_regfile_names       $rfdata
     }
 
     ## @brief Run regfile entry address check.
@@ -232,7 +233,35 @@ namespace eval ig::checks {
                 }
 
                 if {$rstwidth != $width} {
-                    ig::log -warn -id "ChkRB" "register \"${rname}\" in entry \"${ename}\" has reset value \"${rstval}\" needing ${rstwidth} bits but is ${width} bits wide (regfile ${rfname})"
+                    ig::log -warn -id "ChkRR" "register \"${rname}\" in entry \"${ename}\" has reset value \"${rstval}\" needing ${rstwidth} bits but is ${width} bits wide (regfile ${rfname})"
+                }
+            }
+        }
+    }
+
+    ## @brief Run regfile naming check.
+    # @param regfile_data preprocessed data of regfile to check.
+    proc check_regfile_names {regfile_data} {
+        set rfname  [dict get $regfile_data "name"]
+        set entries [dict get $regfile_data "entries"]
+
+        if {[string match {_*} $rfname]} {
+            ig::log -warn -id "ChkRN" "regfile \"${rfname}\" has a name which potentially conflicts with internal types/names"
+        }
+
+        foreach i_entry $entries {
+            set ename [dict get $i_entry "name"]
+            set regs  [dict get $i_entry "regs"]
+
+            if {[string match {_*} $ename]} {
+                ig::log -warn -id "ChkRN" "entry \"${ename}\" has a name which potentially conflicts with internal types/names (regfile ${rfname})"
+            }
+
+            foreach i_reg $regs {
+                set rname  [dict get $i_reg "name"]
+
+                if {[string match {_*} $rname]} {
+                    ig::log -warn -id "ChkRN" "register \"${rname}\" in entry \"${ename}\" has a name which potentially conflicts with internal types/names (regfile ${rfname})"
                 }
             }
         }
