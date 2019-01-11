@@ -387,6 +387,31 @@ namespace eval ig::aux {
         }
     }
 
+    ## @brief Iterate over a list of arrays and execute inbetween the joinbody meeting a condition
+    #
+    # @param iter Iterator variable.
+    # @param array_list List of arrays as list as obtained by [array get ...].
+    # @param condition Condition which must be met to execute body
+    # @param body Code to run in each iteration.
+    # @param joinbody Code to run inbetween each iteration
+    proc foreach_array_join_with {iter array_list condition body joinbody} {
+        set first_ele 1
+        foreach __iter $array_list {
+            uplevel 1 array set $iter [list ${__iter}]
+            set cond [uplevel 1 expr [list $condition]]
+            if {$cond} {
+                if {$first_ele} {
+                    uplevel 1 $joinbody
+                } else {
+                    set first_ele 1
+                }
+                uplevel 1 $body
+            }
+            uplevel 1 array unset $iter
+        }
+    }
+
+
     ## @brief Iterate over a list of arrays meeting a condition.
     #
     # @param iter Iterator variable.
