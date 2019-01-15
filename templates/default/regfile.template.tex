@@ -11,6 +11,9 @@
 
 ########################################################################
     proc tex_escape {string_in} {
+        if {$string_in eq "-"} {
+          return "---"
+        }
         set string_out $string_in
         set string_out [string map [list "\_" "\\_"]  $string_out]
         set string_out [string map [list "\&" "\\&"]  $string_out]
@@ -26,43 +29,30 @@
         return $string_out
     }
 
-    proc cnt_required_escapes {string_in} {
-        set cnt 0
-
-        set cnt [expr {[llength [split $string_in "\_"]]- 1 + $cnt}]
-        set cnt [expr {[llength [split $string_in "\&"]]- 1 + $cnt}]
-        set cnt [expr {[llength [split $string_in "\%"]]- 1 + $cnt}]
-        set cnt [expr {[llength [split $string_in "\|"]]- 1 + $cnt}]
-        set cnt [expr {[llength [split $string_in "\{"]]- 1 + $cnt}]
-        set cnt [expr {[llength [split $string_in "\}"]]- 1 + $cnt}]
-        set cnt [expr {[llength [split $string_in "\^"]]- 1 + $cnt}]
-        set cnt [expr {[llength [split $string_in "\#"]]- 1 + $cnt}]
-        set cnt [expr {[llength [split $string_in "\~"]]- 1 + $cnt}]
-        if {$cnt <0} {
-            set cnt 0
-        }
-        return $cnt
-    }
-
     proc max_array_entry_len_tex {array_list array_entry} {
         set len 0
-        foreach i_entry $array_list {
-            array set i_a $i_entry
-            set i_len [string length $i_a($array_entry)]
-            set escapes [cnt_required_escapes $i_a($array_entry)]
-            set i_len [expr {$i_len + $escapes}]
-            set len [expr {max ($len, $i_len)}]
+        set tmp_len 0
+        foreach_array a $array_list {
+            set texttt_len [string length {\texttt{}}]
+            if {$array_entry eq "address"} {
+                set tmp_len [expr {10 + $texttt_len}]
+            } elseif {$array_entry eq "entrybits"} {
+                set tmp_len [expr {5 + $texttt_len}]
+            } elseif {$array_entry eq "reset"} {
+                set tmp_len [expr {12 + $texttt_len}]
+            } else {
+                set tmp_len [string length [tex_escape $a($array_entry)]]
+            }
+            max_set len $tmp_len
         }
         return $len
     }
 
     proc reg_type {} {
         set type [uplevel 1 {set sreg(type)}]
-        if {[regexp -nocase {RW} $type]} {
+        if {[regexp -nocase {W} $type]} {
             return "RW"
         } elseif {[regexp -nocase {R} $type]} {
-            return "R"
-        } elseif {[regexp -nocase {RS} $type]} {
             return "R"
         } else {
             return "-"
@@ -77,83 +67,43 @@
             return $entrybits
         }
     }
-    proc reg_reset {} {
-        set reset [uplevel 1 {set sreg(reset)}]
-        set width [uplevel 1 {set sreg(width)}]
-        set type  [uplevel 1 {set  sreg(type)}]
+    proc reg_reset {{unused "---"}} {
+        upvar sreg(reset) reset sreg(width) width sreg(type) type obj_id obj_id
 
-        if {$type == "RW" ||  $type == "CRW" ||  $type == "FCRW"} {
-            if {$width == 1} {
-                if {[regexp -nocase {b} $reset]} {
-                    set str [string map {"1'b" ""} $reset]
-                    set str [string map {"'b" ""} $str]
-                    return  $str
-                } elseif {[regexp -nocase {h} $reset]} {
-                    set str [string map {"1'h" ""} $reset]
-                    set str [string map {"'h" ""} $str]
-                    binary scan [binary format H* $str] B* bits
-                    return [string range $bits 7 7]
-                } elseif {[regexp -nocase {d} $reset]} {
-                    set str [string map {"1'd" ""} $reset]
-                    set str [string map {"'d" ""} $str]
-                    binary scan [binary format H* $str] B* bits
-                    return [string range $bits 7 7]
-                } else {
-                    binary scan [binary format H* $reset] B* bits
-                    return [string range $bits 7 7]
+
+        set rf_mod [ig::db::get_attribute -object $obj_id -attribute "parent"]
+        set lang [ig::db::get_attribute -object $rf_mod -attribute "language"]
+
+        if {[regexp -nocase {W} $type]} {
+            if {[regexp {verilog} $lang]} {
+                lassign [ig::vlog::parse_value $reset] value_parsed value
+                if {$value_parsed} {
+                    set reset $value
+                    if {$value == 0} {
+                        set reset 0
+                    }
                 }
-            } elseif {$width == 2} {
-                if {[regexp -nocase {b} $reset]} {
-                    set str [string trim $reset "2'b"]
-                    set str [string map {"'b" ""} $str]
-                    return  $str
-                } elseif {[regexp -nocase {h} $reset]} {
-                    set str [string trim $reset "2'h"]
-                    set str [string map {"'h" ""} $str]
-                    binary scan [binary format H* $str] B* bits
-                    return [string range $bits 6 7]
-                } elseif {[regexp -nocase {d} $reset]} {
-                    set str [string trim $reset   "2'd"]
-                    set str [string map {"'d" ""} $str]
-                    binary scan [binary format H* $str] B* bits
-                    return [string range $bits 6 7]
-                } else {
-                    binary scan [binary format H* $reset] B* bits
-                    return [string range $bits 6 7]
-                }
-            } elseif {$width == 3} {
-                if {[regexp -nocase {b} $reset]} {
-                    set str [string trim $reset "3'b"]
-                    set str [string map {"'b" ""} $str]
-                    return  $str
-                } elseif {[regexp -nocase {h} $reset]} {
-                    set str [string trim $reset "3'h"]
-                    set str [string map {"'h" ""} $str]
-                    binary scan [binary format H* $str] B* bits
-                    return [string range $bits 5 7]
-                } elseif {[regexp -nocase {d} $reset]} {
-                    set str [string trim $reset   "3'd"]
-                    set str [string map {"'d" ""} $str]
-                    binary scan [binary format H* $str] B* bits
-                    return [string range $bits 5 7]
-                } else {
-                    binary scan [binary format H* $reset] B* bits
-                    return [string range $bits 5 7]
-                }
-                return $str
             }
-        } elseif { $type == "R" || $type == "RS" || $type == "CR" || $type == "FCR"  } {
-            return X
+        } else {
+            return "$unused"
         }
-
-        return [string cat "{" [tex_escape $reset] "}"]
+        return [format {\texttt{%s}} [tex_escape $reset]]
     }
+
     proc sreg_name {} {
         set name [uplevel 1 {set sreg(name)}]
         if {[regexp -nocase {\-} $name]} {
            return [string map {"\-" "unused"} $name]
         }
         return $name
+    }
+    proc reg_bits {} {
+        upvar sreg(bit_high) bh sreg(bit_low) bl
+        if {$bh == $bl} {
+            return [format "%5d" $bl]
+        } else {
+            return [format "%2d:%2d" $bh $bl]
+        }
     }
 
 ########################################################################
@@ -166,57 +116,38 @@
     }
     set rf_name [object_name $obj_id]
     # define table header text
-    #set header { "Name" "Bits" "R/W" "Function" }
-    set header { "Register Name" "Address" "Name" "Width" "Access" "Align" "Reset" "Description"}
+    array set header {
+      entry_name "Register Name"
+      addr       "Address"
+      width      "Width"
+      reg_name   "Name"
+      type       "Type"
+      entrybits  "Bits"
+      reset      "Reset"
+      comment    "Description"
+    }
 
     set column_width { 0 0 0 0 0 0 0 0 }
     set num_column   { 0 1 2 3 4 5 6 7 }
 
-    set len_max_data(0) 0
-    set len_max_data(1) 0
-    set len_max_data(2) 0
-    set len_max_data(3) 0
-    set len_max_data(4) 0
-    set len_max_data(5) 0
-    set len_max_data(6) 0
-    set len_max_data(7) 0
+    set len_max_data(type)       4
 
     foreach_array register $register_list {
         foreach_array sreg $register(regs) {
-            set len_max_tmp(0)  [max_array_entry_len_tex $register_list  name]
-            set len_max_tmp(1)  [max_array_entry_len_tex $register_list  address]
-            set len_max_tmp(2)  [max_array_entry_len_tex $register(regs) name]
-            set len_max_tmp(3)  [max_array_entry_len_tex $register(regs) width]
-            #set len_max_tmp(4)  [max_array_entry_len_tex $register(regs) type]
-            set len_max_tmp(4)  2
-            set len_max_tmp(5)  [max_array_entry_len_tex $register(regs) entrybits]
-            set len_max_tmp(6)  [max_array_entry_len_tex $register(regs) reset]
-            set len_max_tmp(7)  [max_array_entry_len_tex $register(regs) comment]
-
-            set len_max_data(0) [expr {max ($len_max_tmp(0), $len_max_data(0))}]
-            set len_max_data(1) [expr {max ($len_max_tmp(1), $len_max_data(1))}]
-            set len_max_data(2) [expr {max ($len_max_tmp(2), $len_max_data(2))}]
-            set len_max_data(3) [expr {max ($len_max_tmp(3), $len_max_data(3))}]
-            set len_max_data(4) [expr {max ($len_max_tmp(4), $len_max_data(4))}]
-            set len_max_data(5) [expr {max ($len_max_tmp(5), $len_max_data(5))}]
-            set len_max_data(6) [expr {max ($len_max_tmp(6), $len_max_data(6))}]
-            set len_max_data(7) [expr {max ($len_max_tmp(7), $len_max_data(7))}]
+            max_set len_max_data(entry_name)  [max_array_entry_len_tex $register_list  name]
+            max_set len_max_data(addr)        [max_array_entry_len_tex $register_list  address]
+            max_set len_max_data(width)       [max_array_entry_len_tex $register(regs) width]
+            max_set len_max_data(reg_name)    [max_array_entry_len_tex $register(regs) name]
+            #max_set len_max_data(type)        [max_array_entry_len_tex $register(regs) type]
+            max_set len_max_data(entrybits)   [max_array_entry_len_tex $register(regs) entrybits]
+            max_set len_max_data(reset)       [max_array_entry_len_tex $register(regs) reset]
+            max_set len_max_data(comment)     [max_array_entry_len_tex $register(regs) comment]
         }
     }
 
-    foreach i_column $num_column {
-        set text    [lindex $header $i_column]
-        set text    [tex_escape $text]
-        set text    [concat "\\textbf\{" $text "\}"]
-
-        set len_header [string length $text]
-
-        if {$len_header >  $len_max_data($i_column)} {
-            lset column_width $i_column $len_header
-        } else {
-            lset column_width $i_column $len_max_data($i_column)
-        }
-        set debug [lindex $column_width $i_column]
+    foreach col {entry_name addr width reg_name entrybits comment} {
+      set text [tex_escape $header($col)]
+      max_set  len_max_data($col) [string length $text]
     }
 
 
@@ -281,20 +212,42 @@ foreach_array reg $register_list {
     }
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % register file table
-<%=  "\\begin\{filecontents\}\{" $rf_name ":table.tex\}\n" %><%
-%><%="    Register Name \& Address \& Name \& Width \& Access \& Align \& Reset \& Description \\\\\n" %><%
-%><% foreach_array reg $register_list {
-        set i_sreg 0
-        foreach_array sreg $reg(regs) {
-            %><%=
-            if {$i_sreg == 0} {
-                %><%= "    " [tex_escape $reg(name)] " \& [format "0x%08x" $reg(address)] \& "%><%
-            } else {
-                %>    & & <%
-            }
-            %><%= [tex_escape $sreg(name)] " \& " [tex_escape $sreg(width)] " \& " [tex_escape [reg_type]] " \& " [tex_escape $sreg(entrybits)] " \& " [tex_escape $sreg(reset)] " \& " [tex_escape $sreg(comment)] "\\\\\%\n" %><%
-            incr i_sreg
-        }
+\begin{filecontents}{<%=$rf_name%>:table.tex}
+  <[format [join [list \
+    "%-${len_max_data(entry_name)}s" \
+    "%-${len_max_data(addr)}s" \
+    "%-${len_max_data(reg_name)}s" \
+    "%-${len_max_data(type)}s" \
+    "%-${len_max_data(entrybits)}s" \
+    "%-${len_max_data(reset)}s" \
+    "%-${len_max_data(comment)}s" \
+  ] " & "] \
+    ${header(entry_name)} \
+    ${header(addr)} \
+    ${header(reg_name)} \
+    ${header(type)} \
+    ${header(entrybits)} \
+    ${header(reset)} \
+    ${header(comment)}
+  ]> \\ \midrule
+<% foreach_array reg $register_list {
+      set i_sreg 0
+      foreach_array sreg $reg(regs) {
+          %><%
+          if {$i_sreg == 0} { -%>
+  <[format "%-${len_max_data(entry_name)}s" [tex_escape $reg(name)]]> & <[format "%-${len_max_data(addr)}s" [format {\texttt{0x%08x}} $reg(address)]]> & <%-
+         } else { -%>
+  <[format "%-${len_max_data(entry_name)}s" ""]> & <[format "%-19s" ""]> & <%-
+          } -%>
+<[format "%-${len_max_data(reg_name)}s"  [tex_escape $sreg(name)]]> & <% -%>
+<[format "%-${len_max_data(type)}s"      [tex_escape $sreg(type)]]> & <% -%>
+<[format "%-${len_max_data(entrybits)}s" [format {\texttt{%s}} [tex_escape [reg_bits]]]]> & <% -%>
+<[format "%-${len_max_data(reset)}s"     [reg_reset]]> & <% -%>
+<[format "%-${len_max_data(comment)}s"   [tex_escape $sreg(comment)]]> \\<%="\n"%><%-
+        incr i_sreg
     }
-%><%="\\end\{filecontents\}\n\n"%><%
-%>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+}
+%>
+\end{filecontents}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
