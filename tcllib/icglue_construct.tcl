@@ -566,10 +566,11 @@ namespace eval ig {
                     set name [string range $inst_pinname 1 end]
                 }
 
-                if {[catch {lappend retval [ig::db::create_pin -instname $instname -pinname $name -value $value]} emsg]} {
+                if {[catch {set tmp_pin [ig::db::create_pin -instname $instname -pinname $name -value $value]} emsg]} {
                     log -error -abort "${emsg}"
                 }
-                ig::db::set_attribute -object $retval -attribute "adapt" -value "selective"
+                ig::db::set_attribute -object $tmp_pin -attribute "adapt" -value "selective"
+                lappend retval $tmp_pin
             }
             return $retval;
         }
