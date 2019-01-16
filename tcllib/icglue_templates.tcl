@@ -352,7 +352,8 @@ namespace eval ig::templates {
                 lappend pin_data [list \
                     "name"           [ig::db::get_attribute -object $i_pin -attribute "name"] \
                     "object"         $i_pin \
-                    "connection"     [ig::db::get_attribute -object $i_pin -attribute "connection"] \
+                    "connection"     [ig::aux::adapt_pin_connection $i_pin] \
+                    "connection_raw" [ig::db::get_attribute -object $i_pin -attribute "connection"] \
                     "invert"         [ig::db::get_attribute -object $i_pin -attribute "invert" -default "false"] \
                 ]
             }

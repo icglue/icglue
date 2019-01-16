@@ -43,8 +43,9 @@ P RF_ADDR_SEL = 4'b0110 tb_component component_wrap
 S "rf_address" -w 32 tb_component  -->  component_wrap
 
 # in- and output ports of resources can be pinned to any string (= is optional, default is {}):
-S "comb_reset_ref_core" -pin = {/*TODO*/}  <--  common_reset_combiner<ref_core>:syn_reset_n_o
-S "scan_mode"           -pin = 1'b0        -->  common_reset_combiner<ref_core>:testmode_i
+S "syn_reset"            submod_wrap -->
+S "comb_reset_ref_core" -pin = {syn_reset!} <--  common_reset_combiner<ref_core>:syn_reset_n_o
+S "scan_mode"           -pin = 1'b0         -->  common_reset_combiner<ref_core>:testmode_i
 
 
 # code placed in component_wrap (signal will be adapted, variable substition will be done as well,

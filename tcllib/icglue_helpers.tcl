@@ -509,6 +509,32 @@ namespace eval ig::aux {
         return [ig::db::get_attribute -object $obj -attribute "name"]
     }
 
+    ## @brief Replacement list for adaption of signal names.
+    #
+    # @param module Module Object-ID for obtaining replacement list.
+    #
+    # @return Replacement list.
+    proc adapt_replacement_list {module} {
+        set signal_replace [list]
+
+        foreach i_port [ig::db::get_ports -of $module -all] {
+            set i_rep [list \
+                [ig::db::get_attribute -object $i_port -attribute "signal"] \
+                [ig::db::get_attribute -object $i_port -attribute "name"] \
+            ]
+            lappend signal_replace $i_rep
+        }
+        foreach i_decl [ig::db::get_declarations -of $module -all] {
+            set i_rep [list \
+                [ig::db::get_attribute -object $i_decl -attribute "signal"] \
+                [ig::db::get_attribute -object $i_decl -attribute "name"] \
+            ]
+            lappend signal_replace $i_rep
+        }
+
+        return $signal_replace
+    }
+
     ## @brief Adapt signalnames in a codesection object if adapt-attribute is set.
     #
     # @param codesection Codesection Object-ID.
@@ -525,22 +551,7 @@ namespace eval ig::aux {
 
         # collect signals of module and replacement-name
         set parent_mod [ig::db::get_attribute -object $codesection -attribute "parent"]
-        set signal_replace [list]
-        #set t_start [clock microseconds]
-        foreach i_port [ig::db::get_ports -of $parent_mod -all] {
-            set i_rep [list \
-                [ig::db::get_attribute -object $i_port -attribute "signal"] \
-                [ig::db::get_attribute -object $i_port -attribute "name"] \
-            ]
-            lappend signal_replace $i_rep
-        }
-        foreach i_decl [ig::db::get_declarations -of $parent_mod -all] {
-            set i_rep [list \
-                [ig::db::get_attribute -object $i_decl -attribute "signal"] \
-                [ig::db::get_attribute -object $i_decl -attribute "name"] \
-            ]
-            lappend signal_replace $i_rep
-        }
+        set signal_replace [adapt_replacement_list $parent_mod]
 
         # adapt signal-names
         if {$do_adapt eq "selective"} {
@@ -568,6 +579,32 @@ namespace eval ig::aux {
         #puts "t_collect: [expr {$t_collect - $t_start}]us, t_replace: [expr {$t_replaced - $t_collect}]us"
 
         return $code_out
+    }
+
+    ## @brief Adapt signalnames in a pin connection if adapt-attribute is set.
+    #
+    # @param pin Pin Object-ID.
+    #
+    # @return Modified connection value based on "adapt" property.
+    proc adapt_pin_connection {pin} {
+        set connection [ig::db::get_attribute -object $pin -attribute "connection"]
+        set do_adapt [ig::db::get_attribute -object $pin -attribute "adapt" -default "none"]
+        if {$do_adapt eq "none"} {
+            return $connection
+        }
+
+        set parent_inst [ig::db::get_attribute -object $pin -attribute "parent"]
+        set parent_mod  [ig::db::get_attribute -object $parent_inst -attribute "parent"]
+
+        set signal_replace [adapt_replacement_list $parent_mod]
+
+        if {$do_adapt eq "selective"} {
+            set conn_out [adapt_codesection_replace $connection $signal_replace true]
+        } elseif {$do_adapt eq "all"} {
+            set conn_out [adapt_codesection_replace $connection $signal_replace false]
+        }
+
+        return $conn_out
     }
 
     ## @brief Helper for code adaption of @ref adapt_codesection.
