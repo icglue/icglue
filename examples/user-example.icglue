@@ -61,7 +61,7 @@ C component_wrap -as {
     // debugging:
     always @(posedge apb_clk_i) begin
         if (rf_sel! && rf_enable!) begin
-            \$display ("Regfile access at address 0x%08x(%d)", rf_addr, \$time);
+            \$display ("Regfile access at address 0x%08x(%d)", rf_addr!, \$time);
         end
     end
 }
@@ -159,7 +159,7 @@ R submod_regfile "entry_name1_low" {
     -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
     s_cfg  | 31:0        | RW     | 32'h0   | s_cfg_large | 31:0         | "Configure submod part 0"
 }
-R submod_regfile "entry_name1_high" {
+R submod_regfile "entry_name1_high" -align 8 {
     "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
     -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
     s_cfg  | 7:0         | RW     | 8'h0    | s_cfg_large | 39:32        | "Configure submod part 1"

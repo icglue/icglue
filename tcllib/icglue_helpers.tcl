@@ -770,6 +770,22 @@ namespace eval ig::aux {
         return [ig::db::get_attribute -obj $rfid -attribute "_save_reg_addr" -default "0x0000"]
     }
 
+    ## @brief Align regfile address
+    #
+    # @param base_addr base address to align
+    # @param addr_align base address alignment
+    # @param reg_align  align address to given number of registers
+    # @return realigned address
+    proc regfile_aligned_addr {base_addr addr_align reg_align} {
+        set align [expr {$addr_align * $reg_align}]
+        set rem   [expr {$base_addr % $align}]
+        if {$rem == 0} {
+            return $base_addr
+        }
+        set addr [expr {$base_addr + $align - $rem}]
+        return $addr
+    }
+
     ## @brief Get origin of where a command was invoked
     #
     # @param fstart relative frame to start looking for source file

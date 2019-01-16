@@ -850,20 +850,22 @@ namespace eval ig {
     # <b>REGn</b>: Sublists containing the actual register-data.
     proc R args {
         # defaults
-        set entryname    ""
-        set regfilename  ""
-        set address      {}
-        set regdef       {}
-        set handshake    {}
-        set protected    "false"
-        set do_var_subst "true"
-        set do_subst     "false"
-        set origin       [ig::aux::get_origin_here]
+        set entryname      ""
+        set regfilename    ""
+        set address        {}
+        set register_align 1
+        set regdef         {}
+        set handshake      {}
+        set protected      "false"
+        set do_var_subst   "true"
+        set do_subst       "false"
+        set origin         [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
                 { {^-(rf|regf(ile)?)($|=)}  "string"             regfilename    "DEPRECATED: specify the regfile name, dispenses REGFILE-MODULE argument "          } \
                 { {^(@|-addr($|=))}         "string"             address        "specify the address"                                                               } \
+                { {^-align($|=)}            "integer"            register_align "alignment of address at a multiple of the given number of registers"               } \
                 { {^-handshake($|=)}        "string"             handshake      "specify signals and type for handshake {signal-out signal-in type} "               } \
                 { {^-prot(ect(ed)?)?$}      "const=true"         protected      "register is protected for privileged-only access"                                  } \
                 { {^-s(ubst)?$}             "const=true"         do_var_subst   "perform Tcl-variable substition of REGISTERTABLE argument (default)"               } \
@@ -968,6 +970,8 @@ namespace eval ig {
             # set address
             if {$address eq ""} {
                 set address [ig::aux::regfile_next_addr $regfile_id]
+                set address [ig::aux::regfile_aligned_addr $address $alignment $register_align]
+                set address [format "0x%04X" $address]
             }
             if {(![string is integer $address]) || ($address < 0)} {
                 log -error -abort "R (regfile-entry ${entryname}): no/invalid address ($origin)"
