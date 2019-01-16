@@ -195,11 +195,13 @@ The registers within an entry are specified with
 
 The general `R` command is invoked in the form to add an entry `<entry-name>` to a register-file `<regfile-name>`:
 ```
-R -regfile <regfile-name> [(@|-addr) <address>] [-prot[ected]] [-handshake <handshake-specification>] [-subst|-nosubst|-evaluate] <entry-name> <register-table>
+R -regfile <regfile-name> [(@|-addr) <address>] [-align <alignment>] [-prot[ected]] [-handshake <handshake-specification>] [-subst|-nosubst|-evaluate] <entry-name> <register-table>
 ```
 
 An explicit address can be specified using the `-addr` or `@` option followed by the address.
 If no address is specified, the last address used of the specified register file is incremented and used instead.
+If the automatically incremented address should be alignment to a specific number of registers, this can be achieved
+by using the `-align` option.
 
 To set the protected property of the regfile entry you can specify the `-protected` option.
 
