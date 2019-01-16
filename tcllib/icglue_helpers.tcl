@@ -521,6 +521,8 @@ namespace eval ig::aux {
             return $code
         }
 
+        set origin [ig::db::get_attribute -object $codesection -attribute "origin" -default {}]
+
         # collect signals of module and replacement-name
         set parent_mod [ig::db::get_attribute -object $codesection -attribute "parent"]
         set signal_replace [list]
@@ -542,9 +544,9 @@ namespace eval ig::aux {
 
         # adapt signal-names
         if {$do_adapt eq "selective"} {
-            set code_out [adapt_codesection_replace $code $signal_replace true]
+            set code_out [adapt_codesection_replace $code $signal_replace true $origin]
         } elseif {$do_adapt eq "all"} {
-            set code_out [adapt_codesection_replace $code $signal_replace false]
+            set code_out [adapt_codesection_replace $code $signal_replace false $origin]
         } elseif {$do_adapt eq "signalcheck"} {
             # TODO: remove signalcheck part when no longer necessary
             set code_out1 [adapt_codesection_replace $code $signal_replace true]
@@ -553,7 +555,6 @@ namespace eval ig::aux {
             if {$code_out1 eq $code_out2} {
                 set code_out $code_out1
             } else {
-                set origin [ig::db::get_attribute -object $codesection -attribute "origin" -default {}]
                 ig::log -warn -id "SCADp" "Signal [ig::db::get_attribute -object $codesection -attribute "signalname"] Deprecated to assign to adaptable signalname without using \"adapt-selective\" style with \"!\" after name ($origin)"
                 set code_out $code_out2
             }
@@ -574,9 +575,10 @@ namespace eval ig::aux {
     # @param code Raw code input.
     # @param replace_list List of 2-element litsts with signal-names and replacements.
     # @param selective If true use selective syntax with "!" after signal names.
+    # @param origin Origin of code for log message.
     #
     # @return adapted code.
-    proc adapt_codesection_replace {code replace_list {selective true}} {
+    proc adapt_codesection_replace {code replace_list {selective true} {origin {}}} {
         # adapt signal-names
         if {$selective} {
             set re {^(.*?)(\m[[:alnum:]_]+\M)\!(.*)$}
@@ -593,7 +595,7 @@ namespace eval ig::aux {
                 if {$idx < 0} {
                     append code_out $m_var
                     if {$selective} {
-                        ig::log -warn -id "TACAd" "selective adaption in codesection failed: signal \"$m_var\" not found"
+                        ig::log -warn -id "TACAd" "selective adaption in codesection failed: signal \"$m_var\" not found ($origin)"
                     }
                 } else {
                     append code_out [lindex $replace_list $idx 1]

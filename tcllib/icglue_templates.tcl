@@ -293,7 +293,8 @@ namespace eval ig::templates {
                     lappend entry_list [list                                                    \
                         "address" [ig::db::get_attribute -object $i_entry -attribute "address"] \
                         {*}[dict remove $entry_attributes "address"]                            \
-                        "regs" $reg_list                                                        \
+                        "regs"    $reg_list                                                     \
+                        "object"  $i_entry                                                      \
                         ]
                 } on error {emsg eopt} {
                     ig::log -error -id RF [format "Error while processing register \"%s/%s\" in regfile \"%s\" \n -- (%s) --\n%s" \
