@@ -147,12 +147,17 @@ namespace eval ig::checks {
         foreach i_entry $entries {
             set name    [dict get $i_entry "name"]
             set address [dict get $i_entry "address"]
+            set oid     [dict get $i_entry "object"]
+            set origin {}
+            if {$oid ne {}} {
+                set origin [ig::db::get_attribute -object $oid -attribute "origin" -default {}]
+            }
 
             # check if existing
             set idx [lsearch -exact -integer -index 0 $addr_list $address]
             if {$idx >= 0} {
                 lassign [lindex $addr_list $idx] o_address o_name
-                ig::log -warn -id "ChkRA" "regfile entries \"${o_name}\" and \"${name}\" overlap at address [format "0x%08x" $address] (regfile ${rfname})"
+                ig::log -warn -id "ChkRA" "regfile entries \"${o_name}\" and \"${name}\" overlap at address [format "0x%08x" $address] (regfile ${rfname}) (${origin})"
                 continue
             }
 
@@ -176,6 +181,11 @@ namespace eval ig::checks {
         foreach i_entry $entries {
             set ename [dict get $i_entry "name"]
             set regs  [dict get $i_entry "regs"]
+            set oid   [dict get $i_entry "object"]
+            set origin {}
+            if {$oid ne {}} {
+                set origin [ig::db::get_attribute -object $oid -attribute "origin" -default {}]
+            }
 
             set bit_list [list]
 
@@ -185,7 +195,7 @@ namespace eval ig::checks {
                 set bhigh [dict get $i_reg "bit_high"]
 
                 if {$bhigh >= $wordsize} {
-                    ig::log -warn -id "ChkRB" "register \"${rname}\" in entry \"${ename}\" exceeds wordsize of ${wordsize} (MSB = ${bhigh}, regfile ${rfname})"
+                    ig::log -warn -id "ChkRB" "register \"${rname}\" in entry \"${ename}\" exceeds wordsize of ${wordsize} (MSB = ${bhigh}, regfile ${rfname}) (${origin})"
                 }
 
                 for {set i $blow} {$i <= $bhigh} {incr i} {
@@ -193,7 +203,7 @@ namespace eval ig::checks {
                     set idx [lsearch -exact -integer -index 0 $bit_list $i]
                     if {$idx >= 0} {
                         lassign [lindex $bit_list $idx] o_bit o_name
-                        ig::log -warn -id "ChkRB" "registers \"${rname}\" and \"${o_name}\" in entry \"${ename}\" overlap at bit ${i} (regfile ${rfname})"
+                        ig::log -warn -id "ChkRB" "registers \"${rname}\" and \"${o_name}\" in entry \"${ename}\" overlap at bit ${i} (regfile ${rfname}) (${origin})"
                         continue
                     }
 
@@ -216,6 +226,11 @@ namespace eval ig::checks {
         foreach i_entry $entries {
             set ename [dict get $i_entry "name"]
             set regs  [dict get $i_entry "regs"]
+            set oid   [dict get $i_entry "object"]
+            set origin {}
+            if {$oid ne {}} {
+                set origin [ig::db::get_attribute -object $oid -attribute "origin" -default {}]
+            }
 
             foreach i_reg $regs {
                 set rname  [dict get $i_reg "name"]
@@ -233,7 +248,7 @@ namespace eval ig::checks {
                 }
 
                 if {$rstwidth != $width} {
-                    ig::log -warn -id "ChkRR" "register \"${rname}\" in entry \"${ename}\" has reset value \"${rstval}\" needing ${rstwidth} bits but is ${width} bits wide (regfile ${rfname})"
+                    ig::log -warn -id "ChkRR" "register \"${rname}\" in entry \"${ename}\" has reset value \"${rstval}\" needing ${rstwidth} bits but is ${width} bits wide (regfile ${rfname}) (${origin})"
                 }
             }
         }
@@ -252,9 +267,14 @@ namespace eval ig::checks {
         foreach i_entry $entries {
             set ename [dict get $i_entry "name"]
             set regs  [dict get $i_entry "regs"]
+            set oid   [dict get $i_entry "object"]
+            set origin {}
+            if {$oid ne {}} {
+                set origin [ig::db::get_attribute -object $oid -attribute "origin" -default {}]
+            }
 
             if {[string match {_*} $ename]} {
-                ig::log -warn -id "ChkRN" "entry \"${ename}\" has a name which potentially conflicts with internal types/names (regfile ${rfname})"
+                ig::log -warn -id "ChkRN" "entry \"${ename}\" has a name which potentially conflicts with internal types/names (regfile ${rfname}) (${origin})"
             }
 
             foreach i_reg $regs {

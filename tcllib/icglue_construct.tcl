@@ -975,6 +975,8 @@ namespace eval ig {
             ig::db::set_attribute -object $entry_id -attribute "address"   -value $address
             ig::db::set_attribute -object $entry_id -attribute "protected" -value $protected
             ig::db::set_attribute -object $entry_id -attribute "origin   " -value $origin
+            # origin
+            ig::db::set_attribute -object $entry_id -attribute "origin" -value $origin
             # set handshake
             if {$handshake ne ""} {
                 set handshakelist {}
