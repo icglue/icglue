@@ -170,7 +170,7 @@ proc main {} {
     if {[llength $c_log]} {
         foreach l $c_log {
             lassign [split $l ","] log_level log_id
-            if {$log_level eq "D" || $log_level eq "I" || $log_level eq "W"} {
+            if {$log_level in {"D" "I" "W" "E"}} {
                 ig::logger -level $log_level -id $log_id
                 ig::log -info -id Log "Enable logging of $log_level,$log_id"
             } else {
