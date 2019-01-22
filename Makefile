@@ -129,7 +129,7 @@ $(MANDIR):
 
 $(MANDIR)/%.$(MANSEC): ./h2m/%.h2m ./bin/% $(PKGIDX) | $(MANDIR)
 	-help2man -N -i ./h2m/$*.h2m ./bin/$* > $@
-	-sed -i -e 's/(INSTALLED-VERSION)//' $@
+	-sed -i -e 's/ (INSTALLED-VERSION)//' $@
 
 man: $(addprefix $(MANDIR)/,$(addsuffix .$(MANSEC),$(H2MBASENAMES)))
 
