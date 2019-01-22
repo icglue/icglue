@@ -82,12 +82,16 @@
                     if {$value == 0} {
                         set reset 0
                     }
+                    if {$value == 1} {
+                        set reset 1
+                    }
                 }
             }
         } else {
             return "$unused"
         }
-        return [format {\texttt{%s}} [tex_escape $reset]]
+        return [tex_escape $reset]
+        #return [format {\texttt{%s}} [tex_escape $reset]]
     }
 
     proc sreg_name {} {
@@ -184,7 +188,7 @@ foreach_array reg $register_list {
             } else {
                 %>      \regfield[white]<%
             }
-            %><%= "\{" [tex_escape [sreg_name]] "\}\{"  [tex_escape $sreg(width)] "\}\{"  [tex_escape [reg_start_bit]] "\}\{" [reg_reset] "\}\%\n" %><%
+            %><%= "\{" [tex_escape [sreg_name]] "\}\{"  [tex_escape $sreg(width)] "\}\{"  [tex_escape [reg_start_bit]] "\}\{\{" [reg_reset] "\}\}\%\n" %><%
         }
         %>    \reglabel{Reset}%\regnewline%<%="\n"
         %>    \end{regdesc}%<%="%\n"%><%
@@ -211,43 +215,71 @@ foreach_array reg $register_list {
         %><%="\\end\{filecontents\}\n\n"%><%
     }
 %>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+<%-
+proc reg_symbol {} {
+  upvar sreg(name) name sreg(type) type reg(name) entry_name reg(protected) prot
+  if {$name eq "-"} {
+    return {\faMinus}
+  } else {
+    if {[regexp {W} $type]} {
+      set rw {\faEdit{}}
+    } else {
+      set rw {\faSearch{}}
+    }
+    if {[regexp {^debug} $entry_name]} {
+      set rw {\faBug{}}
+    }
+    if {$prot} {
+      append rw {\faShield{}}
+    }
+
+    return $rw
+  }
+}
+
+proc row_color {} {
+  upvar i i
+  if {$i % 2} {
+    return {\rowcolor{gray!30}}
+  } else {
+    return {\rowcolor{gray!00}}
+  }
+}
+proc treg_name {} {
+  upvar sreg(name) name
+  if {$name eq "-"} {
+    return ""
+  } else {
+    return [tex_escape $name]
+  }
+}
+%>
 % register file table
 \begin{filecontents}{<%=$rf_name%>:table.tex}
-  <[format [join [list \
-    "%-${len_max_data(entry_name)}s" \
-    "%-${len_max_data(addr)}s" \
+    %\multicolumn{6}{l}{Register Name (Base-Address)} \\
+  & <[format [join [list \
     "%-${len_max_data(reg_name)}s" \
     "%-${len_max_data(type)}s" \
     "%-${len_max_data(entrybits)}s" \
     "%-${len_max_data(reset)}s" \
     "%-${len_max_data(comment)}s" \
   ] " & "] \
-    ${header(entry_name)} \
-    ${header(addr)} \
     ${header(reg_name)} \
     ${header(type)} \
     ${header(entrybits)} \
     ${header(reset)} \
     ${header(comment)}
   ]> \\ \midrule
-<% foreach_array reg $register_list {
-      set i_sreg 0
-      foreach_array sreg $reg(regs) {
-          %><%
-          if {$i_sreg == 0} { -%>
-  <[format "%-${len_max_data(entry_name)}s" [tex_escape $reg(name)]]> & <[format "%-${len_max_data(addr)}s" [format {\texttt{0x%08x}} $reg(address)]]> & <%-
-         } else { -%>
-  <[format "%-${len_max_data(entry_name)}s" ""]> & <[format "%-19s" ""]> & <%-
-          } -%>
-<[format "%-${len_max_data(reg_name)}s"  [tex_escape $sreg(name)]]> & <% -%>
+<% set i 0 ; foreach_array reg $register_list { incr i -%>
+    <[row_color]>\multicolumn{6}{l}{<[tex_escape $reg(name)]> (<[format {\texttt{0x%08x}} $reg(address)]>)} \\<%="\n"%><% foreach_array sreg $reg(regs) { -%>
+    <[row_color]>\hspace{2ex}<[reg_symbol]> & <% -%>
+<[format "%-${len_max_data(reg_name)}s"  [treg_name]]> & <% -%>
 <[format "%-${len_max_data(type)}s"      [tex_escape $sreg(type)]]> & <% -%>
 <[format "%-${len_max_data(entrybits)}s" [format {\texttt{%s}} [tex_escape [reg_bits]]]]> & <% -%>
 <[format "%-${len_max_data(reset)}s"     [reg_reset]]> & <% -%>
-<[format "%-${len_max_data(comment)}s"   [tex_escape $sreg(comment)]]> \\<%="\n"%><%-
-        incr i_sreg
-    }
-}
-%>
+<[format "%-${len_max_data(comment)}s"   [tex_escape $sreg(comment)]]> \\<%="\n"%><%- } %>
+  \addlinespace[0.5ex]
+<% } %>
 \end{filecontents}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%entry%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
