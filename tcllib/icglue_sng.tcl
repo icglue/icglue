@@ -1,7 +1,7 @@
 
 #
 #   ICGlue is a Tcl-Library for scripted HDL generation
-#   Copyright (C) 2017-2018  Andreas Dixius, Felix Neumärker
+#   Copyright (C) 2017-2019  Andreas Dixius, Felix Neumärker
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
