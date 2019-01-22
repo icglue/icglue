@@ -18,10 +18,6 @@
     set seperator_h_head   "="
     set crossing           "+"
 
-    for {set i 0} {$i<9} {incr i} {
-        set len_max_data($i)   [string length [lindex $header $i]]
-    }
-
     foreach_array register $register_list {
         foreach_array sreg $register(regs) {
             max_set len_max_data(0)   [max_array_entry_len $register_list name       ]
@@ -36,6 +32,11 @@
             max_set len_max_data(9) 0
         }
     }
+    max_set len_max_data(5)   [expr {$len_max_data(5) + 3}]
+    for {set i 0} {$i<9} {incr i} {
+        max_set len_max_data($i)   [string length [lindex $header $i]]
+    }
+
 
     foreach i_column $num_column {
         set tmp_string [lindex $header $i_column]
@@ -72,6 +73,14 @@
             append $line $crossing
         }
         append $line "\n"
+    }
+
+    proc reg_type {} {
+        upvar reg(protected) protected sreg(name) name sreg(type) type
+        if {$name eq "-"} {
+            return "-"
+        }
+        return [format "%s$type%s" {*}[expr {$protected ? {( )} : {"" ""}}]]
     }
 %><%
 
@@ -138,8 +147,8 @@
                }
                if {$i_column == 5} {
                    set width   [lindex $column_width $i_column]
-                   set padding [get_padding_size $width $sreg(type)]
-                  %><[format "%s%${padding}s %s "  $sreg(type) "" $seperator_v]><%
+                   set padding [get_padding_size $width  [reg_type]]
+                  %><[format "%s%${padding}s %s "  [reg_type] "" $seperator_v]><%
                }
                if {$i_column == 6} {
                    set width   [lindex $column_width $i_column]
