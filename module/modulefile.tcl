@@ -1,9 +1,7 @@
 #%Module1.0
 
 #------------------------------------------------------------------------
-set tool_name_version [split [module-info name] /]
-set tool_name         [lindex $tool_name_version 0]
-set tool_version      [lindex $tool_name_version 1]
+lassign [split [module-info name] /] tool_name tool_version
 
 #------------------------------------------------------------------------
 set tool_root  "/opt/${tool_name}/${tool_version}"
@@ -27,8 +25,8 @@ if { ([module-info mode load] || [module-info mode switch2]) } {
         exit 1
     }
     if {[module-info shell] eq "zsh"} {
-        puts "compdef _gnu_generic icglue"
-        puts "compdef _gnu_generic icsng2icglue"
+        puts "compdef _gnu_generic icglue ;"
+        puts "compdef _gnu_generic icsng2icglue ;"
     }
 }
 
@@ -40,8 +38,7 @@ if {(![info exists ::env(MANPATH)]) || ($::env(MANPATH) eq "")} {
 }
 prepend-path PATH       "${tool_root}/bin"
 prepend-path MANPATH    "${tool_root}/share/man"
-#prepend-path TCLLIBPATH "${tool_root}/lib/icglue"
 
 #------------------------------------------------------------------------
 
-#vim: syntax=tcl
+# vim: syntax=tcl
