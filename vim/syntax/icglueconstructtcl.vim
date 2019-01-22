@@ -74,7 +74,7 @@ syn match   igSRFlags "\v-w(idth)?(\=)?"                 contained
 syn match   igSRFlags "\v-c(omment)?(\=)?"               contained
 syn match   igSRFlags "\v-t(ype)?(\=)?"                  contained
 syn match   igSRFlags "\v-handshake(\=)?"                contained
-syn match   igSRFlags "\v-prot(ect(ed)?)?$"              contained
+syn match   igSRFlags "\v-prot(ect(ed)?)?"               contained
 syn match   igSRFlags "\v(-v(alue)?|\=|-r(eset(val)?)?)" contained
 syn match   igSRFlags "\v-cmdorigin(\=)?"                contained
 syn match   igSRFlags "\v-(reg)?n(ame)?(\=)?"            contained
