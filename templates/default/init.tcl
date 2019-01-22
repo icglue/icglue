@@ -61,7 +61,7 @@ init::output_file $template {
         }]
         return "${output_dir_root}/units/${parent_unit}/source/${mode}/${lang}/${object_name}[dict get $fileext $lang]"
     } elseif {$objtype eq "regfile"} {
-        if {[regexp {^(h|c|(h|c)pp)$} $type]} {
+        if {$type in {h c hpp cpp}} {
             return "${output_dir_root}/units/regfile_access/source/behavioral/lib/rf_${object_name}.${type}"
         } else {
             set object_name     [ig::db::get_attribute -object $object -attribute "name"]
