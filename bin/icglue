@@ -192,8 +192,7 @@ proc main {} {
     }
 
     # templates provided with package
-    lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../templates"]
-    lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../../share/icglue/templates"]
+    lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../share/icglue/templates"]
 
     # argument evaluation
     if {![file isfile $c_file]} {
