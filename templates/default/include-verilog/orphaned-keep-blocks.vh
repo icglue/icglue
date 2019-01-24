@@ -11,7 +11,7 @@
          */<%="\n\n"%><%-
         foreach b $rem_keeps { %>
     <%= "$b\n"%><% } %>
-    `endif <%="\n\n"%><%- }
+    `endif<%="\n\n"%><%- }
     ###########################################
 -%>
 <%- # vim: set filetype=verilog_template: -%>

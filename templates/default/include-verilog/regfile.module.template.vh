@@ -361,7 +361,7 @@
     %>
     <[format "// %s @ %s" $entry(name)  $entry(address)]><% if {[info exists entry(handshake)]} { %><[format " (%s)" [regsub -all {\m\S+:} $entry(handshake) {}]]><% }
     echo "\n"
-    if {[foreach_array_contains reg $entry(regs) {[write_reg] && ![fullcustom_reg]}]} { 
+    if {[foreach_array_contains reg $entry(regs) {[write_reg] && ![fullcustom_reg]}]} {
        if {$fpga_impl} {-%>
     initial begin<%-
         foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} { %>
