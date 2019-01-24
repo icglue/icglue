@@ -391,6 +391,8 @@
             <[pop_keep_block_content keep_block_data "keep" "custom_reset_${entry(name)}" ".v" ""]><%
             } %>
         end else begin<%
+            if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
+            <[pop_keep_block_content keep_block_data "keep" "custom_preface_code_${entry(name)}"]><% }
             foreach_array_with reg $entry(regs) {[write_reg] && [sctrigger_reg] && ![custom_reg]} { %>
             <[reg_name]> <= <%=$reg(reset)%>;<% }
             %>
