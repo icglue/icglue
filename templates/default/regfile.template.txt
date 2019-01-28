@@ -18,6 +18,8 @@
     set seperator_h_head   "="
     set crossing           "+"
 
+    foreach c $num_column {set len_max_data($c) 0}
+
     foreach_array register $register_list {
         foreach_array sreg $register(regs) {
             max_set len_max_data(0)   [max_array_entry_len $register_list name       ]
