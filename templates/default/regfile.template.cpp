@@ -56,6 +56,7 @@ proc unused_mask {} {
     return [format "0x%08X" $mask]
 }
 
+set maxlen_entryname 0
 foreach_array entry $entry_list {
     max_set maxlen_entryname [string length $entry(name)]
 }
