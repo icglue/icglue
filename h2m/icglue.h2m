@@ -155,10 +155,9 @@ The extra-column "signalbit" can be used to split wire e.g.
 .PP
 
 [reporting bugs]
-E-mail bug reports to \fBandreas.dixius@tu-dresden.de\fR, \fBfelix.neumaerker@tu-dresden.de\fR.
+Reports bugs to \fBbugs@icglue.org\fR.
 .br
-Also, please include the output of \`icglue --version\` in the body of your report if at all possible.
-
+ICGlue home page: <https://icglue.org>
 [see also]
 \fBig(10i)\fR - Scripting commands manpage
 .PP

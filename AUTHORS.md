@@ -1,13 +1,13 @@
 # ICGlue developers
 
 ## Core developers
-- Andreas Dixius (<andreas.dixius@tu-dresden.de>)
-- Felix Neumärker (<felix.neumaerker@tu-dresden.de>)
+- [Andreas Dixius](mailto:andreas.dixius@icglue.org)
+- [Felix Neumärker](mailto:felix.neumaerker@icglue.org)
 
 ## Contributors
-- Marco Stolba (<marco.stolba@tu-dresden.de>)
+- [Marco Stolba](mailto:marco.stolba@tu-dresden.de)
     - documentation templates
-- Heiner Bauer (<heiner.bauer@tu-dresden.de>)
+- [Heiner Bauer](mailto:heiner.bauer@tu-dresden.de)
     - systemverilog support
     - emacs syntax-highlighting
 

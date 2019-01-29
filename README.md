@@ -57,7 +57,7 @@ DESTDIR=/opt/icglue make install
 to install to /opt/icglue.
 
 ## Developers
-see [developers](AUTHORS.md).
+See [developers](AUTHORS.md).
 
 ## Licensing
 GNU GPLv3 (see [license](LICENSE.md)).
