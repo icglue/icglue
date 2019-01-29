@@ -103,11 +103,13 @@
     }
     proc reg_bits {} {
         upvar sreg(bit_high) bh sreg(bit_low) bl
+        set result ""
         if {$bh == $bl} {
-            return [format "%5d" $bl]
+            set result [format "%5d" $bl]
         } else {
-            return [format "%2d:%2d" $bh $bl]
+            set result [format "%2d:%2d" $bh $bl]
         }
+        return [string map {{ } {~}} $result]
     }
 
 ########################################################################
@@ -270,11 +272,11 @@ proc treg_name {} {
     ${header(comment)}
   ]> \\ \midrule
 <% set i 0 ; foreach_array reg $register_list { incr i -%>
-    <[row_color]>\multicolumn{6}{l}{<[tex_escape $reg(name)]> (<[format {\texttt{0x%08x}} $reg(address)]>)} \\<%="\n"%><% foreach_array sreg $reg(regs) { -%>
+    <[row_color]>\multicolumn{6}{l}{<[format {\texttt{0x%08x}} $reg(address)]>\hspace*{1ex}---\hspace*{1ex}\textbf{<[tex_escape $reg(name)]>}} \\<%="\n"%><% foreach_array sreg $reg(regs) { -%>
     <[row_color]>\hspace{2ex}<[reg_symbol]> & <% -%>
 <[format "%-${len_max_data(reg_name)}s"  [treg_name]]> & <% -%>
 <[format "%-${len_max_data(type)}s"      [tex_escape $sreg(type)]]> & <% -%>
-<[format "%-${len_max_data(entrybits)}s" [format {\texttt{%s}} [tex_escape [reg_bits]]]]> & <% -%>
+<[format "%-${len_max_data(entrybits)}s" [format {\texttt{%s}} [reg_bits]]]> & <% -%>
 <[format "%-${len_max_data(reset)}s"     [reg_reset]]> & <% -%>
 <[format "%-${len_max_data(comment)}s"   [tex_escape $sreg(comment)]]> \\<%="\n"%><%- } %>
   \addlinespace[0.5ex]
