@@ -4,20 +4,12 @@ set rf_name [object_name $obj_id]
 set userparams [ig::db::get_attribute -object $obj_id -attribute "accesscargs" -default {}]
 
 set header_name "rf_${rf_name}"
-set base_addr "rf_baseaddr_${rf_name}"
 
-proc read_reg {} {
-    return [uplevel 1 {regexp -nocase {^[^-W]*$} $reg(type)}]
-}
-proc write_reg {{level 1}} {
-    upvar $level reg(type) type
-    return [regexp -nocase {W} $type]
-}
 proc entry_name {{suffix ""}} {
         upvar entry(name) name maxlen_entryname len
         set suffix_len [string length "$suffix"]
         set l [expr {$len + $suffix_len}]
-        return [format "%-${l}s" "${name}${suffix}"]
+        return [format "%-*s" $l "${name}${suffix}"]
     }
 
 proc rf_class {} {
@@ -25,14 +17,16 @@ proc rf_class {} {
     return "rf_${rf_name}_t"
 }
 
-proc entry_class {} {
-    upvar entry(name) name
-    return "${name}_t"
-}
-
 proc entry_struct {} {
     upvar rf_name rf_name entry(name) name
     return "${rf_name}_${name}_t"
+}
+
+proc entry_struct_padded {} {
+    upvar rf_name rf_name entry(name) name maxlen_entryname len
+    set other_len [string length "${rf_name}__t"]
+    set l [expr {$len + $other_len}]
+    return [format "%-*s" $l "${rf_name}_${name}_t"]
 }
 
 proc set_max_len_reg {{init 0}} {
@@ -49,16 +43,6 @@ proc set_max_len_reg {{init 0}} {
     }
 }
 
-proc unused_mask {} {
-    upvar entry(regs) regs
-    variable maxlen_reg
-    set mask 0
-    foreach_array_with reg $regs {$reg(name) eq "-"} {
-        set mask [expr {$mask | (1<<(${reg(bit_high)}+1)) - (1<<(${reg(bit_low)}))}]
-    }
-    return [format "0x%08X" $mask]
-}
-
 proc struct_reg_entry {} {
     upvar reg(name) name reg(width) width reg(comment) comment max_len_reg max_len_reg unused_reg unused_reg
     if {$name ne "-"} {
@@ -68,13 +52,6 @@ proc struct_reg_entry {} {
     }
 }
 
-proc reg_class {} {
-    if {[write_reg 2]} {
-        return "_reg_rw_t"
-    } else {
-        return "_reg_ro_t"
-    }
-}
 foreach_array entry $entry_list {
     max_set maxlen_entryname [string length $entry(name)]
 }
@@ -110,12 +87,9 @@ typedef struct {<% foreach_array entry $entry_list {
             set fill_size [expr {($entry(address) - $next_address) / 4}]
             incr unused_idx
     %>
-    uint32_t _padding_<%= $unused_idx %>[<%= $fill_size %>];<%
+    uint32_t _padding_<%= $unused_idx %>[<%= $fill_size %>]; /* unused */<%
         }%>
-    union {
-        <[entry_struct]> <%=$entry(name)%>;
-        uint32_t _<%=$entry(name)%>_word;
-    };<%
+    union {<[entry_struct_padded]> <[entry_name ";"]>  uint32_t _<%=$entry(name)%>_word;};<[format {%*s} [expr {$maxlen_entryname - [string length $entry(name)]}] ""]> // <%= $entry(name) %><%
         set next_address [expr {$entry(address) + 4}]
     }
     %>
