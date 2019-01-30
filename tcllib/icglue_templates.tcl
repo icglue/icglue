@@ -577,10 +577,11 @@ namespace eval ig::templates {
     # The template method is copied/modified to fit here from
     # http://wiki.tcl.tk/18175
     #
-    # The resulting Tcl Code will write the generated output to a variable @c _res
+    # The resulting Tcl Code will write the generated output
+    # using the command @c echo, which needs to be provided,
     # when evaluated.
     proc parse_template {txt {filename {}}} {
-        set code  "set _res {}\n"
+        set code  {}
         set stack [list [list $filename 1 $txt]]
 
         while {[llength $stack] > 0} {
@@ -620,13 +621,13 @@ namespace eval ig::templates {
                 # append verbatim/normal template content (tcl-list)
                 incr linenr [ig::aux::string_count_nl [string range $txt 0 [expr {$i-1}]]]
                 append code "set _linenr $linenr\n"
-                append code "append _res [list [string range $txt 0 $right_i]]\n"
+                append code "echo [list [string range $txt 0 $right_i]]\n"
                 set txt [string range $txt $i end]
 
                 if {$closing_delim eq "%>"} {
                     if {[string index $txt 0] eq "="} {
                     # <%= will be be append, but evaluated as tcl-argument
-                        append code "append _res "
+                        append code "echo "
                         set txt [string range $txt 1 end]
                     } elseif {[string index $txt 0] eq "I"} {
                     # <%I will be included here
@@ -637,7 +638,7 @@ namespace eval ig::templates {
                     }
                 } else {
                     # closing delimiter is closing square bracket
-                    append code "append _res \[ "
+                    append code "echo \[ "
                 }
 
                 # search ${closing_delim} delimiter
@@ -688,7 +689,7 @@ namespace eval ig::templates {
 
             # append remainder of verbatim/normal template content
             if {$txt ne ""} {
-                append code "append _res [list $txt]\n"
+                append code "echo [list $txt]\n"
             }
         }
 
