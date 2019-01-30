@@ -36,6 +36,7 @@ Mandatory arguments to long options are mandatory for short options too.
     -f, --file=FILE          DEPRECATED: set input FILE to use (FILE argument is omitted)
     -t, --template=FILE      Set FILE to use as template
     --template-dir=DIR       Add DIR to template path
+    -o, --outtypes=LIST      Comma-separated list of output types to generate (or empty for everything).
 
     -l, --logger=TAG         Enable output log of TAG (format: LEVEL,IDENTIFIER)
 
@@ -114,6 +115,7 @@ proc main {} {
     set c_file          ""
     set c_log           {}
     set c_scriptargs    {}
+    set c_outtypelist   {}
 
     # arguments
     set filename [ig::aux::_parse_opts {} {} [list                   \
@@ -128,6 +130,7 @@ proc main {} {
                                                                      \
         {  {^--template-dir(=|$)}  "list"       c_template_dirs {} } \
         {  {^(-t|--template)(=|$)} "string"     c_template      {} } \
+        {  {^(-o|--outtypes)(=|$)} "string"     c_outtypelist   {} } \
         {  {^(-f|--file)(=|$)}     "list"       c_file          {} } \
         {  {^(-l|--logger)(=|$)}   "list"       c_log           {} } \
         {  {^(-a|--args)(=|$)}     "list"       c_scriptargs    {} } \
@@ -240,19 +243,22 @@ proc main {} {
         ig::construct::run_script $c_file $scriptargs
     }
 
+    # generate output
+    set outtypelist [split $c_outtypelist ","]
+
     # generate modules with template
     foreach i_module [ig::db::get_modules -all] {
         ig::checks::check_object $i_module
         if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
             ig::log -info "generating module $i_module"
-            ig::templates::write_object_all $i_module $dryrun
+            ig::templates::write_object_all $i_module $outtypelist $dryrun
         }
     }
     # generate regfiles with template
     foreach i_regfile [ig::db::get_regfiles -all] {
         ig::checks::check_object $i_regfile
         ig::log -info "generating regfiledoc $i_regfile"
-        ig::templates::write_object_all $i_regfile $dryrun
+        ig::templates::write_object_all $i_regfile $outtypelist $dryrun
     }
 
     set exitcode 0

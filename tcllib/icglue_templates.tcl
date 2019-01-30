@@ -972,7 +972,12 @@ namespace eval ig::templates {
             }
         }
 
-        ig::log -info -id Gen "Generating ${_outf_name_var}"
+        set _logtype $type
+        set _logtypelen 8
+        if {[string length ${_logtype}] > ${_logtypelen}} {
+            set _logtype "[string range ${_logtype} 0 [expr {${_logtypelen} - 3}]]..."
+        }
+        ig::log -info -id Gen "Generating [format {%-*s} [expr {${_logtypelen}+2}] "\[${_logtype}\]"] ${_outf_name_var}"
         ig::log -info -id TPrs "Parsing template ${_tt_name}"
         set block_data [list]
         if {[file exists ${_outf_name}]} {
@@ -1033,12 +1038,16 @@ namespace eval ig::templates {
 
     ## @brief Generate output for given object for all output types provided by template.
     # @param obj_id Object-ID to write output for.
+    # @param typelist List of types to generate, empty list generates everything.
     # @param dryrun If set to true, no actual files are written.
     #
     # Iterates over all output types provided by template callback @ref ig::templates::current::get_output_file
     # and writes output via the template.
-    proc write_object_all {obj_id {dryrun false}} {
+    proc write_object_all {obj_id {typelist {}} {dryrun false}} {
         foreach i_type [current::get_output_types $obj_id] {
+            if {([llength $typelist] > 0) && ($i_type ni $typelist)} {
+                continue
+            }
             write_object $obj_id $i_type $dryrun
         }
     }
