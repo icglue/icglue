@@ -4,13 +4,13 @@ if exists("b:current_syntax")
   finish
 endif
 
-" Read the verilog syntax-file
-runtime! syntax/verilog.vim
+" Read the c++ syntax-file
+runtime! syntax/cpp.vim
 unlet b:current_syntax
 
 " Read the icglue template syntax-file
 runtime! syntax/icglue_template.vim
 unlet b:current_syntax
 
-let b:current_syntax = "verilog_template"
+let b:current_syntax = "cpp_template"
 

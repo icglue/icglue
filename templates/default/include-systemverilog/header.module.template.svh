@@ -51,5 +51,3 @@ module <%=$mod_data(name)%><%
     ## </signal declaration>
     ###########################################
 -%>
-
-<%- # vim: set filetype=verilog_template: -%>

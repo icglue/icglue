@@ -21,4 +21,3 @@
 <%I include-verilog/orphaned-keep-blocks.vh -%>
 
 endmodule
-<%- # vim: set filetype=verilog_template: %>
