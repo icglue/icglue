@@ -98,7 +98,8 @@ namespace eval ig::templates {
         # @param object The Object-ID of the Object to generate output for.
         # @param type One of the types returned by @ref get_output_types for the given object.
         # @param template_dir Path to this template.
-        # @return Filename of the template file.
+        # @return Filename of the template file or optionally a 2-element list
+        #         with filename and template language (currently icgt (default) or wtf).
         #
         # See also @ref ig::templates::init::template_file.
         # Should be called by @ref get_template_file.
@@ -575,11 +576,11 @@ namespace eval ig::templates {
     # @return Tcl-Code generated from template as a single String.
     #
     # The template method is copied/modified to fit here from
-    # http://wiki.tcl.tk/18175
+    # https://wiki.tcl-lang.org/page/TemplaTcl%3A+a+Tcl+template+engine
     #
     # The resulting Tcl Code will write the generated output
     # using the command @c echo, which needs to be provided,
-    # when evaluated.
+    # when evaluating.
     proc parse_template {txt {filename {}}} {
         set code  {}
         set stack [list [list $filename 1 $txt]]
@@ -691,6 +692,76 @@ namespace eval ig::templates {
             if {$txt ne ""} {
                 append code "echo [list $txt]\n"
             }
+        }
+
+        return $code
+    }
+
+    ## @brief Parse a Woof!-like template.
+    # @param txt Template as a single String.
+    # @param filename Name of template file for error logging.
+    # @return Tcl-Code generated from template as a single String.
+    #
+    # The template format is based on the Woof! template format:
+    # http://woof.sourceforge.net/woof-ug/_woof/docs/ug/wtf
+    # which is based on substify:
+    # https://wiki.tcl-lang.org/page/Templates+and+subst
+    #
+    # The resulting Tcl Code will write the generated output
+    # using the command @c echo, which needs to be provided,
+    # when evaluating.
+    proc parse_wtf {txt {filename {}}} {
+        set code {}
+
+        set pos 0
+        set block false
+
+        # find all lines starting with %
+        foreach pair [regexp -line -all -inline -indices {^%.*$} $txt] {
+            lassign $pair from to
+
+            if {$block} {
+                # inside %( ... %)
+                if {[string range $txt $from [expr {$from+1}]] eq "%)"} {
+                    # block ends
+                    if {[string range $txt [expr {$from+2}] $to] ne ""} {
+                        ig::log -warn -id "WTFPr" "template $filename contains text after \"%)\""
+                    }
+
+                    append code [string range $txt $pos [expr {$from-2}]] "\n"
+
+                    set block false
+                    set pos   [expr {$to + 2}]
+                } else {
+                    # ignore
+                    continue
+                }
+            } else {
+                # single codeline / begin of %( ... %)
+
+                # raw text so far
+                set s [string range $txt $pos [expr {$from-2}]]
+
+                if {$s ne {}} {
+                    append code "echo \[" [list subst $s] "\]\n"
+                }
+
+                if {[string range $txt $from [expr {$from+1}]] eq "%("} {
+                    # beginning of block
+                    set pos [expr {$from + 2}]
+                    set block true
+                } else {
+                    # single line
+                    append code [string range $txt [expr {$from+1}] $to] "\n"
+
+                    set pos [expr {$to + 2}]
+                }
+            }
+        }
+
+        set s [string range $txt $pos end]
+        if {$s ne {}} {
+            append code "echo \[" [list subst $s] "\]\n"
         }
 
         return $code
@@ -850,8 +921,9 @@ namespace eval ig::templates {
 
     ## @brief Lookup template file in cache and returned cached template script or parse @c template_filename.
     # @param template_filename Path to file to lookup.
+    # @param template_lang Template Language
     # @return cached or parsed template file script.
-    proc get_template_script {template_filename} {
+    proc get_template_script {template_filename {template_lang "icgt"}} {
         variable template_script_cache
 
         set fname_full [file normalize $template_filename]
@@ -865,7 +937,13 @@ namespace eval ig::templates {
         set template_raw [read ${template_file}]
         close ${template_file}
 
-        set template_script [parse_template ${template_raw} ${template_filename}]
+        if {($template_lang eq "icgt") || ($template_lang eq {})} {
+            set template_script [parse_template ${template_raw} ${template_filename}]
+        } elseif {($template_lang eq "wtf")} {
+            set template_script [parse_wtf ${template_raw} ${template_filename}]
+        } else {
+            ig::log -error -abort "invalid template language ${template_lang}"
+        }
 
         lappend template_script_cache [list $fname_full $template_script]
 
@@ -879,14 +957,13 @@ namespace eval ig::templates {
     #
     # The output is written to the file specified by the template callback @ref ig::templates::current::get_output_file.
     proc write_object {obj_id type {dryrun false}} {
-        if {[catch {set _tt_name [current::get_template_file $obj_id $type]}]} {
+        if {[catch {lassign [current::get_template_file $obj_id $type] _tt_name _tt_lang}]} {
             return
         }
 
         set _outf_name [current::get_output_file $obj_id $type]
 
         set _outf_name_var ${_outf_name}
-        set _tt_name_var   ${_tt_name}
 
         set _outf_name_var_norm [file normalize ${_outf_name_var}]
         set _outf_name_var_new [string map [list [file normalize [pwd]]  {.}] ${_outf_name_var_norm}]
@@ -913,7 +990,7 @@ namespace eval ig::templates {
             set block_data [parse_keep_blocks ${_old} [file extension ${_outf_name}]]
         }
 
-        set _tt_code [get_template_script ${_tt_name}]
+        set _tt_code [get_template_script ${_tt_name} ${_tt_lang}]
 
         # evaluate result in temporary namespace
         eval [join [list \

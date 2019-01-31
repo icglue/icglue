@@ -15,20 +15,22 @@ init::output_types $template {
     }
 }
 
-# return path to template file: arguments: {object type template_dir} (object-identifier, outputtype, path to this template's directory)
+# return {<path to template file> <template type>}: arguments: {object type template_dir} (object-identifier, outputtype, path to this template's directory)
 init::template_file $template {
     set objtype [ig::db::get_attribute -object $object -attribute "type"]
     if {$objtype eq "module"} {
         if {$type eq "verilog"} {
-            return "${template_dir}/module.template.v"
+            return [list "${template_dir}/module.template.v" "icgt"]
         } elseif {$type eq "systemverilog"} {
-            return "${template_dir}/module.template.sv"
+            return [list "${template_dir}/module.template.sv" "wtf"]
         } else {
             ig::log -error -abort "No template available for objecttype/outputtype ${objtype}/${type}"
         }
     } elseif {$objtype eq "regfile"} {
         if {[file exist "${template_dir}/regfile.template.${type}"]} {
-            return "${template_dir}/regfile.template.${type}"
+            return [list "${template_dir}/regfile.template.${type}" "icgt"]
+        } elseif {[file exist "${template_dir}/regfile.wtf.${type}"]} {
+            return [list "${template_dir}/regfile.wtf.${type}" "wtf"]
         } else {
             ig::log -error -abort "No template available for objecttype/outputtype ${objtype}/${type}"
         }
