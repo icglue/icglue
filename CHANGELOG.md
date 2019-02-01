@@ -12,3 +12,6 @@ Initial release.
 * Extended Documentation
 * Code-Blocks without substitution mode deprecated (prepare -as as default)
 * Added warning header in templates (that the file is generated and will be overwritten)
+
+## Version 3.0
+* Woof! templates
