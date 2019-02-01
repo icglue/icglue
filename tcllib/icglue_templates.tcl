@@ -589,8 +589,8 @@ namespace eval ig::templates {
             lassign [lindex $stack end] filename linenr txt
             set stack [lreplace $stack end end]
 
-            append code "set _filename [list $filename]\n"
-            append code "set _linenr $linenr\n"
+            append code "_filename [list $filename]\n"
+            append code "_linenr $linenr\n"
 
             set re_delim_open     {<(%|\[)([+-])?}
             set delim_close       "%>"
@@ -621,7 +621,7 @@ namespace eval ig::templates {
 
                 # append verbatim/normal template content (tcl-list)
                 incr linenr [ig::aux::string_count_nl [string range $txt 0 [expr {$i-1}]]]
-                append code "set _linenr $linenr\n"
+                append code "_linenr $linenr\n"
                 append code "echo [list [string range $txt 0 $right_i]]\n"
                 set txt [string range $txt $i end]
 
@@ -684,8 +684,8 @@ namespace eval ig::templates {
                     }
                     set txt [string range $txt $left_i end]
                 }
-                append code "set _filename [list $filename]\n"
-                append code "set _linenr $linenr\n"
+                append code "_filename [list $filename]\n"
+                append code "_linenr $linenr\n"
             }
 
             # append remainder of verbatim/normal template content
@@ -1002,39 +1002,47 @@ namespace eval ig::templates {
             {    namespace import ::ig::templates::remaining_keep_block_contents} \
             {    namespace import ::ig::log} \
             "    variable keep_block_data [list $block_data]" \
-            {    variable _res {}} \
-            {    variable _linenr 0} \
-            {    variable _filename {}} \
-            {    variable _error {}} \
+            {    variable _res_var {}} \
+            {    variable _linenr_var 0} \
+            {    variable _filename_var {}} \
+            {    variable _error_var {}} \
             "    proc echo {args} \{" \
-            {        variable _res} \
-            {        append _res {*}$args} \
+            {        variable _res_var} \
+            {        append _res_var {*}$args} \
+            "    \}" \
+            "    proc _filename {f} \{" \
+            {        variable _filename_var} \
+            {        set _filename_var $f} \
+            "    \}" \
+            "    proc _linenr {n} \{" \
+            {        variable _linenr_var} \
+            {        set _linenr_var $n} \
             "    \}" \
             "    variable obj_id [list $obj_id]" \
             "    if {\[catch {" \
             "        eval [list ${_tt_code}]" \
             "        } _errorres\]} {" \
-            {        set _error $_errorres} \
+            {        set _error_var $_errorres} \
             "    }" \
             "\}" \
             ] "\n"]
 
-        set _res      ${_template_run::_res}
-        set _error    ${_template_run::_error}
-        set _linenr   ${_template_run::_linenr}
-        set _filename ${_template_run::_filename}
+        set res      ${_template_run::_res_var}
+        set error    ${_template_run::_error_var}
+        set linenr   ${_template_run::_linenr_var}
+        set filename ${_template_run::_filename_var}
         namespace delete _template_run
 
-        if {${_error} ne ""} {
+        if {${error} ne ""} {
             ig::log -error "Error while running template for object [ig::db::get_attribute -object ${obj_id} -attribute "name"] and output type ${type}\nstacktrace:\n${::errorInfo}"
-            ig::log -error "template ${_filename} somewhere after line ${_linenr}"
+            ig::log -error "template ${filename} somewhere after line ${linenr}"
             return
         }
 
         if {!$dryrun} {
             file mkdir [file dirname ${_outf_name}]
             set _outf [open ${_outf_name} "w"]
-            puts -nonewline ${_outf} ${_res}
+            puts -nonewline ${_outf} ${res}
             close ${_outf}
         }
     }
