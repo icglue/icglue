@@ -715,9 +715,13 @@ namespace eval ig::templates {
 
         set pos 0
         set block false
+        set linenr 1
+
+        append code "_filename [list $filename]\n"
+        append code "_linenr $linenr\n"
 
         # find all lines starting with %
-        foreach pair [regexp -line -all -inline -indices {^%.*$} $txt] {
+        foreach pair [regexp -line -all -inline -indices -- {^%.*$} $txt] {
             lassign $pair from to
 
             if {$block} {
@@ -728,7 +732,9 @@ namespace eval ig::templates {
                         ig::log -warn -id "WTFPr" "template $filename contains text after \"%)\""
                     }
 
-                    append code [string range $txt $pos [expr {$from-2}]] "\n"
+                    set c [string range $txt $pos [expr {$from-2}]]
+                    append code $c "\n"
+                    incr linenr [expr {[ig::aux::string_count_nl $c] + 1}]
 
                     set block false
                     set pos   [expr {$to + 2}]
@@ -743,24 +749,34 @@ namespace eval ig::templates {
                 set s [string range $txt $pos [expr {$from-2}]]
 
                 if {$s ne {}} {
+                    append code "_linenr $linenr\n"
                     append code "echo \[" [list subst $s] "\]\n"
+                    incr linenr [expr {[ig::aux::string_count_nl $s] + 1}]
+                    append code "_linenr $linenr\n"
                 }
 
                 if {[string range $txt $from [expr {$from+1}]] eq "%("} {
                     # beginning of block
                     set pos [expr {$from + 2}]
                     set block true
+                    incr linenr
                 } else {
                     # single line
                     append code [string range $txt [expr {$from+1}] $to] "\n"
 
                     set pos [expr {$to + 2}]
+                    incr linenr
                 }
             }
         }
 
+        if {$block} {
+            error "No matching %)"
+        }
+
         set s [string range $txt $pos end]
         if {$s ne {}} {
+            append code "_linenr $linenr\n"
             append code "echo \[" [list subst $s] "\]\n"
         }
 
