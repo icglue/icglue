@@ -99,16 +99,15 @@ ifeq ($(suffix $(TARGET)), .so)
   LDFLAGS       := -shared $(LDFLAGS)
 endif
 
+#pkg-config
+ifneq ($(PKG_CFG_LIBS),)
+  CPPFLAGS      += $(shell pkg-config --cflags $(PKG_CFG_LIBS))
+  LDFLAGS       += $(shell pkg-config --libs $(PKG_CFG_LIBS))
+endif
+
 ALL_CFLAGS      := $(WARNFLAGS) $(OPTFLAGS) $(ARCHFLAGS) $(CFLAGS) $(CPPFLAGS)
 ALL_CXXFLAGS    := $(WARNFLAGS) $(OPTFLAGS) $(ARCHFLAGS) $(CXXFLAGS) $(CPPFLAGS)
 ALL_LDFLAGS     := $(LDFLAGS)
-
-#pkg-config
-ifneq ($(PKG_CFG_LIBS),)
-  ALL_CFLAGS    += $(shell pkg-config --cflags $(PKG_CFG_LIBS))
-  ALL_CXXFLAGS  += $(shell pkg-config --cflags $(PKG_CFG_LIBS))
-  ALL_LDFLAGS   += $(shell pkg-config --libs $(PKG_CFG_LIBS))
-endif
 
 # ------------  generate the names of the source/object files  -----------------
 ALL_SOURCES      = $(wildcard $(SOURCE_DIR)/$(SOURCES))
