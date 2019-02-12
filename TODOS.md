@@ -11,6 +11,7 @@
 - allow partial connections of bus signals (low-prio - would require larger reworks)
 
 ## tcllib
+- Reuse create rtl as ressource (also in testbench)
 - add instance-only command or check in M if already exists: sane values, instances only?
 - regfile:
   - specify data width / address alignment?
