@@ -700,6 +700,7 @@ namespace eval ig::templates {
     ## @brief Parse a Woof!-like template.
     # @param txt Template as a single String.
     # @param filename Name of template file for error logging.
+    # @param filestack List of files included to check for recursion loops.
     # @return Tcl-Code generated from template as a single String.
     #
     # The template format is based on the Woof! template format:
@@ -710,12 +711,14 @@ namespace eval ig::templates {
     # The resulting Tcl Code will write the generated output
     # using the command @c echo, which needs to be provided,
     # when evaluating.
-    proc parse_wtf {txt {filename {}}} {
+    proc parse_wtf {txt {filename {}} {filestack {}}} {
         set code {}
 
         set pos 0
         set block false
         set linenr 1
+
+        lappend filestack $filename
 
         append code "_filename [list $filename]\n"
         append code "_linenr $linenr\n"
@@ -755,7 +758,37 @@ namespace eval ig::templates {
                     append code "_linenr $linenr\n"
                 }
 
-                if {[string range $txt $from [expr {$from+1}]] eq "%("} {
+                if {[string range $txt $from [expr {$from+2}]] eq "%I("} {
+                    # include file
+                    set s [string range $txt $from $to]
+                    if {![regexp {^%I\([\s]*(.*[^\s])[\s]*\)[\s]*([^\s].*)?$} $s m_whole m_file m_sfx]} {
+                        ig::log -error -abort -id "WTFPr" "template $filename contains invalid include statement"
+                    }
+                    if {$m_sfx ne ""} {
+                        ig::log -warn -id "WTFPr" "template $filename contains text after include statement"
+                    }
+
+                    set incfname [file join ${current::template_dir} $m_file]
+
+                    # loop-check
+                    if {[lsearch $filestack $incfname] >= 0} {
+                        error "template file $filename includes itself"
+                    }
+
+                    ig::log -info -id WTFPr "...parsing included template $incfname"
+                    set incfile [open $incfname "r"]
+                    set inccontent [read $incfile]
+                    close $incfile
+
+                    append code [parse_wtf $inccontent $incfname $filestack] "\n"
+
+                    incr linenr
+
+                    append code "_filename [list $filename]\n"
+                    append code "_linenr $linenr\n"
+
+                    set pos [expr {$to + 2}]
+                } elseif {[string range $txt $from [expr {$from+1}]] eq "%("} {
                     # beginning of block
                     set pos [expr {$from + 2}]
                     set block true
