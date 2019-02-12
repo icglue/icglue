@@ -750,7 +750,7 @@ namespace eval ig::templates {
 
                 if {$s ne {}} {
                     append code "_linenr $linenr\n"
-                    append code "echo \[" [list subst $s] "\]\n"
+                    append code "echo \"\[" [list subst $s] "\]\\n\"\n"
                     incr linenr [expr {[ig::aux::string_count_nl $s] + 1}]
                     append code "_linenr $linenr\n"
                 }
@@ -777,7 +777,7 @@ namespace eval ig::templates {
         set s [string range $txt $pos end]
         if {$s ne {}} {
             append code "_linenr $linenr\n"
-            append code "echo \[" [list subst $s] "\]\n"
+            append code "echo \"\[" [list subst $s] "\]\\n\"\n"
         }
 
         return $code
