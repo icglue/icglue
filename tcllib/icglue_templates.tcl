@@ -660,7 +660,7 @@ namespace eval ig::templates {
                 incr linenr [ig::aux::string_count_nl [string range $txt 0 [expr {$left_i-1}]]]
 
                 if {$incltag} {
-                    set incfname [eval "file join \${current::template_dir} [string range $txt 0 $i]"]
+                    set incfname [file join ${current::template_dir} [string trim [string range $txt 0 $i]]]
                     ig::log -info -id TPrs "...parsing included template $incfname"
                     set incfile [open $incfname "r"]
                     set inccontent [read $incfile]
