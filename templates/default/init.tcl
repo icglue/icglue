@@ -6,6 +6,9 @@ init::output_types $template {
     set objtype [ig::db::get_attribute -object $object -attribute "type"]
     if {$objtype eq "module"} {
         set lang [ig::db::get_attribute -object $object -attribute "language"]
+        if {$lang eq "systemc"} {
+            return {sc-h sc-cpp sc-v}
+        }
         return $lang
     } elseif {$objtype eq "regfile"} {
         return {csv txt tex html h c hpp cpp soc.h}
@@ -19,12 +22,13 @@ init::output_types $template {
 init::template_file $template {
     set objtype [ig::db::get_attribute -object $object -attribute "type"]
     if {$objtype eq "module"} {
-        if {$type eq "verilog"} {
-            return [list "${template_dir}/module.template.v" "icgt"]
-        } elseif {$type eq "systemverilog"} {
-            return [list "${template_dir}/module.template.sv" "wtf"]
-        } else {
-            ig::log -error -abort "No template available for objecttype/outputtype ${objtype}/${type}"
+        switch -regexp -matchvar m_matches -- $type {
+            {^verilog$}         {return [list "${template_dir}/module.template.v"  "icgt"]}
+            {^systemverilog$}   {return [list "${template_dir}/module.template.sv" "icgt"]}
+            {^sc-(.*)$}         {return [list "${template_dir}/systemc/module.wtf.[lindex ${m_matches} 1]" "wtf"]}
+            default {
+                ig::log -error -abort "No template available for objecttype/outputtype ${objtype}/${type}"
+            }
         }
     } elseif {$objtype eq "regfile"} {
         if {[file exist "${template_dir}/regfile.template.${type}"]} {
@@ -56,12 +60,17 @@ init::output_file $template {
             set mode [ig::db::get_attribute -object $object -attribute "mode" -default "rtl"]
         }
         set lang [ig::db::get_attribute -object $object -attribute "language" -default "verilog"]
-        set fileext [dict create {*}{
-            "verilog"       .v
-            "systemverilog" .sv
-            "vhdl"          .vhdl
-        }]
-        return "${output_dir_root}/units/${parent_unit}/source/${mode}/${lang}/${object_name}[dict get $fileext $lang]"
+        set type_map {
+            "verilog"       {verilog       v}
+            "systemverilog" {systemverilog sv}
+            "vhdl"          {vhdl          vhdl}
+            "sc-h"          {systemc       h}
+            "sc-cpp"        {systemc       cpp}
+            "sc-v"          {verilog       v}
+        }
+        lassign [dict get $type_map $type] dir fileext
+
+        return "${output_dir_root}/units/${parent_unit}/source/${mode}/${dir}/${object_name}.$fileext"
     } elseif {$objtype eq "regfile"} {
         if {$type in {h c hpp cpp}} {
             return "${output_dir_root}/units/regfile_access/source/behavioral/lib/rf_${object_name}.${type}"

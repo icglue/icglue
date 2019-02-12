@@ -1025,7 +1025,7 @@ namespace eval ig::templates {
         }
 
         set _logtype $type
-        set _logtypelen 8
+        set _logtypelen 13
         if {[string length ${_logtype}] > ${_logtypelen}} {
             set _logtype "[string range ${_logtype} 0 [expr {${_logtypelen} - 3}]]..."
         }

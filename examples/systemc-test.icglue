@@ -1,0 +1,17 @@
+#!/usr/bin/env icglue
+
+set tb "tb_nat_log"
+M -unit "nat_log" -tree {
+    $tb ............... (tb)
+    |- teststim ....... (beh,systemc)
+    \- nat_log ........ (res)
+}
+
+S "clk"    $tb  -->  nat_log:clk_i  teststim:clk_i
+S "nreset" $tb  -->  nat_log:nrst_i teststim:nrst_i
+
+S "enable"        teststim  -->  nat_log:enable
+S "data"    -w 32 teststim  -->  nat_log:q
+S "nat_log" -w 32 teststim  <--  nat_log:nat_log_result
+S "data_valid"    teststim  <--  nat_log:result_valid
+

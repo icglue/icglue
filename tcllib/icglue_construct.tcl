@@ -192,6 +192,7 @@ namespace eval ig {
                    { {^-v(erilog)?$}                  "const=verilog"       lang          "output verilog language"               }   \
                    { {^-sv|-s(ystemverilog)?$}        "const=systemverilog" lang          "output systemverilog language"         }   \
                    { {^-vhd(l)?$}                     "const=vhdl"          lang          "output vhdl language"                  }   \
+                   { {^-systemc$}                     "const=systemc"       lang          "output systemc language"               }   \
                                                                                                                                       \
                    { {^-(ilm|macro)$}                 "const=ilm"           ilm           "pass ilm attribute to icglue"          }   \
                    { {^-res(ource)?$}                 "const=true"          resource      "pass ressource attribute to icglue"    }   \
@@ -359,6 +360,7 @@ namespace eval ig {
                     { {^v(erilog)?$}                 "const=verilog"       flang         {} }  \
                     { {^sv|-s(ystemverilog)?$}       "const=systemverilog" flang         {} }  \
                     { {^vhd(l)?$}                    "const=vhdl"          flang         {} }  \
+                    { {^systemc$}                    "const=systemc"       flang         {} }  \
                                                                                                \
                     { {^(rf|(regf(ile)?)?)$}         "const=true"          fregfile      {} }  \
                     { {^(rf|(regf(ile)?)?)=}         "string"              fregfilename  {} }  \
