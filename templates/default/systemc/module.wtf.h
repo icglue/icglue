@@ -48,9 +48,12 @@ $sc_module
         // additional declaration
     [pop_keep_block_content keep_block_data "keep" "class-decl" ".h" "
     private:
+        //TODO: add your custom declarations here
+        //e.g.
         //void testcase_control ();
+        //void testcase ();
 
-        //void onEvenet ();
+        //void onEvent ();
         //sc_event_queue eq;
         //void onClock();
     "]

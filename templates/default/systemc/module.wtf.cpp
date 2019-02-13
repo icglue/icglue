@@ -34,6 +34,8 @@ ${mod_data(name)}::${mod_data(name)} (::sc_core::sc_module_name name) :
     $initializers
 [pop_keep_block_content keep_block_data "keep" "sc_module(${mod_data(name)})_construct" ".cpp" "
 {
+    // TODO: add your constructor code here
+    // NOTE: if the sc_module(${mod_data(name)})_initialize is *not* empty a comma to the last element will be added
     //SC_THREAD (testcase_control);
 
     //SC_THREAD (onEvent);
@@ -47,7 +49,23 @@ ${mod_data(name)}::${mod_data(name)} (::sc_core::sc_module_name name) :
 }
 "]
 
-[pop_keep_block_content keep_block_data "keep" "definition" ".cpp"]
+[pop_keep_block_content keep_block_data "keep" "definition" ".cpp" "
+// TODO: add your custom definitions here
+// e.g.
+//void ${mod_data(name)}::testcase_control ()
+//{
+//    // initialize outputs
+//    write_o = SC_LOGIC_1
+//
+//    while (nrst_i != SC_LOGIC_1) {
+//        wait (nrst_i.posedge_event ());
+//    }
+//
+//    testcase ();
+//    sc_stop ();
+//    wait ();
+//}
+"]
 
 #if   defined(XMSC)
     XMSC_MODULE_EXPORT(${mod_data(name)})
@@ -72,4 +90,4 @@ ${mod_data(name)}::${mod_data(name)} (::sc_core::sc_module_name name) :
 %}
 #endif
 %}
-#endif
+
