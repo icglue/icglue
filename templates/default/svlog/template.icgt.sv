@@ -1,23 +1,23 @@
 <%
-    ##  icglue - module template
+    ##  icglue - SystemVerilog module template
 -%>
 /* ICGLUE GENERATED FILE - manual changes out of prepared *icglue keep begin/end* blocks will be overwritten */
-<%I include-verilog/header.module.template.vh -%>
+<%I svlog/include/header.icgt.svh -%>
 <%-
     ###########################################
     ## <icglue-inst/code>
     if {[llength $mod_data(regfiles)] == 0} {
-    -%><%I include-verilog/inst.module.template.vh %><%-
+    -%><%I vlog/include/inst.icgt.vh %><%-
     ## </icglue-inst/code> ##
     ###########################################
     } else {
     ###########################################
     ## <regfile>
-    -%><%I include-verilog/regfile.module.template.vh %><%-
+    -%><%I vlog/include/regfile.icgt.vh %><%-
     ## </regfile>
     ###########################################
     }
 %>
-<%I include-verilog/orphaned-keep-blocks.vh -%>
+<%I vlog/include/orphaned-keep-blocks.icgt.vh -%>
 
 endmodule

@@ -283,7 +283,7 @@
 <%
     ###########################################
     ## <icglue-inst/code> -%>
-<%I include-verilog/inst.module.template.vh %><%-
+<%I vlog/include/inst.icgt.vh %><%-
     ## </icglue-inst/code> ##
     ###########################################
 %>

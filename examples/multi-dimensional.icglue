@@ -7,7 +7,7 @@
 
 M -unit "multidimensional" -tree {
     tb_multidimensional            (tb,sv)
-    ----multidimensional_wrap      (rtl,v)
+    ----multidimensional_wrap      (rtl,sv)
     --------multidimensional_top   (rtl,sv)
 }
 

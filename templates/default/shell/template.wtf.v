@@ -39,7 +39,8 @@
     }
 %)
 module $mod_data(name) ($portdecl)
-    [pop_keep_block_content keep_block_data "keep" "my_attributes" ".v"]
+    [pop_keep_block_content keep_block_data "keep" "my_attributes" ".v" "
+    "]
     `ifdef XCELIUM
          (* integer foreign = "SystemC"; *); // Cadence verilog shell for xcelium
     `elsif INCA
@@ -61,6 +62,11 @@ module $mod_data(name) ($portdecl)
     [format "%-${decl_data_maxlen_type}s %${decl_data_maxlen_range}s %s;" $decl(vlog.type) $decl(vlog.bitrange)  $decl(name)]
 %}
 
-    [pop_keep_block_content keep_block_data "keep" "my_verilog_shell" ".v"]
+    `ifdef STIMC
+        initial \$stimc_${mod_data(name)}_init ();
+    `endif
+
+    [pop_keep_block_content keep_block_data "keep" "my_verilog_shell" ".v" "
+    "]
 
 endmodule
