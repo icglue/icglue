@@ -39,12 +39,13 @@
     }
 %)
 module $mod_data(name) ($portdecl)
-    `ifdef INCA
-         (* integer foreign = "SystemC"; *); // foreign attribute string value must be "SystemC"
-    `else
-        [pop_keep_block_content keep_block_data "keep" "my_attributes" ".v"]
-        ;
+    [pop_keep_block_content keep_block_data "keep" "my_attributes" ".v"]
+    `ifdef XCELIUM
+         (* integer foreign = "SystemC"; *); // Cadence verilog shell for xcelium
+    `elsif INCA
+         (* integer foreign = "SystemC"; *); // Cadence verilog shell for ius
     `endif
+        ;
 
 %(
     if {[llength $mod_data(parameters)] != 0} {
@@ -60,6 +61,6 @@ module $mod_data(name) ($portdecl)
     [format "%-${decl_data_maxlen_type}s %${decl_data_maxlen_range}s %s;" $decl(vlog.type) $decl(vlog.bitrange)  $decl(name)]
 %}
 
-    // Cadence wrapper for SystemC module $mod_data(name)
+    [pop_keep_block_content keep_block_data "keep" "my_verilog_shell" ".v"]
 
 endmodule
