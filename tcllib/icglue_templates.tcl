@@ -1027,7 +1027,7 @@ namespace eval ig::templates {
         set _logtype $type
         set _logtypelen 13
         if {[string length ${_logtype}] > ${_logtypelen}} {
-            set _logtype "[string range ${_logtype} 0 [expr {${_logtypelen} - 3}]]..."
+            set _logtype "[string range ${_logtype} 0 [expr {${_logtypelen} - 4}]]..."
         }
         ig::log -info -id Gen "Generating [format {%-*s} [expr {${_logtypelen}+2}] "\[${_logtype}\]"] ${_outf_name_var}"
 
@@ -1095,6 +1095,9 @@ namespace eval ig::templates {
         if {!$dryrun} {
             file mkdir [file dirname ${_outf_name}]
             if {${_tt_lang} eq "link"} {
+                if {[file exists ${_outf_name}]} {
+                    file delete ${_outf_name}
+                }
                 file link -symbolic ${_outf_name} ${_tt_name}
             } else {
                 set _outf [open ${_outf_name} "w"]
