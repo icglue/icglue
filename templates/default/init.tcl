@@ -23,7 +23,7 @@ init::output_types $template {
 init::template_file $template {
     set templateformats {icgt wtf}
     lassign [split $type -] dir ext
-    foreach {tf $templateformats {
+    foreach tf $templateformats {
         if {[file exists  "${template_dir}/${dir}/template.${tf}.${ext}"]} {
             return [list  "${template_dir}/${dir}/template.${tf}.${ext}" $tf]
         }
