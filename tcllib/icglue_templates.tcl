@@ -999,6 +999,97 @@ namespace eval ig::templates {
         return $template_script
     }
 
+    ## @brief Generate output-file based on template and provided data.
+    # @param outf_name Output file name to generate / read in for keep-blocks.
+    # @param template_name name of template file.
+    # @param template_lang template language/type or "link" for symbolic link.
+    # @param template_data key/value dict of variable-name and variable value to set before execution of template code.
+    # @param lognote note text to print in error log messages for reference.
+    # @param dryrun If set to true, no actual files are written.
+    #
+    # The output is written to the file specified by the template callback @ref ig::templates::current::get_output_file.
+    proc generate_template_output {outf_name template_name template_lang template_data lognote dryrun} {
+        if {!$dryrun} {
+            file mkdir [file dirname $outf_name]
+            if {$template_lang eq "link"} {
+                if {[file exists $outf_name]} {
+                    file delete $outf_name
+                }
+                file link -symbolic $outf_name $template_name
+                return
+            }
+        }
+
+        set block_data [list]
+        if {[file exists $outf_name]} {
+            set outf [open $outf_name "r"]
+            set oldcontent [read $outf]
+            close $outf
+            set block_data [parse_keep_blocks $oldcontent [file extension $outf_name]]
+        }
+
+        set template_code [get_template_script $template_name $template_lang]
+
+        set template_data_preset "\n"
+        foreach {key value} $template_data {
+            append template_data_preset "    variable [list $key] [list $value]\n"
+        }
+
+        # evaluate result in temporary namespace
+        eval [join [list \
+            "namespace eval _template_run \{" \
+            {    namespace import ::ig::aux::*} \
+            {    namespace import ::ig::templates::preprocess::*} \
+            {    namespace import ::ig::templates::get_keep_block_content} \
+            {    namespace import ::ig::templates::pop_keep_block_content} \
+            {    namespace import ::ig::templates::remaining_keep_block_contents} \
+            {    namespace import ::ig::log} \
+            "    variable keep_block_data [list $block_data]" \
+            {    variable _res_var {}} \
+            {    variable _linenr_var 0} \
+            {    variable _filename_var {}} \
+            {    variable _error_var {}} \
+            "    proc echo {args} \{" \
+            {        variable _res_var} \
+            {        append _res_var {*}$args} \
+            "    \}" \
+            "    proc _filename {f} \{" \
+            {        variable _filename_var} \
+            {        set _filename_var $f} \
+            "    \}" \
+            "    proc _linenr {n} \{" \
+            {        variable _linenr_var} \
+            {        set _linenr_var $n} \
+            "    \}" \
+            $template_data_preset \
+            "    if {\[catch {" \
+            "        eval [list $template_code]" \
+            "        } _errorres\]} {" \
+            {        set _error_var $_errorres} \
+            "    }" \
+            "\}" \
+            ] "\n"]
+
+        set res      ${_template_run::_res_var}
+        set error    ${_template_run::_error_var}
+        set linenr   ${_template_run::_linenr_var}
+        set filename ${_template_run::_filename_var}
+        namespace delete _template_run
+
+        if {$error ne ""} {
+            ig::log -error "Error while running template ${lognote}\nstacktrace:\n${::errorInfo}"
+            ig::log -error "template ${filename} somewhere after line ${linenr}"
+            return
+        }
+
+        if {!$dryrun} {
+            file mkdir [file dirname $outf_name]
+            set outf [open $outf_name "w"]
+            puts -nonewline $outf $res
+            close $outf
+        }
+    }
+
     ## @brief Generate output for given object of specified type.
     # @param obj_id Object-ID to write output for.
     # @param type Type of template as delivered by @ref ig::templates::current::get_output_types.
@@ -1031,80 +1122,9 @@ namespace eval ig::templates {
         }
         ig::log -info -id Gen "Generating [format {%-*s} [expr {${_logtypelen}+2}] "\[${_logtype}\]"] ${_outf_name_var}"
 
-        if {${_tt_lang} ne "link"} {
-            # actual template
-            ig::log -info -id TPrs "Parsing template ${_tt_name}"
-            set block_data [list]
-            if {[file exists ${_outf_name}]} {
-                set _outf [open ${_outf_name} "r"]
-                set _old [read ${_outf}]
-                close ${_outf}
-                set block_data [parse_keep_blocks ${_old} [file extension ${_outf_name}]]
-            }
-
-            set _tt_code [get_template_script ${_tt_name} ${_tt_lang}]
-
-            # evaluate result in temporary namespace
-            eval [join [list \
-                "namespace eval _template_run \{" \
-                {    namespace import ::ig::aux::*} \
-                {    namespace import ::ig::templates::preprocess::*} \
-                {    namespace import ::ig::templates::get_keep_block_content} \
-                {    namespace import ::ig::templates::pop_keep_block_content} \
-                {    namespace import ::ig::templates::remaining_keep_block_contents} \
-                {    namespace import ::ig::log} \
-                "    variable keep_block_data [list $block_data]" \
-                {    variable _res_var {}} \
-                {    variable _linenr_var 0} \
-                {    variable _filename_var {}} \
-                {    variable _error_var {}} \
-                "    proc echo {args} \{" \
-                {        variable _res_var} \
-                {        append _res_var {*}$args} \
-                "    \}" \
-                "    proc _filename {f} \{" \
-                {        variable _filename_var} \
-                {        set _filename_var $f} \
-                "    \}" \
-                "    proc _linenr {n} \{" \
-                {        variable _linenr_var} \
-                {        set _linenr_var $n} \
-                "    \}" \
-                "    variable obj_id [list $obj_id]" \
-                "    if {\[catch {" \
-                "        eval [list ${_tt_code}]" \
-                "        } _errorres\]} {" \
-                {        set _error_var $_errorres} \
-                "    }" \
-                "\}" \
-                ] "\n"]
-
-            set res      ${_template_run::_res_var}
-            set error    ${_template_run::_error_var}
-            set linenr   ${_template_run::_linenr_var}
-            set filename ${_template_run::_filename_var}
-            namespace delete _template_run
-
-            if {${error} ne ""} {
-                ig::log -error "Error while running template for object [ig::db::get_attribute -object ${obj_id} -attribute "name"] and output type ${type}\nstacktrace:\n${::errorInfo}"
-                ig::log -error "template ${filename} somewhere after line ${linenr}"
-                return
-            }
-        }
-
-        if {!$dryrun} {
-            file mkdir [file dirname ${_outf_name}]
-            if {${_tt_lang} eq "link"} {
-                if {[file exists ${_outf_name}]} {
-                    file delete ${_outf_name}
-                }
-                file link -symbolic ${_outf_name} ${_tt_name}
-            } else {
-                set _outf [open ${_outf_name} "w"]
-                puts -nonewline ${_outf} ${res}
-                close ${_outf}
-            }
-        }
+        set tt_data [list "obj_id" $obj_id]
+        set tt_note "type ${type} / object [ig::db::get_attribute -object ${obj_id} -attribute "name"]"
+        generate_template_output ${_outf_name} ${_tt_name} ${_tt_lang} $tt_data $tt_note $dryrun
     }
 
     ## @brief Generate output for given object for all output types provided by template.
