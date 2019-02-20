@@ -55,3 +55,9 @@ augroup filetypedetect
                 \|   setf text
                 \| endif
 augroup END
+
+augroup filetypedetect
+    let g:ft_ignore_pat = '\.\(Z\|gz\|bz2\|zip\|tgz\|template\|wtf\)$'
+    au! BufNewFile,BufRead [mM]akefile*.template setf makefile_template
+    au! BufNewFile,BufRead [mM]akefile*.wtf setf makefile_wooftemplate
+augroup END
