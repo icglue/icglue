@@ -47,7 +47,7 @@ DOXYFILELIB           = doxy/lib.doxyfile
 BROWSER              ?= firefox
 
 MANSEC                = 1
-H2MBASENAMES         ?= $(filter-out icsng2icglue_filtersvndiff, $(PROGS))
+H2MBASENAMES         ?= $(basename $(notdir $(wildcard h2m/*)))
 
 SYNTAXDIR             = nagelfar
 SYNTAXFILE_LIB        = $(SYNTAXDIR)/$(PKGNAME).nagelfar.db.tcl
@@ -73,12 +73,15 @@ LOCEXTRA              = $(wildcard scripts/* vim/*/*.vim vim/*/*/*.vim) Makefile
 
 #-------------------------------------------------------
 # Tcl Package
-.PHONY: all everything prebuild syntaxdb docs man
+.PHONY: all everything logo prebuild syntaxdb docs man
 
-all: prebuild
+all: prebuild logo
 	@$(MAKE) $(PKGIDX)
 
 everything: all syntaxdb docs man
+
+logo:
+	@$(MAKE) -C logo
 
 prebuild $(CLIBSOURCES):
 	@$(MAKE) -C $(CLIBDIR)
@@ -157,11 +160,11 @@ memcheck:
 
 #-------------------------------------------------------
 # install
-.PHONY: install install_core install_templates install_doc install_helpers
+.PHONY: install install_core install_templates install_icons install_doc install_helpers
 
-install: install_core install_templates install_doc install_helpers
+install: install_core install_templates install_icons install_doc install_helpers
 
-$(INSTDIR)/$(PKGDIR) $(INSTDIR)/bin $(INSTDIR)/share/icglue $(INSTDIR)/$(MANDIR):
+$(INSTDIR)/$(PKGDIR) $(INSTDIR)/bin $(INSTDIR)/share/icglue $(INSTDIR)/share/icglue/icons $(INSTDIR)/$(MANDIR):
 	install -m755 -d $@
 
 $(INSTDIR)/$(PKGDIR)/%.so: $(PKGDIR)/%.so | $(INSTDIR)/$(PKGDIR)
@@ -183,6 +186,9 @@ install_core: \
 
 install_templates: |  $(INSTDIR)/share/icglue
 	cp -r $(TEMPLATES) $(INSTDIR)/share/icglue
+
+install_icons: | $(INSTDIR)/share/icglue/icons
+	install -m644 -t $(INSTDIR)/share/icglue/icons logo/logo.{png,svg,txt}
 
 $(INSTDIR)/$(MANDIR)/%.$(MANSEC): | $(INSTDIR)/$(MANDIR)
 	install -m644 $(MANDIR)/$(notdir $@) $@
@@ -235,5 +241,6 @@ cleansyntax:
 	rm -rf $(SYNTAXDIR)
 
 mrproper cleanall: clean cleandoc cleansyntax
+	@$(MAKE) -C logo clean
 	@$(MAKE) -C $(CLIBDIR) clean
 

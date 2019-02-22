@@ -20,7 +20,8 @@
 
 # try to set package path and load ICGlue package for typical cases
 set binpath $::argv0
-lappend auto_path "[file join [file dirname [file dirname [file normalize $binpath]]] lib]"
+set igroot [file dirname [file dirname [file normalize $binpath]]]
+lappend auto_path "[file join $igroot lib]"
 
 set icglue_silent_load "true"
 package require ICGlue
@@ -188,9 +189,10 @@ Help: h
 
 proc show_gui {c_file c_outtypelist c_loglevel scriptargs dryrun} {
     variable tk_library
+    variable igroot
     set img_name "pwrdLogo200.gif"
-    set tcl_logo    [image create photo -file $tk_library/images/$img_name]
-    set icglue_logo [image create photo -file ../logo/logo.png]
+    set tcl_logo    [image create photo -file [file join $tk_library images $img_name]]
+    set icglue_logo [image create photo -file [file join ${igroot} share icglue icons logo.png]]
 
     # widgets
     label .tcl_logo_label -image $tcl_logo
@@ -361,6 +363,9 @@ proc main {} {
     }
 
     if {$gui} {
+        # save argv (Tk parses args as well -- -g collidates)
+        set ::orig_argv $::argv
+        set ::argv {}
         package require Tk
         show_gui $c_file $c_outtypelist $c_loglevel $scriptargs $dryrun
     } else {
