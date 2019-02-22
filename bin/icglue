@@ -85,8 +85,8 @@ proc additionalversion {} {
     return " ($additionalversion_str)"
 }
 
-proc printversion {} {
-    puts [format \
+proc get_version_str {} {
+    set version_str [format  \
 {ICGlue 3.0a1%s
 Copyright (C) 2017-2019 Andreas Dixius, Felix Neumaerker
 
@@ -95,8 +95,87 @@ This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 
 Written by Andreas Dixius, Felix Neumaerker} [additionalversion]]
+ return $version_str
+}
 
+proc printversion {} {
+    puts [get_version_str]
     exit 0
+}
+
+
+proc generate {c_file c_outtypelist c_loglevel scriptargs dryrun} {
+
+    global g_generate_progress
+    set g_generate_progress 0
+
+    # construct hierarchy from input file
+    if {[regexp "\.(ic)?sng$" $c_file]} {
+        # teat (ic)sng files seperately (sng syntax)
+        ig::sng::evaluate_file $c_file
+    } else {
+        ig::construct::run_script $c_file $scriptargs
+    }
+
+    # generate output
+    set outtypelist [split $c_outtypelist ","]
+
+    set gen_modules   [ig::db::get_modules -all]
+    set num_modules   [llength $gen_modules]
+    set gen_regfiles  [ig::db::get_regfiles -all]
+    set num_regfiles  [llength $gen_regfiles]
+    set num_items     [expr $num_modules + $num_regfiles]
+    set progress_step [expr 100.0 / $num_items]
+
+    # generate modules with template
+    foreach i_module $gen_modules {
+        ig::checks::check_object $i_module
+        if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
+            ig::log -info "generating module $i_module"
+            ig::templates::write_object_all $i_module $outtypelist $dryrun
+        }
+        # update progress and enter GUI event loop
+        set g_generate_progress [expr $g_generate_progress + $progress_step]
+        update
+    }
+    # generate regfiles with template
+    foreach i_regfile $gen_regfiles {
+        ig::checks::check_object $i_regfile
+        ig::log -info "generating regfiledoc $i_regfile"
+        ig::templates::write_object_all $i_regfile $outtypelist $dryrun
+        # update progress and enter GUI event loop
+        set g_generate_progress [expr $g_generate_progress + $progress_step]
+        update
+    }
+
+    set exitcode 0
+
+    set msg {}
+    set loglevel_list {D I W E}
+    foreach {stat_opt stat_fmt} {
+        {}        "  %s: %6d messages generated."
+        -suppress "  %s: %6d messages have been explicitly disabled."} {
+        foreach level [lrange $loglevel_list [lsearch $loglevel_list $c_loglevel] end] {
+            set log_count [ig::log_stat {*}$stat_opt -level $level]
+            if {$log_count > 0} {
+                lappend msg [format $stat_fmt $level $log_count]
+
+                if {($stat_opt eq "")} {
+                    if {($level eq "W") && ($exitcode == 0)} {
+                        set exitcode 2
+                    }
+                    if {($level eq "E")} {
+                        set exitcode 1
+                    }
+                }
+            }
+        }
+    }
+
+    if {[llength $msg]} {
+        puts "\nSummary:\n[join $msg "\n"]"
+    }
+    return $exitcode
 }
 
 proc main {} {
@@ -239,60 +318,8 @@ proc main {} {
         exit 1
     }
 
-    # construct hierarchy from input file
-    if {[regexp "\.(ic)?sng$" $c_file]} {
-        # teat (ic)sng files seperately (sng syntax)
-        ig::sng::evaluate_file $c_file
-    } else {
-        ig::construct::run_script $c_file $scriptargs
-    }
+    exit [generate $c_file $c_outtypelist $c_loglevel $scriptargs $dryrun]
 
-    # generate output
-    set outtypelist [split $c_outtypelist ","]
-
-    # generate modules with template
-    foreach i_module [ig::db::get_modules -all] {
-        ig::checks::check_object $i_module
-        if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
-            ig::log -info "generating module $i_module"
-            ig::templates::write_object_all $i_module $outtypelist $dryrun
-        }
-    }
-    # generate regfiles with template
-    foreach i_regfile [ig::db::get_regfiles -all] {
-        ig::checks::check_object $i_regfile
-        ig::log -info "generating regfiledoc $i_regfile"
-        ig::templates::write_object_all $i_regfile $outtypelist $dryrun
-    }
-
-    set exitcode 0
-
-    set msg {}
-    set loglevel_list {D I W E}
-    foreach {stat_opt stat_fmt} {
-        {}        "  %s: %6d messages generated."
-        -suppress "  %s: %6d messages have been explicitly disabled."} {
-        foreach level [lrange $loglevel_list [lsearch $loglevel_list $c_loglevel] end] {
-            set log_count [ig::log_stat {*}$stat_opt -level $level]
-            if {$log_count > 0} {
-                lappend msg [format $stat_fmt $level $log_count]
-
-                if {($stat_opt eq "")} {
-                    if {($level eq "W") && ($exitcode == 0)} {
-                        set exitcode 2
-                    }
-                    if {($level eq "E")} {
-                        set exitcode 1
-                    }
-                }
-            }
-        }
-    }
-
-    if {[llength $msg]} {
-        puts "\nSummary:\n[join $msg "\n"]"
-    }
-    exit $exitcode
 }
 
 main
