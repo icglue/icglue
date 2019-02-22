@@ -1,4 +1,4 @@
-#!/usr/bin/env tclsh
+#!/usr/bin/env wish
 
 #
 #   ICGlue is a Tcl-Library for scripted HDL generation
@@ -24,6 +24,7 @@ lappend auto_path "[file join [file dirname [file dirname [file normalize $binpa
 
 set icglue_silent_load "true"
 package require ICGlue
+package require Tk
 
 proc printhelp {{exitcode 0} {channel stdout} {doexit "true"}} {
     puts $channel [format \
@@ -32,6 +33,7 @@ proc printhelp {{exitcode 0} {channel stdout} {doexit "true"}} {
 Options:
 Mandatory arguments to long options are mandatory for short options too.
     -h, --help               Show help
+    -g, --gui                Show GUI
 
     -f, --file=FILE          DEPRECATED: set input FILE to use (FILE argument is omitted)
     -t, --template=FILE      Set FILE to use as template
@@ -107,6 +109,7 @@ proc main {} {
     set print_version   "false"
     set nologo          "false"
     set dryrun          "false"
+    set gui             "false"
 
     # flags with mandatory arguments
     set c_loglevel      "W"
@@ -120,6 +123,7 @@ proc main {} {
     # arguments
     set filename [ig::aux::_parse_opts {} {} [list                   \
         {  {^(-h|--help)$}         "const=true" help            {} } \
+        {  {^(-g|--gui)$}          "const=true" gui             {} } \
         {  {^-help(doxy)?$}        "const=true" help_invalid    {} } \
         {  {^(-q|--quiet)$}        "const=E"    c_loglevel      {} } \
         {  {^(-v|--verbose)$}      "const=I"    c_loglevel      {} } \
