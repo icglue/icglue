@@ -1,4 +1,4 @@
-#!/usr/bin/env wish
+#!/usr/bin/env tclsh
 
 #
 #   ICGlue is a Tcl-Library for scripted HDL generation
@@ -24,7 +24,6 @@ lappend auto_path "[file join [file dirname [file dirname [file normalize $binpa
 
 set icglue_silent_load "true"
 package require ICGlue
-package require Tk
 
 proc printhelp {{exitcode 0} {channel stdout} {doexit "true"}} {
     puts $channel [format \
@@ -178,6 +177,49 @@ proc generate {c_file c_outtypelist c_loglevel scriptargs dryrun} {
     return $exitcode
 }
 
+proc show_gui_help {} {
+    tk_messageBox -message "ICGlue GUI Help" -detail [format {Keybindings:
+Quit: q or Ctrl-q or Ctrl-w
+Generate: g
+Help: h
+}] -parent .
+}
+
+
+proc show_gui {c_file c_outtypelist c_loglevel scriptargs dryrun} {
+    variable tk_library
+    set img_name "pwrdLogo200.gif"
+    set tcl_logo    [image create photo -file $tk_library/images/$img_name]
+    set icglue_logo [image create photo -file ../logo/logo.png]
+
+    # widgets
+    label .tcl_logo_label -image $tcl_logo
+    label .icglue_logo_label -image $icglue_logo
+    label .title_text -text [get_version_str]
+    label .file_text  -text $c_file
+    button .run -text Generate -command [list generate $c_file $c_outtypelist $c_loglevel $scriptargs $dryrun]
+    button .exit -text Exit -command exit
+    button .help -text Help -command show_gui_help
+    ttk::progressbar .pbar -orient horizontal -length 400 -mode determinate -variable g_generate_progress
+
+    # placement
+    grid .file_text         -row 0 -columnspan 3
+    grid .icglue_logo_label -row 1 -columnspan 3
+    grid .title_text        -row 2 -columnspan 3
+    #grid .tcl_logo_label    -row 0 -column 1
+    grid .run               -row 3 -column 0
+    grid .exit              -row 3 -column 1
+    grid .help              -row 3 -column 2
+    grid .pbar              -row 4 -columnspan 3
+    wm title . "ICGlue"
+    bind . <q> { exit }
+    bind . <Control-Key-q> { exit }
+    bind . <Control-Key-w> { exit }
+    bind . <g> { generate }
+    bind . <h> { show_gui_help }
+    bell
+}
+
 proc main {} {
     variable binpath
 
@@ -318,8 +360,12 @@ proc main {} {
         exit 1
     }
 
-    exit [generate $c_file $c_outtypelist $c_loglevel $scriptargs $dryrun]
-
+    if {$gui} {
+        package require Tk
+        show_gui $c_file $c_outtypelist $c_loglevel $scriptargs $dryrun
+    } else {
+        exit [generate $c_file $c_outtypelist $c_loglevel $scriptargs $dryrun]
+    }
 }
 
 main
