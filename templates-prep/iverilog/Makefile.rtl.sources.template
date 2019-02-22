@@ -1,35 +1,29 @@
 <%-
 
-set content_testbench "
-SIM_NAME  = tb_${unit}\
+set content_testbench "SIM_NAME  = tb_${unit}
 TOPLEVEL  = \$(SIM_NAME) \$(DUMP_MOD_NAME)
 "
 
-set content_vsources "
-VLOG_SOURCES += \\
+set content_vsources "VLOG_SOURCES += \\
     \${ICPRO_DIR}/units/${unit}/source/rtl/verilog/${unit}.v \\
     \${ICPRO_DIR}/units/${unit}/source/tb/verilog/tb_${unit}.v
 "
 
-set content_vinclude "
-#VLOG_INCDIRS += \\
+set content_vinclude "#VLOG_INCDIRS += \\
 #    \${ICPRO_DIR}/units/${unit}/source/rtl/verilog
 "
 
-set content_stimc "
-#STIMC_MODULES ?= ${unit}
+set content_stimc "#STIMC_MODULES ?= ${unit}
 #STIMC_DIRS     = \\
 #    \${ICPRO_DIR}/global_src/stimc \\
 #    \${ICPRO_DIR}/units/${unit}/source/behavioral/stimc
 STIMC_SOURCES   = \$(wildcard \$(addsuffix /*.c, \$(STIMC_DIRS)) \$(addsuffix /*.cpp, \$(STIMC_DIRS)))
 "
 
-set content_compdeps "
-#COMPILE_DEPS += testcase.v
+set content_compdeps "#COMPILE_DEPS += testcase.v
 "
 
-set content_rundeps "
-#RUN_DEPS += progmem/core.mem
+set content_rundeps "#RUN_DEPS += progmem/core.mem
 "
 
 -%>
