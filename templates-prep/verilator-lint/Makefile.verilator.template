@@ -1,0 +1,9 @@
+include Makefile.rtl.sources
+<%+
+set content_warn "DISABLEWARN += \\
+    UNOPTFLAT
+"
++%>
+<[pop_keep_block_content keep_block_data "keep" "warn" "makefile" $content_warn-]>
+
+include ${ICPRO_DIR}/env/verilator/Makefile.project.lint.verilator

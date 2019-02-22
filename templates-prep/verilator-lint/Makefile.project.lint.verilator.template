@@ -1,0 +1,54 @@
+# ------------  list of all source files  --------------------------------------
+VLOG_SOURCES_RTL ?=
+VLOG_INCDIRS     += \
+    ${ICPRO_DIR}/global_src/verilog \
+    .
+DEFINES          ?=
+DISABLEWARN      ?=
+
+# ------------  dirs  ----------------------------------------------------------
+LOGDIR           := log
+
+# ------------  run opts -------------------------------------------------------
+LINT_OPTS        += -Wall --lint-only
+
+# ------------  result ---------------------------------------------------------
+LINT_LOG         ?= ${LOGDIR}/run.log
+
+# ------------  generate -------------------------------------------------------
+
+# disabled warnings
+LINT_OPTS += $(foreach NWARN, ${DISABLEWARN}, -Wno-${NWARN})
+# include dirs
+LINT_OPTS += $(foreach IDIR, ${VLOG_INCDIRS}, -I${IDIR})
+HEADERS   := $(foreach IDIR, ${VLOG_INCDIRS}, $(wildcard ${IDIR}/*.vh))
+
+#===============================================================================
+# The following statements usually need not to be changed
+#===============================================================================
+
+${LINT_LOG}: ${VLOG_SOURCES_RTL} ${HEADERS} Makefile | ${LOGDIR}
+	@echo verilator ${LINT_OPTS} ${VLOG_SOURCES_RTL}
+	@verilator ${LINT_OPTS} ${VLOG_SOURCES_RTL} 2>&1 | tee ${LINT_LOG}
+	@if [ $$(cat ${LINT_LOG} | wc -l) -eq 0 ] ; then \
+		echo "==> ALL CLEAN <==" | tee -a ${LINT_LOG} ; \
+	fi
+
+run: ${LINT_LOG}
+
+show: ${LINT_LOG}
+	@cat ${LINT_LOG}
+
+clean:
+	@rm -rf ${LOGDIR} 2> /dev/null || true
+
+all: run
+
+printinc:
+	@echo ${INCLUDES}
+
+.PHONY: all run show clean
+
+${LOGDIR}:
+	@mkdir -p $@
+

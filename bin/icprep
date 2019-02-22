@@ -1,0 +1,353 @@
+#!/usr/bin/env tclsh
+
+#
+#   ICGlue is a Tcl-Library for scripted HDL generation
+#   Copyright (C) 2017-2019  Andreas Dixius, Felix Neumärker
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+# try to set package path and load ICGlue package for typical cases
+set binpath $::argv0
+lappend auto_path "[file join [file dirname [file dirname [file normalize $binpath]]] lib]"
+
+set icglue_silent_load "true"
+package require ICGlue
+
+
+namespace eval icprep::templates {
+    ## @brief Collect template data
+    namespace eval collection {
+        variable template_dir       {}
+        variable template_data_gen  {}
+        variable check_userdata_gen {}
+        variable help_gen {}
+    }
+
+    ## @brief Functions to call from/with template init script
+    namespace eval init {
+        ## @brief Set path to template.
+        # @param template Name of template.
+        # @param dir Path to template directory.
+        proc template_dir  {template dir} {
+            lappend icprep::templates::collection::template_dir [list \
+                $template $dir \
+            ]
+        }
+
+        ## @brief Set template callback for obtaining template data.
+        # @param template Name of template.
+        # @param body Proc body of callback.
+        #
+        # Proc callback body should match for argument list {userdata template_dir}, where
+        #
+        # See also @ref icprep::templates::current::get_template_data_raw.
+        proc template_data {template body} {
+            lappend icprep::templates::collection::template_data_gen [list \
+                $template $body \
+            ]
+        }
+
+        ## @brief Set template callback for userdata checks.
+        # @param template Name of template.
+        # @param body Proc body of callback.
+        #
+        # Proc callback body should match for argument list {userdata}, where
+        # userdata is a key/value pair-list for user provided data.
+        #
+        # See also @ref icprep::templates::current::check_userdata and
+        proc check_userdata {template body} {
+            lappend icprep::templates::collection::check_userdata_gen [list \
+                $template $body \
+            ]
+        }
+
+        ## @brief Set template callback for help printout.
+        # @param template Name of template.
+        # @param body Proc body of callback.
+        #
+        # Proc callback body should match for argument list {}.
+        #
+        # See also @ref icprep::templates::current::help and
+        proc help {template body} {
+            lappend icprep::templates::collection::help_gen [list \
+                $template $body \
+            ]
+        }
+
+        namespace export *
+    }
+
+    ## @brief Callback procs of currently loaded template.
+    namespace eval current {
+        variable template_dir ""
+
+        ## @brief Actual callback to get the template data.
+        # @param userdata (key/value pair-list for user provided data)
+        # @param template_dir Path to this template.
+        # @return a list of sublists with entries <template-file> <template-language> <output-file>.
+        #
+        # Should be called by @ref get_template_file.
+        proc get_template_data_raw {userdata template_dir} {
+            ig::log -error -abort "No template loaded"
+        }
+
+        ## @brief Callback to check user-provided data.
+        # @param userdata (key/value pair-list for user provided data)
+        # @return true on success.
+        # @ref get_template_data, @ref get_template_data_raw,
+        proc check_userdata {userdata} {
+            ig::log -error -abort "No template loaded"
+        }
+
+        ## @brief Callback to print help message.
+        proc help {} {
+            ig::log -error -abort "No template loaded"
+        }
+
+        ## @brief Callback wrapper to get the template data.
+        # @param userdata (key/value pair-list for user provided data)
+        # @return a list of sublists with entries <template-file> <template-language> <output-file>.
+        #
+        # Calls @ref get_template_data_raw with the path to the current template.
+        proc get_template_data {userdata} {
+            variable template_dir
+            return [get_template_data_raw $userdata $template_dir]
+        }
+    }
+
+    ## @brief Load directory with templates.
+    # @param dir Path to directory with templates.
+    #
+    # dir should contain one subdirectory for each template.
+    # Each subdirectory should contain an "init.tcl" script inserting the template's
+    # callbacks using the methods provided by @ref ig::templates::init
+    proc add_template_dir {dir} {
+        set _tmpl_dirs [glob -directory $dir *]
+        foreach _i_dir ${_tmpl_dirs} {
+            set _initf_name "${_i_dir}/init.tcl"
+            if {![file exists ${_initf_name}]} {
+                continue
+            }
+
+            if {[catch {
+                set _init_scr [open ${_initf_name} "r"]
+                set _init [read ${_init_scr}]
+                close ${_init_scr}
+            }]} {
+                continue
+            }
+
+            set template [file tail [file normalize [file dirname ${_initf_name}]]]
+            eval ${_init}
+            init::template_dir $template [file normalize "${dir}/${template}"]
+        }
+    }
+
+    ## @brief Load a template to use.
+    # @param template Template to use. The template must have been loaded with a
+    # template directory using @ref add_template_dir.
+    proc load_template {template} {
+        # load vars/procs for current template
+        set dir_idx   [lsearch -index 0 $collection::template_dir       $template]
+        set data_idx  [lsearch -index 0 $collection::template_data_gen  $template]
+        set check_idx [lsearch -index 0 $collection::check_userdata_gen $template]
+        set help_idx  [lsearch -index 0 $collection::help_gen           $template]
+
+        if {($dir_idx < 0) || ($data_idx < 0) || ($check_idx < 0) || ($help_idx < 0)} {
+            ig::log -error -abort "template $template not (fully) defined"
+        }
+
+        set current::template_dir [lindex $collection::template_dir $dir_idx 1]
+        # workaround for doxygen: is otherwise irritated by directly visible proc keyword
+        set procdef "proc"
+        $procdef current::check_userdata        {userdata}              [lindex $collection::check_userdata_gen $check_idx 1]
+        $procdef current::help                  {}                      [lindex $collection::help_gen           $help_idx  1]
+        $procdef current::get_template_data_raw {userdata template_dir} [lindex $collection::template_data_gen  $data_idx  1]
+    }
+
+    proc gen_all {target userdata dryrun} {
+        if {![current::check_userdata $userdata]} {
+            exit 1
+        }
+
+        foreach igen [current::get_template_data $userdata] {
+            lassign $igen ttfile lang outfile
+            ig::log -info -id Gen "Generating ${outfile}"
+
+            set note "${target}/${ttfile}"
+            ig::templates::generate_template_output $outfile $ttfile $lang $userdata $note $dryrun
+        }
+    }
+
+    namespace export *
+}
+
+
+proc main {} {
+    variable binpath
+
+    # flags
+    set help            "false"
+    set help_invalid    "false"
+    set debugdebug      "false"
+    set print_version   "false"
+    set nologo          "false"
+    set dryrun          "false"
+
+    # flags with mandatory arguments
+    set c_loglevel      "W"
+    set c_template_dirs {}
+    set c_log           {}
+
+    # arguments
+    set args_rem [ig::aux::_parse_opts {} {} [list                   \
+        {  {^(-h|--help)$}         "const=true" help            {} } \
+        {  {^(-help.*)$}           "const=true" help_invalid    {} } \
+        {  {^(-q|--quiet)$}        "const=E"    c_loglevel      {} } \
+        {  {^(-v|--verbose)$}      "const=I"    c_loglevel      {} } \
+        {  {^(-d|--debug)$}        "const=D"    c_loglevel      {} } \
+        {  {^(-dd|--debugdebug)$}  "const=true" debugdebug      {} } \
+        {  {^(--version$)}         "const=true" print_version   {} } \
+        {  {^(-n|--dryrun)$}       "const=true" dryrun          {} } \
+                                                                     \
+        {  {^--template-dir(=|$)}  "list"       c_template_dirs {} } \
+        {  {^(-l|--logger)(=|$)}   "list"       c_log           {} } \
+        {  {^(--nocopyright)$}     "const=true" nologo          {} } \
+        {  {^(--nologo)$}          "const=true" nologo          {} } \
+        ] $::argv]
+
+    if {$help || ([llength $args_rem] == 0)} {
+        #TODO
+        #printhelp 0
+    }
+    if {!$nologo} {
+        #TODO
+        #ig::print_logo
+    }
+    if {$print_version} {
+        #TODO
+        #printversion
+    }
+
+    if {$help_invalid || ([llength $args_rem] == 0)} {
+        #TODO
+        #printhelp 1 stderr
+        puts "no target"
+        exit 1
+    }
+
+    ig::logger -level I -id Gen
+
+    set c_loglines "false"
+    if {$debugdebug} {
+        set c_loglevel "D"
+        set c_loglines "true"
+    }
+    if {[info exists ::env(ICGLUE_LINE_NUMBERS)]} {
+        set c_loglines $::env(ICGLUE_LINE_NUMBERS)
+    }
+
+    if {$c_loglines} {
+        ig::logger -level ${c_loglevel} -linenumber
+    } else {
+        ig::logger -level ${c_loglevel} -nolinenumber
+    }
+
+    if {[llength $c_log]} {
+        foreach l $c_log {
+            lassign [split $l ","] log_level log_id
+            if {$log_level in {"D" "I" "W" "E"}} {
+                ig::logger -level $log_level -id $log_id
+                ig::log -info -id Log "Enable logging of $log_level,$log_id"
+            } else {
+                ig::log -error "Unknown loglevel $log_level ($log_level,$log_id)"
+            }
+        }
+    }
+
+    # environment
+    # ... template path ($ICPREP_TEMPLATE_PATH)
+    if {[info exists ::env(ICPREP_TEMPLATE_PATH)]} {
+        foreach i_dir [split $::env(ICPREP_TEMPLATE_PATH) ":"] {
+            lappend c_template_dirs $i_dir
+        }
+    }
+    # ... template to use ($ICPREP_TEMPLATE)
+    if {[info exists ::env(ICPREP_TEMPLATE)]} {
+        set c_template $::env(ICPREP_TEMPLATE)
+    }
+
+    # templates provided with package
+    lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../share/icprep/templates"]
+
+    # template dirs
+    foreach i_tdir $c_template_dirs {
+        if {[file isdirectory $i_tdir]} {
+            icprep::templates::add_template_dir $i_tdir
+        }
+    }
+
+    # prepare target and data
+    set prep_target [lindex $args_rem 0]
+    set prep_data [list target $prep_target]
+    foreach {i_key i_val} [lrange $args_rem 1 end] {
+        set i_key [string trimleft $i_key "-"]
+        lappend prep_data $i_key $i_val
+    }
+
+    if {[catch {icprep::templates::load_template $prep_target}]} {
+        ig::log -error "Failed to load template for target \"${prep_target}\""
+        exit 1
+    }
+
+    if {$help} {
+        icprep::templates::current::help
+        exit 0
+    }
+    icprep::templates::gen_all $prep_target $prep_data $dryrun
+
+    set exitcode 0
+
+    set msg {}
+    set loglevel_list {D I W E}
+    foreach {stat_opt stat_fmt} {
+        {}        "  %s: %6d messages generated."
+        -suppress "  %s: %6d messages have been explicitly disabled."} {
+        foreach level [lrange $loglevel_list [lsearch $loglevel_list $c_loglevel] end] {
+            set log_count [ig::log_stat {*}$stat_opt -level $level]
+            if {$log_count > 0} {
+                lappend msg [format $stat_fmt $level $log_count]
+
+                if {($stat_opt eq "")} {
+                    if {($level eq "W") && ($exitcode == 0)} {
+                        set exitcode 2
+                    }
+                    if {($level eq "E")} {
+                        set exitcode 1
+                    }
+                }
+            }
+        }
+    }
+
+    if {[llength $msg]} {
+        puts "\nSummary:\n[join $msg "\n"]"
+    }
+    exit $exitcode
+}
+
+main
+
+# vim: set filetype=icgluetcl syntax=tcl:

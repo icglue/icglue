@@ -1,0 +1,14 @@
+<%-
+set content_vsources "VLOG_SOURCES_RTL += \\
+    \${ICPRO_DIR}/units/${unit}/source/rtl/verilog/${unit}.v
+"
+
+set content_vinclude "#VLOG_INCDIRS += \\
+#    \${ICPRO_DIR}/units/${unit}/source/rtl/verilog
+"
+
+-%>
+<[pop_keep_block_content keep_block_data "keep" "custom_begin" "makefile"]>
+<[pop_keep_block_content keep_block_data "keep" "vsources"     "makefile" "${content_vsources}"]>
+<[pop_keep_block_content keep_block_data "keep" "vinclude"     "makefile" "${content_vinclude}"]>
+<[pop_keep_block_content keep_block_data "keep" "custom_end"   "makefile"]>
