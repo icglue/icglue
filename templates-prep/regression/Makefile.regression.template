@@ -1,0 +1,80 @@
+
+TESTCASES ?=
+
+# vars
+RUN_DATE     := $(shell date '+%Y.%m.%d_%H.%M.%S')
+SIMTOOL_DIR  := iverilog
+OLDAFTERDAYS ?= 10
+
+## directories
+WORK_DIR          := ./runs
+RESULT_DIR        := ${WORK_DIR}/${RUN_DATE}
+LATEST_RESULT_DIR := ${WORK_DIR}/latest
+LOG_DIRS          := $(foreach TC, ${TESTCASES}, ${RESULT_DIR}/${TC})
+
+# result
+SIMRUN_LOG        := runbatch.log
+REGRESSION_LOG    := regression.log
+TBCHECK_LOG       := result.log
+SUMMARY_LOG       := summary.log
+RESULT_LOG        := ${RESULT_DIR}/${SUMMARY_LOG}
+LATEST_RESULT_LOG := ${LATEST_RESULT_DIR}/${SUMMARY_LOG}
+
+TBCHECK_LOGS   := $(foreach TC, ${TESTCASES}, ${RESULT_DIR}/${TC}/${TBCHECK_LOG})
+
+## dir rules
+${LOG_DIRS}: | ${RESULT_DIR}
+
+${LOG_DIRS} ${RESULT_DIR}:
+	@mkdir -p $@
+
+# enter testcase directorie, clean, run
+${RESULT_DIR}/%/${TBCHECK_LOG}: | ${RESULT_DIR}/%
+	$(eval $@_TCDIR := "$(shell echo $* | sed -e "s|\(.*\)\.\(.*\)|${ICPRO_DIR}/units/\1/simulation/${SIMTOOL_DIR}/\2|")")
+	@echo "running $($@_TCDIR) ..."
+	-@make -C ${$@_TCDIR} clean &> ${RESULT_DIR}/$*/${REGRESSION_LOG}
+	-@make -C ${$@_TCDIR} runbatch &>> ${RESULT_DIR}/$*/${REGRESSION_LOG}
+	-@cp ${$@_TCDIR}/.work/*.log ${RESULT_DIR}/$*/
+	@if [ -e ${RESULT_DIR}/$*/${SIMRUN_LOG} ] ; then \
+		res=$$(grep TBCHECK ${RESULT_DIR}/$*/${SIMRUN_LOG}) ; \
+		resc=$$(grep -c TBCHECK ${RESULT_DIR}/$*/${SIMRUN_LOG}) ; \
+		if [ $$resc -eq "1" ] ; then \
+			echo $*": $$res" > ${RESULT_DIR}/$*/${TBCHECK_LOG} ; \
+		else \
+			echo $*": TBCHECK: INTERPRETFAIL" > ${RESULT_DIR}/$*/${TBCHECK_LOG} ; \
+		fi ; \
+	else \
+		echo $*": TBCHECK: SIMFAIL" > ${RESULT_DIR}/$*/${TBCHECK_LOG} ; \
+	fi
+
+# evaluate
+${RESULT_LOG}: ${TBCHECK_LOGS} | ${RESULT_DIR}
+	@cat ${TBCHECK_LOGS} > $@
+	@sh -c "echo \"---\"; echo \"PASSED: $$(cat $@ | grep -c 'TBCHECK: PASSED') out of $$(cat $@ | wc -l)\"" >> $@
+	@rm -f ${LATEST_RESULT_DIR}
+	@ln -srf ${RESULT_DIR} ${LATEST_RESULT_DIR}
+	@echo ""
+	@echo "---"
+	@cat $@
+
+${LATEST_RESULT_DIR}: ${RESULT_LOG}
+
+all: ${RESULT_LOG}
+
+show:
+	@if [ -e ${LATEST_RESULT_LOG} ] ; then \
+		cat ${LATEST_RESULT_LOG} ; \
+	else \
+		echo "no results - run make first" ; \
+	fi
+
+cleanold:
+	@find ${WORK_DIR} -maxdepth 1 -mindepth 1 -type d -not -newermt -${OLDAFTERDAYS}days -exec rm -rf \{\} \+
+
+cleanall:
+	@rm -rf ${WORK_DIR}
+
+.PHONY: all show cleanall
+
+.DEFAULT_GOAL := all
+

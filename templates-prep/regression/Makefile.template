@@ -1,0 +1,8 @@
+<[pop_keep_block_content keep_block_data "keep" "testcaselist" "makefile" \
+"TESTCASES := \\
+	unitname.testcasename \\
+"]>
+<[pop_keep_block_content keep_block_data "keep" "cleanup" "makefile" \
+"OLDAFTERDAYS := 10
+"]>
+include ${ICPRO_DIR}/env/regression/Makefile.regression

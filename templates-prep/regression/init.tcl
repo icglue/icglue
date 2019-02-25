@@ -4,7 +4,6 @@
 # print template help, return nothing, arguments: {}
 init::help $template {
     puts [join {
-        "--path <project-path>"
     } "\n"]
 }
 
@@ -16,16 +15,13 @@ init::check_userdata $template {
 # return {<path to template file> <template type> <output file>}: arguments: {userdata template_dir}
 init::template_data $template {
     set tf_map {
-        "env.template.sh"      "icgt" "env.sh"
-        "vlog/tb_selfcheck.vh" "icgt" "global_src/verilog/tb_selfcheck.vh"
-        "stimc/tb_selfcheck.h" "icgt" "global_src/stimc/tb_selfcheck.h"
-        "stimc/tb_selfcheck.c" "icgt" "global_src/stimc/tb_selfcheck.c"
+        "Makefile.regression.template" "icgt" "env/regression/Makefile.regression"
+        "Makefile.template"            "icgt" "regression/Makefile"
     }
 
     set output_dir_root "."
-
-    if {[dict exists $userdata path]} {
-        set output_dir_root $path
+    if {[info exists ::env(ICPRO_DIR)]} {
+        set output_dir_root "$::env(ICPRO_DIR)"
     }
 
     set result [list]

@@ -10,6 +10,7 @@ DUMPFILE        ?= $(WORK_DIR)/$(SIM_NAME).dump
 DUMPER          ?= fst
 GTKWAVE_LOG     ?= $(WORK_DIR)/gtkwave.log
 VVP_LOG         ?= $(WORK_DIR)/$(SIM_NAME).log
+BATCH_LOG       ?= $(WORK_DIR)/runbatch.log
 DUMP_MOD        ?= dump.v
 DUMP_MOD_NAME   ?= $(notdir $(basename $(DUMP_MOD)))
 
@@ -120,6 +121,11 @@ elab: vlog vpi_run
 run: $(VVP_FILE) $(VPI_MODULE) Makefile
 	$(VVP) $(VVP_FLAGS) $(VVP_FILE) $(DUMPMODE) $(VVP_EXTARGS_RUN)
 
+runbatch: $(VVP_FILE) $(VPI_MODULE) Makefile
+	$(VVP) $(VVP_FLAGS) $(VVP_FILE) $(DUMPMODE) $(VVP_EXTARGS_RUN) 2>&1 | tee $(BATCH_LOG)
+
+rerun: $(DUMPFILE)
+
 rungui: $(DUMPFILE)
 	@$(MAKE) --no-print-directory gui
 
@@ -147,6 +153,6 @@ $(DUMP_MOD):
 	@echo 'end'                            >> $@
 	@echo 'endmodule'                      >> $@
 
-.PHONY: all elab vlog vpi_run elab run rungui gui clean
+.PHONY: all elab vlog vpi_run elab run runbatch rungui rerun gui clean
 
 .SECONDARY: $(STIMC_DEPS) $(STIMC_OBJECTS) $(VPI_MODULE)

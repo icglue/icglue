@@ -6,11 +6,12 @@ TOPLEVEL  = \$(SIM_NAME) \$(DUMP_MOD_NAME)
 
 set content_vsources "VLOG_SOURCES += \\
     \${ICPRO_DIR}/units/${unit}/source/rtl/verilog/${unit}.v \\
-    \${ICPRO_DIR}/units/${unit}/source/tb/verilog/tb_${unit}.v
+    \${ICPRO_DIR}/units/${unit}/source/tb/verilog/tb_${unit}.v \\
 "
 
 set content_vinclude "#VLOG_INCDIRS += \\
-#    \${ICPRO_DIR}/units/${unit}/source/rtl/verilog
+#    \${ICPRO_DIR}/global_src/verilog \\
+#    \${ICPRO_DIR}/units/${unit}/source/rtl/verilog \\
 "
 
 set content_stimc "#STIMC_MODULES ?= ${unit}
