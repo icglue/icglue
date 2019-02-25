@@ -81,7 +81,7 @@ all: prebuild
 everything: all syntaxdb docs man
 
 prebuild $(CLIBSOURCES):
-	@$(MAKE) -C $(CLIBDIR)
+	@$(MAKE) --no-print-directory -C $(CLIBDIR)
 
 $(PKGIDX): $(TCLSOURCES) $(CLIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 	rm -f $(PKGIDX)
@@ -235,5 +235,5 @@ cleansyntax:
 	rm -rf $(SYNTAXDIR)
 
 mrproper cleanall: clean cleandoc cleansyntax
-	@$(MAKE) -C $(CLIBDIR) clean
+	@$(MAKE) --no-print-directory -C $(CLIBDIR) clean
 
