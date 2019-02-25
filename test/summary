@@ -1,0 +1,113 @@
+#!/usr/bin/env tclsh
+
+proc read_result {test} {
+    if {[catch {
+        set f [open [file join "results" "${test}.result"] "r"]
+        set r [read $f]
+        close $f
+    } ex]} {
+        puts $ex
+        return "resultexception"
+    }
+
+    if {[regexp -line -- {^TESTSTATUS: (.*)$} $r m_whole status]} {
+        return $status
+    } else {
+        return "resultparsefailed"
+    }
+}
+
+proc gensummary {tests} {
+    set summary_short [dict create]
+    set summary_list  [list]
+
+    set lmax_test 0
+    set lmax_stat [string length "total"]
+
+    foreach test $tests {
+        set status [read_result $test]
+
+        set lmax_test [expr {max ($lmax_test, [string length $test])}]
+        set lmax_stat [expr {max ($lmax_stat, [string length $status])}]
+
+        lappend summary_list $test $status
+        dict incr summary_short $status
+    }
+
+    set summary_list  [lsort -stride 2 -index 0 -dictionary $summary_list]
+    set summary_short [lsort -stride 2 -index 1 -integer -decreasing $summary_short]
+
+    set lmax_n 0
+
+    foreach {status n} $summary_short {
+        set lmax_n [expr {max ($lmax_n, [string length [format "%d" $n]])}]
+    }
+
+    set sumf [open [file join "results" "summary"] "w"]
+
+    foreach {test status} $summary_list {
+        set s [format "%-*s %s" [expr {$lmax_test + 1}] "${test}:" $status]
+        puts $s
+        puts $sumf $s
+    }
+
+    set s [string repeat "-" [expr {max ($lmax_test, $lmax_n) + $lmax_stat + 2}]]
+    puts $s
+    puts $sumf $s
+
+    set n_passed 0
+    set n_total  0
+
+    foreach {status n} $summary_short {
+        set s [format "%-*s %*d" [expr {$lmax_stat + 1}] "${status}:" $lmax_n $n]
+        puts $s
+        puts $sumf $s
+
+        if {$status eq "passed"} {
+            incr n_passed
+        }
+        incr n_total
+    }
+    set s [format "%-*s %*d" [expr {$lmax_stat + 1}] "total:" $lmax_n $n_total]
+    puts $s
+    puts $sumf $s
+
+    set s [string repeat "-" [expr {max ($lmax_test, $lmax_n) + $lmax_stat + 2}]]
+    puts $s
+    puts $sumf $s
+
+    if {$n_passed < $n_total} {
+        set s "FAILED"
+        set result false
+    } else {
+        set s "PASSED"
+        set result true
+    }
+    puts $s
+    puts $sumf $s
+
+    close $sumf
+
+    return $result
+}
+
+proc main {} {
+    if {[llength $::argv] == 0} {
+        set tests [glob -directory "tests" -tails *]
+    } else {
+        set tests $::argv
+    }
+
+    if {[catch {gensummary $tests} result]} {
+        puts $result
+        exit 1
+    }
+
+    if {!$result} {
+        exit 1
+    }
+
+    exit 0
+}
+
+main
