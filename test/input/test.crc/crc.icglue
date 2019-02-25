@@ -1,0 +1,61 @@
+M -unit crc -tree {
+    tb_crc ............. (tb)
+    +-- crc_wrap ....... (rtl)
+    |   +-- crc ........ (rtl)
+    |   +-- crc_rf ..... (rtl,rf=crc)
+    +-- apb_stim ....... (res)
+}
+
+# clk/reset
+S clk     tb_crc --> crc crc_rf:apb_clk! apb_stim:apb_clk!
+S reset_n tb_crc --> crc crc_rf:apb_resetn! apb_stim:apb_resetn!
+
+S apb_prot_en crc_wrap --> crc_rf = {1'b0}
+
+# apb-rf
+foreach {s w <->} {
+    apb_addr   32 -->
+    apb_sel    1  -->
+    apb_enable 1  -->
+    apb_write  1  -->
+    apb_wdata  32 -->
+    apb_strb   4  -->
+    apb_prot   3  -->
+    apb_rdata  32 <--
+    apb_ready  1  <--
+    apb_slverr 1  <--
+} {
+    S $s -w $w apb_stim ${<->} crc_rf
+}
+
+S crc_en crc_rf --> crc
+
+R crc control {
+    "name" | "entrybits" | "type" | "reset" | "signal" | "comment"
+    -----  | ----------- | -----  | ------- | -------- | ------------
+    en     | 0           | RW     |    1'b0 | crc_en   | "enable crc"
+}
+
+C tb_crc -as {
+    localparam CLKPERIOD = 2.0;
+
+    reg clk;
+    reg reset_n;
+
+    initial begin
+        clk     = 1'b0;
+        reset_n = 1'b0;
+        #(3.3*CLKPERIOD);
+        reset_n = 1'b1;
+    end
+
+    always #(CLKPERIOD/2.0) begin
+        clk = ~clk;
+    end
+
+    assign clk!     = clk;
+    assign reset_n! = reset_n;
+
+    `include "tb_selfcheck.vh"
+    `include "testcase.vh"
+}

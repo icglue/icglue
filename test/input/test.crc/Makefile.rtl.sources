@@ -1,0 +1,45 @@
+# icglue keep begin custom_begin
+# icglue keep end
+
+# icglue keep begin testbench
+SIM_NAME  = tb_crc
+TOPLEVEL  = $(SIM_NAME) $(DUMP_MOD_NAME)
+# icglue keep end
+
+# icglue keep begin vsources
+VLOG_SOURCES += \
+    ${ICPRO_DIR}/units/apb_stim/source/behavioral/verilog/apb_stim.v \
+    ${ICPRO_DIR}/units/crc/source/rtl/verilog/crc.v \
+    ${ICPRO_DIR}/units/crc/source/rtl/verilog/crc_rf.v \
+    ${ICPRO_DIR}/units/crc/source/rtl/verilog/crc_wrap.v \
+    ${ICPRO_DIR}/units/crc/source/tb/verilog/tb_crc.v \
+# icglue keep end
+
+# icglue keep begin vinclude
+VLOG_INCDIRS += \
+    ${ICPRO_DIR}/global_src/verilog \
+# icglue keep end
+
+# icglue keep begin stimc
+STIMC_MODULES = apb_stim
+STIMC_DIRS     = \
+    . \
+    ${ICPRO_DIR}/global_src/stimc \
+    ${ICPRO_DIR}/units/apb_stim/source/behavioral/stimc \
+	${ICPRO_DIR}/software/host/regfile_access/include \
+	${ICPRO_DIR}/software/host/regfile_access/src \
+
+STIMC_SOURCES   = $(wildcard $(addsuffix /*.c, $(STIMC_DIRS)) $(addsuffix /*.cpp, $(STIMC_DIRS)))
+# icglue keep end
+
+# icglue keep begin compdeps
+#COMPILE_DEPS += testcase.v
+# icglue keep end
+
+# icglue keep begin rundeps
+#RUN_DEPS += progmem/core.mem
+# icglue keep end
+
+# icglue keep begin custom_end
+# icglue keep end
+
