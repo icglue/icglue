@@ -97,7 +97,7 @@ proc eval_regression {} {
     }
 }
 
-proc run_test {test} {
+proc run_test {test {keep false}} {
     set deploy::trg_dir [file join [pwd] $config::run_dir $test]
     set deploy::run_dir [file join [pwd] $config::run_dir $test]
     file mkdir $deploy::run_dir
@@ -123,12 +123,25 @@ proc run_test {test} {
 
     close $deploy::logf
 
-    file delete -force -- $deploy::run_dir
+    if {!$keep} {
+        file delete -force -- $deploy::run_dir
+    }
 }
 
 proc main {} {
+    set opts true
+    set keep false
     foreach test $::argv {
-        run_test $test
+        if {$opts} {
+            if {$test eq "--"} {
+                set opts false
+                continue
+            } elseif {$test eq "--keep"} {
+                set keep true
+                continue
+            }
+        }
+        run_test $test $keep
     }
 }
 
