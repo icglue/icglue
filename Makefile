@@ -78,15 +78,15 @@ TESTDIR               = test
 .PHONY: all everything logo prebuild syntaxdb docs man
 
 all: prebuild logo
-	@$(MAKE) $(PKGIDX)
+	@$(MAKE) --no-print-directory $(PKGIDX)
 
 everything: all syntaxdb docs man
 
 logo:
-	@$(MAKE) -C logo
+	-@$(MAKE) -sC logo
 
 prebuild $(CLIBSOURCES):
-	@$(MAKE) -C $(CLIBDIR)
+	@$(MAKE) --no-print-directory -C $(CLIBDIR)
 
 $(PKGIDX): $(TCLSOURCES) $(CLIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 	rm -f $(PKGIDX)
@@ -217,8 +217,8 @@ install_helpers: | $(INSTDIR)/share/icglue
 .PHONY: test
 
 test:
-	@$(MAKE) -C $(TESTDIR) clean
-	@$(MAKE) -C $(TESTDIR)
+	@$(MAKE) -sC $(TESTDIR) clean
+	@$(MAKE) -sC $(TESTDIR)
 
 #-------------------------------------------------------
 # LoC
@@ -251,7 +251,7 @@ cleansyntax:
 	rm -rf $(SYNTAXDIR)
 
 mrproper cleanall: clean cleandoc cleansyntax
-	@$(MAKE) -C logo clean
-	@$(MAKE) -C $(CLIBDIR) clean
-	@$(MAKE) -C $(TESTDIR) clean
+	@$(MAKE) --no-print-directory -C logo clean
+	@$(MAKE) --no-print-directory -C $(CLIBDIR) clean
+	@$(MAKE) --no-print-directory -C $(TESTDIR) clean
 
