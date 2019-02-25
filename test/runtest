@@ -1,0 +1,134 @@
+#!/usr/bin/env tclsh
+
+namespace eval config {
+    variable run_dir "run"
+    variable rsc_dir "resources"
+    variable tst_dir "tests"
+    variable log_dir "log"
+    variable log_dir "log"
+    variable res_dir "results"
+}
+
+namespace eval deploy {
+    variable main_dir ""
+    variable src_dir ""
+    variable trg_dir ""
+    variable run_dir ""
+    variable logf stderr
+    variable resfn {}
+    variable result "unfinished"
+}
+
+proc run {args} {
+    run_in . {*}$args
+}
+
+proc run_in {dir args} {
+    set d [pwd]
+    cd $deploy::run_dir
+
+    puts $deploy::logf "RUN: $args"
+    exec -ignorestderr -- [file join $deploy::main_dir toolwrap] $dir {*}$args >@ $deploy::logf 2>@ $deploy::logf
+
+    cd $d
+}
+
+proc deploy {src trg} {
+    if {[string index $trg end] eq "/"} {
+        set trg [file join $trg $src]
+    }
+    set trg [file join $deploy::trg_dir $trg]
+    set trg_dir [file dirname $trg]
+
+    set src [file join $deploy::src_dir $src]
+
+    file mkdir $trg_dir
+    puts $deploy::logf "DEPLOY: ${src} --> ${trg}"
+    file copy $src $trg
+}
+
+proc deploy_resource {name} {
+    set rsc_dir [file join $config::rsc_dir $name]
+    set rsc_script [file join $rsc_dir "deploy.tcl"]
+
+    set dpl_src_dir_old $deploy::src_dir
+    set deploy::src_dir $rsc_dir
+
+    if {[file exists $rsc_script]} {
+        source $rsc_script
+    } else {
+        error "$rsc_script not found"
+    }
+
+    set deploy::src_dir $dpl_src_dir_old
+}
+
+proc deploy_test {name} {
+    set tst_dir [file join $config::tst_dir $name]
+    set tst_script [file join $tst_dir "deploy.tcl"]
+
+    set dpl_src_dir_old $deploy::src_dir
+    set deploy::src_dir $tst_dir
+
+    if {[file exists $tst_script]} {
+        source $tst_script
+    } else {
+        error "$tst_script not found"
+    }
+
+    set deploy::src_dir $dpl_src_dir_old
+}
+
+proc eval_regression {} {
+    set regsumf [open [file join $deploy::run_dir regression runs latest summary.log] "r"]
+    set regsum [split [read $regsumf] "\n"]
+    close $regsumf
+
+    set lastline [lindex $regsum end-1]
+
+    if {[regexp -- {^\s*PASSED:\s*([0-9]+)\s*out\s*of\s*([0-9]+)\s*$} $lastline m_whole n_pass n_total]} {
+        if {$n_pass < $n_total} {
+            set deploy::result "failed"
+        } else {
+            set deploy::result "passed"
+        }
+    } else {
+        set deploy::result "evalerror"
+    }
+}
+
+proc run_test {test} {
+    set deploy::trg_dir [file join [pwd] $config::run_dir $test]
+    set deploy::run_dir [file join [pwd] $config::run_dir $test]
+    file mkdir $deploy::run_dir
+    set deploy::main_dir [pwd]
+    file mkdir $config::log_dir
+    set deploy::logf [open [file join [pwd] $config::log_dir ${test}.log] "w"]
+    file mkdir $config::res_dir
+    set deploy::resfn [file join [pwd] $config::res_dir ${test}.result]
+
+    set resf [open $deploy::resfn "w"]
+    puts $resf "TESTSTATUS: unfinished"
+    close $resf
+
+    if {[catch {deploy_test $test} ex]} {
+        set deploy::result "exception"
+    }
+
+    set resf [open $deploy::resfn "w"]
+    puts $resf "TESTSTATUS: ${deploy::result}"
+    puts "${test}: ${deploy::result}"
+    close $resf
+
+    close $deploy::logf
+
+    file delete -force -- $deploy::run_dir
+}
+
+proc main {} {
+    foreach test $::argv {
+        run_test $test
+    }
+}
+
+main

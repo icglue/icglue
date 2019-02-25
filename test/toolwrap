@@ -1,0 +1,19 @@
+#!/bin/bash
+wrap_src=${BASH_SOURCE:-$_}
+wrap_pkgsrcpath=$(dirname $(readlink -e "${wrap_src}"))
+
+export SHELL=/bin/bash
+
+if [ -e "${wrap_pkgsrcpath}/../env.sh" ] ; then
+    source "${wrap_pkgsrcpath}/../env.sh"
+fi
+
+if [ -e "env.sh" ] ; then
+    source "env.sh"
+fi
+
+unset wrap_src
+unset wrap_pkgsrcpath
+
+cd $1
+${@:2}
