@@ -63,9 +63,9 @@ proc deploy_resource {name} {
     set deploy::src_dir $dpl_src_dir_old
 }
 
-proc deploy_test {name} {
+proc run_test_script {name} {
     set tst_dir [file join $config::tst_dir $name]
-    set tst_script [file join $tst_dir "deploy.tcl"]
+    set tst_script [file join $tst_dir "run.tcl"]
 
     set dpl_src_dir_old $deploy::src_dir
     set deploy::src_dir $tst_dir
@@ -111,7 +111,8 @@ proc run_test {test} {
     puts $resf "TESTSTATUS: unfinished"
     close $resf
 
-    if {[catch {deploy_test $test} ex]} {
+    if {[catch {run_test_script $test} ex]} {
+        puts $deploy::logf $ex
         set deploy::result "exception"
     }
 
