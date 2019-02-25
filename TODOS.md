@@ -27,3 +27,6 @@
 - allow multiple construction scripts?
 - add "nowriteout" function or similar? -> allows for construction with intermediate clean
 
+## test
+- do travis integration
+- more tests
