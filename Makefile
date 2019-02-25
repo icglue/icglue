@@ -71,6 +71,8 @@ LOCSOURCES            = $(wildcard tcllib/*.tcl bin/* lib/*.c lib/*.h)
 LOCTEMPLATES          = $(wildcard templates/*/*)
 LOCEXTRA              = $(wildcard scripts/* vim/*/*.vim vim/*/*/*.vim) Makefile lib/Makefile
 
+TESTDIR               = test
+
 #-------------------------------------------------------
 # Tcl Package
 .PHONY: all everything logo prebuild syntaxdb docs man
@@ -211,6 +213,14 @@ install_helpers: | $(INSTDIR)/share/icglue
 	fi
 
 #-------------------------------------------------------
+# Test
+.PHONY: test
+
+test:
+	@$(MAKE) -C $(TESTDIR) clean
+	@$(MAKE) -C $(TESTDIR)
+
+#-------------------------------------------------------
 # LoC
 .PHONY: loc locall
 
@@ -243,4 +253,5 @@ cleansyntax:
 mrproper cleanall: clean cleandoc cleansyntax
 	@$(MAKE) -C logo clean
 	@$(MAKE) -C $(CLIBDIR) clean
+	@$(MAKE) -C $(TESTDIR) clean
 
