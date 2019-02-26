@@ -1,5 +1,8 @@
 #!/usr/bin/env tclsh
 
+#===============================================
+# variables/config
+#===============================================
 namespace eval config {
     variable run_dir "run"
     variable rsc_dir "resources"
@@ -16,23 +19,13 @@ namespace eval deploy {
     variable run_dir ""
     variable logf stderr
     variable resfn {}
-    variable result "unfinished"
+    variable result "unchecked"
+    variable result_fail false
 }
 
-proc run {args} {
-    run_in . {*}$args
-}
-
-proc run_in {dir args} {
-    set d [pwd]
-    cd $deploy::run_dir
-
-    puts $deploy::logf "RUN: $args"
-    exec -ignorestderr -- [file join $deploy::main_dir toolwrap] $dir {*}$args >@ $deploy::logf 2>@ $deploy::logf
-
-    cd $d
-}
-
+#===============================================
+# deploy sources
+#===============================================
 proc deploy {src trg} {
     if {[string index $trg end] eq "/"} {
         set trg [file join $trg $src]
@@ -63,6 +56,77 @@ proc deploy_resource {name} {
     set deploy::src_dir $dpl_src_dir_old
 }
 
+#===============================================
+# run commands
+#===============================================
+proc run {args} {
+    run_in . {*}$args
+}
+
+proc run_in {dir args} {
+    set d [pwd]
+    cd $deploy::run_dir
+
+    puts $deploy::logf "RUN: $args"
+    exec -ignorestderr -- [file join $deploy::main_dir toolwrap] $dir {*}$args >@ $deploy::logf 2>@ $deploy::logf
+
+    cd $d
+}
+
+#===============================================
+# evaluate results
+#===============================================
+proc eval_regression {} {
+    if {$deploy::result_fail} {return}
+    puts $deploy::logf "EVAL: regression results"
+
+    set regsumf [open [file join $deploy::run_dir regression runs latest summary.log] "r"]
+    set regsum [split [read $regsumf] "\n"]
+    close $regsumf
+
+    set lastline [lindex $regsum end-1]
+
+    if {[regexp -- {^\s*PASSED:\s*([0-9]+)\s*out\s*of\s*([0-9]+)\s*$} $lastline m_whole n_pass n_total]} {
+        if {$n_pass < $n_total} {
+            set deploy::result "failed"
+            set deploy::result_fail true
+        } else {
+            set deploy::result "passed"
+        }
+    } else {
+        set deploy::result "evalerror"
+        set deploy::result_fail true
+    }
+}
+
+proc eval_compare_to_golden {local golden {exact false}} {
+    if {$deploy::result_fail} {return}
+
+    set flocal  [file join $deploy::trg_dir $local]
+    set fgolden [file join $deploy::src_dir $golden]
+
+    puts $deploy::logf "EVAL: compare \"${flocal}\" <-> \"${fgolden}\""
+
+    if {$exact} {
+        set opts "-au"
+    } else {
+        # ignore space/blank lines
+        set opts "-auwB"
+    }
+
+    if {[catch {
+        exec -ignorestderr -- diff $opts $flocal $fgolden >@ $deploy::logf 2>@ $deploy::logf
+    } ex]} {
+        set deploy::result "failed"
+        set deploy::result_fail true
+    } else {
+        set deploy::result "passed"
+    }
+}
+
+#===============================================
+# main
+#===============================================
 proc run_test_script {name} {
     set tst_dir [file join $config::tst_dir $name]
     set tst_script [file join $tst_dir "run.tcl"]
@@ -79,24 +143,6 @@ proc run_test_script {name} {
     set deploy::src_dir $dpl_src_dir_old
 }
 
-proc eval_regression {} {
-    set regsumf [open [file join $deploy::run_dir regression runs latest summary.log] "r"]
-    set regsum [split [read $regsumf] "\n"]
-    close $regsumf
-
-    set lastline [lindex $regsum end-1]
-
-    if {[regexp -- {^\s*PASSED:\s*([0-9]+)\s*out\s*of\s*([0-9]+)\s*$} $lastline m_whole n_pass n_total]} {
-        if {$n_pass < $n_total} {
-            set deploy::result "failed"
-        } else {
-            set deploy::result "passed"
-        }
-    } else {
-        set deploy::result "evalerror"
-    }
-}
-
 proc run_test {test {keep false}} {
     set deploy::trg_dir [file join [pwd] $config::run_dir $test]
     set deploy::run_dir [file join [pwd] $config::run_dir $test]
@@ -108,12 +154,13 @@ proc run_test {test {keep false}} {
     set deploy::resfn [file join [pwd] $config::res_dir ${test}.result]
 
     set resf [open $deploy::resfn "w"]
-    puts $resf "TESTSTATUS: unfinished"
+    puts $resf "TESTSTATUS: unchecked"
     close $resf
 
     if {[catch {run_test_script $test} ex]} {
         puts $deploy::logf $ex
         set deploy::result "exception"
+        set deploy::result_fail true
     }
 
     set resf [open $deploy::resfn "w"]

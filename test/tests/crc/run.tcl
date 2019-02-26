@@ -18,5 +18,5 @@ run icprep regression
 # run
 run_in regression make
 
-# evaluate
+# evaluate regression
 eval_regression
