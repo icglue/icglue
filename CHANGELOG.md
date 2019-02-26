@@ -15,3 +15,5 @@ Initial release.
 
 ## Version 3.0
 * Woof! templates
+* icprep for project setup
+* Test setup
