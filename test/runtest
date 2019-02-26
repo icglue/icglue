@@ -21,6 +21,7 @@ namespace eval deploy {
     variable resfn {}
     variable result "unchecked"
     variable result_fail false
+    variable run_last_out {}
 }
 
 #===============================================
@@ -64,18 +65,89 @@ proc run {args} {
 }
 
 proc run_in {dir args} {
+    set deploy::run_last_out {}
+
     set d [pwd]
     cd $deploy::run_dir
 
     puts $deploy::logf "RUN: $args"
-    exec -ignorestderr -- [file join $deploy::main_dir toolwrap] $dir {*}$args >@ $deploy::logf 2>@ $deploy::logf
+
+    set err false
+    if {[catch {
+        exec -ignorestderr -- [file join $deploy::main_dir toolwrap] $dir {*}$args 2>@1
+    } result]} {
+        set err true
+    }
+    puts $deploy::logf $result
+    set deploy::run_last_out $result
 
     cd $d
+
+    if {$err} {
+        error "ERROR while running '$args'"
+    }
 }
 
 #===============================================
 # evaluate results
 #===============================================
+proc eval_run_output {cmp_list} {
+    if {$deploy::result_fail} {return}
+    puts $deploy::logf "EVAL: command output"
+
+    # init
+    set match_count [dict create]
+    for {set i 0} {$i < [expr {[llength $cmp_list] / 3}]} {incr i} {
+        dict set match_count $i 0
+    }
+
+    # match
+    foreach line [split $deploy::run_last_out "\n"] {
+        set i 0
+        foreach {type compare count} $cmp_list {
+            switch -exact -- $type {
+                re {
+                    if {[regexp -- $compare $line]} {
+                        dict incr match_count $i
+                    }
+                }
+                exact {
+                    if {$line eq $compare} {
+                        dict incr match_count $i
+                    }
+                }
+                glob {
+                    if {[string match $compare $line]} {
+                        dict incr match_count $i
+                    }
+                }
+                default {
+                    error "unknown comparison type: ${type}"
+                }
+            }
+            incr i
+        }
+    }
+
+    # check
+    set result "passed"
+
+    set i 0
+    foreach {type compare count} $cmp_list {
+        if {[dict get $match_count $i] != $count} {
+            set result "failed"
+            set deploy::result "failed"
+            set deploy::result_fail true
+
+            puts $deploy::logf "mismatch for '${compare}': expected $count, got [dict get $match_count $i]"
+        }
+
+        incr i
+    }
+
+    set deploy::result $result
+}
+
 proc eval_regression {} {
     if {$deploy::result_fail} {return}
     puts $deploy::logf "EVAL: regression results"
