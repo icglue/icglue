@@ -158,13 +158,13 @@ else
 endif
 
 $(TARGET_DIR)/%.so: $(OBJECTS)
-	$(CC) $(WARNFLAGS) $(LDFLAGS) -o $@ $(OBJECTS)
+	$(CC) $(WARNFLAGS) $(OBJECTS) $(LDFLAGS) -o $@
 
 $(TARGET_DIR)/%.a: $(OBJECTS)
 	$(AR) rcs $@ $(OBJECTS)
 
 $(TARGET_DIR)/$(EXECUTALBE): $(OBJECTS)
-	$(CC) $(WARNFLAGS) $(ARCHFLAGS) $(ALL_LDFLAGS) -o $@ $(OBJECTS) $(addprefix -L, $(LIB_DIR)) $(LIBS)
+	$(CC) $(WARNFLAGS) $(ARCHFLAGS) $(OBJECTS) $(ALL_LDFLAGS) -o $@ $(addprefix -L, $(LIB_DIR)) $(LIBS)
 
 run: $(TARGET_DIR)/$(EXECUTALBE)
 	$(TARGET_DIR)/$(EXECUTALBE) $(RUNPARAMS)
