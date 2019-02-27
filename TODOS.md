@@ -11,7 +11,7 @@
 - allow partial connections of bus signals (low-prio - would require larger reworks)
 
 ## tcllib
-- Reuse create rtl as ressource (also in testbench)
+- reuse created rtl as ressource (also in testbench)
 - add instance-only command or check in M if already exists: sane values, instances only?
 - regfile:
   - specify data width / address alignment?
@@ -28,5 +28,6 @@
 - add "nowriteout" function or similar? -> allows for construction with intermediate clean
 
 ## test
-- do travis integration
+- extend crc-test by crc functionality
 - more tests
+- coverage? (via nagelfar)
