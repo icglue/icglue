@@ -58,8 +58,8 @@ STIMC_LDFLAGS   ?= -lpcl
 WARNFLAGS       ?= -Wall -Wextra -Wshadow
 OPTFLAGS        ?= -O2 -fdata-sections -ffunction-sections
 ARCHFLAGS       ?= -mtune=native -march=native
-CFLAGS          ?= -fpic -Wstrict-prototypes
-CXXFLAGS        ?= -fpic
+CFLAGS          ?= -std=gnu99 -fpic -Wstrict-prototypes
+CXXFLAGS        ?= -std=c++11 -fpic
 CPPFLAGS        ?= $(addprefix -I,$(STIMC_DIRS))
 LDFLAGS         ?= -lpcl
 
@@ -102,7 +102,7 @@ $(WORK_DIR)/%.o: %.cpp $(WORK_DIR)/%.d $(MAKEFILE_LIST) | $(WORK_DIR)
 -include ${STIMC_DEPS:.d=.dep}
 
 $(WORK_DIR)/%.vpi: $(STIMC_OBJECTS)
-	$(CC) $(WARNFLAGS) $(ALL_LDFLAGS) -o $@ $(STIMC_OBJECTS)
+	$(CC) $(WARNFLAGS) $(STIMC_OBJECTS) $(ALL_LDFLAGS) -o $@
 
 
 $(VVP_FILE): $(VLOG_SOURCES) $(DUMP_MOD) $(COMPILE_DEPS) $(filter-out %.dep,$(MAKEFILE_LIST)) | $(WORK_DIR)
