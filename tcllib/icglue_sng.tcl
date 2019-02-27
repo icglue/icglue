@@ -393,7 +393,7 @@ namespace eval ig::sng {
         set mod_trees [dict create]
         set mod_standa {}
 
-        set timeout [llength $mod_lines]
+        set n_tries [llength $mod_lines]
 
         while {[llength $mod_lines] > 0} {
             set modname [lindex $mod_lines 0 2]
@@ -417,9 +417,9 @@ namespace eval ig::sng {
                 set mod_lines [lrange $mod_lines 1 end]
                 lappend mod_lines $first
 
-                # timeout check
-                incr timeout -1
-                if {$timeout == 0} {
+                # n_tries check
+                incr n_tries -1
+                if {$n_tries == 0} {
                     ig::log -error "could not create module tree"
                     return {}
                 }
@@ -508,6 +508,7 @@ namespace eval ig::sng {
 
             # next
             set mod_lines [lrange $mod_lines 1 end]
+            set n_tries   [llength $mod_lines]
         }
 
         set result {}
