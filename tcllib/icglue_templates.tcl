@@ -481,10 +481,11 @@ namespace eval ig::templates {
                 continue
             }
 
-            set template [file tail [file normalize [file dirname $initf_name]]]
+            set template     [file tail [file normalize [file dirname $initf_name]]]
+            set template_dir [file normalize "${dir}/${template}"]
 
             lappend ig::templates::collection::template_dir [list \
-                $template [file normalize "${dir}/${template}"] \
+                $template $template_dir \
             ]
 
             set preface {
@@ -525,13 +526,18 @@ namespace eval ig::templates {
                 }
             }
 
-            namespace eval _template_init [join [list \
-                "variable template [list $template]" \
-                $preface \
-                $init \
-                ] "\n"]
+            if {[catch {
+                namespace eval _template_init [join [list \
+                    "variable template [list $template]" \
+                    $preface \
+                    $init \
+                    ] "\n"]
+                } ex]} {
 
-            namespace delete _template_init
+                ig::log -error "error initializing template ${template} (${template_dir}): ${ex}"
+            }
+
+            if {[namespace exists _template_init]} {namespace delete _template_init}
         }
     }
 
