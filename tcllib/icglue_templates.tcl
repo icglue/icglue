@@ -40,7 +40,7 @@ namespace eval ig::templates {
         # @return Filename of the template file or optionally a 2-element list
         #         with filename and template language (currently icgt (default) or wtf).
         #
-        # See also @ref ig::templates::init::template_file.
+        # See also @ref ig::templates::add_template_dir
         # Should be called by @ref get_template_file.
         proc get_template_file_raw {object type template_dir} {
             ig::log -error -abort "No template loaded"
@@ -52,7 +52,7 @@ namespace eval ig::templates {
         # @ref get_template_file, @ref get_template_file_raw,
         # @ref get_output_file.
         #
-        # See also @ref ig::templates::init::output_types.
+        # See also @ref ig::templates::add_template_dir
         proc get_output_types {object} {
             ig::log -error -abort "No template loaded"
         }
@@ -73,7 +73,7 @@ namespace eval ig::templates {
         # @param type One of the types returned by @ref get_output_types for the given object.
         # @return Path to the output file to generate.
         #
-        # See also @ref ig::templates::init::output_file.
+        # See also @ref ig::templates::add_template_dir
         proc get_output_file {object type} {
             ig::log -error -abort "No template loaded"
         }
@@ -464,7 +464,7 @@ namespace eval ig::templates {
     #
     # dir should contain one subdirectory for each template.
     # Each subdirectory should contain an "init.tcl" script inserting the template's
-    # callbacks using the methods provided by @ref ig::templates::init
+    # procs
     proc add_template_dir {dir} {
         set tmpl_dirs [glob -directory $dir *]
         foreach i_dir $tmpl_dirs {
