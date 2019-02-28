@@ -200,8 +200,8 @@ foreach_array reg $register_list {
 % register comment
 <%  foreach_array reg $register_list {
         %><%= "\\begin\{filecontents\}\{" $rf_name ":" $reg(name) ".comment.tex\}\n"
-        %>    \noindent <%= "\%\n" %><%
-        %>    \begin{center} <%= "\%\n" %><%
+        %>    \noindent<%= "\%\n" %><%
+        %>    \begin{center}<%= "\%\n" %><%
         %>    \begin{tabularx}{\textwidth}{llX}<%= "\%\n" %><%
         foreach_array sreg [lreverse $reg(regs)] {
 
