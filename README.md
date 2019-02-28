@@ -37,6 +37,10 @@ make showdocs
 - make
 - pkg-config (with configs for glib2 and Tcl - otherwise you need to patch `lib/Makefile`)
 
+### Test
+- iverilog
+- libpcl (portable coroutine library)
+
 ## Build
 Run
 ```shell

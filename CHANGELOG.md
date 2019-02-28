@@ -17,3 +17,5 @@ Initial release.
 * Woof! templates
 * icprep for project setup
 * Test setup
+* experimental GUI
+* reworked template init-scripts

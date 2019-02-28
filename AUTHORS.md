@@ -10,6 +10,7 @@
 - [Heiner Bauer](mailto:heiner.bauer@tu-dresden.de)
     - systemverilog support
     - emacs syntax-highlighting
+    - GUI
 
 ## Special Thanks To
 - Stefan Scholze for alpha-test, feedback and complaints (quality-control).
