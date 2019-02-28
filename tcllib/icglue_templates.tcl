@@ -524,6 +524,24 @@ namespace eval ig::templates {
                         }
                     }
                 }
+                # icglue 2 init compatibility:
+                namespace eval init {
+                    proc output_types {template body} {
+                        lappend ig::templates::collection::output_types_gen [list \
+                            $template $body \
+                        ]
+                    }
+                    proc template_file {template body} {
+                        lappend ig::templates::collection::template_path_gen [list \
+                            $template $body \
+                        ]
+                    }
+                    proc output_file {template body} {
+                        lappend ig::templates::collection::output_path_gen [list \
+                            $template $body \
+                        ]
+                    }
+                }
             }
 
             if {[catch {
