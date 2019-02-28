@@ -1,20 +1,19 @@
 # template init script
-# predefined variable in this script: template (template name)
 
-# print template help, return nothing, arguments: {}
-init::help $template {
+# print template help, return nothing
+proc help {} {
     puts [join {
         "--path <project-path>"
     } "\n"]
 }
 
-# check userdata, return true/false: arguments: {userdata}
-init::check_userdata $template {
+# check userdata, return true/false
+proc check_userdata {userdata} {
     return true
 }
 
-# return {<path to template file> <template type> <output file>}: arguments: {userdata template_dir}
-init::template_data $template {
+# return list with {<path to template file> <template type> <output file>}
+proc template_data {userdata template_dir} {
     set tf_map {
         "env.template.sh"      "icgt" "env.sh"
         "vlog/tb_selfcheck.vh" "icgt" "global_src/verilog/tb_selfcheck.vh"
@@ -25,7 +24,7 @@ init::template_data $template {
     set output_dir_root "."
 
     if {[dict exists $userdata path]} {
-        set output_dir_root $path
+        set output_dir_root [dict get $userdata path]
     }
 
     set result [list]

@@ -29,67 +29,6 @@ namespace eval ig::templates {
         variable output_path_gen    {}
     }
 
-    ## @brief Functions to call from/with template init script
-    namespace eval init {
-        ## @brief Set path to template.
-        # @param template Name of template.
-        # @param dir Path to template directory.
-        proc template_dir  {template dir} {
-            lappend ig::templates::collection::template_dir [list \
-                $template $dir \
-            ]
-        }
-
-        ## @brief Set template callback for obtaining output types.
-        # @param template Name of template.
-        # @param body Proc body of callback.
-        #
-        # Proc callback body should match for argument list {object}, where
-        # object is the Object-ID of the Object to generate output for.
-        #
-        # See also @ref ig::templates::current::get_output_types.
-        proc output_types {template body} {
-            lappend ig::templates::collection::output_types_gen [list \
-                $template $body \
-            ]
-        }
-
-        ## @brief Set template callback for path to template file.
-        # @param template Name of template.
-        # @param body Proc body of callback.
-        #
-        # Proc callback body should match for argument list {object type template_dir}, where
-        # object is the Object-ID of the Object to generate output for,
-        # type is one of the types returned by the callback set via @ref output_types for
-        # the given object and template_dir is the path to this template.
-        #
-        # See also @ref ig::templates::current::get_template_file_raw and
-        # @ref ig::templates::current::get_template_file.
-        proc template_file {template body} {
-            lappend ig::templates::collection::template_path_gen [list \
-                $template $body \
-            ]
-        }
-
-        ## @brief Set template callback for path to output file.
-        # @param template Name of template.
-        # @param body Proc body of callback.
-        #
-        # Proc callback body should match for argument list {object type}, where
-        # object is the Object-ID of the Object to generate output for and
-        # type is one of the types returned by the callback set via @ref output_types for
-        # the given object.
-        #
-        # See also @ref ig::templates::current::get_output_file.
-        proc output_file {template body} {
-            lappend ig::templates::collection::output_path_gen [list \
-                $template $body \
-            ]
-        }
-
-        namespace export *
-    }
-
     ## @brief Callback procs of currently loaded template.
     namespace eval current {
         variable template_dir ""
@@ -527,24 +466,72 @@ namespace eval ig::templates {
     # Each subdirectory should contain an "init.tcl" script inserting the template's
     # callbacks using the methods provided by @ref ig::templates::init
     proc add_template_dir {dir} {
-        set _tmpl_dirs [glob -directory $dir *]
-        foreach _i_dir ${_tmpl_dirs} {
-            set _initf_name "${_i_dir}/init.tcl"
-            if {![file exists ${_initf_name}]} {
+        set tmpl_dirs [glob -directory $dir *]
+        foreach i_dir $tmpl_dirs {
+            set initf_name "${i_dir}/init.tcl"
+            if {![file exists ${initf_name}]} {
                 continue
             }
 
             if {[catch {
-                set _init_scr [open ${_initf_name} "r"]
-                set _init [read ${_init_scr}]
-                close ${_init_scr}
+                set init_scr [open $initf_name "r"]
+                set init [read $init_scr]
+                close $init_scr
             }]} {
                 continue
             }
 
-            set template [file tail [file normalize [file dirname ${_initf_name}]]]
-            eval ${_init}
-            init::template_dir $template [file normalize "${dir}/${template}"]
+            set template [file tail [file normalize [file dirname $initf_name]]]
+
+            lappend ig::templates::collection::template_dir [list \
+                $template [file normalize "${dir}/${template}"] \
+            ]
+
+            set preface {
+                proc proc {name arglist body} {
+                    variable template
+                    switch -- $name {
+                        output_types {
+                            if {$arglist ne {object}} {
+                                ig::log -error "template ${template}: invalid output_types definition (arguments must be {object})"
+                            } else {
+                                lappend ig::templates::collection::output_types_gen [list \
+                                    $template $body \
+                                ]
+                            }
+                        }
+                        template_file {
+                            if {$arglist ne {object type template_dir}} {
+                                ig::log -error "template ${template}: invalid template_file definition (arguments must be {object type template_dir})"
+                            } else {
+                                lappend ig::templates::collection::template_path_gen [list \
+                                    $template $body \
+                                ]
+                            }
+                        }
+                        output_file {
+                            if {$arglist ne {object type}} {
+                                ig::log -error "template ${template}: invalid output_file definition (arguments must be {object type})"
+                            } else {
+                                lappend ig::templates::collection::output_path_gen [list \
+                                    $template $body \
+                                ]
+                            }
+                        }
+                        default {
+                            ::proc $name $arglist $body
+                        }
+                    }
+                }
+            }
+
+            namespace eval _template_init [join [list \
+                "variable template [list $template]" \
+                $preface \
+                $init \
+                ] "\n"]
+
+            namespace delete _template_init
         }
     }
 

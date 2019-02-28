@@ -35,60 +35,6 @@ namespace eval icprep::templates {
         variable help_gen {}
     }
 
-    ## @brief Functions to call from/with template init script
-    namespace eval init {
-        ## @brief Set path to template.
-        # @param template Name of template.
-        # @param dir Path to template directory.
-        proc template_dir  {template dir} {
-            lappend icprep::templates::collection::template_dir [list \
-                $template $dir \
-            ]
-        }
-
-        ## @brief Set template callback for obtaining template data.
-        # @param template Name of template.
-        # @param body Proc body of callback.
-        #
-        # Proc callback body should match for argument list {userdata template_dir}, where
-        #
-        # See also @ref icprep::templates::current::get_template_data_raw.
-        proc template_data {template body} {
-            lappend icprep::templates::collection::template_data_gen [list \
-                $template $body \
-            ]
-        }
-
-        ## @brief Set template callback for userdata checks.
-        # @param template Name of template.
-        # @param body Proc body of callback.
-        #
-        # Proc callback body should match for argument list {userdata}, where
-        # userdata is a key/value pair-list for user provided data.
-        #
-        # See also @ref icprep::templates::current::check_userdata and
-        proc check_userdata {template body} {
-            lappend icprep::templates::collection::check_userdata_gen [list \
-                $template $body \
-            ]
-        }
-
-        ## @brief Set template callback for help printout.
-        # @param template Name of template.
-        # @param body Proc body of callback.
-        #
-        # Proc callback body should match for argument list {}.
-        #
-        # See also @ref icprep::templates::current::help and
-        proc help {template body} {
-            lappend icprep::templates::collection::help_gen [list \
-                $template $body \
-            ]
-        }
-
-        namespace export *
-    }
-
     ## @brief Callback procs of currently loaded template.
     namespace eval current {
         variable template_dir ""
@@ -134,24 +80,72 @@ namespace eval icprep::templates {
     # Each subdirectory should contain an "init.tcl" script inserting the template's
     # callbacks using the methods provided by @ref ig::templates::init
     proc add_template_dir {dir} {
-        set _tmpl_dirs [glob -directory $dir *]
-        foreach _i_dir ${_tmpl_dirs} {
-            set _initf_name "${_i_dir}/init.tcl"
-            if {![file exists ${_initf_name}]} {
+        set tmpl_dirs [glob -directory $dir *]
+        foreach i_dir $tmpl_dirs {
+            set initf_name "${i_dir}/init.tcl"
+            if {![file exists ${initf_name}]} {
                 continue
             }
 
             if {[catch {
-                set _init_scr [open ${_initf_name} "r"]
-                set _init [read ${_init_scr}]
-                close ${_init_scr}
+                set init_scr [open $initf_name "r"]
+                set init [read $init_scr]
+                close $init_scr
             }]} {
                 continue
             }
 
-            set template [file tail [file normalize [file dirname ${_initf_name}]]]
-            eval ${_init}
-            init::template_dir $template [file normalize "${dir}/${template}"]
+            set template [file tail [file normalize [file dirname $initf_name]]]
+
+            lappend icprep::templates::collection::template_dir [list \
+                $template [file normalize "${dir}/${template}"] \
+            ]
+
+            set preface {
+                proc proc {name arglist body} {
+                    variable template
+                    switch -- $name {
+                        template_data {
+                            if {$arglist ne {userdata template_dir}} {
+                                ig::log -error "template ${template}: invalid template_data definition (arguments must be {userdata template_dir})"
+                            } else {
+                                lappend icprep::templates::collection::template_data_gen [list \
+                                    $template $body \
+                                ]
+                            }
+                        }
+                        check_userdata {
+                            if {$arglist ne {userdata}} {
+                                ig::log -error "template ${template}: invalid check_userdata definition (arguments must be {userdata})"
+                            } else {
+                                lappend icprep::templates::collection::check_userdata_gen [list \
+                                    $template $body \
+                                ]
+                            }
+                        }
+                        help {
+                            if {$arglist ne {}} {
+                                ig::log -error "template ${template}: invalid help definition (arguments must be {})"
+                            } else {
+                                lappend icprep::templates::collection::help_gen [list \
+                                    $template $body \
+                                ]
+                            }
+                        }
+                        default {
+                            ::proc $name $arglist $body
+                        }
+                    }
+                }
+            }
+
+            namespace eval _template_init [join [list \
+                "variable template [list $template]" \
+                $preface \
+                $init \
+                ] "\n"]
+
+            namespace delete _template_init
         }
     }
 

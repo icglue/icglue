@@ -1,8 +1,7 @@
 # template init script
-# predefined variable in this script: template (template name)
 
-# generate object output filename: arguments: {object} (object-identifier)
-init::output_types $template {
+# generate object output types
+proc output_types {object} {
     set objtype [ig::db::get_attribute -object $object -attribute "type"]
     if {$objtype eq "module"} {
         set lang [ig::db::get_attribute -object $object -attribute "language"]
@@ -19,8 +18,8 @@ init::output_types $template {
     return {}
 }
 
-# return {<path to template file> <template type>}: arguments: {object type template_dir} (object-identifier, outputtype, path to this template's directory)
-init::template_file $template {
+# return {<path to template file> <template type>}
+proc template_file {object type template_dir} {
     set templateformats {icgt wtf}
     lassign [split $type -] dir ext
     foreach tf $templateformats {
@@ -31,8 +30,8 @@ init::template_file $template {
     ig::log -error -abort "No template available for ${type} (No such files: ${template_dir}/${dir}/template.{[join $templateformats ","]}.${ext})"
 }
 
-# generate object output filename: arguments: {object type} (object-identifier, outputtype)
-init::output_file $template {
+# generate object output filename
+proc output_file {object type} {
     set output_dir_root "."
     if {[info exists ::env(ICPRO_DIR)]} {
         set output_dir_root "$::env(ICPRO_DIR)"

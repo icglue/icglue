@@ -1,16 +1,15 @@
 # template init script
-# predefined variable in this script: template (template name)
 
-# print template help, return nothing, arguments: {}
-init::help $template {
+# print template help, return nothing
+proc help {} {
     puts [join {
         "--unit   <unit-name>"
         "--suffix <optional suffix>"
     } "\n"]
 }
 
-# check userdata, return true/false: arguments: {userdata}
-init::check_userdata $template {
+# check userdata, return true/false
+proc check_userdata {userdata} {
     set result true
     foreach key {unit} {
         if {![dict exists $userdata $key]} {
@@ -21,8 +20,8 @@ init::check_userdata $template {
     return $result
 }
 
-# return {<path to template file> <template type> <output file>}: arguments: {userdata template_dir}
-init::template_data $template {
+# return list with {<path to template file> <template type> <output file>}
+proc template_data {userdata template_dir} {
     set tf_map {
         "Makefile.project.lint.verilator.template" "icgt" "env/verilator/Makefile.project.lint.verilator"
         "Makefile.rtl.sources.template"            "icgt" "units/%s/lint/verilator%s/Makefile.rtl.sources"
