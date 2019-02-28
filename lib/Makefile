@@ -77,16 +77,16 @@ ASMFLAG         ?= -adhln
 
 # ------------  build-tools  ---------------------------------------------------
 GP              ?=
-CC              := $(GP)gcc
-CXX             := $(GP)g++
-LD              := $(GP)ld
-OD              := $(GP)objdump
-STRIP           := $(GP)strip
-AR              := $(GP)ar
-LN              := ln -sf
-RM              := rm -f
-RMDIR           := rmdir
-MKDIR           := mkdir -p
+CC              ?= $(GP)gcc
+CXX             ?= $(GP)g++
+LD              ?= $(GP)ld
+OD              ?= $(GP)objdump
+STRIP           ?= $(GP)strip
+AR              ?= $(GP)ar
+LN              ?= ln -sf
+RM              ?= rm -f
+RMDIR           ?= rmdir
+MKDIR           ?= mkdir -p
 
 ifeq ($(USE_LTO), YES)
   OPTFLAGS      := -flto $(OPTFLAGS)
