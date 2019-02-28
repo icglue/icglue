@@ -316,7 +316,7 @@
         if (<[reset]> == 1'b0) begin<% foreach handshake $handshake_list { %>
             reg_<%=$handshake%> <= 1'b0;<% } %>
         end else begin
-            if (<[rf_sel]> && <[rf_enable]>) begin<% foreach handshake $handshake_list { %>
+            if ((<[rf_sel]> == 1'b1) && (<[rf_enable]> == 1'b1)) begin<% foreach handshake $handshake_list { %>
                 if ((<[join [dict get $handshake_cond_req $handshake] " || "]>) && (<[dict get $handshake_sig_in_from_out_sync $handshake]> == 1'b0)) begin
                     reg_<%=$handshake%> <= 1'b1;
                 end<% } %>
@@ -369,7 +369,7 @@
             if {[foreach_array_contains reg $entry(regs) {[fullcustom_reg]}]} {
                 set fc_reset_list {}
                 foreach_array_with reg $entry(regs) {[write_reg] && [fullcustom_reg]} {
-                    lappend fc_reset_list [format "%12s// TODO: [reg_name] <= $reg(reset);" {}]
+                    lappend fc_reset_list [format "%12s// TODO: [reg_name] = $reg(reset);" {}]
                 }
             %>
             <[pop_keep_block_content keep_block_data "keep" "fullcustom_reset_${entry(name)}_fpga" ".v" "\n[join $fc_reset_list "\n"]
