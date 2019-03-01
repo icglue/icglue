@@ -422,7 +422,11 @@
         } elseif {[read_reg_sync]} {
             set _reg_val_output "_${entry(name)}_${reg(name)}_sync"
         } elseif {[read_reg]} {
-            set _reg_val_output "[string trim [signal_name][signal_entrybits]]"
+            if {[custom_reg] && $reg(signal) eq "-"} {
+                set _reg_val_output "/*CUSTOMSIGNAL*/"
+            } else {
+                set _reg_val_output "[string trim [signal_name][signal_entrybits]]"
+            }
         } elseif {$reg(type) eq "-"} {
             set _reg_val_output "$reg(width)'b0"
         } else {
