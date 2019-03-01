@@ -24,7 +24,7 @@ set igroot [file dirname [file dirname [file normalize $binpath]]]
 lappend auto_path "[file join $igroot lib]"
 
 set icglue_silent_load "true"
-package require ICGlue
+package require ICGlue 3.0a1
 
 proc printhelp {{exitcode 0} {channel stdout} {doexit "true"}} {
     puts $channel [format \

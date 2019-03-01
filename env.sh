@@ -2,7 +2,7 @@
 src=${BASH_SOURCE:-$_}
 pkgsrcpath=$(dirname $(readlink -e "${src}"))
 
-export PATH="${PATH}:${pkgsrcpath}/bin"
+export PATH="${pkgsrcpath}/bin:${PATH}"
 MANPATH=${MANPATH:-/usr/share/man}
 export MANPATH="${MANPATH}:${pkgsrcpath}/share/man:${pkgsrcpath}/doc/ICGlue/man"
 
