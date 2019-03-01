@@ -180,6 +180,8 @@ namespace eval icprep::templates {
 
     proc gen_all {target userdata dryrun} {
         if {![current::check_userdata $userdata]} {
+            puts "\n\nUsage: [file tail $::argv0] $target\n\nOptions: \[OPTION\]"
+            current::help
             exit 1
         }
 
@@ -195,6 +197,75 @@ namespace eval icprep::templates {
     namespace export *
 }
 
+proc printhelp {{exitcode 0} {channel stdout} {doexit "true"}} {
+    puts $channel [format \
+{Usage: %s [OPTION]... <template> [TEMPLATE OPTIONS]
+
+Options:
+Mandatory arguments to long options are mandatory for short options too.
+    -h, --help               Show help
+
+    --template-dir=DIR       Add DIR to template path
+
+    -l, --logger=TAG         Enable output log of TAG (format: LEVEL,IDENTIFIER)
+
+    -n, --dryrun             Do not modify/writeout results
+
+    -q, --quiet              Show errors only
+    -v, --verbose            Be verbose
+    -d, --debug              Show debug output
+
+    --nocopyright            Do not print the ICGlue copyright, version and logo upon start to stderr
+
+    --version                Show version
+
+} [file tail $::argv0]]
+
+    if {$doexit} {
+        exit $exitcode
+    }
+}
+
+proc additionalversion {} {
+
+    variable binpath
+    set gitpath [file dirname $binpath]
+    set results {}
+    # additionalversion_str default is replaced by make install
+    if {[set additionalversion_str "INSTALLED-VERSION"] ne "INSTALLED-VERSION"} {
+        return $additionalversion_str
+    }
+
+    if {![catch {set results [exec -ignorestderr igit -C $gitpath ls-files [file tail $binpath]]}]} {
+        if {[string trim $results] ne ""} {
+            set gitrev [exec git -C $gitpath rev-parse --short HEAD]
+            set gitdirty ""
+            if {[exec git -C $gitpath diff --shortstat] ne ""} {
+                set gitdirty "-dirty"
+            }
+            set additionalversion_str "git-rev ${gitrev}${gitdirty} \[live\]"
+        }
+    }
+    return " ($additionalversion_str)"
+}
+
+proc get_version_str {} {
+    set version_str [format  \
+{ICGlue 3.0a1%s
+Copyright (C) 2017-2019 Andreas Dixius, Felix Neumaerker
+
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Written by Andreas Dixius, Felix Neumaerker} [additionalversion]]
+ return $version_str
+}
+
+proc printversion {} {
+    puts [get_version_str]
+    exit 0
+}
 
 proc main {} {
     variable binpath
@@ -214,37 +285,33 @@ proc main {} {
 
     # arguments
     set args_rem [ig::aux::_parse_opts {} {} [list                   \
-        {  {^(-h|--help)$}         "const=true" help            {} } \
-        {  {^(-help.*)$}           "const=true" help_invalid    {} } \
-        {  {^(-q|--quiet)$}        "const=E"    c_loglevel      {} } \
-        {  {^(-v|--verbose)$}      "const=I"    c_loglevel      {} } \
-        {  {^(-d|--debug)$}        "const=D"    c_loglevel      {} } \
-        {  {^(-dd|--debugdebug)$}  "const=true" debugdebug      {} } \
-        {  {^(--version$)}         "const=true" print_version   {} } \
-        {  {^(-n|--dryrun)$}       "const=true" dryrun          {} } \
-                                                                     \
-        {  {^--template-dir(=|$)}  "list"       c_template_dirs {} } \
-        {  {^(-l|--logger)(=|$)}   "list"       c_log           {} } \
-        {  {^(--nocopyright)$}     "const=true" nologo          {} } \
-        {  {^(--nologo)$}          "const=true" nologo          {} } \
+        {  {^(-h|--help)$}         "const=true"  help            {} } \
+        {  {^(-help.*)$}           "const=true"  help_invalid    {} } \
+        {  {^(-q|--quiet)$}        "const=E"     c_loglevel      {} } \
+        {  {^(-v|--verbose)$}      "const=I"     c_loglevel      {} } \
+        {  {^(-d|--debug)$}        "const=D"     c_loglevel      {} } \
+        {  {^(-dd|--debugdebug)$}  "const=true"  debugdebug      {} } \
+        {  {^(--version$)}         "const=true"  print_version   {} } \
+        {  {^(-n|--dryrun)$}       "const=true"  dryrun          {} } \
+                                                                      \
+        {  {^--template-dir(=|$)}  "list"        c_template_dirs {} } \
+        {  {^(-l|--logger)(=|$)}   "list"        c_log           {} } \
+        {  {^(--nocopyright)$}     "const=true"  nologo          {} } \
+        {  {^(--nologo)$}          "const=true"  nologo          {} } \
         ] $::argv]
 
-    if {$help || ([llength $args_rem] == 0)} {
-        #TODO
-        #printhelp 0
+    if {$help} {
+        printhelp 0
     }
     if {!$nologo} {
-        #TODO
-        #ig::print_logo
+        ig::print_logo
     }
     if {$print_version} {
-        #TODO
-        #printversion
+        printversion
     }
 
     if {$help_invalid || ([llength $args_rem] == 0)} {
-        #TODO
-        #printhelp 1 stderr
+        printhelp 1 stderr
         puts "no target"
         exit 1
     }
