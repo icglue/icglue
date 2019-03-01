@@ -57,6 +57,7 @@ SYNTAXGEN_LIB         = scripts/gen_nagelfar_db.tcl
 SYNTAXGEN_CNSTR       = scripts/gen_nagelfar_db_construct.tcl
 
 TEMPLATES             = templates
+TEMPLATES_PREP        = templates-prep
 INSTDIR               = $(DESTDIR)$(PREFIX)
 
 CMARK                 = cmark
@@ -162,11 +163,11 @@ memcheck:
 
 #-------------------------------------------------------
 # install
-.PHONY: install install_core install_templates install_icons install_doc install_helpers
+.PHONY: install install_core install_templates install_templates_prep install_icons install_doc install_helpers
 
-install: install_core install_templates install_icons install_doc install_helpers
+install: install_core install_templates install_templates_prep install_icons install_doc install_helpers
 
-$(INSTDIR)/$(PKGDIR) $(INSTDIR)/bin $(INSTDIR)/share/icglue $(INSTDIR)/share/icglue/icons $(INSTDIR)/$(MANDIR):
+$(INSTDIR)/$(PKGDIR) $(INSTDIR)/bin $(INSTDIR)/share/icglue $(INSTDIR)/share/icprep $(INSTDIR)/share/icglue/icons $(INSTDIR)/$(MANDIR):
 	install -m755 -d $@
 
 $(INSTDIR)/$(PKGDIR)/%.so: $(PKGDIR)/%.so | $(INSTDIR)/$(PKGDIR)
@@ -188,6 +189,9 @@ install_core: \
 
 install_templates: |  $(INSTDIR)/share/icglue
 	cp -r $(TEMPLATES) $(INSTDIR)/share/icglue
+
+install_templates_prep: |  $(INSTDIR)/share/icprep
+	cp -r $(TEMPLATES_PREP) $(INSTDIR)/share/icprep
 
 install_icons: | $(INSTDIR)/share/icglue/icons
 	install -m644 -t $(INSTDIR)/share/icglue/icons logo/logo.{png,svg,txt}
