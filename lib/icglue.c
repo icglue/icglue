@@ -1,6 +1,6 @@
 /*
  *  ICGlue is a Tcl-Library for scripted HDL generation
- *  Copyright (C) 2017-2018  Andreas Dixius, Felix Neumärker
+ *  Copyright (C) 2017-2019  Andreas Dixius, Felix Neumärker
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,12 +40,12 @@ int Icglue_Init (Tcl_Interp *interp)
             (strcmp (icglue_silent_load, "true") != 0) &&
             (strcmp (icglue_silent_load, "yes")  != 0))) {
         ig_print_logo (stderr);
-        log_info ("PLoad", "ICGlue v1.3 loaded");
+        log_info ("PLoad", "ICGlue v1.4 loaded");
     }
 
     ig_add_tcl_commands (interp);
 
-    Tcl_PkgProvide (interp, "ICGlue", "1.3");
+    Tcl_PkgProvide (interp, "ICGlue", "1.4");
 
     return TCL_OK;
 }
