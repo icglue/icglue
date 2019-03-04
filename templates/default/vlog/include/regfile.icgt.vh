@@ -308,9 +308,8 @@
     if {$handshake_list ne ""} {
     %><%=[rf_comment_block "handshake"]%><%="\n"%><%-
     if {$fpga_impl} {-%>
-    initial begin
-        <% foreach handshake $handshake_list { -%>
-            reg_<%=$handshake%> = 1'b0;<% } %>
+    initial begin<% foreach handshake $handshake_list { -%>
+        reg_<%=$handshake%> = 1'b0;<% } %>
     end<%="\n"%><% } -%>
     always @(posedge <[clk]><% if {!$fpga_impl} { %> or negedge <[reset]><% } %>) begin
         if (<[reset]> == 1'b0) begin<% foreach handshake $handshake_list { %>
@@ -372,9 +371,9 @@
                     lappend fc_reset_list [format "%12s// TODO: [reg_name] = $reg(reset);" {}]
                 }
             %>
-            <[pop_keep_block_content keep_block_data "keep" "fullcustom_reset_${entry(name)}_fpga" ".v" "\n[join $fc_reset_list "\n"]
+        <[pop_keep_block_content keep_block_data "keep" "fullcustom_reset_${entry(name)}_fpga" ".v" "\n[join $fc_reset_list "\n"]
             "]><% } elseif {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} { %>
-            <[pop_keep_block_content keep_block_data "keep" "custom_reset_${entry(name)}_fpga" ".v" ""]><%
+        <[pop_keep_block_content keep_block_data "keep" "custom_reset_${entry(name)}_fpga" ".v" ""]><%
             } %>
     end<%="\n"%><% } -%>
     always @(posedge <[clk]><% if {!$fpga_impl} { %> or negedge <[reset]><% } %>) begin
