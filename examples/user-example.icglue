@@ -66,7 +66,7 @@ C component_wrap -as {
         end
     end
 }
-
+ 
 
 ########################################################################
 ### tcl proc example for connect by name                             ###
@@ -164,6 +164,13 @@ R submod_regfile "entry_name1_high" -align 8 {
     "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
     -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
     s_cfg  | 7:0         | RW     | 8'h0    | s_cfg_large | 39:32        | "Configure submod part 1"
+}
+
+# explicitly assign register addresses with '@ ADDR'
+R submod_regfile "ex_addressed_reg" @ 0x0010 {
+    "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
+    -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
+    s_ex_a | 7:0         | RW     | 8'h0    | s_ex_a      | 39:32        | "Configure submod part 1"
 }
 
 
