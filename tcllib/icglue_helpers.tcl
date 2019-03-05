@@ -850,6 +850,16 @@ namespace eval ig::aux {
         return $origin
     }
 
+    ## @brief Remove whitespace after comma
+    #
+    # @param varname variable name to be modified
+    # @return the value of the modified variable
+    proc remove_comma_ws {varname} {
+        upvar $varname v
+        set v [regsub -all {(\S),\s+} "$v" "\\1,"]
+        return $v
+    }
+
     namespace export *
 }
 
