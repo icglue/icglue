@@ -226,18 +226,31 @@ namespace eval ig {
                 # remove spaces of list
                 set m_level {}
                 set m_instance {}
-                set m_flags_full {}
                 set m_flags {}
-                regexp -expanded {
+
+                if {[regexp -expanded {
                     # Match level dots
-                    ^([^a-zA-Z]*)
+                    ^([^a-zA-Z(]*)
                     # Match instance_name
-                    ([^(]*)\s*
+                    ([a-zA-Z][^(]*)\s*
                     # Match flags
                     (\((.*)\))?
-                }  $inst m_whole m_level m_instance m_flags_full m_flags
-
-                if {$m_instance eq ""} {continue}
+                    } $inst m_whole m_level m_instance m_flags_full m_flags]} {
+                    # MATCH
+                } elseif {[regexp -expanded {
+                    # Match level dots
+                    ^([^a-zA-Z(]*)
+                    # Match flags
+                    \((.*)\)\s*
+                    # Match instance_name
+                    ([a-zA-Z][^(]*)\s*
+                    } $inst m_whole m_level m_flags m_instance]} {
+                    # MATCH
+                } elseif {[string match {*[a-zA-Z0-9()]*} $inst]} {
+                    log -error -abort "M: Can't parse instance_name - syntax error in instance tree \"${inst}\" ($origin)"
+                } else {
+                    continue
+                }
 
                 set level [string length $m_level]
                 if {[string first "#" $m_instance] == 0 } {continue}
@@ -248,7 +261,7 @@ namespace eval ig {
                 }
 
                 if {$level != 0  && $len_modname == 0} {
-                    log -error -abort "M: Can't match instance_name - syntax error in instance tree ($origin)"
+                    log -error -abort "M: Can't match instance_name - syntax error in instance tree \"${inst}\" ($origin)"
                 }
 
                 if {$level > $cur_level} {
