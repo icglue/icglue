@@ -207,6 +207,7 @@ Mandatory arguments to long options are mandatory for short options too.
     -h, --help               Show help
 
     --template-dir=DIR       Add DIR to template path
+    -t, --show-templates     Show available templates
 
     -l, --logger=TAG         Enable output log of TAG (format: LEVEL,IDENTIFIER)
 
@@ -278,6 +279,7 @@ proc main {} {
     set print_version   "false"
     set nologo          "false"
     set dryrun          "false"
+    set show_templates  "false"
 
     # flags with mandatory arguments
     set c_loglevel      "W"
@@ -286,32 +288,33 @@ proc main {} {
 
     # arguments
     set args_rem [ig::aux::_parse_opts {} {} [list                   \
-        {  {^(-h|--help)$}         "const=true"  help            {} } \
-        {  {^(-help.*)$}           "const=true"  help_invalid    {} } \
-        {  {^(-q|--quiet)$}        "const=E"     c_loglevel      {} } \
-        {  {^(-v|--verbose)$}      "const=I"     c_loglevel      {} } \
-        {  {^(-d|--debug)$}        "const=D"     c_loglevel      {} } \
-        {  {^(-dd|--debugdebug)$}  "const=true"  debugdebug      {} } \
-        {  {^(--version$)}         "const=true"  print_version   {} } \
-        {  {^(-n|--dryrun)$}       "const=true"  dryrun          {} } \
+        {  {^(-h|--help)$}           "const=true"  help            {} } \
+        {  {^(-help.*)$}             "const=true"  help_invalid    {} } \
+        {  {^(-q|--quiet)$}          "const=E"     c_loglevel      {} } \
+        {  {^(-v|--verbose)$}        "const=I"     c_loglevel      {} } \
+        {  {^(-d|--debug)$}          "const=D"     c_loglevel      {} } \
+        {  {^(-dd|--debugdebug)$}    "const=true"  debugdebug      {} } \
+        {  {^(--version$)}           "const=true"  print_version   {} } \
+        {  {^(-n|--dryrun)$}         "const=true"  dryrun          {} } \
                                                                       \
-        {  {^--template-dir(=|$)}  "list"        c_template_dirs {} } \
-        {  {^(-l|--logger)(=|$)}   "list"        c_log           {} } \
-        {  {^(--nocopyright)$}     "const=true"  nologo          {} } \
-        {  {^(--nologo)$}          "const=true"  nologo          {} } \
+        {  {^(-t|--show-templates)$} "const=true"  show_templates  {} } \
+        {  {^--template-dir(=|$)}    "list"        c_template_dirs {} } \
+        {  {^(-l|--logger)(=|$)}     "list"        c_log           {} } \
+        {  {^(--nocopyright)$}       "const=true"  nologo          {} } \
+        {  {^(--nologo)$}            "const=true"  nologo          {} } \
         ] $::argv]
 
     if {$help} {
         printhelp 0
     }
-    if {!$nologo} {
+    if {!$nologo && !$help && !$show_templates} {
         ig::print_logo
     }
     if {$print_version} {
         printversion
     }
 
-    if {$help_invalid || ([llength $args_rem] == 0)} {
+    if {$help_invalid || (!$show_templates && ([llength $args_rem] == 0))} {
         printhelp 1 stderr
         puts "no target"
         exit 1
@@ -366,6 +369,16 @@ proc main {} {
         if {[file isdirectory $i_tdir]} {
             icprep::templates::add_template_dir $i_tdir
         }
+    }
+
+    # just print templates?
+    if {$show_templates} {
+        puts "Available templates:"
+        foreach t $icprep::templates::collection::template_dir {
+            puts "    - [lindex $t 0]"
+        }
+        puts "Run [file tail $::argv0] <template> --help to see template options."
+        exit 0
     }
 
     # prepare target and data
