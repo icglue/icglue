@@ -304,7 +304,7 @@ proc main {} {
         {  {^(--nologo)$}            "const=true"  nologo          {} } \
         ] $::argv]
 
-    if {$help} {
+    if {$help && ([llength $args_rem] == 0)} {
         printhelp 0
     }
     if {!$nologo && !$help && !$show_templates} {
