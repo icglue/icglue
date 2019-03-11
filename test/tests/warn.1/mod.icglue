@@ -1,0 +1,7 @@
+M -unit mod -tree {
+    tb_mod ............. (tb)
+    +-- mod_wrap ....... (rtl)
+        +-- mod ........ (rtl)
+        +-- mod_rf ..... (rtl,rf=mod)
+}
+
