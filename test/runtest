@@ -61,10 +61,18 @@ proc deploy_resource {name} {
 # run commands
 #===============================================
 proc run {args} {
-    run_in . {*}$args
+    run_dir_check . true {*}$args
+}
+
+proc run_nocheck {args} {
+    run_dir_check . false {*}$args
 }
 
 proc run_in {dir args} {
+    run_dir_check $dir true {*}$args
+}
+
+proc run_dir_check {dir check args} {
     set deploy::run_last_out {}
 
     set d [pwd]
@@ -76,7 +84,7 @@ proc run_in {dir args} {
     if {[catch {
         exec -ignorestderr -- [file join $deploy::main_dir toolwrap] $dir {*}$args 2>@1
     } result]} {
-        set err true
+        set err $check
     }
     puts $deploy::logf $result
     set deploy::run_last_out $result

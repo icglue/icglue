@@ -64,9 +64,9 @@ proc gensummary {tests} {
         puts $sumf $s
 
         if {$status eq "passed"} {
-            incr n_passed
+            incr n_passed $n
         }
-        incr n_total
+        incr n_total $n
     }
     set s [format "%-*s %*d" [expr {$lmax_stat + 1}] "total:" $lmax_n $n_total]
     puts $s
