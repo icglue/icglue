@@ -78,7 +78,7 @@ namespace eval ig {
                         }
                     }
                 } else {
-                    error "ig::expand_instances: could not parse $i_entry (arg \$inst_list =  $inst_list)"
+                    error "ig::construct::expand_instances: could not parse $i_entry (arg \$inst_list =  $inst_list)"
                 }
             }
 
