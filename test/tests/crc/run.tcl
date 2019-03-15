@@ -4,6 +4,7 @@ deploy_resource stimc
 
 # test files
 deploy crc.icglue           units/crc/source/gen/
+deploy common_crc.v         units/crc/source/rtl/verilog/
 deploy Makefile.rtl.sources units/crc/simulation/iverilog/common/
 deploy regression.Makefile  regression/Makefile
 deploy testcase.cpp         units/crc/simulation/iverilog/tc_rf_access/

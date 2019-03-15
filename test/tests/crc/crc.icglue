@@ -1,14 +1,41 @@
+#!/usr/bin/env icglue
+
+# ICGlue CRC-EXAMPLE
+# see also https://crccalc.com/
+
+# E.g. CRC-16/USB
+set crc_data_width 8
+set crc_width      16
+set crc_poly       8005
+set crc_init "{{${crc_width}{1'b1}}}"
+# (Reflected)
+set feed_lsb       1
+
+# E.g. CRC-16/CCITT-FALSE
+#set crc_data_width 8
+#set crc_width      16
+#set crc_poly       1021
+#set crc_init "{{${crc_width}{1'b1}}}"
+#set feed_lsb       0
+
+set crc_fix fix_crc_poly${crc_poly}_${crc_data_width}
+
 M -unit crc -tree {
-    tb_crc ............. (tb)
-    +-- crc_wrap ....... (rtl)
-    |   +-- crc ........ (rtl)
-    |   +-- crc_rf ..... (rtl,rf=crc)
-    +-- apb_stim ....... (res)
+    tb_crc .................. (tb)
+    |
+    +-- apb_stim ............ (res)
+    |
+    \-- crc_wrap ............ (rtl)
+        +-- common_crc ...... (res)
+        +-- $crc_fix ........ (rtl)
+        |
+        \-- crc_rf .......... (rtl,rf=crc)
+
 }
 
 # clk/reset
-S clk     tb_crc --> crc crc_rf:apb_clk! apb_stim:apb_clk!
-S reset_n tb_crc --> crc crc_rf:apb_resetn! apb_stim:apb_resetn!
+S clk     tb_crc --> crc_rf:apb_clk!    apb_stim:apb_clk!
+S reset_n tb_crc --> crc_rf:apb_resetn! apb_stim:apb_resetn!
 
 S apb_prot_en crc_wrap --> crc_rf = {1'b0}
 
@@ -28,13 +55,93 @@ foreach {s w <->} {
     S $s -w $w apb_stim ${<->} crc_rf
 }
 
-S crc_en crc_rf --> crc
+P DATA_W   = $crc_data_width           common_crc
+P CRC_W    = $crc_width                common_crc
+P POLYNOM  = ${crc_width}'h${crc_poly} common_crc
+P FEED_LSB = $feed_lsb                 common_crc
 
-R crc control {
-    "name" | "entrybits" | "type" | "reset" | "signal" | "comment"
-    -----  | ----------- | -----  | ------- | -------- | ------------
-    en     | 0           | RW     |    1'b0 | crc_en   | "enable crc"
+S -w $crc_data_width "crc_data"  crc_rf  -->  common_crc:data_i $crc_fix:data_i
+S -w $crc_width      "crc_state" crc_rf  -->  common_crc:crc_i  $crc_fix:crc_i
+
+
+R crc_rf "data" {
+    "name" | "width"         | "type" | "reset"              | "signal"              | "comment"
+    -----  | -----------     | -----  | -------              | --------              | ---------
+    value  | $crc_data_width | RW     | ${crc_data_width}'h0 | crc_data              | "CRC input data"
 }
+R crc_rf "state" {
+    "name" | "width"         | "type" | "reset"              | "signal"              | "comment"
+    -----  | -----------     | -----  | -------              | --------              | ---------
+    value  | $crc_width      | RW     | $crc_init            | crc_state             | "Current CRC state"
+}
+
+S -w $crc_width "next_common_crc_state" crc_rf  <--  common_crc:crc_o
+S -w $crc_width "next_fixed_crc_state"  crc_rf  <--  $crc_fix:crc_o
+foreach type {common fixed} {
+    set next_crc_state_reflected {}
+    for {set i 0} {$i<$crc_width} {incr i} {
+        lappend next_crc_state_reflected "next_${type}_crc_state!\[$i\]"
+    }
+    S -w $crc_width "next_${type}_crc_state_reflected" crc_rf <-- crc_rf = "\{\n    [join $next_crc_state_reflected ",\n    "]\n\}"
+
+    R crc_rf "next_${type}_state" {
+        "name" | "width"     | "type" | "reset"         | "signal"               | "comment"
+        -----  | ----------- | -----  | -------         | --------               | ---------
+        value  | $crc_width  | R      | ${crc_width}'h0 | next_${type}_crc_state | "Next CRC state (from $type)"
+    }
+
+    R crc_rf "next_${type}_state_reflected" {
+        "name" | "width"     | "type" | "reset"         | "signal"                         | "comment"
+        -----  | ----------- | -----  | -------         | --------                         | ---------
+        value  | $crc_width  | R      | ${crc_width}'h0 | next_${type}_crc_state_reflected | "Next reflected CRC state (from $type)"
+    }
+}
+
+proc lremove {varname value} {
+  upvar 1 $varname var
+  set idx [lsearch -exact $var $value]
+  set var [lreplace $var $idx $idx]
+  return $idx
+}
+
+set crc_poly_hex [format "0x%s" $crc_poly]
+for {set p 0} {$p < $crc_width} {incr p} {
+    set crc_value(0,$p) "crc_state!\[$p\]"
+}
+
+for {set i 0} {$i <= $DATA_W} {incr i} {
+    # feed is last crc_value[LAST_ELEMET] ^ DATA
+    set data_sel [expr {$feed_lsb ? $i : $DATA_W-1-$i}]
+    set crc_feedback($i) "$crc_value($i,[expr {$crc_width-1}]) crc_data!\[$data_sel\]"
+
+    set nexti [expr {$i+1}]
+    # 1st crc_value is the feed
+    set crc_value($nexti,0) $crc_feedback($i)
+    for {set p 1} {$p < $crc_width} {incr p} {
+        # shift the other crc_values
+        set crc_value($nexti,$p) "$crc_value($i,[expr {$p-1}])"
+
+        # xor feedback
+        if {($crc_poly_hex & (1<<$p)) != 0} {
+            foreach e $crc_feedback($i) {
+                # try remove value if already in list ( a xor a == 0 )
+                if {[lremove crc_value($nexti,$p) $e] == -1} {
+                    # add value, since removing failed
+                    lappend crc_value($nexti,$p) $e
+                }
+            }
+        }
+    }
+}
+
+# Writing out the crc code
+C -noa $crc_fix [format "// Polynom is 0b%b" $crc_poly_hex]
+for {set p 0} {$p < $crc_width} {incr p} {
+    ig::aux::max_set crc_max_xor [llength $crc_value($DATA_W,$p)]
+    lappend crc_code "assign next_fixed_crc_state!\[$p\] = [join [lsort $crc_value($DATA_W,$p)] " ^ "];"
+}
+C -noa $crc_fix [format "// Info: Delay for the xor tree is clog2(%d) = %d" $crc_max_xor [expr {clog2($crc_max_xor)}]]
+C -as -align {=} $crc_fix [join $crc_code "\n"]
 
 C tb_crc -as {
     localparam CLKPERIOD = 2.0;
@@ -43,13 +150,13 @@ C tb_crc -as {
     reg reset_n;
 
     initial begin
-        clk     = 1'b0;
-        reset_n = 1'b0;
-        #(3.3*CLKPERIOD);
-        reset_n = 1'b1;
+        clk     = 2'b0;
+        reset_n = 2'b0;
+        #(4.3*CLKPERIOD);
+        reset_n = 2'b1;
     end
 
-    always #(CLKPERIOD/2.0) begin
+    always #(CLKPERIOD/3.0) begin
         clk = ~clk;
     end
 
