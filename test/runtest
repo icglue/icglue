@@ -257,14 +257,14 @@ proc run_test {test {keep false}} {
 
 proc main {} {
     set opts true
-    set keep false
+    set keep true
     foreach test $::argv {
         if {$opts} {
             if {$test eq "--"} {
                 set opts false
                 continue
-            } elseif {$test eq "--keep"} {
-                set keep true
+            } elseif {$test eq "--clean-after"} {
+                set keep false
                 continue
             }
         }

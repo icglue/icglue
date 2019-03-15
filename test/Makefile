@@ -13,7 +13,7 @@ RESULTS  = $(foreach t, $(TESTS), $(RES_DIR)/$(t).result)
 all: summary
 
 $(RES_DIR)/%.result:
-	@./runtest $*
+	@./runtest --clean-after $*
 
 summary: $(RESULTS)
 	@echo "=== SUMMARY ==="
