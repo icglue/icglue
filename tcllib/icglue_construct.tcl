@@ -235,7 +235,11 @@ namespace eval ig {
                     ([a-zA-Z][^(]*)\s*
                     # Match flags
                     (\((.*)\))?
-                    } $inst m_whole m_level m_instance m_flags_full m_flags]} {
+                    # remaining line
+                    \s*
+                    (\#.*)?
+                    $
+                    } $inst m_whole m_level m_instance m_flags_full m_flags m_comment]} {
                     # MATCH
                 } elseif {[regexp -expanded {
                     # Match level dots
@@ -243,8 +247,12 @@ namespace eval ig {
                     # Match flags
                     \((.*)\)\s*
                     # Match instance_name
-                    ([a-zA-Z][^(]*)\s*
-                    } $inst m_whole m_level m_flags m_instance]} {
+                    ([a-zA-Z][^(]*)
+                    # remaining line
+                    \s*
+                    (\#.*)?
+                    $
+                    } $inst m_whole m_level m_flags m_instance m_comment]} {
                     # MATCH
                 } elseif {[string match {*[a-zA-Z0-9()]*} $inst]} {
                     log -error -abort "M: Can't parse instance_name - syntax error in instance tree \"${inst}\" ($origin)"
@@ -383,7 +391,7 @@ namespace eval ig {
                     ] [split $moduleflags "\n"]]
 
                 if {[llength $funknown] != 0} {
-                    log -warn -id MTree "M (instance $instance_name): Unknown flag(s) - $funknown ($origin)"
+                    log -abort -error -id MTree "M (instance $instance_name): Unknown flag(s) - $funknown ($origin)"
                 }
 
                 set module_name [lindex [split $instance_name <] 0]
