@@ -124,8 +124,11 @@ namespace eval ig::checks {
     # @param regfile_id Object-ID of regfile to check.
     proc check_regfile {regfile_id} {
         set rfdata [list \
-            "name"    [ig::db::get_attribute -object $regfile_id -attribute "name"] \
-            "entries" [ig::templates::preprocess::regfile_to_arraylist $regfile_id] \
+            "name"      [ig::db::get_attribute -object $regfile_id -attribute "name"] \
+            "addrwidth" [ig::db::get_attribute -object $regfile_id -attribute "addrwidth"] \
+            "addralign" [ig::db::get_attribute -object $regfile_id -attribute "addralign"] \
+            "datawidth" [ig::db::get_attribute -object $regfile_id -attribute "datawidth"] \
+            "entries"   [ig::templates::preprocess::regfile_to_arraylist $regfile_id] \
         ]
 
         check_regfile_addresses   $rfdata
@@ -137,12 +140,11 @@ namespace eval ig::checks {
     ## @brief Run regfile entry address check.
     # @param regfile_data preprocessed data of regfile to check.
     proc check_regfile_addresses {regfile_data} {
-        set rfname  [dict get $regfile_data "name"]
-        set entries [dict get $regfile_data "entries"]
+        set rfname    [dict get $regfile_data "name"]
+        set entries   [dict get $regfile_data "entries"]
+        set addrwidth [dict get $regfile_data "addrwidth"]
+        set alignment [dict get $regfile_data "addralign"]
         set addr_list [list]
-
-        # currently assume 32bit aligned - extend to allow other addressing if supported ...
-        set alignment 4
 
         foreach i_entry $entries {
             set name    [dict get $i_entry "name"]
@@ -151,6 +153,16 @@ namespace eval ig::checks {
             set origin {}
             if {$oid ne {}} {
                 set origin [ig::db::get_attribute -object $oid -attribute "origin" -default {}]
+            }
+
+            # check alignment
+            if {$address % $alignment != 0} {
+                ig::log -warn -id "ChkRA" "regfile entry \"${name}\" has misaligned address [format "0x%08x" $address] (regfile ${rfname}, alignment ${alignment}) (${origin})"
+            }
+
+            # check addrsize
+            if {clog2($address+1) >= $addrwidth} {
+                ig::log -warn -id "ChkRA" "regfile entry \"${name}\" address [format "0x%08x" $address] ([expr {clog2($address+1)}] bits) does not fit into address size ${addrwidth} bits (regfile ${rfname}) (${origin})"
             }
 
             # check if existing
@@ -175,8 +187,7 @@ namespace eval ig::checks {
         set rfname  [dict get $regfile_data "name"]
         set entries [dict get $regfile_data "entries"]
 
-        # assume 32 bit regs - change if other widths supported
-        set wordsize 32
+        set wordsize [dict get $regfile_data "datawidth"]
 
         foreach i_entry $entries {
             set ename [dict get $i_entry "name"]
@@ -220,8 +231,7 @@ namespace eval ig::checks {
         set rfname  [dict get $regfile_data "name"]
         set entries [dict get $regfile_data "entries"]
 
-        # assume 32 bit regs - change if other widths supported
-        set wordsize 32
+        set wordsize [dict get $regfile_data "datawidth"]
 
         foreach i_entry $entries {
             set ename [dict get $i_entry "name"]

@@ -177,37 +177,47 @@ namespace eval ig {
         set regfiles      {}
         set attributes    {}
         set rfattributes  {}
+        set rfaddrbits    32
+        set rfdatabits    32
+        set rfaddralign   {}
         set origin        [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set name [ig::aux::parse_opts [list                                                                                           \
-                   { {^-u(nit)?(=|$)}                 "string"              unit          "specify unit name \[directory\]"       }   \
-                   { {^-i(nst(ances|anciate)?)?(=|$)} "string"              instances     "specify Module to be instanciated"     }   \
-                   { {^-tree(=)?}                     "string"              instance_tree "specify module instance tree"          }   \
-                                                                                                                                      \
-                   { {^-rtl$}                         "const=rtl"           mode          "specify rtl attribute for module"      }   \
-                   { {^-beh(av(ioral|ioural)?)$}      "const=behavioral"    mode          "specify rtl attribute for module"      }   \
-                   { {^-(tb|testbench)$}              "const=tb"            mode          "specify rtl attribute for module"      }   \
-                                                                                                                                      \
-                   { {^-v(erilog)?$}                  "const=verilog"       lang          "output verilog language"               }   \
-                   { {^-sv|-s(ystemverilog)?$}        "const=systemverilog" lang          "output systemverilog language"         }   \
-                   { {^-vhd(l)?$}                     "const=vhdl"          lang          "output vhdl language"                  }   \
-                   { {^-systemc$}                     "const=systemc"       lang          "output systemc language"               }   \
-                                                                                                                                      \
-                   { {^-(ilm|macro)$}                 "const=ilm"           ilm           "pass ilm attribute to icglue"          }   \
-                   { {^-res(ource)?$}                 "const=true"          resource      "pass ressource attribute to icglue"    }   \
-                                                                                                                                      \
-                   { {^-(rf|(regf(ile)?))(=|$)}       "string"              regfiles      "pass regfile attribute to icglue"      }   \
-                                                                                                                                      \
-                   { {^-attr(ibutes?)?(=|$)}          "string"              attributes    "pass a module arribute dict to icglue" }   \
-                   { {^-rfattr(ibutes?)?(=|$)}        "string"              rfattributes  "pass a regfile arribute dict to icglue"}   \
-                                                                                                                                      \
-                   { {^-cmdorigin(=|$)}               "string"              origin        "origin of command call for logging"    }   \
+                   { {^-u(nit)?(=|$)}                     "string"              unit          "specify unit name \[directory\]"       }   \
+                   { {^-i(nst(ances|anciate)?)?(=|$)}     "string"              instances     "specify Module to be instanciated"     }   \
+                   { {^-tree(=)?}                         "string"              instance_tree "specify module instance tree"          }   \
+                                                                                                                                          \
+                   { {^-rtl$}                             "const=rtl"           mode          "specify rtl attribute for module"      }   \
+                   { {^-beh(av(ioral|ioural)?)$}          "const=behavioral"    mode          "specify rtl attribute for module"      }   \
+                   { {^-(tb|testbench)$}                  "const=tb"            mode          "specify rtl attribute for module"      }   \
+                                                                                                                                          \
+                   { {^-v(erilog)?$}                      "const=verilog"       lang          "output verilog language"               }   \
+                   { {^-sv|-s(ystemverilog)?$}            "const=systemverilog" lang          "output systemverilog language"         }   \
+                   { {^-vhd(l)?$}                         "const=vhdl"          lang          "output vhdl language"                  }   \
+                   { {^-systemc$}                         "const=systemc"       lang          "output systemc language"               }   \
+                                                                                                                                          \
+                   { {^-(ilm|macro)$}                     "const=ilm"           ilm           "pass ilm attribute to icglue"          }   \
+                   { {^-res(ource)?$}                     "const=true"          resource      "pass ressource attribute to icglue"    }   \
+                                                                                                                                          \
+                   { {^-(rf|(regf(ile)?))(=|$)}           "string"              regfiles      "pass regfile attribute to icglue"      }   \
+                                                                                                                                          \
+                   { {^-attr(ibutes?)?(=|$)}              "string"              attributes    "pass a module arribute dict to icglue" }   \
+                   { {^-rfattr(ibutes?)?(=|$)}            "string"              rfattributes  "pass a regfile arribute dict to icglue"}   \
+                   { {^-rfa(ddr(ess)?)?w(idth)?(=|$)}     "integer"             rfaddrbits    "regfile address size"                  }   \
+                   { {^-rfa(ddr(ess)?)?align(ment)?(=|$)} "integer"             rfaddralign   "regfile address alignment"             }   \
+                   { {^-rfd(ata)?w(idth)?(=|$)}           "integer"             rfdatabits    "regfile data size"                     }   \
+                                                                                                                                          \
+                   { {^-cmdorigin(=|$)}                   "string"              origin        "origin of command call for logging"    }   \
             ] -context "MODULENAME" $args]
 
         # argument checks
         if {[llength $name] > 1} {
             log -error -abort "M: too many arguments ($name) ($origin)"
+        }
+
+        if {$rfaddralign eq {}} {
+            set rfaddralign [expr {$rfdatabits / 8}]
         }
 
         set instance_tree [regsub -all -lineanchor -linestop {#.*$} $instance_tree {}]
@@ -357,6 +367,9 @@ namespace eval ig {
                 set flang $lang
                 set fattributes   {}
                 set frfattributes {}
+                set frfaddrbits   32
+                set frfdatabits   32
+                set frfaddralign  {}
                 set fregfile      "false"
                 set fregfilename  {}
 
@@ -369,25 +382,28 @@ namespace eval ig {
 
                 set moduleflags [regsub -all {([^\\]),\s*} $moduleflags "\\1\n"]
                 set funknown [ig::aux::parse_opts [list                                        \
-                    { {^u(nit)?(=|$)}                "string"              funit         {} }  \
-                    { {^(ilm|macro)$}                "const=true"          film          {} }  \
-                    { {^res(ource)?$}                "const=true"          fres          {} }  \
-                                                                                               \
-                    { {^inc(lude)?$}                 "const=true"          finc          {} }  \
-                    { {^rtl$}                        "const=rtl"           fmode         {} }  \
-                    { {^beh(av(ioral|ioural)?)?$}    "const=behavioral"    fmode         {} }  \
-                    { {^(tb|testbench)$}             "const=tb"            fmode         {} }  \
-                                                                                               \
-                    { {^v(erilog)?$}                 "const=verilog"       flang         {} }  \
-                    { {^sv|-s(ystemverilog)?$}       "const=systemverilog" flang         {} }  \
-                    { {^vhd(l)?$}                    "const=vhdl"          flang         {} }  \
-                    { {^systemc$}                    "const=systemc"       flang         {} }  \
-                                                                                               \
-                    { {^(rf|(regf(ile)?)?)$}         "const=true"          fregfile      {} }  \
-                    { {^(rf|(regf(ile)?)?)=}         "string"              fregfilename  {} }  \
-                                                                                               \
-                    { {^attr(ibutes?)?(=|$)}         "list"                fattributes   {} }  \
-                    { {^rfattr(ibutes?)?(=|$)}       "list"                frfattributes {} }  \
+                    { {^u(nit)?(=|$)}                     "string"              funit         {} }  \
+                    { {^(ilm|macro)$}                     "const=true"          film          {} }  \
+                    { {^res(ource)?$}                     "const=true"          fres          {} }  \
+                                                                                                    \
+                    { {^inc(lude)?$}                      "const=true"          finc          {} }  \
+                    { {^rtl$}                             "const=rtl"           fmode         {} }  \
+                    { {^beh(av(ioral|ioural)?)?$}         "const=behavioral"    fmode         {} }  \
+                    { {^(tb|testbench)$}                  "const=tb"            fmode         {} }  \
+                                                                                                    \
+                    { {^v(erilog)?$}                      "const=verilog"       flang         {} }  \
+                    { {^sv|-s(ystemverilog)?$}            "const=systemverilog" flang         {} }  \
+                    { {^vhd(l)?$}                         "const=vhdl"          flang         {} }  \
+                    { {^systemc$}                         "const=systemc"       flang         {} }  \
+                                                                                                    \
+                    { {^(rf|(regf(ile)?)?)$}              "const=true"          fregfile      {} }  \
+                    { {^(rf|(regf(ile)?)?)=}              "string"              fregfilename  {} }  \
+                                                                                                    \
+                    { {^attr(ibutes?)?(=|$)}              "list"                fattributes   {} }  \
+                    { {^rfattr(ibutes?)?(=|$)}            "list"                frfattributes {} }  \
+                    { {^rfa(ddr(ess)?)?w(idth)?(=|$)}     "integer"             frfaddrbits   {} }  \
+                    { {^rfa(ddr(ess)?)?align(ment)?(=|$)} "integer"             frfaddralign  {} }  \
+                    { {^rfd(ata)?w(idth)?(=|$)}           "integer"             frfdatabits   {} }  \
                     ] [split $moduleflags "\n"]]
 
                 if {[llength $funknown] != 0} {
@@ -411,7 +427,13 @@ namespace eval ig {
                             set fregfilename $module_name
                         }
                         set rfid [ig::db::add_regfile -regfile $fregfilename -to $modid]
+                        if {$frfaddralign eq {}} {
+                            set frfaddralign [expr {$rfdatabits / 8}]
+                        }
                         ig::db::set_attribute -object $rfid -attribute "origin" -value $origin
+                        ig::db::set_attribute -object $rfid -attribute "addrwidth" -value $frfaddrbits
+                        ig::db::set_attribute -object $rfid -attribute "addralign" -value $frfaddralign
+                        ig::db::set_attribute -object $rfid -attribute "datawidth" -value $frfdatabits
                         foreach attr $frfattributes {
                             #set attr [string trim $attr {"{" "}"}]
                             lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
@@ -503,6 +525,10 @@ namespace eval ig {
             # regfiles
             foreach i_rf $regfiles {
                 set rfid [ig::db::add_regfile -regfile $i_rf -to $modid]
+                ig::db::set_attribute -object $rfid -attribute "origin" -value $origin
+                ig::db::set_attribute -object $rfid -attribute "addrwidth" -value $rfaddrbits
+                ig::db::set_attribute -object $rfid -attribute "addralign" -value $rfaddralign
+                ig::db::set_attribute -object $rfid -attribute "datawidth" -value $rfdatabits
                 foreach attr $rfattributes {
                     set attr [string trim $attr {"{" "}"}]
                     lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
@@ -986,7 +1012,7 @@ namespace eval ig {
                 }
             }
 
-            set alignment 4
+            set alignment [ig::db::get_attribute -obj $regfile_id -attribute "addralign"]
 
             if {$regfile_id eq ""} {
                 log -error -abort "R (regfile-entry ${entryname}): invalid regfile name specified: ${regfilename} ($origin)"
@@ -1003,7 +1029,7 @@ namespace eval ig {
                 set address [ig::aux::regfile_aligned_addr $address $alignment $register_align]
                 set address [format "0x%04X" $address]
             }
-            if {(![string is integer $address]) || ($address < 0)} {
+            if {(![string is entier $address]) || ($address < 0)} {
                 log -error -abort "R (regfile-entry ${entryname}): no/invalid address ($origin)"
             }
             ig::db::set_attribute -object $entry_id -attribute "address"   -value $address

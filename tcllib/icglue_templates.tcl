@@ -107,7 +107,7 @@ namespace eval ig::templates {
             # collect all regfile entries, sort by address
             set entries [ig::db::get_regfile_entries -all -of $regfile_id]
             set entry_list {}
-            set wordsize 32
+            set wordsize [ig::db::get_attribute -object $regfile_id -attribute "datawidth"]
 
             foreach i_entry $entries {
                 set reg_list {}
@@ -364,6 +364,9 @@ namespace eval ig::templates {
         # The regfiles entry is an array-list of arrays with entries
         # @li name = Name of regfile.
         # @li object = Object-ID of regfile.
+        # @li addrwidth = Address input size.
+        # @li addralign = Address alignment.
+        # @li datawidth = Data size.
         # @li entries = Entries of regfile as array-list as returned by @ref regfile_to_arraylist.
         proc module_to_arraylist {module_id} {
             set result {}
@@ -446,9 +449,13 @@ namespace eval ig::templates {
             set regfile_data {}
             foreach i_regfile [ig::db::get_regfiles -of $module_id] {
                 lappend regfile_data [list \
-                    "name"    [ig::db::get_attribute -object $i_regfile -attribute "name"] \
-                    "object"  $i_regfile \
-                    "entries" [regfile_to_arraylist $i_regfile] \
+                    "name"      [ig::db::get_attribute -object $i_regfile -attribute "name"] \
+                    "addrwidth" [ig::db::get_attribute -object $i_regfile -attribute "addrwidth"] \
+                    "addralign" [ig::db::get_attribute -object $i_regfile -attribute "addralign"] \
+                    "datawidth" [ig::db::get_attribute -object $i_regfile -attribute "datawidth"] \
+                    "name"      [ig::db::get_attribute -object $i_regfile -attribute "name"] \
+                    "object"    $i_regfile \
+                    "entries"   [regfile_to_arraylist $i_regfile] \
                 ]
             }
             lappend result "regfiles" $regfile_data
