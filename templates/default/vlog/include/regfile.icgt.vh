@@ -74,7 +74,11 @@
     }
     proc addr_vlog {} {
         upvar entry(address) address
-        return [format "32'h%08X" $address]
+        variable rf_aw
+
+        set aw_nibbles [expr {($rf_aw+3) / 4}]
+
+        return [format "%d'h%0*X" $rf_aw $aw_nibbles $address]
     }
 
     proc reg_name {} {
@@ -194,6 +198,29 @@
     ## <regfiles> ##
     foreach_array rf $mod_data(regfiles) {
         set entry_list $rf(entries)
+
+        set rf_aw $rf(addrwidth)
+        set rf_dw $rf(datawidth)
+        set rf_bw [expr {($rf_dw + 7)/8}]
+
+        set w_checks [list \
+            rf_addr    $rf_aw \
+            rf_bytesel $rf_bw \
+            rf_w_data  $rf_dw \
+            rf_r_data  $rf_dw \
+        ]
+
+        foreach {pp w} $w_checks {
+            set p [$pp]
+            foreach mp $mod_data(ports) {
+                if {[dict get $mp name] eq $p} {
+                    set pw [dict get $mp size]
+                    if {$pw != $w} {
+                        warn_rftp "Port $p should be $w bits wide but is $pw bits wide."
+                    }
+                }
+            }
+        }
 
         set maxlen_name            [max_array_entry_len $entry_list name]
         set maxlen_signame         0
