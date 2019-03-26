@@ -16,6 +16,7 @@ Initial release.
 ## Version 3.0
 * Woof! templates
 * icprep for project setup
-* Test setup
+* Test setup and initial tests
 * experimental GUI
-* reworked template init-scripts
+* Reworked template init-scripts
+* Support control of regfile address-/data-size and alignment
