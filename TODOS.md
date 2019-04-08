@@ -14,7 +14,7 @@
 - reuse created rtl as ressource (also in testbench)
 - add instance-only command or check in M if already exists: sane values, instances only?
 - regfile:
-  - specify data width / address alignment?
+  - implement variable data-width
   - specify regfile portnames (clk, ...)
 - codesections: make adapt-selectively the default?
 - checks: use "origin" information of constructed parts for logging of warnings
