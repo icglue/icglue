@@ -172,6 +172,7 @@ namespace eval ig {
         set mode          "rtl"
         set lang          "verilog"
         set ilm           "false"
+        set dummy         "false"
         set resource      "false"
         set instances     {}
         set regfiles      {}
@@ -197,6 +198,7 @@ namespace eval ig {
                    { {^-vhd(l)?$}                         "const=vhdl"          lang          "output vhdl language"                  }   \
                    { {^-systemc$}                         "const=systemc"       lang          "output systemc language"               }   \
                                                                                                                                           \
+                   { {^-dummy$}                           "const=true"          dummy         "dummy wrapper - do not generate"       }   \
                    { {^-(ilm|macro)$}                     "const=ilm"           ilm           "pass ilm attribute to icglue"          }   \
                    { {^-res(ource)?$}                     "const=true"          resource      "pass ressource attribute to icglue"    }   \
                                                                                                                                           \
@@ -365,6 +367,7 @@ namespace eval ig {
                 set finc "false"
                 set fmode $mode
                 set flang $lang
+                set fdummy "false"
                 set fattributes   {}
                 set frfattributes {}
                 set frfaddrbits   32
@@ -385,6 +388,7 @@ namespace eval ig {
                     { {^u(nit)?(=|$)}                     "string"              funit         {} }  \
                     { {^(ilm|macro)$}                     "const=true"          film          {} }  \
                     { {^res(ource)?$}                     "const=true"          fres          {} }  \
+                    { {^(dummy)$}                         "const=true"          fdummy        {} }  \
                                                                                                     \
                     { {^inc(lude)?$}                      "const=true"          finc          {} }  \
                     { {^rtl$}                             "const=rtl"           fmode         {} }  \
@@ -447,6 +451,7 @@ namespace eval ig {
                             ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_val
                         }
                     }
+                    ig::db::set_attribute -object $modid -attribute "dummy" -value $fdummy
                 }
 
                 if {$moduleparent ne ""} {
@@ -503,6 +508,7 @@ namespace eval ig {
             ig::db::set_attribute -object $modid -attribute "language"   -value $lang
             ig::db::set_attribute -object $modid -attribute "mode"       -value $mode
             ig::db::set_attribute -object $modid -attribute "parentunit" -value $unit
+            ig::db::set_attribute -object $modid -attribute "dummy"      -value $dummy
             foreach attr $attributes {
                 set attr [string trim $attr {"{" "}"}]
                 lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val

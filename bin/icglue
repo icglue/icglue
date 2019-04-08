@@ -130,6 +130,9 @@ proc generate {c_file c_outtypelist c_loglevel scriptargs dryrun} {
 
     # generate modules with template
     foreach i_module $gen_modules {
+        if {[ig::db::get_attribute -object $i_module -attribute "dummy" -default "false"]} {
+            continue
+        }
         ig::checks::check_object $i_module
         if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
             ig::log -info "generating module $i_module"
