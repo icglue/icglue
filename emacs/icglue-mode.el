@@ -43,6 +43,7 @@
     ("#.*"                                                      . font-lock-comment-face)
     ("^ *M \\|^ *P \\|^ *S \\|^ *C \\|^ *R \\|^ *SR \\|^ *RT "  . font-lock-type-face)
     ("-+>\\|<-+>\\|<-+"                                         . font-lock-function-name-face)
+    ("-cmdorigin"                                               . font-lock-keyword-face)
     ;; proc S
     ("-w\\(idth\\)?"                                            . font-lock-keyword-face)
     ;; -value (proc S) and -verbatim (proc C)
@@ -65,7 +66,9 @@
     ;; proc R (-evaluate and -nosubst shared with proc C)
     ("-\\(rf\\|regf\\(ile\\)?\\)"                               . font-lock-keyword-face)
     ("@"                                                        . font-lock-keyword-face)
-    ("-handshake"                                               . font-lock-keyword-face)))
+    ("-handshake"                                               . font-lock-keyword-face)
+    ;; proc RT
+    ("-csv\\(file\\|sep\\(arator\\)?\\)?"                       . font-lock-keyword-face)))
 
 (defvar icglue-mode-syntax-table
   (let ((table (make-syntax-table)))
