@@ -172,6 +172,23 @@
       (icglue-fontify-verilog-section current-section)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Customizations
+
+
+(defgroup icglue nil
+  "ICGlue."
+  :group 'icglue)
+
+(defcustom icglue-compile-opts ""
+  "Options passed to ICGlue in compile buffer
+
+  --nocopyright
+"
+  :group 'icglue)
+
+(make-variable-buffer-local 'icglue-compile-opts)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (require 'compile)
 
@@ -192,7 +209,7 @@
   (set (make-local-variable 'comment-end) "")
   (set (make-local-variable 'comment-start-skip)
        (concat (regexp-quote comment-start) "+\\s *"))
-  (set (make-local-variable 'compile-command) (format "icglue %s " (file-name-nondirectory buffer-file-name)))
+  (set (make-local-variable 'compile-command) (format "icglue %s %s " icglue-compile-opts (file-name-nondirectory buffer-file-name)))
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map icglue-mode-map)
     )
