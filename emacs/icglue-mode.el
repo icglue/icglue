@@ -1,18 +1,43 @@
 
-;;; icglue-mode.el --- minimal mode for ICGlue files
+;;; icglue-mode.el --- Minimal mode for ICGlue files                               -*- lexical-binding: t; -*-
 
+;; Author: Heiner Bauer <heiner.bauer@tu-dresden.de>
+
+;; Keywords: icglue tcl sng eda verilog vhdl vlsi
+
+;; Version: 0.0.3
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
-;; add to load-path and use require
-;; add the following to your emacs config for verilog syntax highlighting in code sections:
-;; (add-hook 'icglue-mode-hook
-;;          (lambda () (add-hook 'after-save-hook 'icglue-fontify-code-sections nil 'local)))
+;; For more information on ICGlue, visit https://icglue.org
 
-;; possible extensions: even better highlighting, auto-indent, menu, completion
+;; Install this file (e.g. under ~/.emacs.d/lisp) and add this code to your emacs configuration (e.g. in ~/.emacs):
+; (add-to-list 'load-path "~/.emacs.d/lisp/")
+; (require 'icglue-mode)
+; (add-to-list 'auto-mode-alist '("\.icglue$" . icglue-mode))
+
+;; Optionally add the following for verilog syntax highlighting in code sections:
+; (add-hook 'icglue-mode-hook
+;          (lambda () (add-hook 'after-save-hook 'icglue-fontify-code-sections nil 'local)))
+
+;; possible extensions: even better highlighting, auto-indent, auto-completion, menu entries
 
 
 ;;; Code:
+
 (defconst icglue-keywords
   '(
     ("#.*"                                                      . font-lock-comment-face)
