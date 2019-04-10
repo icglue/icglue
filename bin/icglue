@@ -51,6 +51,7 @@ Mandatory arguments to long options are mandatory for short options too.
     -v, --verbose            Be verbose
     -d, --debug              Show debug output
     --nocopyright            Do not print the ICGlue copyright, version and logo upon start to stderr
+    --nocolor                Do not use colorcodes in logger
 
     --version                Show version
 
@@ -235,6 +236,7 @@ proc main {} {
     set debugdebug      "false"
     set print_version   "false"
     set nologo          "false"
+    set nocolor         "false"
     set dryrun          "false"
     set gui             "false"
 
@@ -266,6 +268,7 @@ proc main {} {
         {  {^(-l|--logger)(=|$)}   "list"       c_log           {} } \
         {  {^(-a|--args)(=|$)}     "list"       c_scriptargs    {} } \
         {  {^(--nocopyright)$}     "const=true" nologo          {} } \
+        {  {^(--nocolor)$}         "const=true" nocolor         {} } \
         {  {^(--nologo)$}          "const=true" nologo          {} } \
         ] $::argv]
 
@@ -282,6 +285,10 @@ proc main {} {
     set c_file [concat $c_file $filename]
     if {$help_invalid || ([llength $c_file] == 0)} {
         printhelp 1 stderr
+    }
+
+    if {$nocolor} {
+        ig::logger -nocolor
     }
 
     ig::logger -level I -id Gen
