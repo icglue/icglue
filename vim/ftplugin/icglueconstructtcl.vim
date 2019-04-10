@@ -3,7 +3,6 @@ if exists("b:did_icglueconstructtcl_ftplugin")
     finish
 endif
 let b:did_icglueconstructtcl_ftplugin = 1
-set smartindent
 
 let g:syntastic_icglueconstructtcl_checkers = ['nagelfar']
 
