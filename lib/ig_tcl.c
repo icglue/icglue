@@ -21,6 +21,7 @@
 #include "ig_lib.h"
 #include "ig_tcl.h"
 #include "logger.h"
+#include "color.h"
 #include "ig_logo.h"
 
 #include <libgen.h>
@@ -1422,6 +1423,8 @@ static int ig_tclc_reset (ClientData clientdata, Tcl_Interp *interp, int objc, T
 #      <tr><td><i> &ensp; &ensp; -list  </i></td><td>  list available loglevels  <br></td></tr>
 #      <tr><td><i> &ensp; &ensp; -linenumber</i></td><td>  add file/line number to log-output (debug)  <br></td></tr>
 #      <tr><td><i> &ensp; &ensp; -nolinenumber</i></td><td>  do not add file/line number to log-output  <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -color</i></td><td>  enable colors in log-output  <br></td></tr>
+#      <tr><td><i> &ensp; &ensp; -nocolor</i></td><td>  disable colors in log-output  <br></td></tr>
 #    </table>
 #
 */
@@ -1431,6 +1434,7 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
     char    *log_id     = NULL;
     gboolean list       = false;
     int      linenumber = 0;
+    int      color      = 0;
 
     Tcl_ArgvInfo arg_table [] = {
         {TCL_ARGV_STRING,   "-level",        NULL,                   (void *)&loglevel,   "log level",                                    NULL},
@@ -1438,6 +1442,8 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
         {TCL_ARGV_CONSTANT, "-list",         GINT_TO_POINTER (true), (void *)&list,       "list available loglevels",                     NULL},
         {TCL_ARGV_CONSTANT, "-linenumber",   GINT_TO_POINTER (1),    (void *)&linenumber, "add file/line numbers to log-output",          NULL},
         {TCL_ARGV_CONSTANT, "-nolinenumber", GINT_TO_POINTER (-1),   (void *)&linenumber, "do not print file/line numbers in log-output", NULL},
+        {TCL_ARGV_CONSTANT, "-color",        GINT_TO_POINTER (1),    (void *)&color,      "enable colors in log-output",                  NULL},
+        {TCL_ARGV_CONSTANT, "-nocolor",      GINT_TO_POINTER (-1),   (void *)&color,      "disable colors in log-output",                 NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -1464,9 +1470,18 @@ static int ig_tclc_logger (ClientData clientdata, Tcl_Interp *interp, int objc, 
     if (linenumber) {
         set_loglinenumbers ((linenumber > 0) ? true : false);
     }
+    if (color) {
+        if (color > 0) {
+            colors_on ();
+        } else {
+            colors_off ();
+        }
+    }
     if (loglevel == NULL && log_id == NULL) {
         // print current settings
-        log_dump_settings ();
+        if ((!linenumber) && (!color)) {
+            log_dump_settings ();
+        }
         return TCL_OK;
     } else if (loglevel != NULL) {
         gboolean found_level = false;

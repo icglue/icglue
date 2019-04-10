@@ -201,6 +201,9 @@ void log_dump_settings ()
     level = 0;
 
     g_fprintf (stderr, "Default loglevel is %s\n", loglevel_label[GPOINTER_TO_INT (level)]);
+
+    if (log_property == NULL) return;
+
     g_hash_table_iter_init (&iter, log_property);
     while (g_hash_table_iter_next (&iter, &id_local, &level)) {
         g_fprintf (stderr, "LogID: %s is set to level %s\n", (gchar *)id_local, loglevel_label[GPOINTER_TO_INT (level)]);
