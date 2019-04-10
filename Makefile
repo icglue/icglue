@@ -196,7 +196,7 @@ install_templates_prep: |  $(INSTDIR)/share/icprep
 install_icons: | $(INSTDIR)/share/icglue/icons
 	install -m644 -t $(INSTDIR)/share/icglue/icons logo/logo.{png,svg,txt}
 
-$(INSTDIR)/$(MANDIR)/%.$(MANSEC): | $(INSTDIR)/$(MANDIR)
+$(INSTDIR)/$(MANDIR)/%.$(MANSEC): $(MANDIR)/%.$(MANSEC) | $(INSTDIR)/$(MANDIR)
 	install -m644 $(MANDIR)/$(notdir $@) $@
 	sed -i -e 's#%DOCDIRTCL%#$(PREFIX)/share/icglue#' $@
 
