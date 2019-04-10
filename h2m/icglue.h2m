@@ -1,36 +1,36 @@
 [description]
-Tcl-Library for scripted HDL generation. It generations HDL code form a user-defined Tcl-Input script.
+Tcl-Library for scripted HDL generation. It generates HDL code from a user-defined Tcl script.
 
 [enviroment]
-Environment variables are additional to the options passed to \fBicglue\fR.
-Options specfied take precedence over enviroment variables.
+Environment variables extend options passed to \fBicglue\fR.
+Options specfied on the command line take precedence over enviroment variables.
 
 .IP ICGLUE_TEMPLATE_PATH
-Sets the template directories, equivalent to the \fB--template-dir\fR option. Mutliple directories must be seperate by a colon (:).
+Sets the template directories, equivalent to the \fB--template-dir\fR option. Mutliple directories must be seperated by a colon (:).
 
 .IP ICGLUE_TEMPLATE
 Sets the default template, equivalent to the \fB--template\fR option.
 
 .IP ICGLUE_LINE_NUMBERS
-Add linenumbers to icglue logging print-out (debug)
+Add line numbers to icglue logging print-out (debug)
 
 [examples]
 Creating hierarchies via the \fBM\fR command with the -tree flag:
 .PP
 .in +2n
-The hierarchie level is specified by the indentation of non-alpha characters
+The hierarchy level is specified by the indentation of non-alpha characters
 .br
-After this, it directly follows the modulename.
+The modulename has to follow directly after this indentation.
 .br
-Multiple instances of the same type can be create be using the <...> syntax.
+Multiple instances of the same module can be create be using the <...> syntax.
 .br
-Attributes of the module are passed in brackets.
+Attributes of the module are passed in parentheses.
 .br
 See the \fBM\fR command in \fBig(10i)\fR for further details.
 .PP
 .in +4n
 .EX
-# Generate hierarchie in unit submodule
+# Generate hierarchy in unit submodule
 .br
 \fBM\fR -unit "component" -tree {
 .br
@@ -55,7 +55,7 @@ See the \fBM\fR command in \fBig(10i)\fR for further details.
 
 .EE
 .PP
-Connection modules can be done via the \fBS\fR command:
+Signals to connect modules are created with the \fBS\fR command:
 .br
 See the \fBS\fR command in \fBig(10i)\fR for further details.
 .PP
@@ -74,7 +74,7 @@ See the \fBS\fR command in \fBig(10i)\fR for further details.
 \fBS\fR "status_submod" -w 16 submod        -->  component_regfile
 .EE
 .PP
-Passing parameters can be done via the \fBP\fR command:
+Parameters are created with the \fBP\fR command and can be passed to one or more modules:
 .br
 See the \fBP\fR command in \fBig(10i)\fR for further details.
 .PP
@@ -86,7 +86,7 @@ See the \fBP\fR command in \fBig(10i)\fR for further details.
 .EE
 .PP
 
-Passing inline code can be done via the \fBC\fR command:
+HDL code sections within the generated files can be created with the \fBC\fR command:
 .br
 See the \fBC\fR command in \fBig(10i)\fR for further details.
 .PP
@@ -132,7 +132,7 @@ Same without inline connection:
 .br
 }
 .PP
-The extra-column "signalbit" can be used to split wire e.g.
+The extra-column "signalbit" can be used to split wires e.g.
 .PP
 .in +4n
 .EX
@@ -157,9 +157,9 @@ The extra-column "signalbit" can be used to split wire e.g.
 [reporting bugs]
 Reports bugs to \fBbugs@icglue.org\fR.
 .br
-ICGlue home page: <https://icglue.org>
+Visit the ICGlue home page for more details: \fBhttps://icglue.org\fR
 [see also]
 \fBig(10i)\fR - Scripting commands manpage
 .PP
-HTML documentation of the Tcl-library at \fB%DOCDIRTCL%/html/index.html\fR
+View the HTML documentation of the Tcl-library at \fB%DOCDIRTCL%/html/index.html\fR
 \" vim: ft=nroff
