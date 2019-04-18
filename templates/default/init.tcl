@@ -12,7 +12,8 @@ proc output_types {object} {
         }
         return [dict get $lang2type_map $lang]
     } elseif {$objtype eq "regfile"} {
-        return {rf-csv rf-txt rf-tex rf-html rf-h rf-c rf-hpp rf-cpp rf-soc.h}
+        # for backwards compatibility: rf-h rf-c
+        return {rf-csv rf-txt rf-tex rf-html rf-hpp rf-cpp rf-soc.h}
     }
     ig::log -warning "No templates available for objects of type ${objtype}"
     return {}
@@ -48,10 +49,11 @@ proc output_file {object type} {
         if {$ext in {csv txt tex html}} {
             return "${output_dir_root}/doc/${ext}/${object_name}.${ext}"
         }
+        # only for backwards compatibility:
+        #    "h"     host include
+        #    "c"     host src
         foreach {fext dir subdir} {
-            "h"     host include
             "hpp"   host include
-            "c"     host src
             "cpp"   host src
             "soc.h" soc  include
         } {
