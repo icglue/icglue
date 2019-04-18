@@ -3,6 +3,10 @@
 ## general
 - add check (nagelfar shell script)
 
+## doc
+- add woof template documentation
+- update with new features
+
 ## lib
 - library cleanup
   - merge similar data-structs
@@ -14,7 +18,6 @@
 - reuse created rtl as ressource (also in testbench)
 - add instance-only command or check in M if already exists: sane values, instances only?
 - regfile:
-  - implement variable data-width
   - specify regfile portnames (clk, ...)
 - codesections: make adapt-selectively the default?
 - checks: use "origin" information of constructed parts for logging of warnings
@@ -28,6 +31,5 @@
 - add "nowriteout" function or similar? -> allows for construction with intermediate clean
 
 ## test
-- extend crc-test by crc functionality
 - more tests
 - coverage? (via nagelfar)
