@@ -22,7 +22,7 @@
 lappend auto_path [file normalize [file join [file dirname [file dirname [file normalize $::argv0]]] lib]]
 
 set icglue_silent_load "true"
-package require ICGlue 3.0a1
+package require ICGlue 3.0
 
 # import namespace ig (syntaxdb for *.icglue files)
 namespace import ::ig::*
