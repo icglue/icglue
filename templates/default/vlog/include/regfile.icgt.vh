@@ -88,11 +88,7 @@
     }
     proc reg_range {} {
         upvar reg(width) width
-        if {$width == 1} {
-            return [format "%7s"  {}]
-        } else {
-            return [format "\[%2d: 0\]" [expr {${width}-1}]]
-        }
+        return [format "%7s" [ig::vlog::bitrange $width]]
     }
     proc reg_entrybits {} {
         upvar reg(bit_high) ubit reg(bit_low) lbit
@@ -280,7 +276,7 @@
     ###########################################
     ## <definition>
     %><%=[rf_comment_block "regfile signal definition"]-%>
-    reg  [31: 0] <[rf_r_data_sig]>;
+    reg  <[format "%7s" [ig::vlog::bitrange $rf_dw]]> <[rf_r_data_sig]>;
     reg          <[rf_ready_sig]>;
     reg          <[rf_err_sig]>;
     wire         <[rf_w_sel]>;
@@ -300,7 +296,7 @@
     reg          reg_<%=$handshake%>;<% } %><%="\n"%><%
     foreach_array_preamble entry $entry_list { %>
     // regfile registers / wires<% } { %>
-    wire [31: 0] <[reg_val]>;<%
+    wire <[format "%7s" [ig::vlog::bitrange $rf_dw]]> <[reg_val]>;<%
         foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} { %>
     reg  <[reg_range]> <[string trim [reg_name]]>;<% } %><%="\n"%><% } %>
     <%=[pop_keep_block_content keep_block_data "keep" "regfile-${rf(name)}-declaration"] %><%
@@ -424,7 +420,7 @@
             %>
             if (<[rf_w_sel]> && <[rf_enable]>) begin
                 if (<% if {$entry(protected)} {%>(<%}%><[rf_addr]> == <[string trim [param]]><% if {$entry(protected)} {%>) && <[rf_prot_ok]><%}%>) begin<%
-                    for {set byte 0} {$byte < 4} {incr byte} {
+                    for {set byte 0} {$byte < $rf_bw} {incr byte} {
                         foreach_array_preamble_epilog_with reg $entry(regs) {[write_reg] && [reg_entrybits_in_bytesel $byte]} { %>
                     if (<[rf_bytesel]>[<%=$byte%>] == 1'b1) begin<% } { %><%
                         if {![custom_reg]} {%>
@@ -518,7 +514,7 @@
             end<% } %>
             <%=[pop_keep_block_content keep_block_data "keep" "regfile-${rf(name)}-outputmux"] %>
             default: begin
-                <[rf_r_data_sig]> = 32'h0000_0000;
+                <[rf_r_data_sig]> = <[format "%d'h%0*x" $rf_dw [expr {$rf_bw*2}] 0]>;
                 <[rf_next_read_permitted]> = 0;
             end
         endcase
