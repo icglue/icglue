@@ -1,4 +1,4 @@
-ICGlue v3.0
+ICGlue v4.0a1
 a Tcl-Library for scripted HDL generation
 Copyright (C) Andreas Dixius, Felix Neumärker
 Use and redistribute under the terms of the

@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-package provide ICGlue 3.0
+package provide ICGlue 4.0a1
 
 ## @brief Template related functionality
 namespace eval ig::templates {
