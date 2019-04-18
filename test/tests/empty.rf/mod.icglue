@@ -1,0 +1,34 @@
+# generate empty module / register file
+
+M -unit mod -tree {
+    tb_mod (tb)
+    +-- mod
+        +-- submod1
+        |   +-- rfmod (rf)
+        +-- submod2
+        |   +-- submod2.1
+        |   +-- submod2.2
+        |   +-- submod2.3
+        +-- submod3
+}
+
+# regfile-ports
+S clk     submod1 --> rfmod:apb_clk!
+S reset_n submod1 --> rfmod:apb_resetn!
+
+S apb_prot_en submod1 --> rfmod = {1'b0}
+
+foreach {s w <->} {
+    apb_addr   32 -->
+    apb_sel    1  -->
+    apb_enable 1  -->
+    apb_write  1  -->
+    apb_wdata  32 -->
+    apb_strb   4  -->
+    apb_prot   3  -->
+    apb_rdata  32 <--
+    apb_ready  1  <--
+    apb_slverr 1  <--
+} {
+    S $s -w $w submod1 ${<->} rfmod
+}
