@@ -101,7 +101,7 @@ void apb_stim::testcontrol (void) {
 
     if (hardware_crc == software_crc) {
         printf ("\nSUCCESS: CRC equals reference implementation.\n");
-        if (hardware_crc ^ XOROUT == CHECK) {
+        if ((hardware_crc ^ XOROUT) == CHECK) {
             printf ("SUCCESS: CRC equals CHECK = 0x%04X\n", CHECK);
         } else {
             printf ("\nFAILURE: CRC does not equal CHECK = 0x%04X -- CRC = 0x%04X\n", CHECK, hardware_crc ^ XOROUT);
