@@ -73,6 +73,7 @@ Additional properties
 * `rf=<rf-name>` (module contains a register file, a name can be specified)
 * `rfattr=<attr>=<value>` (additional attribute set for the regfile in a module;
   regfile will have an attribute `<attr>` set to value `<value>`)
+* `rfaw=<address-width>` and `rfdw=<data-width>` (address and data width of register file - defaults to 32 bits)
 
 ### Alternative module/instance specification
 Alternatively it is possible to specify individual modules in the form:

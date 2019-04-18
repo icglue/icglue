@@ -22,7 +22,7 @@ Example directory structure of a directory in the template path:
 ```
 
 ## Init script
-The init script of a template defines 3 Tcl proc bodies that return
+The init script of a template defines 3 Tcl procs that return
 * the types of outputs to be generated for an ICGlue object (currently modules and regfiles),
 * the template-file to use for a given object and output type,
 * the output filename for a given object and output type.
@@ -34,19 +34,16 @@ This is a list of custom template-specific identifiers used in the remaining pro
 in case more than one output file is to be generated or different template-files are to be used.
 
 ### Template-File
-The template-file proc decides which template-file is to be parsed for the given object and output type.
+The template-file proc decides which template-file is to be parsed and which parser is to be used for the given object and output type.
+Currently there are 2 parsers available: `icgt` for ICGlue template format and `wtf` for Woof! template format.
 It gets the directory of the template as additional argument to be able to specify the full path to the template-file.
 
 ### Output File
 The output file proc decides where to write the generated output of the template-file for the given object and output-type.
 
 ### Actual Script
-Before the script is executed the variable `template` is set to contain the name of the template.
-
-The init script only defines the proc bodies.
-If The actual procs were defined like this:
+The init script only defines the 3 procs.
 ```tcl
-# actual procs using the bodies of the init script:
 
 proc output_types {object} {
     # proc body defining a list of types based on the given object
@@ -61,10 +58,11 @@ proc template_file {object type template_dir} {
     # template_dir is the path to the template directory with the init script
     if {type eq "verilog"} {
         set filename "${template_dir}/template.v"
+        set format icgt
     } else {
         #...
     }
-    return $filename
+    return [list $filename $format]
 }
 
 proc output_file {object type} {
@@ -80,53 +78,16 @@ proc output_file {object type} {
 }
 ```
 
-Then the init script would look like this:
-```tcl
-# actual content of init.tcl script
-
-# generate object output filename: arguments: {object} (object-identifier)
-init::output_types $template {
-    # proc body defining a list of types based on the given object
-    set type_list [list]
-    # ... code filling the list
-    return $type_list
-}
-
-# return path to template file: arguments: {object type template_dir} (object-identifier, outputtype, path to this template's directory)
-init::template_file $template {
-    # proc body defining an absolute path to the template-file to be used
-    # for the given object and output type
-    # template_dir is the path to the template directory with the init script
-    if {type eq "verilog"} {
-        set filename "${template_dir}/template.v"
-    } else {
-        #...
-    }
-    return $filename
-}
-
-# generate object output filename: arguments: {object type} (object-identifier, outputtype)
-init::output_file $template {
-    # proc body defining a path to the file to be written
-    # for the given object and output type
-    set object_name [ig::db::get_attribute -object $object -attribute "name"]
-    if {type eq "verilog"} {
-        set filename "${object_name}.v"
-    } else {
-        #...
-    }
-    return $filename
-}
-```
-
-This way the proc bodies are registered for the given template name and can be used if the template is selected.
+This way the procs are registered for the given template name and can be used if the template is selected.
 
 
 ## Template-Files
-The template files are written in a Tcl template language inspired by a code snipped in a comment on the Tcl wiki ([TemplaTcl](https://wiki.tcl-lang.org/page/TemplaTcl%3A+a+Tcl+template+engine "TemplaTcl: a Tcl template engine")).
+The template files are written in one of two Tcl template languages.
+ICGT (ICGlue template) is inspired by a code snipped in a comment on the Tcl wiki ([TemplaTcl](https://wiki.tcl-lang.org/page/TemplaTcl%3A+a+Tcl+template+engine "TemplaTcl: a Tcl template engine")).
+WTF (Woof! template format) is mainly taken from woof ([Woof! Template Format](http://woof.sourceforge.net/woof-ug/_woof/docs/ug/wtf "Woof! Template Format")).
 When the template code is invoked, the Tcl variable `obj_id` is set to the object for which output will be generated.
 
-### Block delimiters
+### ICGlue Template Block delimiters
 By default content in the template-file is written to the output file verbatim.
 Content between special delimiters is interpreted as Tcl code.
 Those blocks are:
@@ -139,9 +100,20 @@ Those blocks are:
 * `<[tclcommand]>`: Return value of command is written to the output file.
   * `<[-tclcommand-]>`: Variant to remove line break on both sides.
   * `<[+tclcommand+]>`: Variant to explicitly keep line break on both sides (also default).
+* `<%I filename %>`: Content of file "filename" is included as template. Paths are relative to the template directory.
+  * `<%-I filename -%>`: Variant to remove line break on both sides.
+  * `<%+I filename +%>`: Variant to explicitly keep line break on both sides (also default).
 
 It is possible to remove line breaks at beginning/end of lines by adding a `-` to the delimiters or explicitly add a `+` to indicate the line break is kept.
 This leads to the shown variants.
+
+### Woof! Template Block delimiters
+By default content in the template-file is written to the output file with Tcl substitutions
+(e.g. `$var` is replaced by the value of `var`, `[command]` is replaced by the return value of `command`, `\` need to be escaped).
+Lines starting with special delimiters are interpreted as Tcl code / include statement:
+* `%`: Contains a single line of Tcl code.
+* `%(` to `%)`: Block of Tcl code. `%(` and `%)` must be placed at beginning of line.
+* `%I(filename)`: Content of file "filename" is included as template. Paths are relative to the template directory.
 
 ### Commands
 There is a set of commands to simplify some template tasks.

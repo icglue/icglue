@@ -3,10 +3,6 @@
 ## general
 - add check (nagelfar shell script)
 
-## doc
-- add woof template documentation
-- update with new features
-
 ## lib
 - library cleanup
   - merge similar data-structs
