@@ -82,6 +82,8 @@ proc run_dir_check {dir check args} {
 
     set err false
     if {[catch {
+        # prevent make calls in subscripts from trying to access jobserver
+        set ::env(MAKEFLAGS) "-j1"
         exec -ignorestderr -- [file join $deploy::main_dir toolwrap] $dir {*}$args 2>@1
     } result]} {
         set err $check

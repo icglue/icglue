@@ -13,5 +13,5 @@ before_install:
     - sudo apt-get install -y iverilog
 
 script:
-    - make
-    - make test
+    - make -j3
+    - make -j3 test
