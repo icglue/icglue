@@ -40,7 +40,7 @@
         }
     }
 
-    set len_max_data(type) [expr {$len_max_data(type) + 2}]
+    max_set len_max_data(type) [expr {$len_max_data(type) + 2}]
 
     foreach c $columns {
         max_set len_max_data($c) [string length $header($c)]
