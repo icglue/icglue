@@ -1,0 +1,100 @@
+%(
+    set register_list [regfile_to_arraylist $obj_id]
+
+    set separator_v      "|"
+    set separator_h      "-"
+    set separator_h_head "="
+    set crossing         "+"
+
+    # columns
+    set columns [list entryname address name signal width type entrybits reset comment]
+
+    set header(entryname) "Register Name"
+    set header(address)   "Address"
+    set header(name)      "Name"
+    set header(signal)    "Port"
+    set header(width)     "Width"
+    set header(type)      "Access"
+    set header(entrybits) "Align"
+    set header(reset)     "Reset"
+    set header(comment)   "Description"
+
+    set format(entryname) "%-*s"
+    set format(address)   "0x%08x"
+    set format(name)      "%-*s"
+    set format(signal)    "%-*s"
+    set format(width)     "%*d"
+    set format(type)      "%-*s"
+    set format(entrybits) "%*s"
+    set format(reset)     "%*s"
+    set format(comment)   "%-*s"
+
+    # column size
+    max_set len_max_data(address)   10
+    max_set len_max_data(entryname) [max_array_entry_len $register_list name]
+    max_set len_max_data(type)      0
+
+    foreach_array entry $register_list {
+        foreach c [lrange $columns 2 end] {
+            max_set len_max_data($c) [max_array_entry_len $entry(regs) $c]
+        }
+    }
+
+    set len_max_data(type) [expr {$len_max_data(type) + 2}]
+
+    foreach c $columns {
+        max_set len_max_data($c) [string length $header($c)]
+    }
+
+    # separator
+    set sepline $crossing
+    set sephead $crossing
+    foreach c $columns {
+        append sepline "[string repeat $separator_h      [expr {$len_max_data($c) + 2}]]${crossing}"
+        append sephead "[string repeat $separator_h_head [expr {$len_max_data($c) + 2}]]${crossing}"
+    }
+
+    proc reg_type {} {
+        upvar reg(protected) protected sreg(name) name sreg(type) type
+        if {$name eq "-"} {
+            return "-"
+        }
+        return [format "%s$type%s" {*}[expr {$protected ? {( )} : {"" ""}}]]
+    }
+
+    # header
+    set line [list]
+    foreach c $columns {
+        lappend line [format "%-*s" $len_max_data($c) $header($c)]
+    }
+%)
+${sepline}
+| [join $line " ${separator_v} "] |
+${sephead}
+%(
+    # content
+    foreach_array entry $register_list {
+        set first true
+        foreach_array reg $entry(regs) {
+            set line [list]
+            if {$first} {
+                lappend line [format $format(entryname) $len_max_data(entryname) $entry(name)]
+                lappend line [format $format(address)                            $entry(address)]
+            } else {
+                lappend line [format "%*s" $len_max_data(entryname) ""]
+                lappend line [format "%*s" $len_max_data(address)   ""]
+            }
+            foreach c [lrange $columns 2 end] {
+                lappend line [format $format($c) $len_max_data($c) $reg($c)]
+            }
+%)
+| [join $line " ${separator_v} "] |
+%(
+            set first false
+        }
+%)
+${sepline}
+%(
+    }
+
+%)
