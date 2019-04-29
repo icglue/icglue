@@ -1,0 +1,138 @@
+%(
+    set register_list [regfile_to_arraylist $obj_id]
+
+    set rf_name [object_name $obj_id]
+    set rf_aw [ig::db::get_attribute -object $obj_id -attribute addrwidth]
+    set rf_dw [ig::db::get_attribute -object $obj_id -attribute datawidth]
+    set rf_bw [expr {($rf_dw + 7)/8}]
+
+    set separator_v      "|"
+    set separator_h      "-"
+    set separator_h_head "="
+    set crossing         "+"
+
+    # columns
+    set columns [list entryname address name code width type entrybits comment]
+
+    set header(entryname) "Register Name"
+    set header(address)   "Address"
+    set header(name)      "Name"
+    set header(code)      "Code"
+    set header(width)     "Width"
+    set header(type)      "Access"
+    set header(entrybits) "Align"
+    set header(comment)   "Description"
+
+    set format(entryname) "%-*s"
+    set format(address)   "0x%08x"
+    set format(name)      "%-*s"
+    set format(code)      "%-*s"
+    set format(width)     "%*d"
+    set format(type)      "%-*s"
+    set format(entrybits) "%*s"
+    set format(comment)   "%-*s"
+
+    # column size
+    max_set len_max_data(address)   10
+    max_set len_max_data(entryname) [max_array_entry_len $register_list name]
+    max_set len_max_data(type)      0
+    max_set len_max_data(code)      [expr {$len_max_data(entryname) + 3 + [string length $rf_name]}]
+
+    foreach_array entry $register_list {
+        foreach c [lrange $columns 2 end] {
+            if {$c eq "code"} {
+                max_set len_max_data($c) [expr {[string length $entry(name)] + [max_array_entry_len $entry(regs) name] + 1}]
+            } else {
+                max_set len_max_data($c) [max_array_entry_len $entry(regs) $c]
+            }
+        }
+    }
+
+    max_set len_max_data(type) [expr {$len_max_data(type) + 2}]
+    max_set len_max_data(name) [string length "<struct>"]
+
+    foreach c $columns {
+        max_set len_max_data($c) [string length $header($c)]
+    }
+
+    # separator
+    set sepline $separator_v
+    set sephalf $crossing
+    set sephead $crossing
+    foreach c $columns {
+        append sepline "[string repeat $separator_h      [expr {$len_max_data($c) + 2}]]${crossing}"
+        append sephead "[string repeat $separator_h_head [expr {$len_max_data($c) + 2}]]${crossing}"
+        if {$c eq [lindex $columns 0]} {
+            append sephalf "[string repeat " "          [expr {$len_max_data($c) + 2}]]${separator_v}"
+        } elseif {$c eq [lindex $columns 1]} {
+            append sephalf "[string repeat " "          [expr {$len_max_data($c) + 2}]]${crossing}"
+        } else {
+            append sephalf "[string repeat $separator_h [expr {$len_max_data($c) + 2}]]${crossing}"
+        }
+    }
+
+    proc entry_struct {} {
+        variable rf_name
+        upvar entry(name) name
+        return "${rf_name}_${name}_t"
+    }
+
+    # header
+    set line [list]
+    foreach c $columns {
+        lappend line [format "%-*s" $len_max_data($c) $header($c)]
+    }
+%)
+${sepline}
+| [join $line " ${separator_v} "] |
+${sephead}
+%(
+    # content
+    foreach_array entry $register_list {
+        set line [list]
+        lappend line [format $format(entryname) $len_max_data(entryname) $entry(name)]
+        lappend line [format $format(address)                            $entry(address)]
+
+        foreach c [lrange $columns 2 end] {
+            if {$c eq "code"} {
+                lappend line [format $format($c) $len_max_data($c) [entry_struct]]
+            } elseif {$c eq "name"} {
+                lappend line [format $format($c) $len_max_data($c) "<struct>"]
+            } elseif {$c eq "width"} {
+                lappend line [format $format($c) $len_max_data($c) $rf_dw]
+            } else {
+                lappend line [string repeat "/" $len_max_data($c)]
+            }
+        }
+%)
+| [join $line " ${separator_v} "] |
+${sephalf}
+%(
+
+        foreach_array reg $entry(regs) {
+            set line [list]
+
+            lappend line [format "%*s" $len_max_data(entryname) ""]
+            lappend line [format "%*s" $len_max_data(address)   ""]
+
+            foreach c [lrange $columns 2 end] {
+                if {$c eq "code"} {
+                    if {$reg(name) eq "-"} {
+                        lappend line [format "%*s" $len_max_data($c) ""]
+                    } else {
+                        lappend line [format $format($c) $len_max_data($c) "${entry(name)}.${reg(name)}"]
+                    }
+                } else {
+                    lappend line [format $format($c) $len_max_data($c) $reg($c)]
+                }
+            }
+%)
+| [join $line " ${separator_v} "] |
+%(
+        }
+%)
+${sepline}
+%(
+    }
+
+%)
