@@ -56,8 +56,8 @@
     }
 
     # separator
-    set sepline $separator_v
-    set sephalf $crossing
+    set sepline $crossing
+    set sephalf $separator_v
     set sephead $crossing
     foreach c $columns {
         append sepline "[string repeat $separator_h      [expr {$len_max_data($c) + 2}]]${crossing}"
@@ -75,6 +75,14 @@
         variable rf_name
         upvar entry(name) name
         return "${rf_name}_${name}_t"
+    }
+
+    proc reg_type {} {
+        upvar entry(protected) protected reg(name) name reg(type) type
+        if {$name eq "-"} {
+            return "-"
+        }
+        return [format "%s$type%s" {*}[expr {$protected ? {( )} : {"" ""}}]]
     }
 
     # header
@@ -122,6 +130,8 @@ ${sephalf}
                     } else {
                         lappend line [format $format($c) $len_max_data($c) "${entry(name)}.${reg(name)}"]
                     }
+                } elseif {$c eq "type"} {
+                    lappend line [format $format($c) $len_max_data($c) [reg_type]]
                 } else {
                     lappend line [format $format($c) $len_max_data($c) $reg($c)]
                 }
