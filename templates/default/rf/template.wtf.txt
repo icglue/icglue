@@ -55,7 +55,7 @@
     }
 
     proc reg_type {} {
-        upvar reg(protected) protected sreg(name) name sreg(type) type
+        upvar entry(protected) protected reg(name) name reg(type) type
         if {$name eq "-"} {
             return "-"
         }
@@ -85,7 +85,11 @@ ${sephead}
                 lappend line [format "%*s" $len_max_data(address)   ""]
             }
             foreach c [lrange $columns 2 end] {
-                lappend line [format $format($c) $len_max_data($c) $reg($c)]
+                if {$c eq "type"} {
+                    lappend line [format $format($c) $len_max_data($c) [reg_type]]
+                } else {
+                    lappend line [format $format($c) $len_max_data($c) $reg($c)]
+                }
             }
 %)
 | [join $line " ${separator_v} "] |
