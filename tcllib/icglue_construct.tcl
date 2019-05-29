@@ -439,16 +439,16 @@ namespace eval ig {
                         ig::db::set_attribute -object $rfid -attribute "addralign" -value $frfaddralign
                         ig::db::set_attribute -object $rfid -attribute "datawidth" -value $frfdatabits
                         foreach attr $frfattributes {
-                            #set attr [string trim $attr {"{" "}"}]
+                            set attr [ig::aux::remove_brackets $attr]
                             lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                            ig::db::set_attribute -object $rfid -attribute $attr_name -value $attr_val
+                            ig::db::set_attribute -object $rfid -attribute [string trim $attr_name] -value [string trim $attr_val]
                         }
                     }
                     if {!$fres} {
                         foreach attr $fattributes {
-                            set attr [string trim $attr {"{" "}"}]
+                            set attr [ig::aux::remove_brackets $attr]
                             lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                            ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_val
+                            ig::db::set_attribute -object $modid -attribute [string trim $attr_name] -value [string trim $attr_val]
                         }
                     }
                     ig::db::set_attribute -object $modid -attribute "dummy" -value $fdummy
@@ -471,9 +471,9 @@ namespace eval ig {
                     }
                     if {$fres} {
                         foreach attr $fattributes {
-                            set attr [string trim $attr {"{" "}"}]
+                            set attr [ig::aux::remove_brackets $attr]
                             lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                            ig::db::set_attribute -object $instid -attribute $attr_name -value $attr_val
+                            ig::db::set_attribute -object $instid -attribute [string trim $attr_name] -value [string trim $attr_val]
                         }
                     }
                 }
@@ -510,9 +510,9 @@ namespace eval ig {
             ig::db::set_attribute -object $modid -attribute "parentunit" -value $unit
             ig::db::set_attribute -object $modid -attribute "dummy"      -value $dummy
             foreach attr $attributes {
-                set attr [string trim $attr {"{" "}"}]
+                set attr [ig::aux::remove_brackets $attr]
                 lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                ig::db::set_attribute -object $modid -attribute $attr_name -value $attr_val
+                ig::db::set_attribute -object $modid -attribute [string trim $attr_name] -value [string trim $attr_val]
             }
 
             # instances
@@ -536,9 +536,9 @@ namespace eval ig {
                 ig::db::set_attribute -object $rfid -attribute "addralign" -value $rfaddralign
                 ig::db::set_attribute -object $rfid -attribute "datawidth" -value $rfdatabits
                 foreach attr $rfattributes {
-                    set attr [string trim $attr {"{" "}"}]
+                    set attr [ig::aux::remove_brackets $attr]
                     lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                    ig::db::set_attribute -object $rfid -attribute $attr_name -value $attr_val
+                    ig::db::set_attribute -object $rfid -attribute [string trim $attr_name] -value [string trim $attr_val]
                 }
             }
         } emsg]} {
