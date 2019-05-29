@@ -860,6 +860,18 @@ namespace eval ig::aux {
         return $v
     }
 
+    ## @brief Remove brackets { }
+    #
+    # @param arg variable name to be modified
+    # @return the value of the modified variable
+    proc remove_brackets {arg} {
+        set retval [string trim $arg]
+        if {([string index $retval 0] == "{") && ([string index $retval end] == "}")} {
+            set retval [string range $retval 1 end-1]
+        }
+        return $retval
+    }
+
     namespace export *
 }
 
