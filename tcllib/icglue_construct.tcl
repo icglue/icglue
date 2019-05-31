@@ -38,7 +38,7 @@ namespace eval ig {
         # If ids is set, the object ids of module and instance will be returned.
         # If there is no instance of the given instance-name to be found, a module id will be looked up.
         # If merge is set as well, the result-list will be reduced to a single entry for each instance of the form [~]${id}:signal.
-        proc expand_instances {inst_list {ids false} {merge false}} {
+        proc expand_instances {inst_list {ids false} {merge false} {num_separator "_"}} {
             set result [list]
 
             foreach i_entry $inst_list {
@@ -73,7 +73,7 @@ namespace eval ig {
                             }
 
                             foreach i_sfx $insts {
-                                lappend result [list "${m_module}_${i_sfx}" $m_module $m_rem $m_inv]
+                                lappend result [list "${m_module}${num_separator}${i_sfx}" $m_module $m_rem $m_inv]
                             }
                         }
                     }
