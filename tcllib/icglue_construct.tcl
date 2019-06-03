@@ -516,6 +516,7 @@ namespace eval ig {
             }
 
             # instances
+            ig::aux::remove_comma_ws instances
             foreach i_inst [construct::expand_instances $instances] {
                 set i_name [lindex $i_inst 0]
                 set i_mod  [lindex $i_inst 1]
