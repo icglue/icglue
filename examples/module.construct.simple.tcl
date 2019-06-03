@@ -18,7 +18,7 @@ M -tb  -v -u bungo tb_bungo_top -i {bungo_top}
 
 # resources have to be registered first as a module before instances can be created
 M -resource common_sync
-M -tb -v -u test tb_sync -i {common_sync<data> common_sync<valid> common_sync<gpio1,gpio2>}
+M -tb -v -u test tb_sync -i {common_sync<data> common_sync<valid> common_sync<gpio1, gpio2> common_sync<tx0, tx1, tx2>}
 
 # Equivalent -tree
 #M -unit "test" -tree {
