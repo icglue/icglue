@@ -1019,11 +1019,11 @@ namespace eval ig {
                 }
             }
 
-            set alignment [ig::db::get_attribute -obj $regfile_id -attribute "addralign"]
-
             if {$regfile_id eq ""} {
                 log -error -abort "R (regfile-entry ${entryname}): invalid regfile name specified: ${regfilename} ($origin)"
             }
+
+            set alignment [ig::db::get_attribute -obj $regfile_id -attribute "addralign"]
             # set the "real" regfilename
             set regfilename [ig::db::get_attribute -obj $regfile_id -attribute "name"]
             set rf_module_name [ig::db::get_attribute -obj [ig::db::get_attribute -obj $regfile_id -attribute "parent"] -attribute "name"]
