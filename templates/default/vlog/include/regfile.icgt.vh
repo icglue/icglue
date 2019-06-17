@@ -159,8 +159,12 @@
         } else {
             if {$bits == 0} {
                 set sigid [get_signal_id_by_name $signal $id]
-                if {[ig::db::get_attribute -object $sigid -attribute size] == 1} {
-                    return [format "%7s" {}]
+                if {$sigid == ""} {
+                    ig::log -error "Signal ${signal} for entrybits not found"
+                } else {
+                    if {[ig::db::get_attribute -object $sigid -attribute size] == 1} {
+                        return [format "%7s" {}]
+                    }
                 }
             }
             return [format "\[%5d\]" $bits]
