@@ -3,7 +3,7 @@
 
 ;; Author: Heiner Bauer <heiner.bauer@tu-dresden.de>
 
-;; Keywords: icglue tcl sng eda verilog vhdl vlsi
+;; Keywords: icglue tcl generator sng eda verilog systemverilog vhdl vlsi
 
 ;; Version: 0.0.3
 
@@ -204,7 +204,7 @@
 
 (define-derived-mode icglue-mode tcl-mode
   (font-lock-add-keywords nil icglue-keywords)
-  (setq mode-name "ICGlue Mode")
+  (setq mode-name "ICGlue")
 
   (set (make-local-variable 'comment-multi-line) nil)
 
