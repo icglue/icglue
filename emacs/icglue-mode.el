@@ -57,6 +57,7 @@
     ("-tree"                                                    . font-lock-keyword-face)
     ;; proc C
     ("-noa\\(dapt\\)?"                                          . font-lock-keyword-face)
+    ("-t\\(rim\\)?"                                             . font-lock-keyword-face)
     ;; -adapt -align -adapt-selectively -addr
     ("-a\\(dapt\\|l\\(ign\\)?\\|s\\|dapt-selectively\\|ddr\\)?" . font-lock-keyword-face)
     ("-s\\(ubst\\)?"                                            . font-lock-keyword-face)
