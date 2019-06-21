@@ -820,6 +820,7 @@ namespace eval ig {
         set verbatim      "false"
         set do_subst      "false"
         set origin        [ig::aux::get_origin_here]
+        set do_ws_trim    "false"
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
@@ -833,6 +834,7 @@ namespace eval ig {
                 { {^-e(val(uate)?)?$}             "const=true"      do_subst       "perform Tcl substition of CODE argument, do not forget to escape" } \
                 { {^-noi(ndentfix)?$}             "const=false"     do_indent_fix  "do not fix the indent of the codeblock"                           } \
                 { {^-cmdorigin(=|$)}              "string"          origin         "origin of command call for logging"                               } \
+                { {^-t(rim)?$}                    "const=true"      do_ws_trim     "trim whitespaces and newlines around codesections"                } \
             ] -context "MODULENAME CODE" $args]
 
         # argument checks
@@ -862,6 +864,17 @@ namespace eval ig {
         if {$do_indent_fix} {
             set code [ig::aux::code_indent_fix $code]
         }
+
+
+        if {$do_ws_trim} {
+            # replace redundant newlines at the start
+            set code [regsub {^\n} $code ""]
+
+            # replace redundant newlines at the end
+            set code [regsub {\n *\n *$} $code "\n"]
+            ig::log -debug -id CWstrim "<${code}>"
+        }
+
 
         # actual code creation
         if {[catch {
