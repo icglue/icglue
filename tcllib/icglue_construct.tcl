@@ -829,7 +829,7 @@ namespace eval ig {
                 { {^-al(ign)?$}                   "string"          align          "align codesections at given string"                               } \
                 { {^-s(ubst)?$}                   "const=true"      do_var_subst   "perform Tcl-variable substition of CODE argument (default)"       } \
                 { {^-nos(ubst)?$}                 "const=false"     do_var_subst   "do not perform Tcl-variable substition of CODE argument"          } \
-                { {^-v(erbatim)$}                 "const=true"      verbatim       "alias for -noadapt and -nosubst"                                  } \
+                { {^-v(erbatim)?$}                "const=true"      verbatim       "alias for -noadapt and -nosubst"                                  } \
                 { {^-e(val(uate)?)?$}             "const=true"      do_subst       "perform Tcl substition of CODE argument, do not forget to escape" } \
                 { {^-noi(ndentfix)?$}             "const=false"     do_indent_fix  "do not fix the indent of the codeblock"                           } \
                 { {^-cmdorigin(=|$)}              "string"          origin         "origin of command call for logging"                               } \
