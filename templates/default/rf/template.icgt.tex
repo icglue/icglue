@@ -137,17 +137,16 @@
 
     set len_max_data(type)       4
 
+    max_set len_max_data(entry_name)  [max_array_entry_len_tex $register_list  name]
+    max_set len_max_data(addr)        [max_array_entry_len_tex $register_list  address]
+
     foreach_array register $register_list {
-        foreach_array sreg $register(regs) {
-            max_set len_max_data(entry_name)  [max_array_entry_len_tex $register_list  name]
-            max_set len_max_data(addr)        [max_array_entry_len_tex $register_list  address]
-            max_set len_max_data(width)       [max_array_entry_len_tex $register(regs) width]
-            max_set len_max_data(reg_name)    [max_array_entry_len_tex $register(regs) name]
-            #max_set len_max_data(type)        [max_array_entry_len_tex $register(regs) type]
-            max_set len_max_data(entrybits)   [max_array_entry_len_tex $register(regs) entrybits]
-            max_set len_max_data(reset)       [max_array_entry_len_tex $register(regs) reset]
-            max_set len_max_data(comment)     [max_array_entry_len_tex $register(regs) comment]
-        }
+        max_set len_max_data(width)       [max_array_entry_len_tex $register(regs) width]
+        max_set len_max_data(reg_name)    [max_array_entry_len_tex $register(regs) name]
+        #max_set len_max_data(type)        [max_array_entry_len_tex $register(regs) type]
+        max_set len_max_data(entrybits)   [max_array_entry_len_tex $register(regs) entrybits]
+        max_set len_max_data(reset)       [max_array_entry_len_tex $register(regs) reset]
+        max_set len_max_data(comment)     [max_array_entry_len_tex $register(regs) comment]
     }
 
     foreach col {entry_name addr width reg_name entrybits comment} {
