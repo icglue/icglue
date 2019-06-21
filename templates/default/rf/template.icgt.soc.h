@@ -1,7 +1,7 @@
 <%-
 set entry_list [regfile_to_arraylist $obj_id]
 set rf_name [object_name $obj_id]
-set userparams [ig::db::get_attribute -object $obj_id -attribute "accesscargs" -default {}]
+set padding_to [ig::db::get_attribute -object $obj_id -attribute "pad_to" -default {0}]
 
 set header_name "rf_${rf_name}"
 
@@ -91,6 +91,12 @@ typedef struct {<% foreach_array entry $entry_list {
         }%>
     union {<[entry_struct_padded]> <[entry_name ";"]>  uint32_t _<%=$entry(name)%>_word;};<[format {%*s} [expr {$maxlen_entryname - [string length $entry(name)]}] ""]> // <%= $entry(name) %><%
         set next_address [expr {$entry(address) + 4}]
+    }
+    if {$padding_to > 0} {
+        set fill_size [expr {($padding_to - $next_address) / 4}]
+        incr unused_idx
+        %>
+    uint32_t _padding_<%= $unused_idx %>[<%= $fill_size %>]; /* unused */<%
     }
     %>
 } __attribute__((__packed__)) <[rf_class]>;

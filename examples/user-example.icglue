@@ -22,7 +22,7 @@ M -unit "submod" -tree {
     +- common_sync<submod0..4> ..................... (res)
     +- common_sync<submod_trigger_sync> ............ (res)
     |
-    +- submod_regfile .............................. (rf)
+    +- submod_regfile .............................. (rf,rfattr=pad_to=0x100)
     \- submod_top .................................. (rtl)
        |
        +- submod ................................... (res)
@@ -167,7 +167,8 @@ R submod_regfile "entry_name1_high" -align 8 {
 }
 
 # explicitly assign register addresses with '@ ADDR'
-R submod_regfile "ex_addressed_reg" @ 0x0010 {
+S "s_ex_a" -w 8 submod_regfile --> submod
+R submod_regfile "ex_addressed_reg" @ 0x0030 {
     "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
     -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
     s_ex_a | 7:0         | RW     | 8'h0    | s_ex_a      | 39:32        | "Configure submod part 1"
