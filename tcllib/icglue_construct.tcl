@@ -455,7 +455,7 @@ namespace eval ig {
                 }
 
                 if {$moduleparent ne ""} {
-                    ig::aux::remove_comma_ws instance_name
+                    set instance_name [ig::aux::remove_comma_ws $instance_name]
                     foreach i_inst [construct::expand_instances $instance_name] {
                         set i_name [lindex $i_inst 0]
                         set i_mod  [lindex $i_inst 1]
@@ -516,7 +516,7 @@ namespace eval ig {
             }
 
             # instances
-            ig::aux::remove_comma_ws instances
+            set instances [ig::aux::remove_comma_ws $instances]
             foreach i_inst [construct::expand_instances $instances] {
                 set i_name [lindex $i_inst 0]
                 set i_mod  [lindex $i_inst 1]
@@ -609,7 +609,7 @@ namespace eval ig {
             }
 
             set instance_names [lrange $arguments 1 end]
-            ig::aux::remove_comma_ws instance_names
+            set instance_names [ig::aux::remove_comma_ws $instance_names]
             if {[llength $instance_names] == 0} {
                 log -error -abort "S: no instance names specified ($origin)"
             }
@@ -666,8 +666,8 @@ namespace eval ig {
             log -error -abort "S: no connection direction specified ($origin)"
         }
 
-        ig::aux::remove_comma_ws con_left
-        ig::aux::remove_comma_ws con_right
+        set con_left  [ig::aux::remove_comma_ws $con_left]
+        set con_right [ig::aux::remove_comma_ws $con_right]
         # actual module creation
         if {[catch {
             set con_left_e  [construct::expand_instances $con_left  "true" "true"]
@@ -766,7 +766,7 @@ namespace eval ig {
             log -error -abort "P (parameter ${name}): no value specified ($origin)"
         }
 
-        ig::aux::remove_comma_ws endpoints
+        set endpoints [ig::aux::remove_comma_ws $endpoints]
         # actual parameter creation
         if {[catch {
             set endpoints [construct::expand_instances $endpoints "true" "true"]

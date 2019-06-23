@@ -852,12 +852,11 @@ namespace eval ig::aux {
 
     ## @brief Remove whitespace after comma
     #
-    # @param varname variable name to be modified
-    # @return the value of the modified variable
-    proc remove_comma_ws {varname} {
-        upvar $varname v
-        set v [regsub -all {(\S),\s+} "$v" "\\1,"]
-        return $v
+    # @param s string to be modified
+    # @return the value of the modified string
+    proc remove_comma_ws {s} {
+        set s [regsub -all {(\S),\s+} $s {\1,}]
+        return $s
     }
 
     ## @brief Remove brackets { }
