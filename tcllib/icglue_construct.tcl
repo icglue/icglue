@@ -108,6 +108,298 @@ namespace eval ig {
             return $result
         }
 
+        ## @brief Parse module instance tree
+        #
+        # @param instance_tree instance tree string to parse
+        # @param origin script line origin to output when logging
+        #
+        # @return Stride list of parsed modules/instances of form name parent flags ...
+        proc mtree_parse {instance_tree {origin {}}} {
+            set instance_tree [regsub -all -lineanchor -linestop {#.*$} $instance_tree {}]
+            set instance_tree [uplevel 2 subst [list $instance_tree]]
+            set instance_tree [split $instance_tree "\n"]
+
+            set cur_parent {}
+            set cur_level {}
+            set parents_stack {}
+            set level_stack {}
+            set last_instance {}
+            set module_list {}
+            set maxlen_modname 0
+
+            foreach inst $instance_tree {
+                # remove spaces of list
+                set m_level {}
+                set m_instance {}
+                set m_flags {}
+
+                if {[regexp -expanded {
+                    # Match level dots
+                    ^([^a-zA-Z(]*)
+                    # Match instance_name
+                    ([a-zA-Z][^(]*)\s*
+                    # Match flags
+                    (\((.*)\))?
+                    # remaining line
+                    \s*
+                    (\#.*)?
+                    $
+                    } $inst m_whole m_level m_instance m_flags_full m_flags m_comment]} {
+                    # MATCH
+                } elseif {[regexp -expanded {
+                    # Match level dots
+                    ^([^a-zA-Z(]*)
+                    # Match flags
+                    \((.*)\)\s*
+                    # Match instance_name
+                    ([a-zA-Z][^(]*)
+                    # remaining line
+                    \s*
+                    (\#.*)?
+                    $
+                    } $inst m_whole m_level m_flags m_instance m_comment]} {
+                    # MATCH
+                } elseif {[string match {*[a-zA-Z0-9()]*} $inst]} {
+                    ig::log -error -abort "M: Can't parse instance_name - syntax error in instance tree \"${inst}\" ($origin)"
+                } else {
+                    continue
+                }
+
+                set level [string length $m_level]
+                if {[string first "#" $m_instance] == 0 } {continue}
+                set m_instance [string trim $m_instance " \t."]
+                set len_modname [string length $m_instance]
+                if {$len_modname > $maxlen_modname} {
+                    set maxlen_modname $len_modname
+                }
+
+                if {$level != 0  && $len_modname == 0} {
+                    ig::log -error -abort "M: Can't match instance_name - syntax error in instance tree \"${inst}\" ($origin)"
+                }
+
+                if {$level > $cur_level} {
+                    # one level up
+                    lappend parents_stack $last_instance
+                    lappend level_stack $level
+
+                    set cur_parent $last_instance
+                    set cur_level  $level
+                    set last_instance $m_instance
+                } elseif {$level < $cur_level} {
+                    # pop levels down
+                    set level_stack_size [llength $level_stack]
+                    for {set keep_idx 0} {$keep_idx<$level_stack_size} {incr keep_idx} {
+                        if {[lindex $level_stack $keep_idx] > $level} {
+                            incr keep_idx -1
+                            break;
+                        }
+                    }
+                    # reduce level
+                    set level_stack [lrange $level_stack 0 $keep_idx]
+
+                    # append new level if not matching
+                    if {[lindex $level_stack $keep_idx] != $level} {
+                        lappend level_stack $level
+                        incr keep_idx 1
+                    }
+                    set last_instance $m_instance
+
+                    set parents_stack [lrange $parents_stack 0 $keep_idx]
+                    set cur_parent [lindex $parents_stack end]
+                    set cur_level [lindex $level_stack end]
+                } else {
+                    set last_instance $m_instance
+                }
+
+                lappend module_list $m_instance $cur_parent $m_flags
+            }
+
+            foreach {instance_name moduleparent moduleflags} $module_list {
+                ig::log -id "MTree" -debug [format "module: %-*s -- parent: %-*s -- Flags: %s" $maxlen_modname $instance_name $maxlen_modname $moduleparent $moduleflags]
+            }
+
+            return $module_list
+        }
+
+        ## @brief Create modules of parsed instance/module tree
+        #
+        # @param module_list module list parsed by @ref mtree_parse
+        # @param origin script line origin to output when logging
+        #
+        # @return generated module's ids
+        proc mtree_process_modules {module_list {origin {}}} {
+            set module_inc_list {}
+            set modids {}
+
+            foreach {instance_name moduleparent moduleflags} $module_list {
+                set module_name   [lindex [split $instance_name <] 0]
+
+                set film "false"
+                set fres "false"
+                set finc "false"
+                set moduleflags [regsub -all {\s+} ${moduleflags} {}]
+                ig::aux::parse_opts [list                    \
+                    { {^(ilm|macro)$} "const=true" film {} } \
+                    { {^res(ource)?$} "const=true" fres {} } \
+                    { {^inc(lude)?$}  "const=true" finc {} } \
+                    ] [split $moduleflags ","]
+
+                set cf [list ]
+                if {$fres} {
+                    lappend cf "-resource"
+                }
+                if {$film} {
+                    lappend cf "-ilm"
+                }
+                if {$finc} {
+                    lappend module_inc_list $module_name
+                }
+
+                if {[catch {ig::db::get_modules -name $module_name}]} {
+                    ig::log -debug -id MTree "M (module = $module_name): creating..."
+                    set modid [ig::db::create_module {*}$cf -name $module_name]
+                    ig::db::set_attribute -object $modid -attribute "origin" -value $origin
+                    lappend modids $modid
+                } else {
+                    if {!$fres && !$finc} {
+                        if {[lsearch $module_inc_list $module_name] == 0} {
+                            ig::log -error -abort "M (module = $module_name): exists multiple times and is neither resource nor included. ($origin)"
+                        }
+                    }
+                }
+            }
+
+            return $modids
+        }
+
+        ## @brief process instances, register files and attributes of parsed module/instance tree
+        #
+        # @param module_list module list parsed by @ref mtree_parse
+        # @param unit default parent unit name
+        # @param mode default mode attribute
+        # @param lang default language attribute
+        # @param origin script line origin to output when logging
+        proc mtree_process_insts_rfs {module_list unit mode lang {origin {}}} {
+            foreach {instance_name moduleparent moduleflags} $module_list {
+                set funit $unit
+                set film "false"
+                set fres "false"
+                set finc "false"
+                set fmode $mode
+                set flang $lang
+                set fdummy "false"
+                set fattributes   {}
+                set frfattributes {}
+                set frfaddrbits   32
+                set frfdatabits   32
+                set frfaddralign  {}
+                set fregfile      "false"
+                set fregfilename  {}
+
+                if {$moduleparent ne ""} {
+                    set ppunit [ig::db::get_attribute -object [ig::db::get_modules -name $moduleparent] -attribute "parentunit" -default ""]
+                    if {$ppunit ne ""} {
+                        set funit $ppunit
+                    }
+                }
+
+                set moduleflags [regsub -all {([^\\]),\s*} $moduleflags "\\1\n"]
+                set funknown [ig::aux::parse_opts [list                                        \
+                    { {^u(nit)?(=|$)}                     "string"              funit         {} }  \
+                    { {^(ilm|macro)$}                     "const=true"          film          {} }  \
+                    { {^res(ource)?$}                     "const=true"          fres          {} }  \
+                    { {^(dummy)$}                         "const=true"          fdummy        {} }  \
+                                                                                                    \
+                    { {^inc(lude)?$}                      "const=true"          finc          {} }  \
+                    { {^rtl$}                             "const=rtl"           fmode         {} }  \
+                    { {^beh(av(ioral|ioural)?)?$}         "const=behavioral"    fmode         {} }  \
+                    { {^(tb|testbench)$}                  "const=tb"            fmode         {} }  \
+                                                                                                    \
+                    { {^v(erilog)?$}                      "const=verilog"       flang         {} }  \
+                    { {^sv|-s(ystemverilog)?$}            "const=systemverilog" flang         {} }  \
+                    { {^vhd(l)?$}                         "const=vhdl"          flang         {} }  \
+                    { {^systemc$}                         "const=systemc"       flang         {} }  \
+                                                                                                    \
+                    { {^(rf|(regf(ile)?)?)$}              "const=true"          fregfile      {} }  \
+                    { {^(rf|(regf(ile)?)?)=}              "string"              fregfilename  {} }  \
+                                                                                                    \
+                    { {^attr(ibutes?)?(=|$)}              "list"                fattributes   {} }  \
+                    { {^rfattr(ibutes?)?(=|$)}            "list"                frfattributes {} }  \
+                    { {^rfa(ddr(ess)?)?w(idth)?(=|$)}     "integer"             frfaddrbits   {} }  \
+                    { {^rfa(ddr(ess)?)?align(ment)?(=|$)} "integer"             frfaddralign  {} }  \
+                    { {^rfd(ata)?w(idth)?(=|$)}           "integer"             frfdatabits   {} }  \
+                    ] [split $moduleflags "\n"]]
+
+                if {[llength $funknown] != 0} {
+                    ig::log -abort -error -id MTree "M (instance $instance_name): Unknown flag(s) - $funknown ($origin)"
+                }
+
+                set module_name [lindex [split $instance_name <] 0]
+                set modid [ig::db::get_modules -name $module_name]
+                if {!$finc} {
+                    if {$funit ne ""} {
+                        ig::db::set_attribute -object $modid -attribute "parentunit" -value $funit
+                    }
+                    if {$fmode ne ""} {
+                        ig::db::set_attribute -object $modid -attribute "mode"       -value $fmode
+                    }
+                    if {$flang ne ""} {
+                        ig::db::set_attribute -object $modid -attribute "language"   -value $flang
+                    }
+                    if {$fregfile || ($fregfilename ne "")} {
+                        if {$fregfilename eq ""} {
+                            set fregfilename $module_name
+                        }
+                        set rfid [ig::db::add_regfile -regfile $fregfilename -to $modid]
+                        if {$frfaddralign eq {}} {
+                            set frfaddralign [expr {$frfdatabits / 8}]
+                        }
+                        ig::db::set_attribute -object $rfid -attribute "origin" -value $origin
+                        ig::db::set_attribute -object $rfid -attribute "addrwidth" -value $frfaddrbits
+                        ig::db::set_attribute -object $rfid -attribute "addralign" -value $frfaddralign
+                        ig::db::set_attribute -object $rfid -attribute "datawidth" -value $frfdatabits
+                        foreach attr $frfattributes {
+                            set attr [ig::aux::remove_brackets $attr]
+                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
+                            ig::db::set_attribute -object $rfid -attribute [string trim $attr_name] -value [string trim $attr_val]
+                        }
+                    }
+                    if {!$fres} {
+                        foreach attr $fattributes {
+                            set attr [ig::aux::remove_brackets $attr]
+                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
+                            ig::db::set_attribute -object $modid -attribute [string trim $attr_name] -value [string trim $attr_val]
+                        }
+                    }
+                    ig::db::set_attribute -object $modid -attribute "dummy" -value $fdummy
+                }
+
+                if {$moduleparent ne ""} {
+                    set instance_name [ig::aux::remove_comma_ws $instance_name]
+                    foreach i_inst [expand_instances $instance_name] {
+                        set i_name [lindex $i_inst 0]
+                        set i_mod  [lindex $i_inst 1]
+
+                        ig::log -debug -id MTree "M (module = $instance_name): creating instance $i_name of module $moduleparent"
+
+                        set instid [ig::db::create_instance \
+                            -name $i_name \
+                            -of-module [ig::db::get_modules -name $i_mod] \
+                            -parent-module [ig::db::get_modules -name $moduleparent]]
+
+                        ig::db::set_attribute -object $instid -attribute "origin" -value $origin
+                    }
+                    if {$fres} {
+                        foreach attr $fattributes {
+                            set attr [ig::aux::remove_brackets $attr]
+                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
+                            ig::db::set_attribute -object $instid -attribute [string trim $attr_name] -value [string trim $attr_val]
+                        }
+                    }
+                }
+            }
+        }
+
         ## @brief Run a construction script in encapsulated namespace.
         #
         # @param filename Path to script.
@@ -222,266 +514,13 @@ namespace eval ig {
             set rfaddralign [expr {$rfdatabits / 8}]
         }
 
-        set instance_tree [regsub -all -lineanchor -linestop {#.*$} $instance_tree {}]
-        set instance_tree [uplevel subst [list $instance_tree]]
-        set instance_tree [split $instance_tree "\n"]
-        if {[llength $instance_tree] > 0} {
-            set cur_parent {}
-            set cur_level {}
-            set parents_stack {}
-            set level_stack {}
-            set last_instance {}
-            set module_list {}
-            set maxlen_modname 0
+        if {$instance_tree ne {}} {
+            set module_list [construct::mtree_parse $instance_tree $origin]
 
-            foreach inst $instance_tree {
-                # remove spaces of list
-                set m_level {}
-                set m_instance {}
-                set m_flags {}
+            set modids [construct::mtree_process_modules $module_list $origin]
 
-                if {[regexp -expanded {
-                    # Match level dots
-                    ^([^a-zA-Z(]*)
-                    # Match instance_name
-                    ([a-zA-Z][^(]*)\s*
-                    # Match flags
-                    (\((.*)\))?
-                    # remaining line
-                    \s*
-                    (\#.*)?
-                    $
-                    } $inst m_whole m_level m_instance m_flags_full m_flags m_comment]} {
-                    # MATCH
-                } elseif {[regexp -expanded {
-                    # Match level dots
-                    ^([^a-zA-Z(]*)
-                    # Match flags
-                    \((.*)\)\s*
-                    # Match instance_name
-                    ([a-zA-Z][^(]*)
-                    # remaining line
-                    \s*
-                    (\#.*)?
-                    $
-                    } $inst m_whole m_level m_flags m_instance m_comment]} {
-                    # MATCH
-                } elseif {[string match {*[a-zA-Z0-9()]*} $inst]} {
-                    log -error -abort "M: Can't parse instance_name - syntax error in instance tree \"${inst}\" ($origin)"
-                } else {
-                    continue
-                }
+            construct::mtree_process_insts_rfs $module_list $unit $mode $lang $origin
 
-                set level [string length $m_level]
-                if {[string first "#" $m_instance] == 0 } {continue}
-                set m_instance [string trim $m_instance " \t."]
-                set len_modname [string length $m_instance]
-                if {$len_modname > $maxlen_modname} {
-                    set maxlen_modname $len_modname
-                }
-
-                if {$level != 0  && $len_modname == 0} {
-                    log -error -abort "M: Can't match instance_name - syntax error in instance tree \"${inst}\" ($origin)"
-                }
-
-                if {$level > $cur_level} {
-                    # one level up
-                    lappend parents_stack $last_instance
-                    lappend level_stack $level
-
-                    set cur_parent $last_instance
-                    set cur_level  $level
-                    set last_instance $m_instance
-                } elseif {$level < $cur_level} {
-                    # pop levels down
-                    set level_stack_size [llength $level_stack]
-                    for {set keep_idx 0} {$keep_idx<$level_stack_size} {incr keep_idx} {
-                        if {[lindex $level_stack $keep_idx] > $level} {
-                            incr keep_idx -1
-                            break;
-                        }
-                    }
-                    # reduce level
-                    set level_stack [lrange $level_stack 0 $keep_idx]
-
-                    # append new level if not matching
-                    if {[lindex $level_stack $keep_idx] != $level} {
-                        lappend level_stack $level
-                        incr keep_idx 1
-                    }
-                    set last_instance $m_instance
-
-                    set parents_stack [lrange $parents_stack 0 $keep_idx]
-                    set cur_parent [lindex $parents_stack end]
-                    set cur_level [lindex $level_stack end]
-                } else {
-                    set last_instance $m_instance
-                }
-
-                lappend module_list $m_instance $cur_parent $m_flags
-            }
-            set module_inc_list {}
-
-            foreach {instance_name moduleparent moduleflags} $module_list {
-                set module_name   [lindex [split $instance_name <] 0]
-                set modids {}
-                log -id "MTree" -debug [format "module: %-${maxlen_modname}s -- parent: %-${maxlen_modname}s -- Flags: %s" $instance_name $moduleparent $moduleflags]
-
-                set film "false"
-                set fres "false"
-                set finc "false"
-                set moduleflags [regsub -all {\s+} ${moduleflags} {}]
-                ig::aux::parse_opts [list                    \
-                    { {^(ilm|macro)$} "const=true" film {} } \
-                    { {^res(ource)?$} "const=true" fres {} } \
-                    { {^inc(lude)?$}  "const=true" finc {} } \
-                    ] [split $moduleflags ","]
-
-                set cf [list ]
-                if {$fres} {
-                    lappend cf "-resource"
-                }
-                if {$film} {
-                    lappend cf "-ilm"
-                }
-                if {$finc} {
-                    lappend module_inc_list $module_name
-                }
-
-                if {[catch {ig::db::get_modules -name $module_name}]} {
-                    log -debug -id MTree "M (module = $module_name): creating..."
-                    lappend modids [ig::db::create_module {*}$cf -name $module_name]
-                } else {
-                    if {!$fres && !$finc} {
-                        if {[lsearch $module_inc_list $module_name] == 0} {
-                            log -error -abort "M (module = $module_name): exists multiple times and is neither resource nor included. ($origin)"
-                        }
-                    }
-                }
-            }
-
-            foreach {instance_name moduleparent moduleflags} $module_list {
-                set funit $unit
-                set film "false"
-                set fres "false"
-                set finc "false"
-                set fmode $mode
-                set flang $lang
-                set fdummy "false"
-                set fattributes   {}
-                set frfattributes {}
-                set frfaddrbits   32
-                set frfdatabits   32
-                set frfaddralign  {}
-                set fregfile      "false"
-                set fregfilename  {}
-
-                if {$moduleparent ne ""} {
-                    set ppunit [ig::db::get_attribute -object [ig::db::get_modules -name $moduleparent] -attribute "parentunit" -default ""]
-                    if {$ppunit ne ""} {
-                        set funit $ppunit
-                    }
-                }
-
-                set moduleflags [regsub -all {([^\\]),\s*} $moduleflags "\\1\n"]
-                set funknown [ig::aux::parse_opts [list                                        \
-                    { {^u(nit)?(=|$)}                     "string"              funit         {} }  \
-                    { {^(ilm|macro)$}                     "const=true"          film          {} }  \
-                    { {^res(ource)?$}                     "const=true"          fres          {} }  \
-                    { {^(dummy)$}                         "const=true"          fdummy        {} }  \
-                                                                                                    \
-                    { {^inc(lude)?$}                      "const=true"          finc          {} }  \
-                    { {^rtl$}                             "const=rtl"           fmode         {} }  \
-                    { {^beh(av(ioral|ioural)?)?$}         "const=behavioral"    fmode         {} }  \
-                    { {^(tb|testbench)$}                  "const=tb"            fmode         {} }  \
-                                                                                                    \
-                    { {^v(erilog)?$}                      "const=verilog"       flang         {} }  \
-                    { {^sv|-s(ystemverilog)?$}            "const=systemverilog" flang         {} }  \
-                    { {^vhd(l)?$}                         "const=vhdl"          flang         {} }  \
-                    { {^systemc$}                         "const=systemc"       flang         {} }  \
-                                                                                                    \
-                    { {^(rf|(regf(ile)?)?)$}              "const=true"          fregfile      {} }  \
-                    { {^(rf|(regf(ile)?)?)=}              "string"              fregfilename  {} }  \
-                                                                                                    \
-                    { {^attr(ibutes?)?(=|$)}              "list"                fattributes   {} }  \
-                    { {^rfattr(ibutes?)?(=|$)}            "list"                frfattributes {} }  \
-                    { {^rfa(ddr(ess)?)?w(idth)?(=|$)}     "integer"             frfaddrbits   {} }  \
-                    { {^rfa(ddr(ess)?)?align(ment)?(=|$)} "integer"             frfaddralign  {} }  \
-                    { {^rfd(ata)?w(idth)?(=|$)}           "integer"             frfdatabits   {} }  \
-                    ] [split $moduleflags "\n"]]
-
-                if {[llength $funknown] != 0} {
-                    log -abort -error -id MTree "M (instance $instance_name): Unknown flag(s) - $funknown ($origin)"
-                }
-
-                set module_name [lindex [split $instance_name <] 0]
-                set modid [ig::db::get_modules -name $module_name]
-                if {!$finc} {
-                    if {$funit ne ""} {
-                        ig::db::set_attribute -object $modid -attribute "parentunit" -value $funit
-                    }
-                    if {$fmode ne ""} {
-                        ig::db::set_attribute -object $modid -attribute "mode"       -value $fmode
-                    }
-                    if {$flang ne ""} {
-                        ig::db::set_attribute -object $modid -attribute "language"   -value $flang
-                    }
-                    if {$fregfile || ($fregfilename ne "")} {
-                        if {$fregfilename eq ""} {
-                            set fregfilename $module_name
-                        }
-                        set rfid [ig::db::add_regfile -regfile $fregfilename -to $modid]
-                        if {$frfaddralign eq {}} {
-                            set frfaddralign [expr {$rfdatabits / 8}]
-                        }
-                        ig::db::set_attribute -object $rfid -attribute "origin" -value $origin
-                        ig::db::set_attribute -object $rfid -attribute "addrwidth" -value $frfaddrbits
-                        ig::db::set_attribute -object $rfid -attribute "addralign" -value $frfaddralign
-                        ig::db::set_attribute -object $rfid -attribute "datawidth" -value $frfdatabits
-                        foreach attr $frfattributes {
-                            set attr [ig::aux::remove_brackets $attr]
-                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                            ig::db::set_attribute -object $rfid -attribute [string trim $attr_name] -value [string trim $attr_val]
-                        }
-                    }
-                    if {!$fres} {
-                        foreach attr $fattributes {
-                            set attr [ig::aux::remove_brackets $attr]
-                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                            ig::db::set_attribute -object $modid -attribute [string trim $attr_name] -value [string trim $attr_val]
-                        }
-                    }
-                    ig::db::set_attribute -object $modid -attribute "dummy" -value $fdummy
-                }
-
-                if {$moduleparent ne ""} {
-                    set instance_name [ig::aux::remove_comma_ws $instance_name]
-                    foreach i_inst [construct::expand_instances $instance_name] {
-                        set i_name [lindex $i_inst 0]
-                        set i_mod  [lindex $i_inst 1]
-
-                        log -debug -id MTree "M (module = $instance_name): creating instance $i_name of module $moduleparent"
-
-                        set instid [ig::db::create_instance \
-                            -name $i_name \
-                            -of-module [ig::db::get_modules -name $i_mod] \
-                            -parent-module [ig::db::get_modules -name $moduleparent]]
-
-                        ig::db::set_attribute -object $instid -attribute "origin" -value $origin
-                    }
-                    if {$fres} {
-                        foreach attr $fattributes {
-                            set attr [ig::aux::remove_brackets $attr]
-                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                            ig::db::set_attribute -object $instid -attribute [string trim $attr_name] -value [string trim $attr_val]
-                        }
-                    }
-                }
-            }
-
-            foreach modid $modids {
-                ig::db::set_attribute -object $modid -attribute "origin" -value $origin
-            }
             return $modids
         }
         if {$unit eq ""} {
