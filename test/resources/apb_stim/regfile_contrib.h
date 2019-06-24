@@ -96,6 +96,7 @@ class regfile_t {
         rf_data_t _read  (rf_addr_t addr);
         void      _write (rf_addr_t addr, rf_data_t value, rf_data_t mask, rf_data_t unused_mask);
         rf_addr_t _get_addr ();
+        virtual  ~regfile_t ();
 };
 
 class _entry_t {
@@ -145,5 +146,31 @@ class _reg_rw_t : public _reg_t {
         operator rf_data_t ();
 };
 
-#endif
+class mem_access_t {
+    public:
+        class value {
+            protected:
+                mem_access_t &_access;
+                uintptr_t     _address;
+            public:
+                value (mem_access_t &access, uintptr_t address);
+                value (value &o);
+            public:
+                operator rf_data_t ();
+                value& operator= (rf_data_t newval);
+                value& operator= (value &o);
+        };
+    protected:
+        regfile_dev &_dev;
+        rf_addr_t    _base_addr;
+        unsigned int _bytes;
 
+    public:
+        mem_access_t (regfile_dev &dev, rf_addr_t base_addr);
+        mem_access_t (mem_access_t &o);
+
+        mem_access_t& operator= (mem_access_t &o);
+        value operator[] (uintptr_t idx);
+};
+
+#endif

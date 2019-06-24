@@ -201,6 +201,9 @@ regfile_t::regfile_t (regfile_dev &dev, rf_addr_t base_addr) :
     _dev (dev), _base_addr (base_addr)
 {}
 
+regfile_t::~regfile_t ()
+{}
+
 rf_data_t regfile_t::_read (rf_addr_t addr)
 {
     return _dev.rfdev_read (_base_addr + addr);
@@ -307,3 +310,62 @@ _reg_rw_t::operator rf_data_t ()
     return _reg_t_read ();
 }
 
+/* mem_access_t */
+mem_access_t::mem_access_t (regfile_dev &dev, rf_addr_t base_addr) :
+    _dev(dev), _base_addr(base_addr), _bytes(4)
+{
+}
+
+mem_access_t::mem_access_t (mem_access_t &o) :
+    _dev(o._dev), _base_addr(o._base_addr), _bytes(o._bytes)
+{
+}
+
+mem_access_t& mem_access_t::operator= (mem_access_t &o)
+{
+    this->_dev       = o._dev;
+    this->_base_addr = o._base_addr;
+    this->_bytes     = o._bytes;
+
+    return *this;
+}
+
+mem_access_t::value mem_access_t::operator[] (uintptr_t idx)
+{
+    value v (*this, _base_addr + _bytes * idx);
+
+    return v;
+}
+
+mem_access_t::value::value (mem_access_t &access, uintptr_t address) :
+    _access(access), _address(address)
+{
+}
+
+mem_access_t::value::value (mem_access_t::value &o) :
+    _access(o._access), _address(o._address)
+{
+}
+
+mem_access_t::value::operator rf_data_t ()
+{
+    rf_data_t result = _access._dev.rfdev_read (_address);
+
+    return result;
+}
+
+mem_access_t::value& mem_access_t::value::operator= (rf_data_t newval)
+{
+    rf_data_t mask = (2 << (_access._bytes*8-1)) - 1;
+    _access._dev.rfdev_write (_address, newval, mask, 0);
+
+    return *this;
+}
+
+mem_access_t::value& mem_access_t::value::operator= (mem_access_t::value &o)
+{
+    this->_access  = o._access;
+    this->_address = o._address;
+
+    return *this;
+}
