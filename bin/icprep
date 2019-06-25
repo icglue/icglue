@@ -25,7 +25,7 @@ lappend auto_path "[file join $igroot lib]"
 
 set icglue_silent_load "true"
 package require Tcl 8.6
-package require ICGlue 3.0
+package require ICGlue 3.2
 
 
 namespace eval icprep::templates {
@@ -253,7 +253,7 @@ proc additionalversion {} {
 
 proc get_version_str {} {
     set version_str [format  \
-{ICGlue 3.0%s
+{ICGlue 3.2%s
 Copyright (C) 2017-2019 Andreas Dixius, Felix Neumaerker
 
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
