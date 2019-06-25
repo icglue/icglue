@@ -35,8 +35,6 @@ DOCDIR                = doc
 PKGIDX                = $(PKGDIR)/pkgIndex.tcl
 PKGGENSCR             = scripts/tcl_pkggen.tcl
 
-VERSION               = 3.0
-VERSIONSCR            = scripts/update_version.sh
 VERSIONSCRINSTALL     = scripts/install-version.sh
 
 DOCDIRTCL             = $(DOCDIR)/$(PKGNAME)
@@ -79,15 +77,15 @@ TESTDIR               = test
 .PHONY: all everything logo prebuild syntaxdb docs man
 
 all: prebuild logo
-	@$(MAKE) --no-print-directory $(PKGIDX)
+	+@$(MAKE) --no-print-directory $(PKGIDX)
 
 everything: all syntaxdb docs man
 
 logo:
-	-@$(MAKE) -sC logo
+	-+@$(MAKE) -sC logo
 
 prebuild $(CLIBSOURCES):
-	@$(MAKE) --no-print-directory -C $(CLIBDIR)
+	+@$(MAKE) --no-print-directory -C $(CLIBDIR)
 
 $(PKGIDX): $(TCLSOURCES) $(CLIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 	rm -f $(PKGIDX)
@@ -96,16 +94,6 @@ $(PKGIDX): $(TCLSOURCES) $(CLIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 		ln -sft $(PKGDIR) ../../$$S; \
 	done
 	$(PKGGENSCR) $(PKGDIR)
-
-#-------------------------------------------------------
-# version number/header update
-.PHONY: updateversion
-
-updateversion:
-	$(VERSIONSCR) $(VERSION)
-	$(MAKE)
-	$(MAKE) man
-
 
 #-------------------------------------------------------
 # documentation
