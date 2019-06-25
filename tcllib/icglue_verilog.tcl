@@ -148,7 +148,7 @@ namespace eval ig::vlog {
             return [parse_value $m_content $paramlist]
         } elseif {[regexp {^\s*\{\s*(.*)\s*\}\s*$} $value m_whole m_content]} {
             # braces
-            if {[regexp {^([^{},[:space:]][^{},]+)(\{.*\})} $m_content m_whole m_rep m_val]} {
+            if {[regexp {^([^{},[:space:]][^{},]*)(\{.*\})} $m_content m_whole m_rep m_val]} {
                 # repetition
                 lassign [parse_value $m_rep $paramlist] rep_s rep_v rep_w
                 if {!$rep_s} {return [list $rep_s 0 -1]}
