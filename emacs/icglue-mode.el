@@ -103,6 +103,10 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;
+;; Verilog related functions
+
+
 ;; TODO: fix '#' comment highlighting from TCL applied *after* verilog highlighting
 ;; TODO: figure out how to avoid 'modified' buffer state after highlighting verilog syntax
 ;; Graciously inspired by http://emacs.stackexchange.com/a/5408/227
@@ -174,6 +178,43 @@
     (while code-sections
       (setq current-section (pop code-sections))
       (icglue-fontify-verilog-section current-section)))))
+
+;;;;;;;;;;
+;; icglue construct text manipulation
+(defun icglue-find-signal-arrow ()
+ "Return location of S proc arrow in current line"
+ (interactive)
+ (let* ((line  (thing-at-point 'line t))
+        (start (string-match "-+>\\|<-+>\\|<-+" line))
+        (end   (match-end 0)))
+  (if start
+   (list start end))))
+
+(defun icglue-print-signal-arrow-location ()
+ (interactive)
+ (let ((index-list (icglue-find-signal-arrow)))
+  (if index-list
+   (message "Arrow found at %d -- %d" (nth 0 index-list) (nth 1 index-list))
+   (message "No arrow found !"))))
+
+(defun icglue-modules-before-arrow ()
+ "Return location of modules before arrow"
+ (interactive))
+
+(defun icglue-flip-arrow ()
+ "Flip direction of S proc arrow in current line"
+ (interactive))
+
+(defun icglue-flip-signal-direction ()
+ "Exchange modules before and after S proc arrow"
+ (interactive))
+
+(defun icglue-flip-signal-direction-and-arrow ()
+ "Exchange modules and flip arrow"
+ (interactive)
+ (icglue-flip-arrow)
+ (icglue-flip-signal-direction))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customizations
