@@ -1560,7 +1560,7 @@ namespace eval ig {
             if {$e_addr ne ""} {
                 lappend opts "@${e_addr}"
             }
-            if {$e_prot ne ""} {
+            if {($e_prot ne "") && (($e_prot) || ($e_prot in {x X}))} {
                 lappend opts "-protected"
             }
             if {$nosubst_opt ne ""} {

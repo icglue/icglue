@@ -1,4 +1,4 @@
-address;register;bits;size;value;type;signal;reset;comment
+address;entryname;protect;entrybits;width;name;type;signal;reset;comment
 <%+
 set entry_list [regfile_to_arraylist $obj_id]
 -%>
@@ -14,10 +14,12 @@ foreach i_entry $entry_list {
 <%-=        [format "0x%08x" $entry(address)] -%>
 ;
 <%-=        $entry(name) -%>
+;
+<%-=        [expr {$entry(protected) ? "1" : ""}] -%>
 <%-
         } else {
 -%>
-;
+;;
 <%-
         }
 -%>
@@ -32,7 +34,7 @@ foreach i_entry $entry_list {
 ;
 <%-=    $reg(signal) -%>
 <%-
-        if {$reg(signalbits) ne ""} {
+        if {$reg(signalbits) ni {"" -}} {
 -%>
 <%-=        "\[$reg(signalbits)\]" -%>
 <%-
