@@ -1150,11 +1150,19 @@ namespace eval ig {
                 foreach i_attr [lrange $entry_default_map 1 end] {
                     # attributes except name
                     set i_val [lindex $i_reg [lsearch $entry_map $i_attr]]
+                    set sbitsextra {}
+
                     if {$i_val ne ""} {
                         if {$i_attr eq "name"} {
                             set s_fieldname $i_val
                         }
                         if {$i_attr eq "signal"} {
+                            if {[regexp {^(.*)\[([^\[\]]+)\]$} $i_val m_whole m_sig m_bits]} {
+                                # signalbits in [...] (e.g. csv case)
+                                set i_val      $m_sig
+                                set sbitsextra $m_bits
+                            }
+
                             if {[llength $i_val] > 1} {
                                 set s_modules [lrange $i_val 1 end]
                                 set s_signal  [lindex $i_val 0]
@@ -1200,6 +1208,9 @@ namespace eval ig {
                             set s_width $i_val
                         }
                         ig::db::set_attribute -object $reg_id -attribute "rf_${i_attr}" -value $i_val
+                        if {$sbitsextra ne {}} {
+                            ig::db::set_attribute -object $reg_id -attribute "rf_signalbits" -value $sbitsextra
+                        }
                     }
                 }
 
