@@ -1,0 +1,37 @@
+address;entryname;protect;entrybits;width;name;type;signal;reset;comment
+%(
+set entry_list [regfile_to_arraylist $obj_id]
+
+# iterate over entries sorted by address
+foreach i_entry $entry_list {
+    set idx 0
+    array set entry $i_entry
+
+    set cadr [format "0x%08x" $entry(address)]
+    set cenm $entry(name)
+    set cprt [expr {$entry(protected) ? "1" : ""}]
+
+    foreach i_reg $entry(regs) {
+        array set reg $i_reg
+        set cebt $reg(entrybits)
+        set cwdt $reg(width)
+        set crnm $reg(name)
+        set ctyp $reg(type)
+        if {$reg(signalbits) ni {"" -}} {
+            set csig "$reg(signal)\[$reg(signalbits)\]"
+        } else {
+            set csig $reg(signal)
+        }
+        set crst $reg(reset)
+        set ccmt $reg(comment)
+        if {$idx == 0} {
+%)
+${cadr};${cenm};${cprt};${cebt};${cwdt};${crnm};${ctyp};${csig};${crst};${ccmt}
+%       } else {
+;;;${cebt};${cwdt};${crnm};${ctyp};${csig};${crst};${ccmt}
+%(
+        }
+    incr idx
+    }
+}
+%)
