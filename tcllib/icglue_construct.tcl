@@ -1157,13 +1157,15 @@ namespace eval ig {
                         if {$i_attr eq "signal"} {
                             if {[llength $i_val] > 1} {
                                 set s_modules [lrange $i_val 1 end]
-                                set s_signal  "${entryname}_[lindex $i_val 0]"
+                                set s_signal  [lindex $i_val 0]
 
                                 # special '=' means  signalname = fieldname
                                 if {$s_signal eq "="} {
                                     set s_signal "${regfilename}_${entryname}_${i_name}"
+                                } else {
+                                    set s_signal "${regfilename}_${entryname}_${s_signal}"
                                 }
-                                set i_val "$s_signal"
+                                set i_val $s_signal
                             } else {
                                 # implicit - auto connect if : is in signalname [list entry only]
                                 if {[string first ":" $i_val] ne -1} {
@@ -1175,7 +1177,7 @@ namespace eval ig {
                                         set s_modules [list ${s_implicit_mod}:${s_port}]
                                     }
                                     set s_signal "${regfilename}_${entryname}_${i_name}"
-                                    set i_val "$s_signal"
+                                    set i_val $s_signal
                                 }
                             }
                         }
