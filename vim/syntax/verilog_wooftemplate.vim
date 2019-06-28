@@ -12,5 +12,5 @@ unlet b:current_syntax
 runtime! syntax/woof_template.vim
 unlet b:current_syntax
 
-let b:current_syntax = "verilog_template"
+let b:current_syntax = "verilog_wooftemplate"
 

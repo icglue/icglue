@@ -14,5 +14,5 @@ unlet b:current_syntax
 
 syn region cPreProc start=/^\s*\zs\(%:\|#\)\s*\(if\|ifdef\|ifndef\|elif\)\>/ skip=/\\$/ end=/$/  keepend contains=cComment,cCommentL,cCppString,cCharacter,cCppParen,cParenError,cNumbers,cCommentError,cSpaceError,templateCode
 
-let b:current_syntax = "c_template"
+let b:current_syntax = "c_wooftemplate"
 
