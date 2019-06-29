@@ -142,7 +142,5 @@ ${sephalf}
         }
 %)
 ${sepline}
-%(
-    }
-
-%)
+%   }
+%# vim: filetype=woof_template
