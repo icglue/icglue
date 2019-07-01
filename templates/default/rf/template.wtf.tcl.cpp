@@ -101,7 +101,7 @@ static int rf_${rf_name} (ClientData client_data, Tcl_Interp *interp, int tcl_ar
 %   }
     ${ifexpr} (strcmp (entry, "${entry(name)}") == 0) {
         if (mode == mode_wordread) {
-            if (tcl_argc > 0) {
+            if (tcl_argc > 1) {
                 Tcl_SetObjResult (interp, Tcl_NewStringObj ("rf_${rf_name}: too many arguments for word-read.", -1));
                 ckfree_if_needed (&tcl_argc, &tcl_argv_rem);
                 return TCL_ERROR;
@@ -109,13 +109,13 @@ static int rf_${rf_name} (ClientData client_data, Tcl_Interp *interp, int tcl_ar
             rf_data_t res = ${rfacc}_${entry(name)}_word;
             Tcl_SetObjResult (interp, Tcl_NewLongObj (res));
         } else if (mode == mode_wordwrite) {
-            if (tcl_argc != 1) {
+            if (tcl_argc != 2) {
                 Tcl_SetObjResult (interp, Tcl_NewStringObj ("rf_${rf_name}: wrong number of arguments for word-write.", -1));
                 ckfree_if_needed (&tcl_argc, &tcl_argv_rem);
                 return TCL_ERROR;
             }
             long val;
-            if (Tcl_GetLongFromObj (interp, tcl_argv_rem\[0\], &val) != TCL_OK) {
+            if (Tcl_GetLongFromObj (interp, tcl_argv_rem\[1\], &val) != TCL_OK) {
                 ckfree_if_needed (&tcl_argc, &tcl_argv_rem);
                 return TCL_ERROR;
             }
@@ -125,7 +125,7 @@ static int rf_${rf_name} (ClientData client_data, Tcl_Interp *interp, int tcl_ar
             ${rf_name}_${entry(name)}_t rval = ${rfacc}${entry(name)};
             Tcl_Obj *reslist = Tcl_NewListObj (0, NULL);
 
-            for (int i = 0; i < tcl_argc; i++) {
+            for (int i = 1; i < tcl_argc; i++) {
                 const char *ireg = Tcl_GetString (tcl_argv_rem\[i\]);
 %   set rfirst true
 %   foreach_array reg $entry(regs) {
@@ -156,14 +156,16 @@ static int rf_${rf_name} (ClientData client_data, Tcl_Interp *interp, int tcl_ar
                 }
 %   }
             }
+            Tcl_SetObjResult (interp, reslist);
         } else {
-            if ((tcl_argc % 2) != 0) {
+            if ((tcl_argc % 2) != 1) {
                 Tcl_SetObjResult (interp, Tcl_NewStringObj ("rf_${rf_name}: expecdet even number of arguments for reg-write/modify.", -1));
                 ckfree_if_needed (&tcl_argc, &tcl_argv_rem);
                 return TCL_ERROR;
             }
 
-            ${rf_name}_${entry(name)}_t wval = ${rfacc}${entry(name)};
+            ${rf_name}_${entry(name)}_t wval;
+
             if (mode == mode_regwrite) {
 %   foreach_array reg $entry(regs) {
 %     if {$reg(reset) in {- {}}} {continue}
@@ -178,7 +180,7 @@ static int rf_${rf_name} (ClientData client_data, Tcl_Interp *interp, int tcl_ar
                 wval = ${rfacc}${entry(name)};
             }
 
-            for (int i = 0; i < tcl_argc; i++) {
+            for (int i = 1; i < tcl_argc; i++) {
                 const char *ireg = Tcl_GetString (tcl_argv_rem\[i++\]);
                 long ival;
                 if (Tcl_GetLongFromObj (interp, tcl_argv_rem\[i\], &ival) != TCL_OK) {

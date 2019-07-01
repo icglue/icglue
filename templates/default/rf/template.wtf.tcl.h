@@ -2,8 +2,8 @@
 set entry_list [regfile_to_arraylist $obj_id]
 set rf_name [object_name $obj_id]
 
-set idxnum   [ig::db::get_attribute -object $obj_id -attribute "index_num"   -default 0]
-set idxnames [ig::db::get_attribute -object $obj_id -attribute "index_names" -default {}]
+set idxnames [lindex [ig::db::get_attribute -object $obj_id -attribute "indices" -default {}] 0]
+set idxnum   [llength $idxnames]
 
 set header_name "rf_${rf_name}_tcl"
 
