@@ -84,6 +84,13 @@ class regfile_dev_wordcache : public regfile_dev {
         void cache_disable ();
 };
 
+class regfile_dev_debug: public regfile_dev_simple {
+    public:
+        regfile_dev_debug ();
+        virtual rf_data_t rfdev_read (rf_addr_t addr);
+        virtual void rfdev_write_simple (rf_addr_t addr, rf_data_t value);
+};
+
 class regfile_t {
     protected:
         regfile_dev &_dev;

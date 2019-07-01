@@ -1,4 +1,5 @@
 #include "regfile_contrib.h"
+#include <stdio.h>
 
 /* regfile_dev */
 void regfile_dev::rfdev_write_sequence (unsigned int length, rf_addr_t addr[], rf_data_t value[], rf_data_t mask[], rf_data_t unused_mask[])
@@ -194,6 +195,23 @@ void regfile_dev_wordcache::cache_flush ()
     main_dev.rfdev_write_sequence (seqlen, addr_list, value_list, mask_list, unused_mask_list);
 
     seqlen = 0;
+}
+
+/* regfile_dev_debug */
+regfile_dev_debug::regfile_dev_debug ()
+{
+}
+
+rf_data_t regfile_dev_debug::rfdev_read (rf_addr_t addr)
+{
+    rf_data_t res = 0x12345678;
+    printf ("RFDEVDBG: read  from address 0x%08x - returning 0x%08x\n", addr, res);
+    return res;
+}
+
+void regfile_dev_debug::rfdev_write_simple (rf_addr_t addr, rf_data_t value)
+{
+    printf ("RFDEVDBG: write from address 0x%08x - value:    0x%08x\n", addr, value);
 }
 
 /* regfile_t */
