@@ -43,7 +43,7 @@ void regfile_dev_subword::rfdev_write (rf_addr_t addr, rf_data_t value, rf_data_
         rf_data_t word_mask = (1 << (bytesperword * 8)) - 1;
 
         for (unsigned int i = 0; i < nbytes / bytesperword; i++) {
-            rf_data_t i_word_mask = word_mask << i;
+            rf_data_t i_word_mask = word_mask << (i * (nbytes / bytesperword));
 
             if (((keep_mask & i_word_mask) == 0) && ((mask & (~i_word_mask)) == 0)) {
                 unsigned int byte_offset = i * bytesperword;
