@@ -181,33 +181,105 @@
 
 ;;;;;;;;;;
 ;; icglue construct text manipulation
-(defun icglue-find-signal-arrow ()
- "Return location of S proc arrow in current line"
- (interactive)
- (let* ((line  (thing-at-point 'line t))
-        (start (string-match "-+>\\|<-+>\\|<-+" line))
-        (end   (match-end 0)))
-  (if start
-   (list start end))))
+
+(defun icglue-get-signal-arrow ()
+  "Return location of S proc arrow in current line"
+  (interactive)
+  (let* ((line  (thing-at-point 'line t))
+         (start (string-match " -+> \\| <-+> \\| <-+ " line))
+         (end   (match-end 0)))
+    (if start
+        (list start end))))
 
 (defun icglue-print-signal-arrow-location ()
- (interactive)
- (let ((index-list (icglue-find-signal-arrow)))
-  (if index-list
-   (message "Arrow found at %d -- %d" (nth 0 index-list) (nth 1 index-list))
-   (message "No arrow found !"))))
+  (interactive)
+  (let ((index-list (icglue-get-signal-arrow)))
+    (if index-list
+        (message "Arrow found at %d -- %d" (nth 0 index-list) (nth 1 index-list))
+      (message "No arrow found !"))))
 
-(defun icglue-modules-before-arrow ()
- "Return location of modules before arrow"
- (interactive))
+(defun icglue-module-start-before-arrow ()
+  "Return location of modules in current line before arrow"
+  (interactive)
+  (let* ((line (thing-at-point 'line t))
+         (signal-name-start (string-match "^ *S +[[:alnum:]_:]*" line))
+         (signal-name-end (match-end 0))
+         (source-start (string-match " [[:alpha:]][[:alnum:]_:]+ " line signal-name-end)))
+    (progn
+;      (message "source starts at %d" source-start)
+    source-start)))
+
+(defun icglue-get-source-and-destination ()
+  "Determine start and end of source and destination modules"
+  (interactive)
+  (let ((line (thing-at-point 'line t))
+        (source-start (icglue-module-start-before-arrow))
+        (source-end   (nth 0 (icglue-get-signal-arrow)))
+;        (source-str   (substring line source-start source-end))
+        (destination-start (nth 1 (icglue-get-signal-arrow)))
+;        (destination-str   (substring line destination-start nil)))
+        (destination-end (length line)))
+    (progn
+;      (message "source %d -- %d, destination %d -- %d" source-start source-end destination-start destination-end)
+    (list (list source-start source-end) (list destination-start destination-end)))))
+
+(defun icglue-get-component-strings ()
+  "Return a list of strings with everything before the source modules,
+   the source modules, the arrow, and the destination modules"
+  (interactive)
+  (let* ((line (thing-at-point 'line t))
+         (src-dest-pair (icglue-get-source-and-destination))
+         (prefix-end  (nth 0 (nth 0 src-dest-pair)))
+         (prefix-str (substring line 0 prefix-end))
+         (source-start (nth 0 (nth 0 src-dest-pair)))
+         (source-end   (nth 1 (nth 0 src-dest-pair)))
+         (source-str   (substring line source-start source-end))
+         (arrow-start (nth 0 (icglue-get-signal-arrow)))
+         (arrow-end   (nth 1 (icglue-get-signal-arrow)))
+         (arrow-str   (substring line arrow-start arrow-end))
+         (destination-start (nth 0 (nth 1 src-dest-pair)))
+         (destination-end   (nth 1 (nth 1 src-dest-pair)))
+         (destination-str   (substring line destination-start destination-end)))
+    (progn
+;      (message "source %d -- %d, destination %d -- %d" source-start source-end destination-start destination-end)
+;      (message "prefix: '%s'\n source:'%s'\narrow-str:%s\ndestination-str:%s" prefix-str source-str arrow-str destination-str)
+      (list prefix-str source-str arrow-str destination-str))))
+
+(defun icglue-get-flipped-arrow ()
+ "Return string with a flipped arrow of the current line "
+ (interactive)
+ (let* ((component-list (icglue-get-component-strings))
+        (arrow-str-rev  (reverse (nth 2 component-list))))
+   (progn
+     (if (not (string-match "<-+>" arrow-str-rev))
+         (let* ((dir-index (string-match "[<\|>]"  arrow-str-rev))
+                (dir-char-rev (alist-get (substring arrow-str-rev dir-index (+ dir-index 1)) '(("<" . ">") (">" . "<")) nil nil 'string=)))
+           (store-substring arrow-str-rev dir-index dir-char-rev)))
+        (setf (nth 2 component-list) arrow-str-rev)
+        (seq-mapcat #'concat component-list 'string))))
 
 (defun icglue-flip-arrow ()
- "Flip direction of S proc arrow in current line"
- (interactive))
+  "Flip direction of S proc arrow in current line"
+  (interactive)
+    (let ((flipped-line (icglue-get-flipped-arrow))
+          (old-position (point)))
+      (progn
+        (message "flipped: %s" flipped-line)
+        (kill-whole-line)
+        (move-beginning-of-line nil)
+        (insert flipped-line)
+        (goto-char old-position))))
+
+(defun icglue-test ()
+  "test save excursion"
+  (interactive)
+  (save-excursion
+    (move-beginning-of-line nil)))
 
 (defun icglue-flip-signal-direction ()
  "Exchange modules before and after S proc arrow"
- (interactive))
+ (interactive)
+ )
 
 (defun icglue-flip-signal-direction-and-arrow ()
  "Exchange modules and flip arrow"
