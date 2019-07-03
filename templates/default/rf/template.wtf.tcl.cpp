@@ -45,6 +45,7 @@ static int rf_${rf_name} (ClientData client_data, Tcl_Interp *interp, int tcl_ar
     const int mode_regread   = 2;
     const int mode_regwrite  = 3;
     const int mode_regmodify = 4;
+    const int mode_list      = 5;
 
     char *entry = NULL;
     int  mode   = -1;
@@ -58,15 +59,16 @@ static int rf_${rf_name} (ClientData client_data, Tcl_Interp *interp, int tcl_ar
 
     const Tcl_ArgvInfo arg_table\[\] = {
 % foreach idx $idxnames {
-        {TCL_ARGV_INT,      "-${idx}",         NULL,                                  (void *)&idx_${idx}, "${idx} index",             NULL},
+        {TCL_ARGV_INT,      "-${idx}",    NULL,                                  (void *)&idx_${idx}, "${idx} index",             NULL},
 % }
-        {TCL_ARGV_STRING,   "-entry",          NULL,                                  (void *)&entry, "the name of the regfile entry", NULL},
+        {TCL_ARGV_STRING,   "-entry",     NULL,                                  (void *)&entry, "the name of the regfile entry", NULL},
 
-        {TCL_ARGV_CONSTANT, "-mode-wordread",  (void *) (uintptr_t) (mode_wordread),  (void *)&mode,  "read whole entry as word",                                      NULL},
-        {TCL_ARGV_CONSTANT, "-mode-wordwrite", (void *) (uintptr_t) (mode_wordwrite), (void *)&mode,  "write whole entry as word",                                     NULL},
-        {TCL_ARGV_CONSTANT, "-mode-regread",   (void *) (uintptr_t) (mode_regread),   (void *)&mode,  "read individual register(s)",                                   NULL},
-        {TCL_ARGV_CONSTANT, "-mode-regwrite",  (void *) (uintptr_t) (mode_regwrite),  (void *)&mode,  "write individual register(s) - unused = default value",         NULL},
-        {TCL_ARGV_CONSTANT, "-mode-regmodify", (void *) (uintptr_t) (mode_regmodify), (void *)&mode,  "write individual register(s) - unused = write read back value", NULL},
+        {TCL_ARGV_CONSTANT, "-wordread",  (void *) (uintptr_t) (mode_wordread),  (void *)&mode,  "read whole entry as word",                                      NULL},
+        {TCL_ARGV_CONSTANT, "-wordwrite", (void *) (uintptr_t) (mode_wordwrite), (void *)&mode,  "write whole entry as word",                                     NULL},
+        {TCL_ARGV_CONSTANT, "-regread",   (void *) (uintptr_t) (mode_regread),   (void *)&mode,  "read individual register(s)",                                   NULL},
+        {TCL_ARGV_CONSTANT, "-regwrite",  (void *) (uintptr_t) (mode_regwrite),  (void *)&mode,  "write individual register(s) - unused = default value",         NULL},
+        {TCL_ARGV_CONSTANT, "-regmodify", (void *) (uintptr_t) (mode_regmodify), (void *)&mode,  "write individual register(s) - unused = write read back value", NULL},
+        {TCL_ARGV_CONSTANT, "-list",      (void *) (uintptr_t) (mode_list),      (void *)&mode,  "list entries/registers",                                        NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -85,10 +87,30 @@ static int rf_${rf_name} (ClientData client_data, Tcl_Interp *interp, int tcl_ar
         return TCL_ERROR;
     }
 
-    if (entry == NULL) {
+    if ((mode != mode_list) && (entry == NULL)) {
         Tcl_SetObjResult (interp, Tcl_NewStringObj ("rf_${rf_name}: no regfile entry specified.", -1));
         ckfree_if_needed (&tcl_argc, &tcl_argv_rem);
         return TCL_ERROR;
+    }
+
+    if (mode == mode_list) {
+        if (tcl_argc > 1) {
+            Tcl_SetObjResult (interp, Tcl_NewStringObj ("rf_${rf_name}: too many arguments for list.", -1));
+            ckfree_if_needed (&tcl_argc, &tcl_argv_rem);
+            return TCL_ERROR;
+        }
+
+        if (entry == NULL) {
+            Tcl_Obj *reslist = Tcl_NewListObj (0, NULL);
+
+% foreach_array entry $entry_list {
+            Tcl_ListObjAppendElement (interp, reslist, Tcl_NewStringObj ("${entry(name)}", -1));
+% }
+
+            Tcl_SetObjResult (interp, reslist);
+            ckfree_if_needed (&tcl_argc, &tcl_argv_rem);
+            return TCL_OK;
+        }
     }
 
 % set efirst true
@@ -157,7 +179,7 @@ static int rf_${rf_name} (ClientData client_data, Tcl_Interp *interp, int tcl_ar
 %   }
             }
             Tcl_SetObjResult (interp, reslist);
-        } else {
+        } else if (mode == mode_regwrite) {
             if ((tcl_argc % 2) != 1) {
                 Tcl_SetObjResult (interp, Tcl_NewStringObj ("rf_${rf_name}: expecdet even number of arguments for reg-write/modify.", -1));
                 ckfree_if_needed (&tcl_argc, &tcl_argv_rem);
@@ -213,6 +235,17 @@ static int rf_${rf_name} (ClientData client_data, Tcl_Interp *interp, int tcl_ar
             }
 
             ${rfacc}${entry(name)} = wval;
+        } else {
+            Tcl_Obj *reslist = Tcl_NewListObj (0, NULL);
+
+%   foreach_array reg $entry(regs) {
+%     if {$reg(name) in {- {}}} {continue}
+            Tcl_ListObjAppendElement (interp, reslist, Tcl_NewStringObj ("${reg(name)}", -1));
+%   }
+
+            Tcl_SetObjResult (interp, reslist);
+            ckfree_if_needed (&tcl_argc, &tcl_argv_rem);
+            return TCL_OK;
         }
 % }
 % if {! $efirst} {
