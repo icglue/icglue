@@ -182,18 +182,18 @@
 ;;;;;;;;;;
 ;; icglue construct text manipulation
 
-(defun icglue-get-signal-arrow ()
+(defun icglue-get-signal-arrow (line)
   "Return location of S proc arrow in current line"
   (interactive)
-  (let* ((line  (thing-at-point 'line t))
-         (start (string-match " -+> \\| <-+> \\| <-+ " line))
+  (let* ((start (string-match " -+> \\| <-+> \\| <-+ " line))
          (end   (match-end 0)))
     (if start
         (list start end))))
 
 (defun icglue-print-signal-arrow-location ()
   (interactive)
-  (let ((index-list (icglue-get-signal-arrow)))
+  (let* ((line (thing-at-point 'line t))
+         (index-list (icglue-get-signal-arrow line)))
     (if index-list
         (message "Arrow found at %d -- %d" (nth 0 index-list) (nth 1 index-list))
       (message "No arrow found !"))))
@@ -214,9 +214,9 @@
   (interactive)
   (let ((line (thing-at-point 'line t))
         (source-start (icglue-module-start-before-arrow))
-        (source-end   (nth 0 (icglue-get-signal-arrow)))
+        (source-end   (nth 0 (icglue-get-signal-arrow line)))
 ;        (source-str   (substring line source-start source-end))
-        (destination-start (nth 1 (icglue-get-signal-arrow)))
+        (destination-start (nth 1 (icglue-get-signal-arrow line)))
 ;        (destination-str   (substring line destination-start nil)))
         (destination-end (length line)))
     (progn
@@ -234,8 +234,8 @@
          (source-start (nth 0 (nth 0 src-dest-pair)))
          (source-end   (nth 1 (nth 0 src-dest-pair)))
          (source-str   (substring line source-start source-end))
-         (arrow-start (nth 0 (icglue-get-signal-arrow)))
-         (arrow-end   (nth 1 (icglue-get-signal-arrow)))
+         (arrow-start (nth 0 (icglue-get-signal-arrow line)))
+         (arrow-end   (nth 1 (icglue-get-signal-arrow line)))
          (arrow-str   (substring line arrow-start arrow-end))
          (destination-start (nth 0 (nth 1 src-dest-pair)))
          (destination-end   (nth 1 (nth 1 src-dest-pair)))
@@ -245,30 +245,37 @@
 ;      (message "prefix: '%s'\n source:'%s'\narrow-str:%s\ndestination-str:%s" prefix-str source-str arrow-str destination-str)
       (list prefix-str source-str arrow-str destination-str))))
 
+(defun icglue-flip-arrow_ (arrow-str)
+  "Return reversed arrow in arrow-str"
+  (let* ((arrow-str-rev (reverse arrow-str))
+         (dir-index (string-match "[<\|>]"  arrow-str-rev))
+         (dir-char-rev (alist-get (substring arrow-str-rev dir-index (+ dir-index 1)) '(("<" . ">") (">" . "<")) nil nil 'string=)))
+    (store-substring arrow-str-rev dir-index dir-char-rev)))
+
 (defun icglue-get-flipped-arrow ()
- "Return string with a flipped arrow of the current line "
- (interactive)
- (let* ((component-list (icglue-get-component-strings))
-        (arrow-str-rev  (reverse (nth 2 component-list))))
-   (progn
-     (if (not (string-match "<-+>" arrow-str-rev))
-         (let* ((dir-index (string-match "[<\|>]"  arrow-str-rev))
-                (dir-char-rev (alist-get (substring arrow-str-rev dir-index (+ dir-index 1)) '(("<" . ">") (">" . "<")) nil nil 'string=)))
-           (store-substring arrow-str-rev dir-index dir-char-rev)))
-        (setf (nth 2 component-list) arrow-str-rev)
-        (seq-mapcat #'concat component-list 'string))))
+  "Return string with a flipped arrow of the current line "
+  (interactive)
+  (let* ((component-list (icglue-get-component-strings))
+         (arrow-str      (nth 2 component-list)))
+    (progn
+      (if (not (string-match "<-+>" arrow-str))
+          (setq arrow-str (icglue-flip-arrow_ arrow-str)))
+      (setf (nth 2 component-list) arrow-str)
+      (mapconcat 'identity component-list nil))))
 
 (defun icglue-flip-arrow ()
   "Flip direction of S proc arrow in current line"
   (interactive)
-    (let ((flipped-line (icglue-get-flipped-arrow))
-          (old-position (point)))
+  (if (string-match "^ *S.+ -+> \\| <-+> \\| <-+ " (thing-at-point 'line t))
       (progn
-        (message "flipped: %s" flipped-line)
-        (kill-whole-line)
-        (move-beginning-of-line nil)
-        (insert flipped-line)
-        (goto-char old-position))))
+        (let ((flipped-line (icglue-get-flipped-arrow))
+              (old-position (point)))
+          (progn
+            (kill-whole-line)
+            (move-beginning-of-line nil)
+            (insert flipped-line)
+            (goto-char old-position))))
+    (message "No S proc invocation with arrow found !")))
 
 (defun icglue-test ()
   "test save excursion"
@@ -286,7 +293,6 @@
  (interactive)
  (icglue-flip-arrow)
  (icglue-flip-signal-direction))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customizations
