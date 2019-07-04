@@ -35,35 +35,41 @@ regfile_dev_simple::~regfile_dev_simple()
 /* regfile_dev_subword */
 void regfile_dev_subword::rfdev_write (rf_addr_t addr, rf_data_t value, rf_data_t mask, rf_data_t unused_mask)
 {
-    unsigned int nbytes = sizeof (rf_data_t);
+    unsigned int n_word_bytes = sizeof (rf_data_t);
 
+    // register bits that must not be changed
     rf_data_t keep_mask = ~(mask | unused_mask);
 
-    rf_data_t word_mask = (2 << (nbytes * 8 - 1)) - 1;
+    // initial subword mask: full word size
+    rf_data_t subword_mask = (2 << (n_word_bytes * 8 - 1)) - 1; // all bits to 1
 
-    for (unsigned int bytesperword = nbytes; bytesperword > 0; bytesperword >>= 1) {
-        for (unsigned int i = 0; i < nbytes / bytesperword; i++) {
-            rf_data_t i_word_mask = word_mask << (i * bytesperword * 8);
+    // go from full word to shorter subwords (e.g. 32, 16, 8 bits --> 4, 2, 1 bytes)
+    for (unsigned int n_subword_bytes = n_word_bytes; n_subword_bytes > 0; n_subword_bytes /= 2) {
+        // iterate over subwords of current size (e.g. 32bits: 0; 16bits: 0, 1; 8bits: 0, 1, 2, 3)
+        for (unsigned int i = 0; i < n_word_bytes / n_subword_bytes; i++) {
+            // shift wordmask to current position
+            rf_data_t i_word_mask = subword_mask << (i * n_subword_bytes * 8);
 
+            // no keep bit would be overwritten? && all write bits are covered?
             if (((keep_mask & i_word_mask) == 0) && ((mask & (~i_word_mask)) == 0)) {
-                unsigned int byte_offset = i * bytesperword;
-                unsigned int byte_size   = bytesperword;
+                unsigned int subword_offset = i * n_subword_bytes;
 
-                rfdev_write_subword (addr + byte_offset, value, byte_size);
+                rfdev_write_subword (addr + subword_offset, value, n_subword_bytes);
                 return;
             }
         }
 
-        word_mask >>= (bytesperword >> 1) * 8;
+        // reduce subword mask
+        subword_mask >>= (n_subword_bytes / 2) * 8;
     }
 
-    /* no success */
+    /* no success ? full read-modify-write */
     rf_data_t tdata = rfdev_read (addr);
 
     tdata &= ~mask;
     tdata |= (value & mask);
 
-    rfdev_write_subword (addr, tdata, nbytes);
+    rfdev_write_subword (addr, tdata, n_word_bytes);
 }
 
 regfile_dev_subword::~regfile_dev_subword()
