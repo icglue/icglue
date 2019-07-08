@@ -1,0 +1,9 @@
+EMACS        = emacs
+ERT_FUNCTION = ert-run-tests-batch-and-exit
+
+all: run-ert
+
+run-ert: ert-tests.el icglue-mode.el
+	$(EMACS) --quick -batch -l ert $(addprefix -l ,$^) -f $(ERT_FUNCTION)
+
+.PHONY: all run-ert
