@@ -1020,7 +1020,7 @@ namespace eval ig::templates {
     ## @brief Generate output-file based on template and provided data.
     # @param outf_name Output file name to generate / read in for keep-blocks.
     # @param template_name name of template file.
-    # @param template_lang template language/type or "link" for symbolic link.
+    # @param template_lang template language/type or "link"/"link!"/"copy"/"copy!" for symbolic link/copy (! for overwrite existing).
     # @param template_data key/value dict of variable-name and variable value to set before execution of template code.
     # @param lognote note text to print in error log messages for reference.
     # @param dryrun If set to true, no actual files are written.
@@ -1029,15 +1029,24 @@ namespace eval ig::templates {
     proc generate_template_output {outf_name template_name template_lang template_data lognote dryrun} {
         if {!$dryrun} {
             file mkdir [file dirname $outf_name]
-            if {$template_lang eq "link"} {
+            if {$template_lang in {"link!" "copy!" "link" "copy"}} {
                 if {[file exists $outf_name]} {
-                    file delete $outf_name
+                    if {$template_lang in {"link!" "copy!"}} {
+                        file delete $outf_name
+                    } else {
+                        return
+                    }
                 }
-                file link -symbolic $outf_name $template_name
+                if {$template_lang in {"link" "link!"}} {
+                    file link -symbolic $outf_name $template_name
+                } else {
+                    file copy -- $template_name $outf_name
+                }
                 return
             }
         }
 
+        #actual template
         set block_data [list]
         if {[file exists $outf_name]} {
             set outf [open $outf_name "r"]
