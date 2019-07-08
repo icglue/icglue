@@ -25,13 +25,13 @@
 ;; For more information on ICGlue, visit https://icglue.org
 
 ;; Install this file (e.g. under ~/.emacs.d/lisp) and add this code to your emacs configuration (e.g. in ~/.emacs):
-; (add-to-list 'load-path "~/.emacs.d/lisp/")
-; (require 'icglue-mode)
-; (add-to-list 'auto-mode-alist '("\.icglue$" . icglue-mode))
+                                        ; (add-to-list 'load-path "~/.emacs.d/lisp/")
+                                        ; (require 'icglue-mode)
+                                        ; (add-to-list 'auto-mode-alist '("\.icglue$" . icglue-mode))
 
 ;; Optionally add the following for verilog syntax highlighting in code sections:
-; (add-hook 'icglue-mode-hook
-;          (lambda () (add-hook 'after-save-hook 'icglue-fontify-code-sections nil 'local)))
+                                        ; (add-hook 'icglue-mode-hook
+                                        ;          (lambda () (add-hook 'after-save-hook 'icglue-fontify-code-sections nil 'local)))
 
 ;; possible extensions: even better highlighting, auto-indent, auto-completion, menu entries
 
@@ -98,7 +98,7 @@
     (modify-syntax-entry ?*  ". 23"   table)
     (modify-syntax-entry ?\n "> b"  table)
     (modify-syntax-entry ?\^M "> b"   table)
-  table)
+    table)
   "Syntax table used in ICGlue mode buffers.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -174,10 +174,10 @@
   "Fontify Verilog code sections in the current buffer."
   (interactive)
   (save-excursion
-  (let ((code-sections (icglue-code-sections)))
-    (while code-sections
-      (setq current-section (pop code-sections))
-      (icglue-fontify-verilog-section current-section)))))
+    (let ((code-sections (icglue-code-sections)))
+      (while code-sections
+        (setq current-section (pop code-sections))
+        (icglue-fontify-verilog-section current-section)))))
 
 ;;;;;;;;;;
 ;; icglue construct text manipulation
@@ -205,9 +205,8 @@
          (signal-name-start (string-match "^ *S +[[:alnum:]_:]*" line))
          (signal-name-end (match-end 0))
          (source-start (string-match " [[:alpha:]][[:alnum:]_:]+ " line signal-name-end)))
-    (progn
-;      (message "source starts at %d" source-start)
-    source-start)))
+;    (message "source starts at %d" source-start)
+    source-start))
 
 (defun icglue-get-source-and-destination ()
   "Determine start and end of source and destination modules"
@@ -215,13 +214,12 @@
   (let ((line (thing-at-point 'line t))
         (source-start (icglue-module-start-before-arrow))
         (source-end   (nth 0 (icglue-get-signal-arrow line)))
-;        (source-str   (substring line source-start source-end))
+                                        ;        (source-str   (substring line source-start source-end))
         (destination-start (nth 1 (icglue-get-signal-arrow line)))
-;        (destination-str   (substring line destination-start nil)))
+                                        ;        (destination-str   (substring line destination-start nil)))
         (destination-end (length line)))
-    (progn
-;      (message "source %d -- %d, destination %d -- %d" source-start source-end destination-start destination-end)
-    (list (list source-start source-end) (list destination-start destination-end)))))
+;    (message "source %d -- %d, destination %d -- %d" source-start source-end destination-start destination-end)
+    (list (list source-start source-end) (list destination-start destination-end))))
 
 (defun icglue-get-component-strings ()
   "Return a list of strings with everything before the source modules,
@@ -240,59 +238,50 @@
          (destination-start (nth 0 (nth 1 src-dest-pair)))
          (destination-end   (nth 1 (nth 1 src-dest-pair)))
          (destination-str   (substring line destination-start destination-end)))
-    (progn
-;      (message "source %d -- %d, destination %d -- %d" source-start source-end destination-start destination-end)
-;      (message "prefix: '%s'\n source:'%s'\narrow-str:%s\ndestination-str:%s" prefix-str source-str arrow-str destination-str)
-      (list prefix-str source-str arrow-str destination-str))))
+;    (message "source %d -- %d, destination %d -- %d" source-start source-end destination-start destination-end)
+;    (message "prefix: '%s'\n source:'%s'\narrow-str:%s\ndestination-str:%s" prefix-str source-str arrow-str destination-str)
+    (list prefix-str source-str arrow-str destination-str)))
 
-(defun icglue-flip-arrow_ (arrow-str)
+(defun icglue-flip-arrow (arrow-str)
   "Return reversed arrow in arrow-str"
   (let* ((arrow-str-rev (reverse arrow-str))
          (dir-index (string-match "[<\|>]"  arrow-str-rev))
          (dir-char-rev (alist-get (substring arrow-str-rev dir-index (+ dir-index 1)) '(("<" . ">") (">" . "<")) nil nil 'string=)))
-    (store-substring arrow-str-rev dir-index dir-char-rev)))
+    (if (string-match "<-+>" arrow-str)
+        arrow-str
+      (store-substring arrow-str-rev dir-index dir-char-rev))))
 
 (defun icglue-get-flipped-arrow ()
   "Return string with a flipped arrow of the current line "
   (interactive)
   (let* ((component-list (icglue-get-component-strings))
          (arrow-str      (nth 2 component-list)))
-    (progn
-      (if (not (string-match "<-+>" arrow-str))
-          (setq arrow-str (icglue-flip-arrow_ arrow-str)))
-      (setf (nth 2 component-list) arrow-str)
-      (mapconcat 'identity component-list nil))))
+    (setq arrow-str (icglue-flip-arrow arrow-str))
+    (setf (nth 2 component-list) arrow-str)
+    (mapconcat 'identity component-list nil)))
 
-(defun icglue-flip-arrow ()
+(defun icglue-flip-arrow-line ()
   "Flip direction of S proc arrow in current line"
   (interactive)
-  (if (string-match "^ *S.+ -+> \\| <-+> \\| <-+ " (thing-at-point 'line t))
-      (progn
-        (let ((flipped-line (icglue-get-flipped-arrow))
-              (old-position (point)))
-          (progn
-            (kill-whole-line)
-            (move-beginning-of-line nil)
-            (insert flipped-line)
-            (goto-char old-position))))
-    (message "No S proc invocation with arrow found !")))
-
-(defun icglue-test ()
-  "test save excursion"
-  (interactive)
-  (save-excursion
-    (move-beginning-of-line nil)))
+  (when (string-match "^ *S.+ -+> \\| <-+> \\| <-+ " (thing-at-point 'line t))
+    (let ((flipped-line (icglue-get-flipped-arrow))
+          (old-position (point)))
+      (kill-whole-line)
+      (move-beginning-of-line nil)
+      (insert flipped-line)
+      (goto-char old-position)))
+  (message "No S proc invocation with arrow found !"))
 
 (defun icglue-flip-signal-direction ()
- "Exchange modules before and after S proc arrow"
- (interactive)
- )
+  "Exchange modules before and after S proc arrow"
+  (interactive)
+  )
 
 (defun icglue-flip-signal-direction-and-arrow ()
- "Exchange modules and flip arrow"
- (interactive)
- (icglue-flip-arrow)
- (icglue-flip-signal-direction))
+  "Exchange modules and flip arrow"
+  (interactive)
+  (icglue-flip-arrow-line)
+  (icglue-flip-signal-direction))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customizations
