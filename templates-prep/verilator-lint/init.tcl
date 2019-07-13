@@ -2,10 +2,10 @@
 
 #  return template arguments
 proc template_args {} {
-    #   <option>     <description>     <default value>  <callback for checking>
+    #   <option>     <description>       <default value>  <callback for checking>
     return {
-        "--unit"     <unit-name>       {}               {$value ne {}}
-        "--suffix"   <optional suffix> {}               {}
+        "--unit"     "<unit-name>"       {}               {$value ne {}}
+        "--suffix"   "<optional suffix>" {}               {}
     }
 }
 
