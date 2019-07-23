@@ -105,6 +105,7 @@ bool apb_stim::read (uint32_t addr, uint32_t &rdata)
 }
 
 void __attribute__((weak)) apb_stim::testcontrol ()
+
 {
 }
 

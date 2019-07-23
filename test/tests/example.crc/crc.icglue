@@ -3,20 +3,36 @@
 # ICGlue CRC-EXAMPLE
 # see also https://crccalc.com/
 
-# E.g. CRC-16/USB
-set crc_data_width 8
-set crc_width      16
-set crc_poly       8005
-set crc_init "{{${crc_width}{1'b1}}}"
-# (Reflected)
-set feed_lsb       1
-
-# E.g. CRC-16/CCITT-FALSE
-#set crc_data_width 8
-#set crc_width      16
-#set crc_poly       1021
-#set crc_init "{{${crc_width}{1'b1}}}"
-#set feed_lsb       0
+if {1} {
+    # E.g. CRC-8/SAE-J1850-ZERO
+    set crc_data_width 8
+    set crc_width      8
+    set crc_poly       1d
+    set crc_init "{{${crc_width}{1'b0}}}"
+    set feed_lsb       0
+} elseif {1} {
+    # E.g. CRC-8/DVB-S2
+    set crc_data_width 8
+    set crc_width      8
+    set crc_poly       d5
+    set crc_init "{{${crc_width}{1'b0}}}"
+    set feed_lsb       0
+} elseif {1} {
+    # E.g. CRC-16/USB
+    set crc_data_width 8
+    set crc_width      16
+    set crc_poly       8005
+    set crc_init "{{${crc_width}{1'b1}}}"
+    # (Reflected)
+    set feed_lsb       1
+} elseif {1} {
+    # E.g. CRC-16/CCITT-FALSE
+    set crc_data_width 8
+    set crc_width      16
+    set crc_poly       1021
+    set crc_init "{{${crc_width}{1'b1}}}"
+    set feed_lsb       0
+}
 
 set crc_fix fix_crc_poly${crc_poly}_${crc_data_width}
 

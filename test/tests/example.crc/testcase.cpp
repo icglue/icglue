@@ -5,6 +5,25 @@
 
 // see https://crccalc.com/
 
+#if 1
+/*  CRC-8/SAE-J1850-ZERO */
+#define CRC_WIDTH 8
+#define CHECK     0x37
+#define CRC_POLY  0x1D
+#define CRC_INIT  0x00
+#define REFIN     false
+#define REFOUT    false
+#define XOROUT    0x00
+#elif 1
+/*  CRC-8/DVB-S2 */
+#define CRC_WIDTH 8
+#define CHECK     0xBC
+#define CRC_POLY  0xD5
+#define CRC_INIT  0x00
+#define REFIN     false
+#define REFOUT    false
+#define XOROUT    0x00
+#elif 1
 /*  CRC-16/USB */
 #define CRC_WIDTH 16
 #define CHECK     0xB4C8
@@ -13,15 +32,16 @@
 #define REFIN     true
 #define REFOUT    true
 #define XOROUT    0xFFFF
-
+#elif 1
 /* CRC-16/CCITT-FALSE */
-//#define CRC_WIDTH 16
-//#define CHECK     0x29B1
-//#define CRC_POLY  0x1021
-//#define CRC_INIT  0xFFFF
-//#define REFIN     false
-//#define REFOUT    false
-//#define XOROUT    0x0000
+#define CRC_WIDTH 16
+#define CHECK     0x29B1
+#define CRC_POLY  0x1021
+#define CRC_INIT  0xFFFF
+#define REFIN     false
+#define REFOUT    false
+#define XOROUT    0x0000
+#endif
 
 unsigned int calc_crc(unsigned char message[], unsigned char length, bool refin, bool refout)
 {
