@@ -27,8 +27,7 @@ STIMC_DIRS     = \
     . \
     ${ICPRO_DIR}/global_src/stimc \
     ${ICPRO_DIR}/units/apb_stim/source/behavioral/stimc \
-	${ICPRO_DIR}/software/host/regfile_access/include \
-	${ICPRO_DIR}/software/host/regfile_access/src \
+	${ICPRO_DIR}/software/host/regfile_access \
 
 STIMC_SOURCES   = $(wildcard $(addsuffix /*.c, $(STIMC_DIRS)) $(addsuffix /*.cpp, $(STIMC_DIRS)))
 # icglue keep end

@@ -65,7 +65,7 @@ foreach_array entry $entry_list {
 
 <[pop_keep_block_content keep_block_data "keep" "custom-header" ".cpp"]>
 
-#include <<%=${header_name}%>.hpp>
+#include <<%=${header_name}%>.h>
 
 <[rf_class]>::<[rf_class]> (regfile_dev &dev, rf_addr_t base_addr) :
     <[format "%-${maxlen_entryname}s"  regfile_t]> (dev, base_addr),<% foreach_array_join entry $entry_list { %>
@@ -137,4 +137,6 @@ rf_data_t *<[rf_class]>::<[entry_class]>::operator&()
     #endif <%="\n\n"%><%- }
     ###########################################
 -%>
-
+<%-
+# vim: filetype=cpp_template
++%>

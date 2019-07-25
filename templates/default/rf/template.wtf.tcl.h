@@ -15,7 +15,7 @@ set rf_c_type_access [expr {$idxnum > 0 ? "." : "->"}]
 #define __[string toupper "${header_name}"]_H__
 
 #include <tcl.h>
-#include "rf_${rf_name}.hpp"
+#include "rf_${rf_name}.h"
 
 #ifdef __cplusplus
 extern "C" {

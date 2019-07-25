@@ -121,3 +121,6 @@ typedef struct {<% foreach_array entry $entry_list {
 -%>
 
 #endif
+<%-
+# vim: filetype=cpp_template
++%>

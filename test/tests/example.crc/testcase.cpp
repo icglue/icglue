@@ -1,6 +1,6 @@
 
 #include <apb_stim.h>
-#include <rf_crc.hpp>
+#include <rf_crc.h>
 #include <tb_selfcheck.h>
 
 // see https://crccalc.com/

@@ -13,7 +13,7 @@ proc output_types {object} {
         return [dict get $lang2type_map $lang]
     } elseif {$objtype eq "regfile"} {
         # for backwards compatibility: rf-h rf-c
-        return {rf-csv rf-c.txt rf-txt rf-tex rf-html rf-hpp rf-cpp rf-soc.h rf-tcl.cpp rf-tcl.h}
+        return {rf-csv rf-c.txt rf-txt rf-tex rf-html rf-host.h rf-host.cpp rf-soc.h rf-tcl.cpp rf-tcl.h}
     }
     ig::log -warning "No templates available for objects of type ${objtype}"
     return {}
@@ -52,15 +52,15 @@ proc output_file {object type} {
         # only for backwards compatibility:
         #    "h"     host include
         #    "c"     host src
-        foreach {fext dir subdir} {
-            "hpp"     host include
-            "cpp"     host src
-            "tcl.h"   host include
-            "tcl.cpp" host src
-            "soc.h"   soc  include
+        foreach {iext dir  oext} {
+            "host.h"   host "h"
+            "host.cpp" host "cpp"
+            "tcl.h"    tcl  "tcl.h"
+            "tcl.cpp"  tcl  "tcl.cpp"
+            "soc.h"    soc  "h"
         } {
-            if {${ext} eq ${fext}} {
-                return "${output_dir_root}/software/${dir}/regfile_access/${subdir}/rf_${object_name}.${ext}"
+            if {${ext} eq ${iext}} {
+                return "${output_dir_root}/software/${dir}/regfile_access/rf_${object_name}.${oext}"
             }
         }
     }

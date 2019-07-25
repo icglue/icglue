@@ -86,7 +86,7 @@ foreach_array entry $entry_list {
 
 #include <regfile_contrib.h>
 
-<[pop_keep_block_content keep_block_data "keep" "custom-header" ".hpp"]>
+<[pop_keep_block_content keep_block_data "keep" "custom-header" ".h"]>
 
 <% foreach_array entry $entry_list {
     set unused_reg "/* unused */"
@@ -118,7 +118,7 @@ class <[rf_class]> : public regfile_t {
 
 };
 
-<[pop_keep_block_content keep_block_data "keep" "custom-decl" ".hpp"]>
+<[pop_keep_block_content keep_block_data "keep" "custom-decl" ".h"]>
 
 <%-
     ###########################################
@@ -138,3 +138,6 @@ class <[rf_class]> : public regfile_t {
 -%>
 
 #endif
+<%-
+# vim: filetype=cpp_template
++%>
