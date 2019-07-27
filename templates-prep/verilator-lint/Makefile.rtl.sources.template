@@ -1,6 +1,5 @@
 <%-
-set content_vsources "VLOG_SOURCES_RTL += \\
-    \${ICPRO_DIR}/units/${unit}/source/rtl/verilog/${unit}.v
+set content_vsources "VLOG_SRC_FILES += \$(wildcard sources/*)
 "
 
 set content_vinclude "#VLOG_INCDIRS += \\

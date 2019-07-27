@@ -850,6 +850,8 @@ namespace eval ig::templates {
             .vh     -
             .v      {return [list "/* "   " */"]}
 
+            .cmdf   {return [list "// "   "\n"]}
+
             .vhd    -
             .vhdl   {return [list "-- "   "\n"]}
 
@@ -1052,7 +1054,7 @@ namespace eval ig::templates {
             set outf [open $outf_name "r"]
             set oldcontent [read $outf]
             close $outf
-            set block_data [parse_keep_blocks $oldcontent [file extension $outf_name]]
+            set block_data [parse_keep_blocks $oldcontent [file extension $template_name]]
         }
 
         set template_code [get_template_script $template_name $template_lang]

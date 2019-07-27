@@ -1,0 +1,105 @@
+# ------------  list of all source files  --------------------------------------
+VLOG_SRC_ARGS    += $(addprefix -f ,$(VLOG_SRC_FILES))
+VLOG_SOURCES     += $(foreach f,$(VLOG_SRC_FILES), $(shell echo $(shell cat $f | sed -e 'sX^\(\#\|//\).*XX')))
+VLOG_INCDIRS     += \
+    ${ICPRO_DIR}/global_src/verilog \
+    .
+DEFINES          ?=
+DISABLEWARN      ?=
+
+# ------------  dirs  ----------------------------------------------------------
+LOGDIR           := log
+
+# ------------  run opts -------------------------------------------------------
+LINT_OPTS        += -Wall --lint-only
+
+# ------------  result ---------------------------------------------------------
+LINT_LOG         ?= ${LOGDIR}/run.log
+
+# ------------  generate -------------------------------------------------------
+
+# disabled warnings
+LINT_OPTS += $(foreach NWARN, ${DISABLEWARN}, -Wno-${NWARN})
+# include dirs
+LINT_OPTS += $(foreach IDIR, ${VLOG_INCDIRS}, -I${IDIR})
+HEADERS   := $(foreach IDIR, ${VLOG_INCDIRS}, $(wildcard ${IDIR}/*.vh))
+
+#===============================================================================
+# The following statements usually need not to be changed
+#===============================================================================
+
+# ------------  output color/verbosity -----------------------------------------
+q?=@
+
+USE_COLOR ?= 1
+define echo
+	if [ -t 1 -a "x${USE_COLOR}" = "x1" ] ; then \
+		c='\e[0m'; \
+		b='\e[1m'; \
+		red='\e[31m'; \
+		green='\e[32m'; \
+		yellow='\e[33m'; \
+		blue='\e[34m'; \
+		purple='\e[35m'; \
+		cyan='\e[36m'; \
+		gray='\e[37m'; \
+	else \
+		c=''; \
+		b=''; \
+		red=''; \
+		green=''; \
+		yellow=''; \
+		blue=''; \
+		purple=''; \
+		cyan=''; \
+		gray=''; \
+	fi; \
+	echo -e $1;
+endef
+
+define shell-fmtflags
+	echo " $(strip $(1))" | sed -r -e 's/\s+-/\\n    -/g' -e 's#${ICPRO_DIR}#$${ICPRO_DIR}#g'
+endef
+
+lintcolor=""
+
+# ------------  info output ----------------------------------------------------
+
+info-lint:
+ifneq (,$(strip $(LINT_OPTS)))
+	$q$(call echo, "$${b}$(lintcolor)LINT-OPTS$${c}$(shell $(call shell-fmtflags,$(addprefix -I,$(LINT_OPTS))))")
+endif
+
+.PHONY: info-lint
+
+
+
+# ------------  rules ----------------------------------------------------------
+
+.DEFAULT_GOAL=run
+
+${LINT_LOG}: ${VLOG_SOURCES} ${HEADERS} Makefile | ${LOGDIR} info-lint
+	$q$(call echo, "$${b}$(lintcolor)LINT$${c} run...")
+	-$qverilator ${LINT_OPTS} ${VLOG_SRC_ARGS} 2>&1 | tee ${LINT_LOG}
+	$q$(call echo, "$${b}$(lintcolor)LINT$${c} result:")
+	$qif [ $$(cat ${LINT_LOG} | wc -l) -eq 0 ] ; then \
+		echo "==> ALL CLEAN <==" | tee -a ${LINT_LOG} ; \
+	fi
+
+run: ${LINT_LOG}
+
+show: ${LINT_LOG}
+	$q$(call echo, "$${b}$(lintcolor)LINT$${c} result:")
+	$qcat ${LINT_LOG}
+
+clean:
+	$qrm -rf ${LOGDIR} 2> /dev/null || true
+
+printinc:
+	$qecho ${INCLUDES}
+
+.PHONY: run show clean
+
+${LOGDIR}:
+	$qmkdir -p $@
+

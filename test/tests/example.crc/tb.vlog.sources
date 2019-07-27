@@ -1,0 +1,4 @@
+// icglue keep begin sources
+${ICPRO_DIR}/units/apb_stim/source/behavioral/verilog/apb_stim.v
+${ICPRO_DIR}/units/crc/source/tb/verilog/tb_crc.v
+// icglue keep end

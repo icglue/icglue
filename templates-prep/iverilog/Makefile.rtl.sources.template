@@ -4,9 +4,7 @@ set content_testbench "SIM_NAME  = tb_${unit}
 TOPLEVEL  = \$(SIM_NAME) \$(DUMP_MOD_NAME)
 "
 
-set content_vsources "VLOG_SOURCES += \\
-    \${ICPRO_DIR}/units/${unit}/source/rtl/verilog/${unit}.v \\
-    \${ICPRO_DIR}/units/${unit}/source/tb/verilog/tb_${unit}.v \\
+set content_vsources "VLOG_SRC_FILES += \$(wildcard sources/*)
 "
 
 set content_vinclude "#VLOG_INCDIRS += \\
