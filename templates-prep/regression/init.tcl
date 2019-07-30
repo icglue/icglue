@@ -6,11 +6,11 @@ proc template_args {} {
     return {}
 }
 
-# return list with {<path to template file> <template type> <output file>}
+# return list with {<tag> <template type> <path to template file> <template type> <output file>}
 proc template_data {userdata tdir} {
     return [subst {
-        copy "${tdir}/Makefile.regression" "env/regression/Makefile.regression"
-        icgt "${tdir}/Makefile.template"   "regression/Makefile"
+        "mk-prj" copy "${tdir}/Makefile.regression" "env/regression/Makefile.regression"
+        "mk-reg" icgt "${tdir}/Makefile.template"   "regression/Makefile"
     }]
 }
 

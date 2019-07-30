@@ -10,7 +10,7 @@ proc template_args {} {
     }
 }
 
-# return list with {<path to template file> <template type> <output file>}
+# return list with {<tag> <template type> <path to template file> <template type> <output file>}
 proc template_data {userdata tdir} {
     set unit   [dict get $userdata "--unit"]
     set tc     [dict get $userdata "--testcase"]
@@ -19,23 +19,23 @@ proc template_data {userdata tdir} {
     if {$srcext ne {}} {set srce "-${srcext}"}
 
     return [subst {
-        copy "${tdir}/Makefile.project.iverilog"              "env/iverilog/Makefile.project.iverilog"
+        "mk-prj"      copy "${tdir}/Makefile.project.iverilog"              "env/iverilog/Makefile.project.iverilog"
 
-        icgt "${tdir}/Makefile.rtl.sources.template"          "units/${unit}/simulation/iverilog/common/Makefile.rtl${srce}.sources"
-        copy "${tdir}/Makefile.iverilog"                      "units/${unit}/simulation/iverilog/common/Makefile.iverilog"
+        "mk-src"      icgt "${tdir}/Makefile.rtl.sources.template"          "units/${unit}/simulation/iverilog/common/Makefile.rtl${srce}.sources"
+        "mk-iv"       copy "${tdir}/Makefile.iverilog"                      "units/${unit}/simulation/iverilog/common/Makefile.iverilog"
 
-        link "../common/Makefile.rtl${srce}.sources"          "units/${unit}/simulation/iverilog/${tc}/Makefile.rtl.sources"
-        link "../common/Makefile.iverilog"                    "units/${unit}/simulation/iverilog/${tc}/Makefile"
+        "mk-tc-src"   link "../common/Makefile.rtl${srce}.sources"          "units/${unit}/simulation/iverilog/${tc}/Makefile.rtl.sources"
+        "mk-tc-iv"    link "../common/Makefile.iverilog"                    "units/${unit}/simulation/iverilog/${tc}/Makefile"
 
-        copy "${tdir}/res.vlog.sources.cmdf"                  "units/${unit}/source/list/res.vlog.sources"
-        wtf  "${tdir}/rtl.vlog.wtf.sources.cmdf"              "units/${unit}/source/list/rtl.vlog.sources"
-        wtf  "${tdir}/tb.vlog.wtf.sources.cmdf"               "units/${unit}/source/list/tb${srce}.vlog.sources"
+        "src-res"     copy "${tdir}/res.vlog.sources.cmdf"                  "units/${unit}/source/list/res.vlog.sources"
+        "src-rtl"     wtf  "${tdir}/rtl.vlog.wtf.sources.cmdf"              "units/${unit}/source/list/rtl.vlog.sources"
+        "src-tb"      wtf  "${tdir}/tb.vlog.wtf.sources.cmdf"               "units/${unit}/source/list/tb${srce}.vlog.sources"
 
-        link "../../../../source/list/res.vlog.sources"       "units/${unit}/simulation/iverilog/common/sources${srce}/res.vlog.sources"
-        link "../../../../source/list/rtl.vlog.sources"       "units/${unit}/simulation/iverilog/common/sources${srce}/rtl.vlog.sources"
-        link "../../../../source/list/tb${srce}.vlog.sources" "units/${unit}/simulation/iverilog/common/sources${srce}/tb${srce}.vlog.sources"
+        "src-sim-res" link "../../../../source/list/res.vlog.sources"       "units/${unit}/simulation/iverilog/common/sources${srce}/res.vlog.sources"
+        "src-sim-rtl" link "../../../../source/list/rtl.vlog.sources"       "units/${unit}/simulation/iverilog/common/sources${srce}/rtl.vlog.sources"
+        "src-sim-tb"  link "../../../../source/list/tb${srce}.vlog.sources" "units/${unit}/simulation/iverilog/common/sources${srce}/tb${srce}.vlog.sources"
 
-        link "../common/sources${srce}"                       "units/${unit}/simulation/iverilog/${tc}/sources"
+        "src-tc"      link "../common/sources${srce}"                       "units/${unit}/simulation/iverilog/${tc}/sources"
     }]
 }
 

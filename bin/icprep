@@ -28,181 +28,62 @@ package require Tcl 8.6
 package require ICGlue 4.0a1
 
 
-namespace eval icprep::templates {
-    ## @brief Collect template data
-    namespace eval collection {
-        variable template_dir      {}
-        variable template_data_gen {}
-        variable template_args_gen {}
-    }
-
-    ## @brief Callback procs of currently loaded template.
-    namespace eval current {
-        variable template_dir ""
-
-        ## @brief Actual callback to get the template data.
-        # @param userdata (key/value pair-list for user provided data)
-        # @param template_dir Path to this template.
-        # @return a list of sublists with entries <template-file> <template-language> <output-file>.
-        #
-        # Should be called by @ref get_template_file.
-        proc get_template_data_raw {userdata template_dir} {
-            ig::log -error -abort "No template loaded"
+proc gen_all {target userdata dryrun} {
+    foreach {flag description default_value check} [ig::templates::current::template_args] {
+        if {![dict exists $userdata $flag]} {
+            dict set userdata $flag $default_value
         }
-
-        ## @brief Callback to get template arguments
-        # @return stride list of commandline arguments for template of form
-        #   <argument> <value description> <default value> <check expression / empty>
-        # @ref get_template_data, @ref get_template_data_raw,
-        proc template_args {} {
-            ig::log -error -abort "No template loaded"
-        }
-
-        ## @brief Callback wrapper to get the template data.
-        # @param userdata (key/value pair-list for user provided data)
-        # @return a list of sublists with entries <template-language> <template-file> <output-file>.
-        #
-        # Calls @ref get_template_data_raw with the path to the current template.
-        proc get_template_data {userdata} {
-            variable template_dir
-            return [get_template_data_raw $userdata $template_dir]
-        }
-    }
-
-    ## @brief Load directory with templates.
-    # @param dir Path to directory with templates.
-    #
-    # dir should contain one subdirectory for each template.
-    # Each subdirectory should contain an "init.tcl" script inserting the template's
-    # callbacks using the methods provided by @ref ig::templates::init
-    proc add_template_dir {dir} {
-        set tmpl_dirs [glob -directory $dir *]
-        foreach i_dir $tmpl_dirs {
-            set initf_name "${i_dir}/init.tcl"
-            if {![file exists ${initf_name}]} {
-                continue
-            }
-
-            if {[catch {
-                set init_scr [open $initf_name "r"]
-                set init [read $init_scr]
-                close $init_scr
-            }]} {
-                continue
-            }
-
-            set template     [file tail [file normalize [file dirname $initf_name]]]
-            set template_dir [file normalize "${dir}/${template}"]
-
-            lappend icprep::templates::collection::template_dir [list \
-                $template $template_dir \
-            ]
-
-            set preface {
-                proc proc {name arglist body} {
-                    variable template
-                    switch -- $name {
-                        template_data {
-                            if {$arglist ne {userdata tdir}} {
-                                ig::log -error "template ${template}: invalid template_data definition (arguments must be {userdata tdir})"
-                            } else {
-                                lappend icprep::templates::collection::template_data_gen [list \
-                                    $template $body \
-                                ]
-                            }
-                        }
-                        template_args {
-                            if {$arglist ne {}} {
-                                ig::log -error "template ${template}: invalid template_args definition (arguments must be {})"
-                            } else {
-                                lappend icprep::templates::collection::template_args_gen [list \
-                                    $template $body \
-                                ]
-                            }
-                        }
-                        default {
-                            ::proc $name $arglist $body
-                        }
-                    }
+        set value [dict get $userdata $flag]
+        if {$check ne ""} {
+            ##nagelfar ignore Expr without braces
+            if {![expr $check]} {
+                puts "Usage: [file tail $::argv0] $target\n\nOptions: \[OPTION\]"
+                foreach {flag description default_value check} [ig::templates::current::template_args] {
+                    puts [format "  %-26s %s" $flag $description]
                 }
+                exit 1
             }
-
-            if {[catch {
-                namespace eval _template_init [join [list \
-                    "variable template [list $template]" \
-                    $preface \
-                    $init \
-                    ] "\n"]
-                } ex]} {
-
-                ig::log -error "error initializing template ${template} (${template_dir}): ${ex}"
-            }
-
-            if {[namespace exists _template_init]} {namespace delete _template_init}
         }
     }
 
-    ## @brief Load a template to use.
-    # @param template Template to use. The template must have been loaded with a
-    # template directory using @ref add_template_dir.
-    proc load_template {template} {
-        # load vars/procs for current template
-        set dir_idx   [lsearch -index 0 $collection::template_dir       $template]
-        set data_idx  [lsearch -index 0 $collection::template_data_gen  $template]
-        set args_idx  [lsearch -index 0 $collection::template_args_gen  $template]
-
-        if {($dir_idx < 0) || ($data_idx < 0) || ($args_idx < 0)} {
-            ig::log -error -abort "template $template not (fully) defined"
-        }
-
-        set current::template_dir [lindex $collection::template_dir $dir_idx 1]
-        # workaround for doxygen: is otherwise irritated by directly visible proc keyword
-        set procdef "proc"
-        $procdef current::template_args         {}              [lindex $collection::template_args_gen $args_idx 1]
-        $procdef current::get_template_data_raw {userdata tdir} [lindex $collection::template_data_gen $data_idx 1]
+    set template_data {}
+    foreach {key value} $userdata {
+        lappend template_data [string trimleft $key "-"] $value
     }
 
-    proc gen_all {target userdata dryrun} {
-        foreach {flag description default_value check} [current::template_args] {
-            if {![dict exists $userdata $flag]} {
-                dict set userdata $flag $default_value
-            }
-            set value [dict get $userdata $flag]
-            if {$check ne ""} {
-                ##nagelfar ignore Expr without braces
-                if {![expr $check]} {
-                    puts "Usage: [file tail $::argv0] $target\n\nOptions: \[OPTION\]"
-                    foreach {flag description default_value check} [icprep::templates::current::template_args] {
-                        puts [format "  %-26s %s" $flag $description]
-                    }
-                    exit 1
-                }
+    foreach {tag lang ttfile outfile} [ig::templates::current::get_template_data $userdata] {
+        if {[string index $outfile 0] ne "." && [string index $outfile 0] ne "/"} {
+            if {[info exists ::env(ICPRO_DIR)]} {
+                set outfile "$::env(ICPRO_DIR)/$outfile"
+            } else {
+                set outfile "./$outfile"
             }
         }
 
-        set template_data {}
-        foreach {key value} $userdata {
-            lappend template_data [string trimleft $key "-"] $value
-        }
+        set outf_name_var $outfile
 
-        foreach {lang ttfile outfile} [current::get_template_data $userdata] {
-            if {[string index $outfile 0] ne "." && [string index $outfile 0] ne "/"} {
-                if {[info exists ::env(ICPRO_DIR)]} {
-                    set outfile "$::env(ICPRO_DIR)/$outfile"
-                } else {
-                    set outfile "./$outfile"
-                }
+        set outf_name_var_norm [file normalize $outf_name_var]
+        set outf_name_var_new [string map [list [file normalize [pwd]] {.}] $outf_name_var_norm]
+        if {$outf_name_var_new ne $outf_name_var_norm} {
+            set outf_name_var $outf_name_var_new
+        } else {
+            if {[info exists ::env(ICPRO_DIR)]} {
+                set outf_name_var [string map [list $::env(ICPRO_DIR) {$ICPRO_DIR}] $outf_name_var]
             }
-
-            ig::log -info -id Gen "Generating ${outfile}"
-
-            set note "${target}/${ttfile}"
-            ig::templates::generate_template_output $outfile $ttfile $lang $template_data $note $dryrun
         }
+
+        set logtype $tag
+        set logtypelen 13
+        if {[string length $logtype] > $logtypelen} {
+            set logtype "[string range $logtype 0 [expr {$logtypelen - 4}]]..."
+        }
+        ig::log -info -id Gen "Generating [format {%-*s} [expr {$logtypelen + 2}] "\[${logtype}\]"] $outf_name_var"
+
+        set note "${target}/${tag}"
+        ig::templates::generate_template_output $outfile $ttfile $lang $template_data $note $dryrun
     }
-
-    namespace export *
 }
+
 
 proc printhelp {{exitcode 0} {channel stdout} {doexit "true"}} {
     puts $channel [format \
@@ -373,14 +254,14 @@ proc main {} {
     # template dirs
     foreach i_tdir $c_template_dirs {
         if {[file isdirectory $i_tdir]} {
-            icprep::templates::add_template_dir $i_tdir
+            ig::templates::add_template_dir $i_tdir
         }
     }
 
     # just print templates?
     if {$show_templates} {
         puts "Available templates:"
-        foreach t $icprep::templates::collection::template_dir {
+        foreach t $ig::templates::collection::template_dir {
             puts "    - [lindex $t 0]"
         }
         puts "Run [file tail $::argv0] <template> --help to see template options."
@@ -394,19 +275,19 @@ proc main {} {
         lappend prep_data $i_key $i_val
     }
 
-    if {[catch {icprep::templates::load_template $prep_target}]} {
+    if {[catch {ig::templates::load_template $prep_target}]} {
         ig::log -error "Failed to load template for target \"${prep_target}\""
         exit 1
     }
 
     if {$help} {
         puts "Usage: [file tail $::argv0] $prep_target\n\nOptions: \[OPTION\]"
-        foreach {flag description default_value check} [icprep::templates::current::template_args] {
+        foreach {flag description default_value check} [ig::templates::current::template_args] {
             puts [format "  %-26s %s" $flag $description]
         }
         exit 0
     }
-    icprep::templates::gen_all $prep_target $prep_data $dryrun
+    gen_all $prep_target $prep_data $dryrun
 
     set exitcode 0
 
