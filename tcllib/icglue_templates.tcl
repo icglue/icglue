@@ -23,59 +23,43 @@ package provide ICGlue 4.0a1
 namespace eval ig::templates {
     ## @brief Collect template data
     namespace eval collection {
-        variable template_dir       {}
-        variable output_types_gen   {}
-        variable template_path_gen  {}
-        variable output_path_gen    {}
+        variable template_dir      {}
+        variable template_data_gen {}
+        variable template_args_gen {}
     }
 
     ## @brief Callback procs of currently loaded template.
     namespace eval current {
         variable template_dir ""
 
-        ## @brief Actual callback to get the template file.
-        # @param object The Object-ID of the Object to generate output for.
-        # @param type One of the types returned by @ref get_output_types for the given object.
+        ## @brief Actual callback to get the template data.
+        # @param userdata (key/value pair-list for (user) provided data)
+        #   icglue templates expect a key object with the ID of the object to write
         # @param template_dir Path to this template.
-        # @return Filename of the template file or optionally a 2-element list
-        #         with filename and template language (currently icgt (default) or wtf).
+        # @return a stride list of <tag> <template-type> <template-file> <output-file>.
         #
-        # See also @ref ig::templates::add_template_dir
         # Should be called by @ref get_template_file.
-        proc get_template_file_raw {object type template_dir} {
+        proc get_template_data_raw {userdata template_dir} {
             ig::log -error -abort "No template loaded"
         }
 
-        ## @brief Callback to get supported output types for given object.
-        # @param object Object-ID of the Object to generate output for.
-        # @return A list of supported output types needed by
-        # @ref get_template_file, @ref get_template_file_raw,
-        # @ref get_output_file.
-        #
-        # See also @ref ig::templates::add_template_dir
-        proc get_output_types {object} {
+        ## @brief Callback to get template arguments
+        # @return stride list of commandline arguments for template of form
+        #   <argument> <value description> <default value> <check expression / empty>
+        # @ref get_template_data, @ref get_template_data_raw,
+        proc template_args {} {
             ig::log -error -abort "No template loaded"
         }
 
-        ## @brief Callback wrapper to get the template file.
-        # @param object The Object-ID of the Object to generate output for.
-        # @param type One of the types returned by @ref get_output_types for the given object.
-        # @return Filename of the template file.
+        ## @brief Callback wrapper to get the template data.
+        # @param userdata (key/value pair-list for user provided data)
+        #   icglue templates expect a key object with the ID of the object to write
+        # @return a stride list of <tag> <template-type> <template-file> <output-file>.
         #
-        # Calls @ref get_template_file_raw with the path to the current template.
-        proc get_template_file {object type} {
+        # Calls @ref get_template_data_raw with the path to the current template.
+        proc get_template_data {userdata} {
             variable template_dir
-            return [get_template_file_raw $object $type $template_dir]
-        }
-
-        ## @brief Callback to get path to output file.
-        # @param object Object-ID of the Object to generate output for.
-        # @param type One of the types returned by @ref get_output_types for the given object.
-        # @return Path to the output file to generate.
-        #
-        # See also @ref ig::templates::add_template_dir
-        proc get_output_file {object type} {
-            ig::log -error -abort "No template loaded"
+            return [get_template_data_raw $userdata $template_dir]
         }
     }
 
@@ -499,29 +483,20 @@ namespace eval ig::templates {
                 proc proc {name arglist body} {
                     variable template
                     switch -- $name {
-                        output_types {
-                            if {$arglist ne {object}} {
-                                ig::log -error "template ${template}: invalid output_types definition (arguments must be {object})"
+                        template_data {
+                            if {$arglist ne {userdata tdir}} {
+                                ig::log -error "template ${template}: invalid template_data definition (arguments must be {userdata tdir})"
                             } else {
-                                lappend ig::templates::collection::output_types_gen [list \
+                                lappend ig::templates::collection::template_data_gen [list \
                                     $template $body \
                                 ]
                             }
                         }
-                        template_file {
-                            if {$arglist ne {object type template_dir}} {
-                                ig::log -error "template ${template}: invalid template_file definition (arguments must be {object type template_dir})"
+                        template_args {
+                            if {$arglist ne {}} {
+                                ig::log -error "template ${template}: invalid template_args definition (arguments must be {})"
                             } else {
-                                lappend ig::templates::collection::template_path_gen [list \
-                                    $template $body \
-                                ]
-                            }
-                        }
-                        output_file {
-                            if {$arglist ne {object type}} {
-                                ig::log -error "template ${template}: invalid output_file definition (arguments must be {object type})"
-                            } else {
-                                lappend ig::templates::collection::output_path_gen [list \
+                                lappend ig::templates::collection::template_args_gen [list \
                                     $template $body \
                                 ]
                             }
@@ -529,24 +504,6 @@ namespace eval ig::templates {
                         default {
                             ::proc $name $arglist $body
                         }
-                    }
-                }
-                # icglue 2 init compatibility:
-                namespace eval init {
-                    proc output_types {template body} {
-                        lappend ig::templates::collection::output_types_gen [list \
-                            $template $body \
-                        ]
-                    }
-                    proc template_file {template body} {
-                        lappend ig::templates::collection::template_path_gen [list \
-                            $template $body \
-                        ]
-                    }
-                    proc output_file {template body} {
-                        lappend ig::templates::collection::output_path_gen [list \
-                            $template $body \
-                        ]
                     }
                 }
             }
@@ -571,21 +528,23 @@ namespace eval ig::templates {
     # template directory using @ref add_template_dir.
     proc load_template {template} {
         # load vars/procs for current template
-        set dir_idx  [lsearch -index 0 $collection::template_dir       $template]
-        set type_idx [lsearch -index 0 $collection::output_types_gen   $template]
-        set tmpl_idx [lsearch -index 0 $collection::template_path_gen  $template]
-        set out_idx  [lsearch -index 0 $collection::output_path_gen    $template]
+        set dir_idx   [lsearch -index 0 $collection::template_dir      $template]
+        set data_idx  [lsearch -index 0 $collection::template_data_gen $template]
+        set args_idx  [lsearch -index 0 $collection::template_args_gen $template]
 
-        if {($dir_idx < 0) || ($type_idx < 0) || ($tmpl_idx < 0) || ($out_idx < 0)} {
+        if {($dir_idx < 0) || ($data_idx < 0)} {
             ig::log -error -abort "template $template not (fully) defined"
         }
 
         set current::template_dir [lindex $collection::template_dir $dir_idx 1]
         # workaround for doxygen: is otherwise irritated by directly visible proc keyword
         set procdef "proc"
-        $procdef current::get_output_types      {object}                   [lindex $collection::output_types_gen   $type_idx 1]
-        $procdef current::get_template_file_raw {object type template_dir} [lindex $collection::template_path_gen  $tmpl_idx 1]
-        $procdef current::get_output_file       {object type}              [lindex $collection::output_path_gen    $out_idx  1]
+        if {$args_idx < 0} {
+            $procdef current::template_args {} {return {}}
+        } else {
+            $procdef current::template_args {} [lindex $collection::template_args_gen $args_idx 1]
+        }
+        $procdef current::get_template_data_raw {userdata tdir} [lindex $collection::template_data_gen $data_idx 1]
     }
 
     ## @brief Parse a template.
@@ -1119,56 +1078,57 @@ namespace eval ig::templates {
         }
     }
 
-    ## @brief Generate output for given object of specified type.
-    # @param obj_id Object-ID to write output for.
-    # @param type Type of template as delivered by @ref ig::templates::current::get_output_types.
-    # @param dryrun If set to true, no actual files are written.
-    #
-    # The output is written to the file specified by the template callback @ref ig::templates::current::get_output_file.
-    proc write_object {obj_id type {dryrun false}} {
-        if {[catch {lassign [current::get_template_file $obj_id $type] _tt_name _tt_lang}]} {
-            return
-        }
-
-        set _outf_name [current::get_output_file $obj_id $type]
-
-        set _outf_name_var ${_outf_name}
-
-        set _outf_name_var_norm [file normalize ${_outf_name_var}]
-        set _outf_name_var_new [string map [list [file normalize [pwd]]  {.}] ${_outf_name_var_norm}]
-        if {${_outf_name_var_new} ne ${_outf_name_var_norm}} {
-            set _outf_name_var ${_outf_name_var_new}
-        } else {
-            if {[info exists ::env(ICPRO_DIR)]} {
-                set _outf_name_var [string map [list $::env(ICPRO_DIR) {$ICPRO_DIR}] ${_outf_name_var}]
-            }
-        }
-
-        set _logtype $type
-        set _logtypelen 13
-        if {[string length ${_logtype}] > ${_logtypelen}} {
-            set _logtype "[string range ${_logtype} 0 [expr {${_logtypelen} - 4}]]..."
-        }
-        ig::log -info -id Gen "Generating [format {%-*s} [expr {${_logtypelen}+2}] "\[${_logtype}\]"] ${_outf_name_var}"
-
-        set tt_data [list "obj_id" $obj_id]
-        set tt_note "type ${type} / object [ig::db::get_attribute -object ${obj_id} -attribute "name"]"
-        generate_template_output ${_outf_name} ${_tt_name} ${_tt_lang} $tt_data $tt_note $dryrun
-    }
-
     ## @brief Generate output for given object for all output types provided by template.
     # @param obj_id Object-ID to write output for.
     # @param typelist List of types to generate, empty list generates everything.
     # @param dryrun If set to true, no actual files are written.
     #
-    # Iterates over all output types provided by template callback @ref ig::templates::current::get_output_file
+    # Iterates over all output tags provided by template callback @ref ig::templates::current::get_template_data
     # and writes output via the template.
     proc write_object_all {obj_id {typelist {}} {dryrun false}} {
-        foreach i_type [current::get_output_types $obj_id] {
-            if {([llength $typelist] > 0) && ($i_type ni $typelist)} {
+        set udata [dict create object $obj_id]
+
+        if {[catch {set tdata [current::get_template_data $udata]}]} {
+            return
+        }
+
+        foreach {tag lang ttfile outfile} $tdata {
+            if {([llength $typelist] > 0) && ($tag ni $typelist)} {
                 continue
             }
-            write_object $obj_id $i_type $dryrun
+
+            if {[string index $outfile 0] ne "." && [string index $outfile 0] ne "/"} {
+                if {[info exists ::env(ICPRO_DIR)]} {
+                    set outfile "$::env(ICPRO_DIR)/$outfile"
+                } else {
+                    set outfile "./$outfile"
+                }
+            }
+
+            set outf_name_var $outfile
+
+            set outf_name_var_norm [file normalize $outf_name_var]
+            set outf_name_var_new [string map [list [file normalize [pwd]] {.}] $outf_name_var_norm]
+            if {$outf_name_var_new ne $outf_name_var_norm} {
+                set outf_name_var $outf_name_var_new
+            } else {
+                if {[info exists ::env(ICPRO_DIR)]} {
+                    set outf_name_var [string map [list $::env(ICPRO_DIR) {$ICPRO_DIR}] $outf_name_var]
+                }
+            }
+
+            set logtype $tag
+            set logtypelen 13
+            if {[string length $logtype] > $logtypelen} {
+                set logtype "[string range $logtype 0 [expr {$logtypelen - 4}]]..."
+            }
+            ig::log -info -id Gen "Generating [format {%-*s} [expr {$logtypelen + 2}] "\[${logtype}\]"] $outf_name_var"
+
+
+            set tt_data [list "obj_id" $obj_id]
+            set tt_note "type ${tag} / object [ig::db::get_attribute -object ${obj_id} -attribute "name"]"
+
+            ig::templates::generate_template_output $outfile $ttfile $lang $tt_data $tt_note $dryrun
         }
     }
 

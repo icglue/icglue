@@ -1,81 +1,52 @@
 # template init script
 
-# generate object output types
-proc output_types {object} {
-    set objtype [ig::db::get_attribute -object $object -attribute "type"]
-    if {$objtype eq "module"} {
-        set lang [ig::db::get_attribute -object $object -attribute "language"]
-        set lang2type_map {
-            "verilog"       {vlog-v}
-            "systemverilog" {svlog-sv}
-            "systemc"       {sc-h sc-cpp shell-v}
-        }
-        return [dict get $lang2type_map $lang]
-    } elseif {$objtype eq "regfile"} {
-        # for backwards compatibility: rf-h rf-c
-        return {rf-csv rf-c.txt rf-txt rf-tex rf-html rf-host.h rf-host.cpp rf-soc.h rf-tcl.cpp rf-tcl.h}
-    }
-    ig::log -warning "No templates available for objects of type ${objtype}"
-    return {}
-}
+# return list with {<tag> <template type> <path to template file> <template type> <output file>}
+proc template_data {userdata tdir} {
+    set object [dict get $userdata "object"]
 
-# return {<path to template file> <template type>}
-proc template_file {object type template_dir} {
-    set templateformats {icgt wtf}
-    lassign [split $type -] dir ext
-    foreach tf $templateformats {
-        if {[file exists  "${template_dir}/${dir}/template.${tf}.${ext}"]} {
-            return [list  "${template_dir}/${dir}/template.${tf}.${ext}" $tf]
-        }
-    }
-    ig::log -error -abort "No template available for ${type} (No such files: ${template_dir}/${dir}/template.{[join $templateformats ","]}.${ext})"
-}
+    set type [ig::db::get_attribute -object $object -attribute "type"]
+    set name [ig::db::get_attribute -object $object -attribute "name"]
 
-# generate object output filename
-proc output_file {object type} {
-    set output_dir_root "."
-    if {[info exists ::env(ICPRO_DIR)]} {
-        set output_dir_root "$::env(ICPRO_DIR)"
-    }
-    set object_name [ig::db::get_attribute -object $object -attribute "name"]
-    set parent_unit [ig::db::get_attribute -object $object -attribute "parentunit" -default $object_name]
-    set mode        [ig::db::get_attribute -object $object -attribute "mode"       -default "rtl"]
-    set lang        [ig::db::get_attribute -object $object -attribute "language"   -default "verilog"]
+    set result [list]
 
-    lassign [split $type -] maintype ext
+    if {$type eq "module"} {
+        set parent [ig::db::get_attribute -object $object -attribute "parentunit" -default $name]
+        set mode   [ig::db::get_attribute -object $object -attribute "mode"       -default "rtl"]
+        set lang   [ig::db::get_attribute -object $object -attribute "language"]
 
-    # special cases
-    if {$maintype eq "rf"} {
-        if {$ext in {csv c.txt txt tex html}} {
-            return "${output_dir_root}/doc/${ext}/${object_name}.${ext}"
-        }
-        # only for backwards compatibility:
-        #    "h"     host include
-        #    "c"     host src
-        foreach {iext dir  oext} {
-            "host.h"   host "h"
-            "host.cpp" host "cpp"
-            "tcl.h"    tcl  "tcl.h"
-            "tcl.cpp"  tcl  "tcl.cpp"
-            "soc.h"    soc  "h"
+        foreach {ilang itag itype idir iext} {
+                verilog       vlog  icgt verilog       v
+                systemverilog svlog icgt systemverilog sv
+                systemc       sc    wtf  systemc       h
+                systemc       sc    wtf  systemc       cpp
+                systemc       shell wtf  verilog       v
         } {
-            if {${ext} eq ${iext}} {
-                return "${output_dir_root}/software/${dir}/regfile_access/rf_${object_name}.${oext}"
+            if {$lang eq $ilang} {
+                lappend result "${itag}-${iext}" $itype "${tdir}/${itag}/template.${itype}.${iext}" "units/${parent}/source/${mode}/${idir}/${name}.${iext}"
             }
         }
-    }
+    } elseif {$type eq "regfile"} {
+        foreach {itag itype} {
+            txt  wtf
+            csv  wtf
+            html icgt
+            tex  icgt
+        } {
+            lappend result "rf-${itag}" $itype "${tdir}/rf/template.${itype}.${itag}" "doc/${itag}/${name}.${itag}"
+        }
 
-    # default
-    foreach {dir types} {
-        "verilog"       {vlog-v shell-v}
-        "systemverilog" {svlog-sv}
-        "systemc"       {sc-h sc-cpp}
-    } {
-        if {$type in $types} {
-            return "${output_dir_root}/units/${parent_unit}/source/${mode}/${dir}/${object_name}.${ext}"
+        lappend result "rf-c.txt"    wtf  "${tdir}/rf/template.wtf.c.txt"     "software/doc/regfile_access/${name}.txt"
+
+        foreach {itag itype iinf iext} {
+            soc  icgt {}   h
+            host icgt {}   h
+            host icgt {}   cpp
+            tcl  wtf  .tcl h
+            tcl  wtf  .tcl cpp
+        } {
+            lappend result "rf-${itag}.${iext}" $itype "${tdir}/rf/template.${itype}.${itag}.${iext}" "software/${itag}/regfile_access/rf_${name}${iinf}.${iext}"
         }
     }
 
-    ig::log -error -abort "No output directory defined for type $type -- $object_name ($mode,$lang)."
+    return $result
 }
-
