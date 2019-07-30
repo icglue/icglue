@@ -1,7 +1,10 @@
 <%-
 set entry_list [regfile_to_arraylist $obj_id]
 set rf_name [object_name $obj_id]
+set rf_dw   [ig::db::get_attribute -object $obj_id -attribute "datawidth" -default 32]
+set rf_bw   [expr {$rf_dw / 8}]
 set padding_to [ig::db::get_attribute -object $obj_id -attribute "pad_to" -default {0}]
+set entry_t "uint[format %d $rf_dw]_t"
 
 set header_name "rf_${rf_name}"
 
@@ -75,7 +78,7 @@ foreach_array entry $entry_list {
 // REGFILE-><%=$entry(name)%>.REGISTER_NAME
 typedef struct {<% foreach_array reg $entry(regs) {%>
     <[struct_reg_entry]><% } %>
-} __attribute__((__packed__)) <[entry_struct]>;
+} __attribute__((__packed__,__aligned__(<%=$rf_bw%>))) <[entry_struct]>;
 <% } %>
 
 <%
@@ -84,22 +87,22 @@ typedef struct {<% foreach_array reg $entry(regs) {%>
 %>
 typedef struct {<% foreach_array entry $entry_list {
         if {$entry(address) > $next_address} {
-            set fill_size [expr {($entry(address) - $next_address) / 4}]
+            set fill_size [expr {($entry(address) - $next_address) / $rf_bw}]
             incr unused_idx
     %>
-    uint32_t _padding_<%= $unused_idx %>[<%= $fill_size %>]; /* unused */<%
+    <%=$entry_t%> _padding_<%= $unused_idx %>[<%= $fill_size %>]; /* unused */<%
         }%>
-    union {<[entry_struct_padded]> <[entry_name ";"]>  uint32_t _<%=$entry(name)%>_word;};<[format {%*s} [expr {$maxlen_entryname - [string length $entry(name)]}] ""]> // <%= $entry(name) %><%
-        set next_address [expr {$entry(address) + 4}]
+    union {<[entry_struct_padded]> <[entry_name ";"]>  <%=$entry_t%> _<%=$entry(name)%>_word;};<[format {%*s} [expr {$maxlen_entryname - [string length $entry(name)]}] ""]> // <%= $entry(name) %><%
+        set next_address [expr {$entry(address) + $rf_bw}]
     }
     if {$padding_to > 0} {
-        set fill_size [expr {($padding_to - $next_address) / 4}]
+        set fill_size [expr {($padding_to - $next_address) / $rf_bw}]
         incr unused_idx
         %>
-    uint32_t _padding_<%= $unused_idx %>[<%= $fill_size %>]; /* unused */<%
+    <%=$entry_t%> _padding_<%= $unused_idx %>[<%= $fill_size %>]; /* unused */<%
     }
     %>
-} __attribute__((__packed__)) <[rf_class]>;
+} __attribute__((__packed__,__aligned__(<%=$rf_bw%>))) <[rf_class]>;
 
 <[pop_keep_block_content keep_block_data "keep" "custom-decl" ".h"]>
 
