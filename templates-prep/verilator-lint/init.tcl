@@ -16,19 +16,17 @@ proc template_data {userdata tdir} {
     set suffix [dict get $userdata "--suffix"]
     if {$suffix ne {}} {set suffix "-${suffix}"}
 
-    return [subst {
-        "mk-prj"       copy "${tdir}/Makefile.project.lint.verilator" "env/verilator/Makefile.project.lint.verilator"
+    add "mk-prj"       copy "${tdir}/Makefile.project.lint.verilator" "env/verilator/Makefile.project.lint.verilator"
 
-        "mk-src"       icgt "${tdir}/Makefile.rtl.sources.template"   "units/${unit}/lint/verilator${suffix}/Makefile.rtl.sources"
-        "mk-vltr"      icgt "${tdir}/Makefile.verilator.template"     "units/${unit}/lint/verilator${suffix}/Makefile"
+    add "mk-src"       icgt "${tdir}/Makefile.rtl.sources.template"   "units/${unit}/lint/verilator${suffix}/Makefile.rtl.sources"
+    add "mk-vltr"      icgt "${tdir}/Makefile.verilator.template"     "units/${unit}/lint/verilator${suffix}/Makefile"
 
-        "src-res"      copy "${tdir}/res.vlog.sources.cmdf"           "units/${unit}/source/list/res.vlog.sources"
-        "src-rtl"      wtf  "${tdir}/rtl.vlog.wtf.sources.cmdf"       "units/${unit}/source/list/rtl.vlog.sources"
+    add "src-res"      copy "${tdir}/res.vlog.sources.cmdf"           "units/${unit}/source/list/res.vlog.sources"
+    add "src-rtl"      wtf  "${tdir}/rtl.vlog.wtf.sources.cmdf"       "units/${unit}/source/list/rtl.vlog.sources"
 
-        "src-lint-res" link "../../../source/list/res.vlog.sources"   "units/${unit}/lint/common/sources${suffix}/res.vlog.sources"
-        "src-lint-rtl" link "../../../source/list/rtl.vlog.sources"   "units/${unit}/lint/common/sources${suffix}/rtl.vlog.sources"
+    add "src-lint-res" link "../../../source/list/res.vlog.sources"   "units/${unit}/lint/common/sources${suffix}/res.vlog.sources"
+    add "src-lint-rtl" link "../../../source/list/rtl.vlog.sources"   "units/${unit}/lint/common/sources${suffix}/rtl.vlog.sources"
 
-        "src-run"      link "../common/sources${suffix}"              "units/${unit}/lint/verilator${suffix}/sources"
-    }]
+    add "src-run"      link "../common/sources${suffix}"              "units/${unit}/lint/verilator${suffix}/sources"
 }
 

@@ -7,8 +7,6 @@ proc template_data {userdata tdir} {
     set type [ig::db::get_attribute -object $object -attribute "type"]
     set name [ig::db::get_attribute -object $object -attribute "name"]
 
-    set result [list]
-
     if {$type eq "module"} {
         set parent [ig::db::get_attribute -object $object -attribute "parentunit" -default $name]
         set mode   [ig::db::get_attribute -object $object -attribute "mode"       -default "rtl"]
@@ -22,7 +20,7 @@ proc template_data {userdata tdir} {
                 systemc       shell wtf  verilog       v
         } {
             if {$lang eq $ilang} {
-                lappend result "${itag}-${iext}" $itype "${tdir}/${itag}/template.${itype}.${iext}" "units/${parent}/source/${mode}/${idir}/${name}.${iext}"
+                add "${itag}-${iext}" $itype "${tdir}/${itag}/template.${itype}.${iext}" "units/${parent}/source/${mode}/${idir}/${name}.${iext}"
             }
         }
     } elseif {$type eq "regfile"} {
@@ -32,10 +30,10 @@ proc template_data {userdata tdir} {
             html icgt
             tex  icgt
         } {
-            lappend result "rf-${itag}" $itype "${tdir}/rf/template.${itype}.${itag}" "doc/${itag}/${name}.${itag}"
+            add "rf-${itag}" $itype "${tdir}/rf/template.${itype}.${itag}" "doc/${itag}/${name}.${itag}"
         }
 
-        lappend result "rf-c.txt"    wtf  "${tdir}/rf/template.wtf.c.txt"     "software/doc/regfile_access/${name}.txt"
+        add "rf-c.txt" wtf "${tdir}/rf/template.wtf.c.txt" "software/doc/regfile_access/${name}.txt"
 
         foreach {itag itype iinf iext} {
             soc  icgt {}   h
@@ -44,9 +42,7 @@ proc template_data {userdata tdir} {
             tcl  wtf  .tcl h
             tcl  wtf  .tcl cpp
         } {
-            lappend result "rf-${itag}.${iext}" $itype "${tdir}/rf/template.${itype}.${itag}.${iext}" "software/${itag}/regfile_access/rf_${name}${iinf}.${iext}"
+            add "rf-${itag}.${iext}" $itype "${tdir}/rf/template.${itype}.${itag}.${iext}" "software/${itag}/regfile_access/rf_${name}${iinf}.${iext}"
         }
     }
-
-    return $result
 }

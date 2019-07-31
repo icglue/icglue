@@ -32,6 +32,21 @@ namespace eval ig::templates {
     namespace eval current {
         variable template_dir ""
 
+        variable _result {}
+
+        ## @brief Init procs helper function to add template data
+        # @param tag template type tag (for selective output and printout)
+        # @param type template language/type
+        # @param src template source (template file / copy/link source)
+        # @param dst template dest file
+        proc add {tag type src dst} {
+            variable _result
+
+            ig::log -debug -id TRAdd "template action addded: tag \"${tag}\", type \"${type}\", \"${src}\" -> \"${dst}\""
+
+            lappend _result $tag $type $src $dst
+        }
+
         ## @brief Actual callback to get the template data.
         # @param userdata (key/value pair-list for (user) provided data)
         #   icglue templates expect a key object with the ID of the object to write
@@ -59,7 +74,13 @@ namespace eval ig::templates {
         # Calls @ref get_template_data_raw with the path to the current template.
         proc get_template_data {userdata} {
             variable template_dir
-            return [get_template_data_raw $userdata $template_dir]
+            variable _result
+
+            set _result [list]
+
+            get_template_data_raw $userdata $template_dir
+
+            return ${_result}
         }
     }
 
@@ -1088,7 +1109,8 @@ namespace eval ig::templates {
     proc write_object_all {obj_id {typelist {}} {dryrun false}} {
         set udata [dict create object $obj_id]
 
-        if {[catch {set tdata [current::get_template_data $udata]}]} {
+        if {[catch {set tdata [current::get_template_data $udata]} msg]} {
+            ig::log -error -id TWAOb "failed to get template data - error: $msg"
             return
         }
 

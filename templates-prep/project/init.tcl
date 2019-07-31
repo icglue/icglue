@@ -12,10 +12,8 @@ proc template_args {} {
 proc template_data {userdata tdir} {
     set proj_root [file normalize [dict get $userdata "--path"]]
 
-    return [subst {
-        "env"     copy "${tdir}/env.sh"               "${proj_root}/env.sh"
-        "tbchk-v" copy "${tdir}/vlog/tb_selfcheck.vh" "${proj_root}/global_src/verilog/tb_selfcheck.vh"
-        "tbchk-h" copy "${tdir}/stimc/tb_selfcheck.h" "${proj_root}/global_src/stimc/tb_selfcheck.h"
-        "tbchk-c" copy "${tdir}/stimc/tb_selfcheck.c" "${proj_root}/global_src/stimc/tb_selfcheck.c"
-    }]
+    add "env"     copy "${tdir}/env.sh"               "${proj_root}/env.sh"
+    add "tbchk-v" copy "${tdir}/vlog/tb_selfcheck.vh" "${proj_root}/global_src/verilog/tb_selfcheck.vh"
+    add "tbchk-h" copy "${tdir}/stimc/tb_selfcheck.h" "${proj_root}/global_src/stimc/tb_selfcheck.h"
+    add "tbchk-c" copy "${tdir}/stimc/tb_selfcheck.c" "${proj_root}/global_src/stimc/tb_selfcheck.c"
 }
