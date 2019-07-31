@@ -29,6 +29,7 @@ namespace eval ig {
         # @param inst_list List of instance expressions.
         # @param ids Return instance object IDs instead of names (default: false).
         # @param merge (Only in combination with ids=true) Return list of merged expressions with IDs and originial expression remainder (default: false).
+        # @param num_separator separator between module name and instance suffix for instanciation.
         #
         # @return List of expanded instance expressions {instance-name module-name remainder inverted}.
         #

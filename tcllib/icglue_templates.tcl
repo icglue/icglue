@@ -36,16 +36,16 @@ namespace eval ig::templates {
         # @param userdata (key/value pair-list for (user) provided data)
         #   icglue templates expect a key object with the ID of the object to write
         # @param template_dir Path to this template.
-        # @return a stride list of <tag> <template-type> <template-file> <output-file>.
+        # @return a stride list of tag, template-type, template-file, output-file.
         #
-        # Should be called by @ref get_template_file.
+        # Should be called by @ref get_template_data.
         proc get_template_data_raw {userdata template_dir} {
             ig::log -error -abort "No template loaded"
         }
 
         ## @brief Callback to get template arguments
         # @return stride list of commandline arguments for template of form
-        #   <argument> <value description> <default value> <check expression / empty>
+        #   argument, value description, default value, check expression / empty
         # @ref get_template_data, @ref get_template_data_raw,
         proc template_args {} {
             ig::log -error -abort "No template loaded"
@@ -54,7 +54,7 @@ namespace eval ig::templates {
         ## @brief Callback wrapper to get the template data.
         # @param userdata (key/value pair-list for user provided data)
         #   icglue templates expect a key object with the ID of the object to write
-        # @return a stride list of <tag> <template-type> <template-file> <output-file>.
+        # @return a stride list of tag, template-type, template-file, output-file.
         #
         # Calls @ref get_template_data_raw with the path to the current template.
         proc get_template_data {userdata} {
@@ -986,7 +986,7 @@ namespace eval ig::templates {
     # @param lognote note text to print in error log messages for reference.
     # @param dryrun If set to true, no actual files are written.
     #
-    # The output is written to the file specified by the template callback @ref ig::templates::current::get_output_file.
+    # The output is written to the file specified by the template callback @ref ig::templates::current::get_template_data_raw.
     proc generate_template_output {outf_name template_name template_lang template_data lognote dryrun} {
         if {!$dryrun} {
             file mkdir [file dirname $outf_name]
