@@ -52,32 +52,9 @@ proc gen_all {target userdata dryrun} {
     }
 
     foreach {tag lang ttfile outfile} [ig::templates::current::get_template_data $userdata] {
-        if {[string index $outfile 0] ne "." && [string index $outfile 0] ne "/"} {
-            if {[info exists ::env(ICPRO_DIR)]} {
-                set outfile "$::env(ICPRO_DIR)/$outfile"
-            } else {
-                set outfile "./$outfile"
-            }
-        }
+        lassign [ig::templates::adapt_output_path $outfile] outfile outf_name_var
 
-        set outf_name_var $outfile
-
-        set outf_name_var_norm [file normalize $outf_name_var]
-        set outf_name_var_new [string map [list [file normalize [pwd]] {.}] $outf_name_var_norm]
-        if {$outf_name_var_new ne $outf_name_var_norm} {
-            set outf_name_var $outf_name_var_new
-        } else {
-            if {[info exists ::env(ICPRO_DIR)]} {
-                set outf_name_var [string map [list $::env(ICPRO_DIR) {$ICPRO_DIR}] $outf_name_var]
-            }
-        }
-
-        set logtype $tag
-        set logtypelen 13
-        if {[string length $logtype] > $logtypelen} {
-            set logtype "[string range $logtype 0 [expr {$logtypelen - 4}]]..."
-        }
-        ig::log -info -id Gen "Generating [format {%-*s} [expr {$logtypelen + 2}] "\[${logtype}\]"] $outf_name_var"
+        ig::templates::log_generate $outf_name_var $tag $dryrun
 
         set note "${target}/${tag}"
         ig::templates::generate_template_output $outfile $ttfile $lang $template_data $note $dryrun

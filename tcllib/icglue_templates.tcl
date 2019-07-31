@@ -1011,7 +1011,10 @@ namespace eval ig::templates {
     proc generate_template_output {outf_name template_name template_lang template_data lognote dryrun} {
         if {!$dryrun} {
             file mkdir [file dirname $outf_name]
-            if {$template_lang in {"link!" "copy!" "link" "copy"}} {
+        }
+
+        if {$template_lang in {"link!" "copy!" "link" "copy"}} {
+            if {!$dryrun} {
                 if {[file exists $outf_name]} {
                     if {$template_lang in {"link!" "copy!"}} {
                         file delete $outf_name
@@ -1024,8 +1027,9 @@ namespace eval ig::templates {
                 } else {
                     file copy -- $template_name $outf_name
                 }
-                return
             }
+
+            return
         }
 
         #actual template
@@ -1099,6 +1103,54 @@ namespace eval ig::templates {
         }
     }
 
+    ## @brief Adapt path of output file based on project root variable
+    # @param outfile output file path
+    # @return list with adapted output path for template output
+    #         and path mapped with project root variable for printout
+    proc adapt_output_path {outfile} {
+        if {[string index $outfile 0] ne "." && [string index $outfile 0] ne "/"} {
+            if {[info exists ::env(ICPRO_DIR)]} {
+                set outfile "$::env(ICPRO_DIR)/$outfile"
+            } else {
+                set outfile "./$outfile"
+            }
+        }
+
+        set outf_name_var $outfile
+
+        set outf_name_var_norm [file normalize $outf_name_var]
+        set outf_name_var_new [string map [list [file normalize [pwd]] {.}] $outf_name_var_norm]
+        if {$outf_name_var_new ne $outf_name_var_norm} {
+            set outf_name_var $outf_name_var_new
+        } else {
+            if {[info exists ::env(ICPRO_DIR)]} {
+                set outf_name_var [string map [list $::env(ICPRO_DIR) {$ICPRO_DIR}] $outf_name_var]
+            }
+        }
+
+        return [list $outfile $outf_name_var]
+    }
+
+    ## @brief Log generate step
+    # @param outfile path to generated output
+    # @param tag template tag
+    # @param dry dry run (do not generate output)
+    proc log_generate {outfile tag {dry false}} {
+        set logtype $tag
+        set logtypelen 13
+        if {[string length $logtype] > $logtypelen} {
+            set logtype "[string range $logtype 0 [expr {$logtypelen - 4}]]..."
+        }
+
+        if {$dry} {
+            set pfx "Would generate"
+        } else {
+            set pfx "Generating"
+        }
+
+        ig::log -info -id Gen "${pfx} [format {%-*s} [expr {$logtypelen + 2}] "\[${logtype}\]"] $outfile"
+    }
+
     ## @brief Generate output for given object for all output types provided by template.
     # @param obj_id Object-ID to write output for.
     # @param typelist List of types to generate, empty list generates everything.
@@ -1114,43 +1166,20 @@ namespace eval ig::templates {
             return
         }
 
+        set tt_data [list "obj_id" $obj_id]
+
         foreach {tag lang ttfile outfile} $tdata {
             if {([llength $typelist] > 0) && ($tag ni $typelist)} {
                 continue
             }
 
-            if {[string index $outfile 0] ne "." && [string index $outfile 0] ne "/"} {
-                if {[info exists ::env(ICPRO_DIR)]} {
-                    set outfile "$::env(ICPRO_DIR)/$outfile"
-                } else {
-                    set outfile "./$outfile"
-                }
-            }
+            lassign [adapt_output_path $outfile] outfile outf_name_var
 
-            set outf_name_var $outfile
+            log_generate $outf_name_var $tag $dryrun
 
-            set outf_name_var_norm [file normalize $outf_name_var]
-            set outf_name_var_new [string map [list [file normalize [pwd]] {.}] $outf_name_var_norm]
-            if {$outf_name_var_new ne $outf_name_var_norm} {
-                set outf_name_var $outf_name_var_new
-            } else {
-                if {[info exists ::env(ICPRO_DIR)]} {
-                    set outf_name_var [string map [list $::env(ICPRO_DIR) {$ICPRO_DIR}] $outf_name_var]
-                }
-            }
-
-            set logtype $tag
-            set logtypelen 13
-            if {[string length $logtype] > $logtypelen} {
-                set logtype "[string range $logtype 0 [expr {$logtypelen - 4}]]..."
-            }
-            ig::log -info -id Gen "Generating [format {%-*s} [expr {$logtypelen + 2}] "\[${logtype}\]"] $outf_name_var"
-
-
-            set tt_data [list "obj_id" $obj_id]
             set tt_note "type ${tag} / object [ig::db::get_attribute -object ${obj_id} -attribute "name"]"
 
-            ig::templates::generate_template_output $outfile $ttfile $lang $tt_data $tt_note $dryrun
+            generate_template_output $outfile $ttfile $lang $tt_data $tt_note $dryrun
         }
     }
 
