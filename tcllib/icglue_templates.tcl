@@ -1088,6 +1088,9 @@ namespace eval ig::templates {
                 if {$template_lang in {"link" "link!"}} {
                     file link -symbolic $outf_name $template_name
                 } else {
+                    while {[file type $template_name] eq "link"} {
+                        set template_name [file join [file dirname $template_name] [file readlink $template_name]]
+                    }
                     file copy -- $template_name $outf_name
                 }
             }
