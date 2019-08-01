@@ -501,8 +501,60 @@ namespace eval ig::templates {
             ]
 
             set preface {
+                # icglue 2/3 init compatibility:
+                namespace eval init {
+                    variable bc_types {}
+                    variable bc_tfile {}
+                    variable bc_ofile {}
+
+                    proc output_types {template body} {
+                        variable bc_types
+                        set bc_types $body
+                    }
+                    proc template_file {template body} {
+                        variable bc_tfile
+                        set bc_tfile $body
+                    }
+                    proc output_file {template body} {
+                        variable bc_ofile
+                        set bc_ofile $body
+                    }
+                    proc gen_bc_body {template} {
+                        variable bc_types
+                        variable bc_tfile
+                        variable bc_ofile
+
+                        if {$bc_types eq {}} {return}
+                        if {$bc_tfile eq {}} {return}
+                        if {$bc_ofile eq {}} {return}
+                        if {[lsearch -index 0 $ig::templates::collection::template_data_gen $template] >= 0} {return}
+
+                        set body_pre [subst {
+                            set bc_types [list $bc_types]
+                            set bc_tfile [list $bc_tfile]
+                            set bc_ofile [list $bc_ofile]
+                        }]
+                        set body {
+                            set result {}
+                            set object [dict get $userdata "object"]
+
+                            foreach type [apply [list {object} $bc_types] $object] {
+                                lassign [apply [list {object type template_dir} $bc_tfile] $object $type $tdir] tpath tlang
+                                if {$tlang eq {}} {set tlang icgt}
+                                set opath [apply [list {object type} $bc_ofile] $object $type]
+
+                                add $type $tlang $tpath $opath
+                            }
+                        }
+                        lappend ig::templates::collection::template_data_gen [list \
+                            $template ${body_pre}${body} \
+                        ]
+                    }
+                }
+
                 proc proc {name arglist body} {
                     variable template
+
                     switch -- $name {
                         template_data {
                             if {$arglist ne {userdata tdir}} {
@@ -522,6 +574,11 @@ namespace eval ig::templates {
                                 ]
                             }
                         }
+
+                        output_types  {init::output_types  $template $body}
+                        template_file {init::template_file $template $body}
+                        output_file   {init::output_file   $template $body}
+
                         default {
                             ::proc $name $arglist $body
                         }
@@ -529,11 +586,17 @@ namespace eval ig::templates {
                 }
             }
 
+            # icglue 2/3 init compatibility:
+            set bc_attach {
+                init::gen_bc_body $template
+            }
+
             if {[catch {
                 namespace eval _template_init [join [list \
                     "variable template [list $template]" \
                     $preface \
                     $init \
+                    $bc_attach \
                     ] "\n"]
                 } ex]} {
 
