@@ -242,7 +242,7 @@
 ;    (message "prefix: '%s'\n source:'%s'\narrow-str:%s\ndestination-str:%s" prefix-str source-str arrow-str destination-str)
     (list prefix-str source-str arrow-str destination-str)))
 
-(defun icglue-flip-arrow (arrow-str)
+(defun icglue-flip-arrow-str (arrow-str)
   "Return reversed arrow in arrow-str"
   (let* ((arrow-str-rev (reverse arrow-str))
          (dir-index (string-match "[<\|>]"  arrow-str-rev))
@@ -256,11 +256,11 @@
   (interactive)
   (let* ((component-list (icglue-get-component-strings))
          (arrow-str      (nth 2 component-list)))
-    (setq arrow-str (icglue-flip-arrow arrow-str))
+    (setq arrow-str (icglue-flip-arrow-str arrow-str))
     (setf (nth 2 component-list) arrow-str)
     (mapconcat 'identity component-list nil)))
 
-(defun icglue-flip-arrow-line ()
+(defun icglue-flip-arrow ()
   "Flip direction of S proc arrow in current line"
   (interactive)
   (when (string-match "^ *S.+ -+> \\| <-+> \\| <-+ " (thing-at-point 'line t))
@@ -280,7 +280,7 @@
 (defun icglue-flip-signal-direction-and-arrow ()
   "Exchange modules and flip arrow"
   (interactive)
-  (icglue-flip-arrow-line)
+  (icglue-flip-arrow)
   (icglue-flip-signal-direction))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
