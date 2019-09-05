@@ -1,16 +1,12 @@
 os:       linux
-dist:     xenial
+dist:     bionic
 language: minimal
 
 before_install:
     # build dependencies
-    - sudo apt-get install -y tcl tcl-dev libglib2.0-0 libglib2.0-dev pkg-config libpcl1 libpcl1-dev
+    - sudo apt-get install -y tcl tcl-dev libglib2.0-0 libglib2.0-dev pkg-config libpcl1 libpcl1-dev iverilog
     # ubuntu does not provide pkg-config file for tcl...
     - 'sudo bash -c ''echo -e "Name: Tool Command Language\nDescription: Tcl\nVersion: 8.6\nLibs: -ltcl8.6 -ltclstub8.6\nCflags: -I/usr/include/tcl8.6" > /usr/share/pkgconfig/tcl.pc'''
-    # get iverilog 1.0 from bionic (0.9 not sufficient) for test
-    - sudo add-apt-repository "deb http://us.archive.ubuntu.com/ubuntu/ bionic main universe"
-    - sudo apt-get update -q
-    - sudo apt-get install -y iverilog
 
 script:
     - make -j3
