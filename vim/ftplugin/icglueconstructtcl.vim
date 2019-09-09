@@ -44,17 +44,17 @@ if !exists("b:ftplugin_icglue_noimap")
     if !exists("b:ftplugin_icglue_opt2")
         let b:ftplugin_icglue_opt2='-ogc -l1'
     endif
-    vmap <silent> <Leader>tA        :call Align_icglue_signals('=p2P2W')       <CR>
-    vmap <silent> <Leader>ta        :call Align_icglue_signals_blocks('=p2P2W')<CR>
+    vmap <silent> <buffer> <Leader>tA        :call Align_icglue_signals('=p2P2W')       <CR>
+    vmap <silent> <buffer> <Leader>ta        :call Align_icglue_signals_blocks('=p2P2W')<CR>
 
-    vmap <silent> <Leader>tr        :call Ascii2UTF8_Tree()<CR>
-    vmap <silent> <Leader>tR        :call UTF82Ascii_Tree()<CR>
+    vmap <silent> <buffer> <Leader>tr        :call Ascii2UTF8_Tree()<CR>
+    vmap <silent> <buffer> <Leader>tR        :call UTF82Ascii_Tree()<CR>
 
-    vmap <silent> <Leader>ts        :call Quote_icglue_signals()               <CR>
-    vmap <silent> <Leader>tw        :call Move_icglue_width_signal()           <CR>
-    vmap <silent> <Leader>tb        :call Align_icglue_signal_linebreak_block()<CR>
-    imap <silent> <C-A>        <ESC>:call Vins_icglue(b:ftplugin_icglue_opt1)  <CR>
-    imap <silent> <C-E>        <ESC>:call Vins_icglue(b:ftplugin_icglue_opt2)  <CR>
+    vmap <silent> <buffer> <Leader>ts        :call Quote_icglue_signals()               <CR>
+    vmap <silent> <buffer> <Leader>tw        :call Move_icglue_width_signal()           <CR>
+    vmap <silent> <buffer> <Leader>tb        :call Align_icglue_signal_linebreak_block()<CR>
+    imap <silent> <buffer> <C-A>        <ESC>:call Vins_icglue(b:ftplugin_icglue_opt1)  <CR>
+    imap <silent> <buffer> <C-E>        <ESC>:call Vins_icglue(b:ftplugin_icglue_opt2)  <CR>
 
 endif
 
