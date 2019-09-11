@@ -133,6 +133,7 @@ namespace eval ig::checks {
 
         check_regfile_addresses   $rfdata
         check_regfile_entrybits   $rfdata
+        check_regfile_signalbits  $rfdata
         check_regfile_resetvalues $rfdata
         check_regfile_names       $rfdata
     }
@@ -220,6 +221,38 @@ namespace eval ig::checks {
 
                     # add to list
                     lappend bit_list [list $i $rname]
+                }
+            }
+        }
+    }
+
+    ## @brief Run regfile signal bit check.
+    # @param regfile_data preprocessed data of regfile to check.
+    proc check_regfile_signalbits {regfile_data} {
+        set rfname  [dict get $regfile_data "name"]
+        set entries [dict get $regfile_data "entries"]
+
+        foreach i_entry $entries {
+            set ename [dict get $i_entry "name"]
+            set regs  [dict get $i_entry "regs"]
+            set oid   [dict get $i_entry "object"]
+            set origin {}
+            if {$oid ne {}} {
+                set origin [ig::db::get_attribute -object $oid -attribute "origin" -default {}]
+            }
+
+            foreach i_reg $regs {
+                set sbits [dict get $i_reg "signalbits"]
+                if {$sbits eq "-"} {continue}
+
+                set rname [dict get $i_reg "name"]
+                set blow  [dict get $i_reg "bit_low"]
+                set bhigh [dict get $i_reg "bit_high"]
+                set slow  [lindex [split $sbits ":"] end]
+                set shigh [lindex [split $sbits ":"] 0]
+
+                if {($bhigh - $blow) != ($shigh - $slow)} {
+                    ig::log -warn -id "ChkRS" "register \"${rname}\" in entry \"${ename}\" connects to non-matching bits of signal (${bhigh}:${blow} <-> $sbits, regfile ${rfname}) (${origin})"
                 }
             }
         }
