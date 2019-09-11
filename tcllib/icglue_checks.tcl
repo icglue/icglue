@@ -242,6 +242,14 @@ namespace eval ig::checks {
             }
 
             foreach i_reg $regs {
+                set sig   [dict get $i_reg "signal"]
+                if {$sig eq "-"} {continue}
+
+                if {[catch {ig::db::get_nets -name $sig} sigobj]} {
+                    ig::log -warn -id "ChkRS" "register \"${rname}\" in entry \"${ename}\" connects to unknown signal ($sig, regfile ${rfname}) (${origin})"
+                    continue
+                }
+
                 set sbits [dict get $i_reg "signalbits"]
                 if {$sbits eq "-"} {continue}
 
