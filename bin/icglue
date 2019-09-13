@@ -36,7 +36,6 @@ Mandatory arguments to long options are mandatory for short options too.
     -h, --help               Show help
     -g, --gui                Show GUI
 
-    -f, --file=FILE          DEPRECATED: set input FILE to use (FILE argument is omitted)
     -t, --template=FILE      Set FILE to use as template
     --template-dir=DIR       Add DIR to template path
     -o, --outtypes=LIST      Comma-separated list of output types to generate (or empty for everything).
@@ -264,7 +263,6 @@ proc main {} {
         {  {^--template-dir(=|$)}  "list"       c_template_dirs {} } \
         {  {^(-t|--template)(=|$)} "string"     c_template      {} } \
         {  {^(-o|--outtypes)(=|$)} "string"     c_outtypelist   {} } \
-        {  {^(-f|--file)(=|$)}     "list"       c_file          {} } \
         {  {^(-l|--logger)(=|$)}   "list"       c_log           {} } \
         {  {^(-a|--args)(=|$)}     "list"       c_scriptargs    {} } \
         {  {^(--nocopyright)$}     "const=true" nologo          {} } \
