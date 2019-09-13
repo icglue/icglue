@@ -1,0 +1,44 @@
+#compdef icprep
+
+(( $+functions[_icprep_templates] )) || _icprep_templates() {
+    local -a tmpl
+    tmpl=($(icprep --nocopyright -t | sed -n -r -e 's/^\s+- //p'))
+    if [[ -n "${tmpl[@]}" ]] ; then
+        _values "icprep templates" ${tmpl[@]}
+    else
+        _nothing
+    fi
+}
+
+
+(( $+functions[_icprep_template_args] )) || _icprep_template_args() {
+    local -a opts
+
+    opts=($(icprep --nocopyright $words[$NORMARG] -h | tail -n+4 | awk '{print $1}'))
+
+    opts=(${opts:|words})
+    if [[ -n "${opts[@]}" ]] ; then
+        _describe -V 'icprep templates arguments' opts
+    else
+        _nothing
+    fi
+}
+
+(( $+functions[_icprep_comp] )) || _icprep_comp() {
+    integer NORMARG
+    _arguments -n -S \
+        '(- :)'{-h,--help}'[Show help]' \
+        '(:)'--template-dir'[Add DIR to template path]:files:_files' \
+        '(- :)'{-t,--show-templates}'[Show available templates]' \
+        {-l,--logger}'[Enable output log of TAG (format: LEVEL,IDENTIFIER)]:tags:_nothing' \
+        {-n,--dryrun}'[Do not modify/writeout results]' \
+        {-q,--quiet}'[Show errors only]' \
+        {-v,--verbose}'[Be verbose]' \
+        {-d,--debug}'[Show debug output]' \
+        --nocopyright'[Do not print the ICGlue copyright, version and logo upon start to stderr]' \
+        '(- :)'--version'[Show version]' \
+        '(-)1:icprep-templates:_icprep_templates' \
+        '(-)*:icprep-args:_icprep_template_args'
+}
+
+_icprep_comp

@@ -197,6 +197,7 @@ install_doc: $(addprefix $(INSTDIR)/$(MANDIR)/,$(addsuffix .$(MANSEC),$(H2MBASEN
 
 install_helpers: | $(INSTDIR)/share/icglue
 	cp -r $(CURDIR)/vim $(INSTDIR)/share/icglue
+	cp -r $(CURDIR)/share/zsh $(INSTDIR)/share/zsh
 	@if [ -e $(SYNTAXDIR) ]; then \
 		cp -r $(SYNTAXDIR)  $(INSTDIR)/share/icglue ; \
 	else \

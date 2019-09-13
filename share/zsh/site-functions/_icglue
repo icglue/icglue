@@ -1,0 +1,7 @@
+#compdef icglue
+
+(( $+functions[_icglue_comp] )) || _icglue_comp() {
+    _gnu_generic
+}
+
+_icglue_comp $@

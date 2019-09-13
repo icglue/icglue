@@ -36,12 +36,14 @@ proc gen_all {target userdata dryrun} {
         set value [dict get $userdata $flag]
         if {$check ne ""} {
             ##nagelfar ignore Expr without braces
-            if {![expr $check]} {
-                puts "Usage: [file tail $::argv0] $target\n\nOptions: \[OPTION\]"
-                foreach {flag description default_value check} [ig::templates::current::template_args] {
-                    puts [format "  %-26s %s" $flag $description]
+            while {![expr $check]} {
+                if {$value ne ""} {
+                    puts "Invalid value \"$value\" for $description."
                 }
-                exit 1
+                puts -nonewline "Enter value for $description: "
+                flush stdout
+                set value [gets stdin]
+                dict set userdata $flag $value
             }
         }
     }
