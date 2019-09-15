@@ -135,6 +135,30 @@ proc printversion {} {
     exit 0
 }
 
+proc try_get_unit {} {
+    if {![info exists ::env(ICPRO_DIR)]} {
+        return {false ""}
+    }
+
+    set unit_dir [file normalize "$::env(ICPRO_DIR)/units"]
+
+    set work_dir [file normalize [pwd]]
+
+    set ud_len [string length $unit_dir]
+
+    if {[string range $work_dir 0 [expr $ud_len - 1]] ne $unit_dir} {
+        return {false ""}
+    }
+
+    set unit [lindex [file split [string range $work_dir [expr $ud_len + 1] end]] 0]
+
+    if {$unit eq ""} {
+        return {false ""}
+    }
+
+    return [list true $unit]
+}
+
 proc main {} {
     variable binpath
 
@@ -249,9 +273,13 @@ proc main {} {
 
     # prepare target and data
     set prep_target [lindex $args_rem 0]
-    set prep_data [list target $prep_target]
+    set prep_data [dict create target $prep_target]
+    lassign [try_get_unit] unit_name_found unit_name
+    if {$unit_name_found} {
+        dict set prep_data --unit $unit_name
+    }
     foreach {i_key i_val} [lrange $args_rem 1 end] {
-        lappend prep_data $i_key $i_val
+        dict set prep_data $i_key $i_val
     }
 
     if {[catch {ig::templates::load_template $prep_target}]} {
