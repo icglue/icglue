@@ -26,8 +26,8 @@ for f in $FILES_DATE bin/* ; do
     sed -r -e 's#(Copyright.*[0-9]{4}-)[0-9]{4}#\1'${YEAR}'#' -i $f
 done
 
-make
-make man
+make || die "build failed"
+make man || die "man update failed"
 
 if [[ $version =~ [ab] ]] ; then
     echo "Commit version $version..."
