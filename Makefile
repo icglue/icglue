@@ -176,10 +176,10 @@ install_core: \
     install_templates
 
 install_templates: |  $(INSTDIR)/share/icglue
-	cp -r $(TEMPLATES) $(INSTDIR)/share/icglue
+	cp -r $(TEMPLATES) $(INSTDIR)/share/icglue/templates
 
 install_templates_prep: |  $(INSTDIR)/share/icprep
-	cp -r $(TEMPLATES_PREP) $(INSTDIR)/share/icprep
+	cp -r $(TEMPLATES_PREP) $(INSTDIR)/share/icprep/templates
 
 install_icons: | $(INSTDIR)/share/icglue/icons
 	install -m644 -t $(INSTDIR)/share/icglue/icons logo/logo.{png,svg,txt}
