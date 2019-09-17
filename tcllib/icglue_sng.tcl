@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-package provide ICGlue 3.3
+package provide ICGlue 3.4
 
 ## @brief Functions for sng-file processing
 #
