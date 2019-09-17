@@ -1,6 +1,5 @@
 # template init script
 
-# return list with {<tag> <template type> <path to template file> <template type> <output file>}
 proc template_data {userdata tdir} {
     set object [dict get $userdata "object"]
 

@@ -5,7 +5,7 @@ ICGlue can accept multiple templates.
 A template is a directory containing template-files for generated output and an init-script defining types of outputs
 for a given object and target-filenames and template-files to use for each type of output.
 
-Directories containing template directories can be specified in the `ICGLUE_TEMPLATE_PATH` environment variable.
+Directories containing template directories can be specified in the `ICGLUE_TEMPLATE_PATH` (ICGlue, `ICPREP_TEMPLATE_PATH` for ICPrep) environment variable.
 If a template is specified, all directories in the template path will be searched for a directory with the specified name.
 If nothing is specified, the `default` template is used.
 
@@ -22,67 +22,69 @@ Example directory structure of a directory in the template path:
 ```
 
 ## Init script
-The init script of a template defines 3 Tcl procs that return
+The init script of a template defines a Tcl proc `template_data` that defines
 * the types of outputs to be generated for an ICGlue object (currently modules and regfiles),
-* the template-file to use for a given object and output type,
-* the output filename for a given object and output type.
+* the template-file to use for a given object and each output type,
+* the output filename for a given object and each output type.
 
+It gets 2 arguments:
+* `userdata` (mainly used in [ICPrep](icprep.md) for user provided arguments).
+* `tdir` (the path to the template's directory).
 
-### Output Types
-The output types proc defines what is generated for a given object.
-This is a list of custom template-specific identifiers used in the remaining procs to decide the output filename and the template-file to use
-in case more than one output file is to be generated or different template-files are to be used.
+To specify a set of data for output generation the `add` proc is provided taking 4 arguments:
+* A tag,
+* the template type,
+* the template-file and
+* the output file.
 
-### Template-File
-The template-file proc decides which template-file is to be parsed and which parser is to be used for the given object and output type.
+### Tag
+The output tag is a custom identifier for what is generated for a given object.
+It is useful in case more than one output file is to be generated for explicit output selection.
+
+### Template Type and File
+The template type specifies how the template is processed.
 Currently there are 2 parsers available: `icgt` for ICGlue template format and `wtf` for Woof! template format.
-It gets the directory of the template as additional argument to be able to specify the full path to the template-file.
+The template-file decides which template-file is to be parsed and which parser is to be used for the given object and output type.
+Additionaly there are the special types `copy` and `link` that copy the specified file or create a symlink with the specified target.
+Copy and link by default do not overwrite an exisiting target file unless followed by "!".
 
 ### Output File
 The output file proc decides where to write the generated output of the template-file for the given object and output-type.
 
+### Optional Arguments
+For `icprep` templates taking user provided arguments the additional proc `template_args` should be provided.
+It defines what command line arguments are to be parsed in a stride list with elements
+* argument (command line argument),
+* description (variable description),
+* default (default assignment if not specified or empty) and
+* check expression (Tcl expression returning true on success checking the given argument value as `$value`).
+
 ### Actual Script
-The init script only defines the 3 procs.
+The init script only defines the 2 procs.
 ```tcl
-
-proc output_types {object} {
-    # proc body defining a list of types based on the given object
-    set type_list [list]
-    # ... code filling the list
-    return $type_list
-}
-
-proc template_file {object type template_dir} {
-    # proc body defining an absolute path to the template-file to be used
-    # for the given object and output type
-    # template_dir is the path to the template directory with the init script
-    if {type eq "verilog"} {
-        set filename "${template_dir}/template.v"
-        set format icgt
-    } else {
-        #...
+# optional userdata specification
+proc template_args {} {
+    #   <option>      <description>    <default value>  <check expression>
+    return {
+        "--argument1" "<description1>" {}               {$value ne {}}
     }
-    return [list $filename $format]
 }
 
-proc output_file {object type} {
-    # proc body defining a path to the file to be written
-    # for the given object and output type
-    set object_name [ig::db::get_attribute -object $object -attribute "name"]
-    if {type eq "verilog"} {
-        set filename "${object_name}.v"
-    } else {
-        #...
-    }
-    return $filename
+# mandatory template data
+proc template_data {userdata tdir} {
+    # ... optional userdata checks
+
+    add "tag1" icgt "${tdir}/template1.template" "target/path/1"
+    add "tag2" wtf  "${tdir}/template2.wtf"      "target/path/2"
 }
+
 ```
 
 This way the procs are registered for the given template name and can be used if the template is selected.
 
 
 ## Template-Files
-The template files are written in one of two Tcl template languages.
+Template files are written in one of two Tcl template languages.
 ICGT (ICGlue template) is inspired by a code snipped in a comment on the Tcl wiki ([TemplaTcl](https://wiki.tcl-lang.org/page/TemplaTcl%3A+a+Tcl+template+engine "TemplaTcl: a Tcl template engine")).
 WTF (Woof! template format) is mainly taken from woof ([Woof! Template Format](http://woof.sourceforge.net/woof-ug/_woof/docs/ug/wtf "Woof! Template Format")).
 When the template code is invoked, the Tcl variable `obj_id` is set to the object for which output will be generated.

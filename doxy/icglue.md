@@ -5,6 +5,7 @@ ICGlue consists of:
 - icsng2icglue script for backwards compatibility to icsng (HPSN internal tool which inspired ICGlue).
 - icglue library encapsulating the core functionality.
 - A template-set for HDL and documentation output.
+- icprep binary for template based tool setups.
 
 ## icglue Binary
 The main tool for the user.
@@ -49,3 +50,8 @@ For more details have a look into the source code or the generated doxygen docum
 ## Templates
 Templates are a combination of an init Tcl-script for template setup and a set of template-files within one template directory.
 For details have a look at [templates](templates.md).
+
+## icprep Binary
+An additional binary using the ICGlue template engines for providing tool setups.
+It is also used for simulation setup in icglue tests.
+For a short introduction see [ICPrep](icprep.md).

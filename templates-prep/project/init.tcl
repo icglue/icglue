@@ -8,7 +8,6 @@ proc template_args {} {
     }
 }
 
-# return list with {<tag> <template type> <path to template file> <template type> <output file>}
 proc template_data {userdata tdir} {
     set proj_root [file normalize [dict get $userdata "--path"]]
 
