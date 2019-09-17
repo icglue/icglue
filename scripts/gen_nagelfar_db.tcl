@@ -21,7 +21,7 @@
 # set package path and load ICGlue package
 lappend auto_path [file normalize [file join [file dirname [file dirname [file normalize $::argv0]]] lib]]
 set icglue_silent_load "true"
-package require ICGlue 3.2
+package require ICGlue 3.3
 
 foreach ns [list ig::] {
     set ::syntax(${ns}aux::max_set) {n x}

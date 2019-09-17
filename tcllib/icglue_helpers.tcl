@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-package provide ICGlue 3.2
+package provide ICGlue 3.3
 
 ## @brief Helper functions mainly in template/output context.
 namespace eval ig::aux {
