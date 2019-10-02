@@ -347,7 +347,7 @@
                     reg_<%=$handshake%> <= 1'b1;
                 end<% } %>
             end<% foreach handshake $handshake_list { %>
-            if ((reg_<%=$handshake%> == 1'b1) && (<[dict get $handshake_sig_in_from_out_sync $handshake]> == 1'b1)) begin
+            if ((<[rf_enable]> == 1'b0) || ((reg_<%=$handshake%> == 1'b1) && (<[dict get $handshake_sig_in_from_out_sync $handshake]> == 1'b1))) begin
                 reg_<%=$handshake%> <= 1'b0;
             end<% }  %>
         end
