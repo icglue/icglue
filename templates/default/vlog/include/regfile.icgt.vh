@@ -13,7 +13,7 @@
     proc rf_write                {} { return {apb_write_i}             }
     proc rf_w_data               {} { return {apb_wdata_i}             }
     proc rf_bytesel              {} { return {apb_strb_i}              }
-    proc rf_prot                 {} { return {apb_prot_i[1]}           }
+    proc rf_prot                 {} { return {apb_prot_i[0]}           }
     proc rf_prot_enable          {} { return {apb_prot_en_i}           }
 
     proc rf_r_data               {} { return {apb_rdata_o}             }
