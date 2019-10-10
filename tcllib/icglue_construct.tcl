@@ -818,7 +818,7 @@ namespace eval ig {
 
                 if { $is_ilm && $is_res } {
                     set module_name [ig::db::get_attribute -obj $module_id -attribute "name"]
-                    log -warn "P overwriting parameter of ILM $module_name"
+                    log -warn -id "PIlm" "Overwriting parameter '${name}' of ILM and resource '${module_name}'"
                 }
                 lappend ep "${inst_id}${remainder}"
             }
