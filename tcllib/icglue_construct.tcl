@@ -809,9 +809,21 @@ namespace eval ig {
         set endpoints [ig::aux::remove_comma_ws $endpoints]
         # actual parameter creation
         if {[catch {
-            set endpoints [construct::expand_instances $endpoints "true" "true"]
+            set ep {}
+            foreach _list [construct::expand_instances $endpoints "true"] {
+                lassign $_list inst_id module_id remainder inverted
 
-            set paramid [ig::db::parameter -name $name -value $value -targets $endpoints]
+                set is_ilm [ig::db::get_attribute -obj $module_id -attribute "ilm" -default false]
+                set is_res [ig::db::get_attribute -obj $module_id -attribute "resource" -default false]
+
+                if { $is_ilm && $is_res } {
+                    set module_name [ig::db::get_attribute -obj $module_id -attribute "name"]
+                    log -warn "P overwriting parameter of ILM $module_name"
+                }
+                lappend ep "${inst_id}${remainder}"
+            }
+
+            set paramid [ig::db::parameter -name $name -value $value -targets $ep]
         } emsg]} {
             log -error -abort "P (parameter ${name}): error while creating parameter:\n\t${emsg} ($origin)"
         }
