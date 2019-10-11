@@ -1,6 +1,6 @@
 # ICGlue Changelog
 ## Version 1.0
-Initial release.
+* Initial release.
 
 ## Version 2.0
 * Alignment feature for Code blocks
@@ -20,3 +20,10 @@ Initial release.
 * experimental GUI
 * Reworked template init-scripts
 * Support control of regfile address-/data-size and alignment
+
+## Version 4.0
+* new (cleaner) template init (shared with icprep)
+* icprep flow templates
+* template fixes
+* emacs mode updates
+* severial minor fixes
