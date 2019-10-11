@@ -467,10 +467,7 @@
     "]><% } } %><%="\n"%><% } %><%="\n"
     %><[rf_comment_block "apb ready/error generate"]>
     always @(*) begin
-        <[rf_ready_sig]> = 1'b0;
-        if (<[rf_enable]> == 1'b1) begin
-            <[rf_ready_sig]> = 1'b1;
-        end<%
+        <[rf_ready_sig]> = 1'b1;<%
         foreach_array entry $entry_list {
             if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
         <[pop_keep_block_content keep_block_data "keep" "custom_ready_$entry(name)" ".v" "
