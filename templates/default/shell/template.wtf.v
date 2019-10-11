@@ -42,9 +42,9 @@ module $mod_data(name) ($portdecl)
     [pop_keep_block_content keep_block_data "keep" "my_attributes" ".v" "
     "]
     `ifdef XCELIUM
-         (* integer foreign = "SystemC"; *); // Cadence verilog shell for xcelium
+         (* integer foreign = "SystemC"; *) // Cadence verilog shell for xcelium
     `elsif INCA
-         (* integer foreign = "SystemC"; *); // Cadence verilog shell for ius
+         (* integer foreign = "SystemC"; *) // Cadence verilog shell for ius
     `endif
         ;
 

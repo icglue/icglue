@@ -19,7 +19,7 @@
     set initializers [join $initializers ",\n    "]
     set init_keep_block_name "sc_module(${mod_data(name)})_intialize"
     if {$initializers ne ""} {
-        set idx [lsearch -index 1 [lsearch -inline -all -index 0 $keep_block_data "keep"] $init_keep_block_name]
+        set idx [lsearch -index 1 $keep_block_data "$init_keep_block_name"]
         if {($idx >= 0)} {
             set keep_block_content [lindex $keep_block_data $idx 2]
             set no_ws_keep_block_content [string map {" " "" "\n" "" "\t" ""} $keep_block_content]
@@ -28,7 +28,7 @@
             }
         }
     }
-    append initializers "\n[get_keep_block_content keep_block_data "keep" $init_keep_block_name ".cpp"]"
+    append initializers "\n[pop_keep_block_content keep_block_data "keep" "$init_keep_block_name" ".cpp"]"
 %)
 ${mod_data(name)}::${mod_data(name)} (::sc_core::sc_module_name name) :
     $initializers
