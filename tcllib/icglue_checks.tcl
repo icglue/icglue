@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-package provide ICGlue 4.0
+package provide ICGlue 5.0a1
 
 ## @brief Sanity/consistency checks for objects
 namespace eval ig::checks {
