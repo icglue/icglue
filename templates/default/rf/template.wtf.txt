@@ -30,17 +30,19 @@
     set format(comment)   "%-*s"
 
     # column size
-    max_set len_max_data(address)   10
-    max_set len_max_data(entryname) [max_array_entry_len $register_list name]
-    max_set len_max_data(type)      0
+    max_set len_max_data(address)    10
+    max_set len_max_data(entryname)  [max_array_entry_len $register_list name]
+    max_set len_max_data(type)       0
+    max_set len_max_data(signalbits) 0
 
     foreach_array entry $register_list {
-        foreach c [lrange $columns 2 end] {
+        foreach c [list signalbits {*}[lrange $columns 2 end]] {
             max_set len_max_data($c) [max_array_entry_len $entry(regs) $c]
         }
     }
 
-    max_set len_max_data(type) [expr {$len_max_data(type) + 2}]
+    set len_max_data(type)   [expr {$len_max_data(type) + 2}]
+    set len_max_data(signal) [expr {$len_max_data(signal) + $len_max_data(signalbits) + 2}]
 
     foreach c $columns {
         max_set len_max_data($c) [string length $header($c)]
@@ -87,6 +89,13 @@ ${sephead}
             foreach c [lrange $columns 2 end] {
                 if {$c eq "type"} {
                     lappend line [format $format($c) $len_max_data($c) [reg_type]]
+                } elseif {$c eq "signal"} {
+                    if {$reg(signalbits) ni {"" -}} {
+                        set sig "$reg(signal)\[$reg(signalbits)\]"
+                    } else {
+                        set sig $reg(signal)
+                    }
+                    lappend line [format $format($c) $len_max_data($c) $sig]
                 } else {
                     lappend line [format $format($c) $len_max_data($c) $reg($c)]
                 }
