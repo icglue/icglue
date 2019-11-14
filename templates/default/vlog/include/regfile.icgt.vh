@@ -250,7 +250,7 @@
                     lappend sig_syncs $handshake_sig_in $handshake_sig_in "       " {}
                     dict set handshake_sig_in_from_out_sync $handshake_sig_out ${handshake_sig_in}_sync
                 } else {
-                    dict set handshake_sig_in_from_out_sync $handshake_sig_out ${handshake_sig_in}
+                    dict set handshake_sig_in_from_out_sync $handshake_sig_out [adapt_signalname ${handshake_sig_in} $obj_id]
                 }
             } else {
                 if {[dict get $handshake_sig_in_from_out $handshake_sig_out] ne $handshake_sig_in} {
