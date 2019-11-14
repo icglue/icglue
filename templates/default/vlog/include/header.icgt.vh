@@ -23,6 +23,7 @@
  */
 "] +%>
 `timescale 1ns/1ps
+<[expr {$cell_define ? "`celldefine\n" : ""}-]>
 module <%=$mod_data(name)%> (
 <%-
     ###########################################
