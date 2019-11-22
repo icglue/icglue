@@ -225,6 +225,7 @@
         set maxlen_name            [max_array_entry_len $entry_list name]
         set maxlen_signame         0
 
+        set has_read_reg_sync false
         set sig_syncs {}
         set handshake_list {}
         set handshake_cond_req {}
@@ -233,7 +234,8 @@
 
         foreach_array entry $entry_list {
             foreach_array_with reg $entry(regs) {[read_reg_sync]} {
-                lappend sig_syncs "$reg(signal)" "_${entry(name)}_${reg(name)}" "[reg_range]" "[signal_entrybits]"
+                set has_read_reg_sync true
+                lappend sig_syncs "$reg(signal)" "${entry(name)}_${reg(name)}" "[reg_range]" "[signal_entrybits]"
             }
         }
         foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
@@ -248,7 +250,7 @@
                 dict set handshake_sig_in_from_out $handshake_sig_out $handshake_sig_in
                 if {$handshake_type eq "S"} {
                     lappend sig_syncs $handshake_sig_in $handshake_sig_in "       " {}
-                    dict set handshake_sig_in_from_out_sync $handshake_sig_out ${handshake_sig_in}_sync
+                    dict set handshake_sig_in_from_out_sync $handshake_sig_out sync_${handshake_sig_in}
                 } else {
                     dict set handshake_sig_in_from_out_sync $handshake_sig_out [adapt_signalname ${handshake_sig_in} $obj_id]
                 }
@@ -289,12 +291,15 @@
     reg          <[rf_write_permitted]>;
     reg          <[rf_next_write_permitted]>;
     reg          <[rf_read_permitted]>;
-    reg          <[rf_next_read_permitted]>;
-
-    assign <[rf_prot_ok]> = <[rf_prot]> | ~<[rf_prot_enable]>;<%="\n"%><%
+    reg          <[rf_next_read_permitted]>;<%="\n"%><%
+    if {$has_read_reg_sync} { %>
+    reg          do_ready_sync_delay;
+    wire         ready_sync_delay;
+    reg          ready_sync_delay_r;
+    wire         ready_sync_delay_done;<%="\n"%><% }
     foreach_preamble {s r w sb} $sig_syncs { %>
     // common sync signals<% } { %>
-    wire <%=$w%> <%=$r%>_sync;<% } %><%="\n"%><%
+    wire <%=$w%> sync_<%=$r%>;<% } %><%="\n"%><%
     foreach_preamble handshake $handshake_list {%>
     // handshake register<%} { %>
     reg          reg_<%=$handshake%>;<% } %><%="\n"%><%
@@ -309,21 +314,48 @@
 %>
 <%
     ###########################################
-    ## <icglue-inst/code> -%>
+    ## <icglue-inst/code> %>
+    assign <[rf_prot_ok]> = <[rf_prot]> | ~<[rf_prot_enable]>;
 <%I vlog/include/inst.icgt.vh %><%-
     ## </icglue-inst/code> ##
     ###########################################
 %>
-<%
+<%-
     ###########################################
     ## <common-sync>
+    if {$has_read_reg_sync} { %>
+    // "not a synchronizer" - just for delay measurement
+    si_common_sync i_si_common_sync_delay_ready (
+        .clk_i     (<[clk]>),
+        .reset_n_i (<[reset]>),
+        .data_i    (do_ready_sync_delay),
+        .data_o    (ready_sync_delay)
+    );<%="\n"%><%
+    if {$fpga_impl} {-%>
+    initial begin
+        ready_sync_delay_r = 1'b0;
+    end<% } %>
+    always @(posedge <[clk]><% if {!$fpga_impl} { %> or negedge <[reset]><% } %>) begin
+        if (<[reset]> == 1'b0) begin
+            ready_sync_delay_r <= 1'b0;
+        end else begin
+            if (ready_sync_delay) begin
+                ready_sync_delay_r <= 1'b1;
+            end
+            if (<[rf_ready]>) begin
+                ready_sync_delay_r <= 1'b0;
+            end
+        end
+    end
+    assign ready_sync_delay_done = ready_sync_delay | ready_sync_delay_r;<%="\n"%><% }
+
     foreach_preamble {s r w sb} $sig_syncs {
     %><[rf_comment_block "common sync's"]><% } { -%>
     common_sync i_common_sync_<%=$s%><[string trim $w]> (
-        .clk_i(<[clk]>),
-        .reset_n_i(<[reset]>),
-        .data_i(<[adapt_signalname $s $obj_id]><[string trim $sb]>),
-        .data_o(<%=$r%>_sync)
+        .clk_i     (<[clk]>),
+        .reset_n_i (<[reset]>),
+        .data_i    (<[adapt_signalname $s $obj_id]><[string trim $sb]>),
+        .data_o    (sync_<%=$r%>)
     );<%="\n"%><% }
     ## </common-sync>
     ###########################################
@@ -446,7 +478,7 @@
         if {[write_reg]} {
             set _reg_val_output "[string trim [reg_name]]"
         } elseif {[read_reg_sync]} {
-            set _reg_val_output "_${entry(name)}_${reg(name)}_sync"
+            set _reg_val_output "sync_${entry(name)}_${reg(name)}"
         } elseif {[read_reg]} {
             if {[custom_reg] && $reg(signal) eq "-"} {
                 set _reg_val_output "/*CUSTOMSIGNAL*/"
@@ -468,6 +500,9 @@
     %><[rf_comment_block "apb ready/error generate"]>
     always @(*) begin
         <[rf_ready_sig]> = 1'b1;<%
+        if {$has_read_reg_sync} {%>
+        do_ready_sync_delay = 1'b0;<%="\n"%><%
+        }
         foreach_array entry $entry_list {
             if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
         <[pop_keep_block_content keep_block_data "keep" "custom_ready_$entry(name)" ".v" "
@@ -478,6 +513,13 @@
         "]><%
             }
         }
+        foreach_array entry $entry_list {
+            if {[foreach_array_contains reg $entry(regs) {[read_reg_sync]}]} { %>
+        if (<[rf_addr]> == <[string trim [param]]>) begin
+            do_ready_sync_delay = (<[rf_sel]> == 1'b1) && (<[rf_enable]> == 1'b0);
+            <[rf_ready_sig]> = ready_sync_delay_done;
+        end<% } }
+
         foreach handshake $handshake_list { %>
         if (<[join [dict get $handshake_cond_req $handshake] " || "]>) begin
             <[rf_ready_sig]> = <[dict get $handshake_sig_in_from_out_sync $handshake]> & reg_<%=$handshake%>;
