@@ -30,10 +30,11 @@
     set format(comment)   "%-*s"
 
     # column size
-    max_set len_max_data(address)    10
-    max_set len_max_data(entryname)  [max_array_entry_len $register_list name]
-    max_set len_max_data(type)       0
-    max_set len_max_data(signalbits) 0
+    set len_max_data(address)    10
+    set len_max_data(entryname)  [max_array_entry_len $register_list name]
+    set len_max_data(type)       0
+    set len_max_data(signalbits) 0
+    set len_max_data(signal)     0
 
     foreach_array entry $register_list {
         foreach c [list signalbits {*}[lrange $columns 2 end]] {
