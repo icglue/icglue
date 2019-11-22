@@ -86,6 +86,11 @@
         set maxlen_reg_name [expr {[string length $name] + 1 + $maxlen_signame}]
         return [format "reg_%-${maxlen_reg_name}s" "${name}_${regname}"]
     }
+    proc trig_name {} {
+        upvar entry(name) name maxlen_signame maxlen_signame reg(name) regname
+        set maxlen_reg_name [expr {[string length $name] + 1 + $maxlen_signame}]
+        return [format "trg_%-${maxlen_reg_name}s" "${name}_${regname}"]
+    }
     proc reg_range {} {
         upvar reg(width) width
         return [format "%7s" [ig::vlog::bitrange $width]]
@@ -306,6 +311,8 @@
     foreach_array_preamble entry $entry_list { %>
     // regfile registers / wires<% } { %>
     wire <[format "%7s" [ig::vlog::bitrange $rf_dw]]> <[reg_val]>;<%
+        foreach_array_with reg $entry(regs) {[write_reg] && [sctrigger_reg] && ![custom_reg]} { %>
+    reg          <[string trim [trig_name]]>;<% } %><%
         foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} { %>
     reg  <[reg_range]> <[string trim [reg_name]]>;<% } %><%="\n"%><% } %>
     <%=[pop_keep_block_content keep_block_data "keep" "regfile-${rf(name)}-declaration"] %><%
@@ -436,7 +443,9 @@
             } %>
     end<%="\n"%><% } -%>
     always @(posedge <[clk]><% if {!$fpga_impl} { %> or negedge <[reset]><% } %>) begin
-        if (<[reset]> == 1'b0) begin<% foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} { %>
+        if (<[reset]> == 1'b0) begin<% foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} {
+            if {[sctrigger_reg] && ![custom_reg]} {%>
+            <[trig_name]> <= 1'b0;<%}%>
             <[reg_name]> <= <%=$reg(reset)%>;<% }
             if {[foreach_array_contains reg $entry(regs) {[fullcustom_reg]}]} {
                 set fc_reset_list {}
@@ -452,15 +461,23 @@
             if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
             <[pop_keep_block_content keep_block_data "keep" "custom_preface_code_${entry(name)}"]><% }
             foreach_array_with reg $entry(regs) {[write_reg] && [sctrigger_reg] && ![custom_reg]} { %>
-            <[reg_name]> <= <%=$reg(reset)%>;<% }
-            %>
+            if (<[trig_name]>) begin
+                <[reg_name]> <= <%=$reg(reset)%>;
+                if (<[rf_ready]>) begin
+                    <[trig_name]> <= 1'b0;
+                end
+            end<% } %>
             if (<[rf_w_sel]> && <[rf_enable]>) begin
                 if (<% if {$entry(protected)} {%>(<%}%><[rf_addr]> == <[string trim [param]]><% if {$entry(protected)} {%>) && <[rf_prot_ok]><%}%>) begin<%
                     for {set byte 0} {$byte < $rf_bw} {incr byte} {
                         foreach_array_preamble_epilog_with reg $entry(regs) {[write_reg] && [reg_entrybits_in_bytesel $byte]} { %>
-                    if (<[rf_bytesel]>[<%=$byte%>] == 1'b1) begin<% } { %><%
-                        if {![custom_reg]} {%>
-                        <[reg_name]><[reg_range_bytesel $byte]> <= <[rf_w_data]>[<[reg_entrybits_bytesel $byte]>];<%
+                    if (<[rf_bytesel]>[<%=$byte%>] == 1'b1) begin<% } {
+                        if {![custom_reg]} {if {[sctrigger_reg]} {%>
+                        if (!<[trig_name]>) begin
+                            <[trig_name]>        <= 1'b1;
+                            <[reg_name]><[reg_range_bytesel $byte]> <= <[rf_w_data]>[<[reg_entrybits_bytesel $byte]>];
+                        end<% } else {%>
+                        <[reg_name]><[reg_range_bytesel $byte]> <= <[rf_w_data]>[<[reg_entrybits_bytesel $byte]>];<% }
                         } else { %>
                         <[pop_keep_block_content keep_block_data "keep" "custom_assign_$entry(name)_$reg(name)" ".v" "
                         // TODO: [reg_name][reg_range_bytesel $byte] <= [rf_w_data]\[[reg_entrybits_bytesel $byte]\];
@@ -512,6 +529,14 @@
         //end
         "]><%
             }
+            if {[foreach_array_contains reg $entry(regs) {[sctrigger_reg] && ![custom_reg]}]} {
+                set trig_l [list]
+                foreach_array_with reg $entry(regs) {[write_reg] && [sctrigger_reg] && ![custom_reg]} {
+                    lappend trig_l [string trim [trig_name]]
+                }%>
+        if (<[rf_addr]> == <[string trim [param]]>) begin
+            <[rf_ready_sig]> = <[join $trig_l " | "]>;
+        end<% }
         }
         foreach_array entry $entry_list {
             if {[foreach_array_contains reg $entry(regs) {[read_reg_sync]}]} { %>

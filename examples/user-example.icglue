@@ -155,15 +155,17 @@ if {0} {
 #  if the signal-width exceeds the the regfile data width you can split signals with the *signalbits* column
 #  this is also useful for part selection and register subfield creation
 S "s_cfg_large" -w 40 submod_regfile  -->  submod
+S "s_cfg_trig"        submod_regfile  -->  submod
 R submod_regfile "entry_name1_low" {
     "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
     -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
     s_cfg  | 31:0        | RW     | 32'h0   | s_cfg_large | 31:0         | "Configure submod part 0"
 }
 R submod_regfile "entry_name1_high" -align 8 {
-    "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
-    -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
-    s_cfg  | 7:0         | RW     | 8'h0    | s_cfg_large | 39:32        | "Configure submod part 1"
+    "name"         | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
+    -------------- | ----------- | -----  | ------- | --------    | ------------ | ---------
+    s_cfg          | 7:0         | RW     | 8'h0    | s_cfg_large | 39:32        | "Configure submod part 1"
+    s_cfg_trigger  |   8         | RWT    | 1'b0    | s_cfg_trig  | -            | "trigger config update"
 }
 
 # explicitly assign register addresses with '@ ADDR'
