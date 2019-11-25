@@ -286,9 +286,15 @@ rf_data_t *_entry_t::operator& ()
 /* _reg_t */
 void _reg_t::_reg_t_write (rf_data_t value)
 {
-    value <<= _m_lsb;
-    value  &= _m_mask;
-    _m_entry._m_rf._write (_m_entry._m_addr, value, _m_mask, _m_entry._m_unused_mask);
+    rf_data_t wval = value;
+    wval <<= _m_lsb;
+
+    if ((wval & (~_m_mask)) != 0) {
+        printf ("Warning: value 0x%x is truncated when writing to register\n", value);
+    }
+
+    wval  &= _m_mask;
+    _m_entry._m_rf._write (_m_entry._m_addr, wval, _m_mask, _m_entry._m_unused_mask);
 }
 rf_data_t _reg_t::_reg_t_read ()
 {
