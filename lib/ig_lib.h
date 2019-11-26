@@ -114,6 +114,16 @@ struct ig_module *ig_lib_add_module      (struct ig_lib_db *db, const char *name
 /**
  * @brief Add a new pin to a given instance.
  * @param db Database to modify.
+ * @param mod Pointer to module data.
+ * @param dir Port direction.
+ * @param port_name Name of the port
+ * @return The newly created port data or @c NULL if port already exists.
+ */
+struct ig_port *ig_lib_add_port (struct ig_lib_db *db, struct ig_module *mod, enum ig_port_dir dir, const char *port_name);
+
+/**
+ * @brief Add a new pin to a given instance.
+ * @param db Database to modify.
  * @param inst Pointer to instance data.
  * @param pin_name Name of the pin
  * @param conn_name Name of the connection signal
@@ -121,6 +131,7 @@ struct ig_module *ig_lib_add_module      (struct ig_lib_db *db, const char *name
  * @return The newly created pin data or @c NULL if pin already exists.
  */
 struct ig_pin *ig_lib_add_pin (struct ig_lib_db *db, struct ig_instance *inst, const char *pin_name, const char *conn_name, const char *invert_attr);
+
 /**
  * @brief Add a new module instance to the database.
  * @param db Database to modify.
