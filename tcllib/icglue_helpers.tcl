@@ -519,10 +519,12 @@ namespace eval ig::aux {
 
         foreach i_port [ig::db::get_ports -of $module -all] {
             set i_rep [list \
-                [ig::db::get_attribute -object $i_port -attribute "signal"] \
+                [ig::db::get_attribute -object $i_port -attribute "signal" -default ""] \
                 [ig::db::get_attribute -object $i_port -attribute "name"] \
             ]
-            lappend signal_replace $i_rep
+            if {[lindex $i_rep 0] ne ""} {
+                lappend signal_replace $i_rep
+            }
         }
         foreach i_decl [ig::db::get_declarations -of $module -all] {
             set i_rep [list \

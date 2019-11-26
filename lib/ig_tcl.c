@@ -1342,6 +1342,7 @@ l_ig_tclc_parameter_nfexit:
 # -instname \<instance name\><br>
 # -pinname \<pin name\><br>
 # -value \<signalname/value assigned to the the pin\><br>
+# [-size \<signal-bitwidth\>]<br>
 #
 */
 static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
@@ -1350,14 +1351,20 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
 
     if (db == NULL) return tcl_error_msg (interp,  "Database is NULL");
 
-    char *instname = NULL;
-    char *pinname  = NULL;
-    char *value    = NULL;
+    char            *instname = NULL;
+    char            *pinname  = NULL;
+    char            *value    = NULL;
+    char            *size     = NULL;
+    enum ig_port_dir dir      = IG_PD_OUT;
 
     Tcl_ArgvInfo arg_table [] = {
-        {TCL_ARGV_STRING, "-instname", NULL, (void *)&instname,  "instance name", NULL},
-        {TCL_ARGV_STRING, "-pinname",  NULL, (void *)&pinname,   "pin name", NULL},
-        {TCL_ARGV_STRING, "-value",    NULL, (void *)&value,     "signalname/value assigned to the pin", NULL},
+        {TCL_ARGV_STRING,   "-instname",    NULL,                          (void *)&instname,  "instance name", NULL},
+        {TCL_ARGV_STRING,   "-pinname",     NULL,                          (void *)&pinname,   "pin name", NULL},
+        {TCL_ARGV_STRING,   "-value",       NULL,                          (void *)&value,     "signalname/value assigned to the pin", NULL},
+        {TCL_ARGV_STRING,   "-size",        NULL,                          (void *)&size,      "signal size", NULL},
+        {TCL_ARGV_CONSTANT, "-in",          GINT_TO_POINTER (IG_PD_IN),    (void *)&dir,       "input port", NULL},
+        {TCL_ARGV_CONSTANT, "-out",         GINT_TO_POINTER (IG_PD_OUT),   (void *)&dir,       "output port", NULL},
+        {TCL_ARGV_CONSTANT, "-inout",       GINT_TO_POINTER (IG_PD_BIDIR), (void *)&dir,       "inout port", NULL},
 
         TCL_ARGV_AUTO_HELP,
         TCL_ARGV_TABLE_END
@@ -1374,13 +1381,13 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
     if (pinname == NULL) {
         result = tcl_error_msg (interp, "No pin name specified");
     }
+    if (size == NULL) {
+        size = "1";
+    }
 
     struct ig_instance *inst = IG_INSTANCE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->instances_by_name, instname)));
     if (inst == NULL) {
         return tcl_error_msg (interp, "Could not find instance \"%s\"\n", instname);
-    }
-    if (!inst->module->resource) {
-        return tcl_error_msg (interp, "Unable to add pin \"%s\" - instance \"%s\" is not a resource.", pinname, instname);
     }
     struct ig_pin *pin = ig_lib_add_pin (db, inst, pinname, value, "false");
 
@@ -1388,7 +1395,23 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
         return tcl_error_msg (interp, "Unable to add pin \"%s\" for instance \"%s\").", pin, instname);
     }
 
-    Tcl_SetObjResult (interp, Tcl_NewStringObj (IG_OBJECT (pin)->id, -1));
+    struct ig_port *port = NULL;
+    if (!inst->module->resource) {
+        port = ig_lib_add_port (db, inst->module, dir, pinname);
+
+        if (port == NULL) {
+            return tcl_error_msg (interp, "Unable to add port \"%s\" for module of instance \"%s\").", pin, instname);
+        }
+    }
+
+    Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
+    Tcl_ListObjAppendElement (interp, retval, Tcl_NewStringObj (IG_OBJECT (pin)->id, -1));
+    ig_obj_attr_set (IG_OBJECT (pin), "size", size, true);
+    if (port != NULL) {
+        Tcl_ListObjAppendElement (interp, retval, Tcl_NewStringObj (IG_OBJECT (port)->id, -1));
+        ig_obj_attr_set (IG_OBJECT (port), "size", size, true);
+    }
+    Tcl_SetObjResult (interp, retval);
 
     return TCL_OK;
 }

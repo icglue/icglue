@@ -147,6 +147,24 @@ struct ig_module *ig_lib_add_module (struct ig_lib_db *db, const char *name, boo
     return mod;
 }
 
+struct ig_port *ig_lib_add_port (struct ig_lib_db *db, struct ig_module *mod, enum ig_port_dir dir, const char *port_name)
+{
+    /* create a port */
+    struct ig_port *mod_port = ig_port_new (port_name, dir, mod, db->str_chunks);
+
+    if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod_port)->id)) {
+        log_error ("HTrPS", "Already declared port %s", IG_OBJECT (mod_port)->id);
+        ig_port_free (mod_port);
+    } else {
+        g_queue_push_tail (mod->ports, mod_port);
+        ig_obj_ref (IG_OBJECT (mod_port));
+        g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod_port)->id), IG_OBJECT (mod_port));
+        ig_obj_ref (IG_OBJECT (mod_port));
+    }
+
+    return mod_port;
+}
+
 struct ig_pin *ig_lib_add_pin (struct ig_lib_db *db, struct ig_instance *inst, const char *pin_name, const char *conn_name, const char *invert_attr)
 {
     /* create a pin */
@@ -997,8 +1015,9 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
 
         /* create a pin */
         struct ig_pin *inst_pin = ig_lib_add_pin (db, inst, pin_name, conn_name, (cinfo->invert ? "true" : "false"));
+
         /* connecting the pin */
-        if (inst_pin) {
+        if (inst_pin != NULL) {
             pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT (inst_pin));
             log_debug ("CPin", "Created pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, IG_OBJECT (inst)->id, conn_name);
         }
@@ -1046,15 +1065,8 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
                 pdir = IG_PD_BIDIR;
             }
             /* create a port */
-            struct ig_port *mod_port = ig_port_new (signal_name, pdir, mod, db->str_chunks);
-            if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod_port)->id)) {
-                log_error ("HTrPS", "Already declared port %s", IG_OBJECT (mod_port)->id);
-                ig_port_free (mod_port);
-            } else {
-                g_queue_push_tail (mod->ports, mod_port);
-                ig_obj_ref (IG_OBJECT (mod_port));
-                g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod_port)->id), IG_OBJECT (mod_port));
-                ig_obj_ref (IG_OBJECT (mod_port));
+            struct ig_port *mod_port = ig_lib_add_port (db, mod, pdir, signal_name);
+            if (mod_port != NULL) {
                 pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT (mod_port));
                 log_debug ("HTrPS", "Created port \"%s\" in module \"%s\"", signal_name, IG_OBJECT (mod)->id);
             }

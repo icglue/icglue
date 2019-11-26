@@ -642,10 +642,17 @@ namespace eval ig {
         }
 
         if {$resource_pin} {
-            if {$invert eq "true"} {
-                set name "${name}_o"
+            if {$bidir} {
+                set pdir -inout
+                set pinname "${name}_b"
+            } elseif {$invert eq "true"} {
+                set pdir -out
+                set pinname "${name}_o"
             } elseif {$invert eq "false"} {
-                set name "${name}_i"
+                set pdir -in
+                set pinname "${name}_i"
+            } else {
+                set pdir {}
             }
 
             set instance_names [lrange $arguments 1 end]
@@ -661,14 +668,18 @@ namespace eval ig {
                 set inst_pinname [lindex $inst 2]
                 if {$inst_pinname ne ""} {
                     # remove leading :
-                    set name [string range $inst_pinname 1 end]
+                    set inst_pinname [string range $inst_pinname 1 end]
+                } else {
+                    set inst_pinname $pinname
                 }
 
-                if {[catch {set tmp_pin [ig::db::create_pin -instname $instname -pinname $name -value $value]} emsg]} {
+                if {[catch {set tmp_pin [ig::db::create_pin -instname $instname -pinname $inst_pinname -value $value -size $width {*}$pdir]} emsg]} {
                     log -error -abort "${emsg}"
                 }
-                ig::db::set_attribute -object $tmp_pin -attribute "adapt" -value "selective"
-                lappend retval $tmp_pin
+                foreach itmp_pin $tmp_pin {
+                    ig::db::set_attribute -object $itmp_pin -attribute "adapt" -value "selective"
+                    lappend retval $itmp_pin
+                }
             }
             return $retval;
         }
