@@ -27,6 +27,14 @@
 #include <stdbool.h>
 
 #ifdef __cplusplus
+#include <atomic>
+#define stimc_thread_fence(...) std::atomic_thread_fence (std::memory_order_acq_rel)
+#else
+#include <stdatomic.h>
+#define stimc_thread_fence(...) __atomic_thread_fence (__ATOMIC_ACQ_REL)
+#endif
+
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -68,6 +76,7 @@ double   stimc_time_seconds (void);
 typedef struct stimc_event_s *stimc_event;
 
 stimc_event stimc_event_create (void);
+void        stimc_event_free (stimc_event event);
 void        stimc_wait_event (stimc_event event);
 void        stimc_trigger_event (stimc_event event);
 

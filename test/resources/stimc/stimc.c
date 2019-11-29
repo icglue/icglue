@@ -29,15 +29,69 @@
 
 #include <pcl.h>
 
-#ifndef SOCC_THREAD_STACK_SIZE
+#ifndef STIMC_THREAD_STACK_SIZE
 /* default stack size */
-#define SOCC_THREAD_STACK_SIZE    65536
+#define STIMC_THREAD_STACK_SIZE    65536
 #endif
 
-#ifndef SOCC_VALVECTOR_MAX_STATIC
-#define SOCC_VALVECTOR_MAX_STATIC 8
+#ifndef STIMC_VALVECTOR_MAX_STATIC
+#define STIMC_VALVECTOR_MAX_STATIC 8
 #endif
 
+// internal header
+struct stimc_method_wrap {
+    void  (*methodfunc) (void *userdata);
+    void *userdata;
+};
+
+struct stimc_thread_queue_s {
+    size_t       threads_len;
+    size_t       threads_num;
+    coroutine_t *threads;
+};
+
+struct stimc_event_s {
+    struct stimc_thread_queue_s queue;
+};
+
+static const char *stimc_get_caller_scope (void);
+
+static void stimc_thread_queue_init (struct stimc_thread_queue_s *q);
+static void stimc_thread_queue_free (struct stimc_thread_queue_s *q);
+static void stimc_thread_queue_enqueue (struct stimc_thread_queue_s *q, coroutine_t *thread);
+static void stimc_thread_queue_enqueue_all (struct stimc_thread_queue_s *q, struct stimc_thread_queue_s *source);
+static void stimc_thread_queue_clear (struct stimc_thread_queue_s *q);
+
+static inline void stimc_main_queue_checksetup (void);
+static void        stimc_main_queue_run_threads (void);
+
+static inline void stimc_valuechange_method_callback_wrapper (struct t_cb_data *cb_data, int edge);
+static PLI_INT32   stimc_posedge_method_callback_wrapper (struct t_cb_data *cb_data);
+static PLI_INT32   stimc_negedge_method_callback_wrapper (struct t_cb_data *cb_data);
+static PLI_INT32   stimc_change_method_callback_wrapper (struct t_cb_data *cb_data);
+static void        stimc_register_valuechange_method (void (*methodfunc)(void *userdata), void *userdata, stimc_net net, int edge);
+static PLI_INT32   stimc_thread_callback_wrapper (struct t_cb_data *cb_data);
+
+static inline void stimc_suspend (void);
+
+static vpiHandle stimc_module_handle_init (stimc_module *m, const char *name);
+
+static inline void stimc_net_set_xz (stimc_net net, int val);
+static inline void stimc_net_set_uint64_callback_nonblock_gen (PLI_INT32 (*cb_rtn)(struct t_cb_data *), stimc_net net);
+static PLI_INT32   stimc_net_set_x_nonblock_callback_wrapper (struct t_cb_data *cb_data);
+static PLI_INT32   stimc_net_set_z_nonblock_callback_wrapper (struct t_cb_data *cb_data);
+static PLI_INT32   stimc_net_set_uint64_nonblock_callback_wrapper (struct t_cb_data *cb_data);
+static PLI_INT32   stimc_net_set_bits_uint64_nonblock_callback_wrapper (struct t_cb_data *cb_data);
+static PLI_INT32   stimc_net_set_int32_nonblock_callback_wrapper (struct t_cb_data *cb_data);
+
+// global variables
+static coroutine_t stimc_current_thread = NULL;
+
+static bool                        stimc_main_queue_setup  = false;
+static struct stimc_thread_queue_s stimc_main_queue        = {0, 0, NULL};
+static struct stimc_thread_queue_s stimc_main_queue_shadow = {0, 0, NULL};
+
+// implementation
 static const char *stimc_get_caller_scope (void)
 {
     vpiHandle taskref = vpi_handle (vpiSysTfCall, NULL);
@@ -50,11 +104,6 @@ static const char *stimc_get_caller_scope (void)
 
     return scope_name;
 }
-
-struct stimc_method_wrap {
-    void  (*methodfunc) (void *userdata);
-    void *userdata;
-};
 
 static inline void stimc_valuechange_method_callback_wrapper (struct t_cb_data *cb_data, int edge)
 {
@@ -69,6 +118,8 @@ static inline void stimc_valuechange_method_callback_wrapper (struct t_cb_data *
     }
 
     wrap->methodfunc (wrap->userdata);
+
+    stimc_main_queue_run_threads ();
 }
 
 static PLI_INT32 stimc_posedge_method_callback_wrapper (struct t_cb_data *cb_data)
@@ -137,17 +188,16 @@ void stimc_register_change_method  (void (*methodfunc)(void *userdata), void *us
 }
 
 
-coroutine_t stimc_current_thread = NULL;
-
 static PLI_INT32 stimc_thread_callback_wrapper (struct t_cb_data *cb_data)
 {
     coroutine_t *thread = (coroutine_t)cb_data->user_data;
 
     assert (thread);
 
-    stimc_current_thread = thread;
-    co_call (thread);
-    stimc_current_thread = NULL;
+    stimc_main_queue_checksetup ();
+    stimc_thread_queue_enqueue (&stimc_main_queue, thread);
+
+    stimc_main_queue_run_threads ();
 
     return 0;
 }
@@ -158,7 +208,7 @@ void stimc_register_startup_thread (void (*threadfunc)(void *userdata), void *us
     s_vpi_time  data_time;
     s_vpi_value data_value;
 
-    coroutine_t thread = co_create (threadfunc, userdata, NULL, SOCC_THREAD_STACK_SIZE);
+    coroutine_t thread = co_create (threadfunc, userdata, NULL, STIMC_THREAD_STACK_SIZE);
 
     assert (thread);
 
@@ -178,9 +228,11 @@ void stimc_register_startup_thread (void (*threadfunc)(void *userdata), void *us
     assert (vpi_register_cb (&data));
 }
 
-static void stimc_suspend (void)
+static inline void stimc_suspend (void)
 {
+    stimc_thread_fence ();
     co_resume ();
+    stimc_thread_fence ();
 }
 
 void stimc_wait_time (uint64_t time, int exp)
@@ -288,45 +340,125 @@ double stimc_time_seconds (void)
     return dtime;
 }
 
-struct stimc_event_s {
-    size_t        threads_len;
-    size_t        threads_num;
-    volatile bool active;
-    coroutine_t  *threads;
-    coroutine_t  *threads_shadow;
-};
+static void stimc_thread_queue_init (struct stimc_thread_queue_s *q)
+{
+    q->threads_len = 16;
+    q->threads     = (coroutine_t *)malloc (sizeof (coroutine_t) * (q->threads_len));
+
+    stimc_thread_queue_clear (q);
+}
+
+static void stimc_thread_queue_free (struct stimc_thread_queue_s *q)
+{
+    q->threads_len = 0;
+    q->threads_num = 0;
+    free (q->threads);
+}
+
+static void stimc_thread_queue_enqueue (struct stimc_thread_queue_s *q, coroutine_t *thread)
+{
+    /* size check */
+    if (q->threads_num + 1 >= q->threads_len) {
+        if (q->threads_len <= 0) q->threads_len = 1;
+
+        q->threads_len *= 2;
+        q->threads      = (coroutine_t *)realloc (q->threads,        q->threads_len);
+    }
+
+    /* thread data ... */
+    q->threads[q->threads_num] = thread;
+    q->threads_num++;
+    q->threads[q->threads_num] = NULL;
+}
+
+static void stimc_thread_queue_enqueue_all (struct stimc_thread_queue_s *q, struct stimc_thread_queue_s *source)
+{
+    /* size check */
+    if (q->threads_num + source->threads_num >= q->threads_len) {
+        if (q->threads_len <= 0) q->threads_len = 1;
+
+        while (q->threads_num + source->threads_num >= q->threads_len) {
+            q->threads_len *= 2;
+        }
+        q->threads = (coroutine_t *)realloc (q->threads,        q->threads_len);
+    }
+
+    /* thread data ... */
+    for (size_t i = 0; i < source->threads_num; i++) {
+        q->threads[q->threads_num] = source->threads[i];
+        q->threads_num++;
+    }
+
+    q->threads[q->threads_num] = NULL;
+}
+
+static void stimc_thread_queue_clear (struct stimc_thread_queue_s *q)
+{
+    q->threads_num = 0;
+    q->threads[0]  = NULL;
+}
+
+static inline void stimc_main_queue_checksetup ()
+{
+    if (stimc_main_queue_setup) return;
+
+    stimc_thread_queue_init (&stimc_main_queue);
+    stimc_thread_queue_init (&stimc_main_queue_shadow);
+
+    stimc_main_queue_setup = true;
+}
+
+static void stimc_main_queue_run_threads ()
+{
+    stimc_main_queue_checksetup ();
+
+    while (true) {
+        if (stimc_main_queue.threads_num == 0) break;
+
+        stimc_thread_queue_enqueue_all (&stimc_main_queue_shadow, &stimc_main_queue);
+        stimc_thread_queue_clear (&stimc_main_queue);
+
+        /* execute threads... */
+        assert (stimc_current_thread == NULL);
+
+        for (size_t i = 0; stimc_main_queue_shadow.threads[i] != NULL; i++) {
+            coroutine_t *thread = stimc_main_queue_shadow.threads[i];
+            stimc_current_thread = thread;
+
+            stimc_thread_fence ();
+            co_call (thread);
+            stimc_thread_fence ();
+        }
+
+        stimc_current_thread = NULL;
+
+        stimc_thread_queue_clear (&stimc_main_queue_shadow);
+    }
+}
 
 stimc_event stimc_event_create (void)
 {
     stimc_event event = (stimc_event)malloc (sizeof (struct stimc_event_s));
 
-    event->active         = false;
-    event->threads_len    = 16;
-    event->threads_num    = 0;
-    event->threads        = (coroutine_t *)malloc (sizeof (coroutine_t) * (event->threads_len));
-    event->threads_shadow = (coroutine_t *)malloc (sizeof (coroutine_t) * (event->threads_len));
-    event->threads[0]     = NULL;
+    stimc_thread_queue_init (&event->queue);
 
     return event;
 }
 
+void stimc_event_free (stimc_event event)
+{
+    stimc_thread_queue_free (&event->queue);
+    free (event);
+}
+
 void stimc_wait_event (stimc_event event)
 {
-    /* size check */
-    if (event->threads_num + 1 >= event->threads_len) {
-        assert (event->active == false);
-        event->threads_len   *= 2;
-        event->threads        = (coroutine_t *)realloc (event->threads,        event->threads_len);
-        event->threads_shadow = (coroutine_t *)realloc (event->threads_shadow, event->threads_len);
-    }
-
     /* thread data ... */
     coroutine_t *thread = stimc_current_thread;
+
     assert (thread);
 
-    event->threads[event->threads_num] = thread;
-    event->threads_num++;
-    event->threads[event->threads_num] = NULL;
+    stimc_thread_queue_enqueue (&event->queue, thread);
 
     /* thread handling ... */
     stimc_suspend ();
@@ -334,27 +466,12 @@ void stimc_wait_event (stimc_event event)
 
 void stimc_trigger_event (stimc_event event)
 {
-    if (event->active) return;
-    if (event->threads_num == 0) return;
+    if (event->queue.threads_num == 0) return;
 
-    /* copy threads to shadow... */
-    for (size_t i = 0; i <= event->threads_num; i++) {
-        event->threads_shadow[i] = event->threads[i];
-    }
-
-    assert (event->threads_shadow [event->threads_num] == NULL);
-
-    event->threads[0]  = NULL;
-    event->threads_num = 0;
-
-    /* execute threads... */
-    coroutine_t *old_thread = stimc_current_thread;
-    for (size_t i = 0; event->threads_shadow[i] != NULL; i++) {
-        coroutine_t *thread = event->threads_shadow[i];
-        stimc_current_thread = thread;
-        co_call (thread);
-    }
-    stimc_current_thread = old_thread;
+    /* enqueue threads... */
+    stimc_main_queue_checksetup ();
+    stimc_thread_queue_enqueue_all (&stimc_main_queue, &event->queue);
+    stimc_thread_queue_clear (&event->queue);
 }
 
 void stimc_finish (void)
@@ -424,8 +541,8 @@ static inline void stimc_net_set_xz (stimc_net net, int val)
     }
 
     unsigned vsize = ((size - 1) / 32) + 1;
-    if (vsize <= SOCC_VALVECTOR_MAX_STATIC) {
-        s_vpi_vecval vec[SOCC_VALVECTOR_MAX_STATIC];
+    if (vsize <= STIMC_VALVECTOR_MAX_STATIC) {
+        s_vpi_vecval vec[STIMC_VALVECTOR_MAX_STATIC];
         for (unsigned i = 0; i < vsize; i++) {
             vec[i].aval = (val == vpiZ ? 0x00000000 : 0xffffffff);
             vec[i].bval = 0xffffffff;
@@ -500,7 +617,6 @@ void stimc_net_set_bits_uint64 (stimc_net net, unsigned msb, unsigned lsb, uint6
     unsigned jstop  = msb / 32;
 
     uint64_t mask = ((2 << (msb - lsb)) - 1);
-    fprintf (stderr, "DEBUG: lsb=%d, msb=%d, mask=0x%016lx\n", lsb, msb, mask);
 
     for (unsigned i = 0, j = jstart; (j < vsize) && (j <= jstop) && (i < 3); i++, j++) {
         uint32_t i_mask;
@@ -513,7 +629,6 @@ void stimc_net_set_bits_uint64 (stimc_net net, unsigned msb, unsigned lsb, uint6
             i_mask = mask           >> (32 * i - s0);
             i_val  = (value & mask) >> (32 * i - s0);
         }
-        fprintf (stderr, "DEBUG: i=%d, j=%d, mask=0x%08x, value=0x%08x\n", i, j, i_mask, i_val);
 
         v.value.vector[i].aval &= ~i_mask;
         v.value.vector[i].aval |=  i_val;
@@ -569,8 +684,8 @@ void stimc_net_set_uint64 (stimc_net net, uint64_t value)
     }
 
     unsigned vsize = ((size - 1) / 32) + 1;
-    if (vsize <= SOCC_VALVECTOR_MAX_STATIC) {
-        s_vpi_vecval vec[SOCC_VALVECTOR_MAX_STATIC];
+    if (vsize <= STIMC_VALVECTOR_MAX_STATIC) {
+        s_vpi_vecval vec[STIMC_VALVECTOR_MAX_STATIC];
         for (unsigned i = 0; (i < vsize) && (i < 2); i++) {
             vec[i].aval = (value >> (32 * i)) & 0xffffffff;
             vec[i].bval = 0;
