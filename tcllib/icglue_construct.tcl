@@ -653,6 +653,7 @@ namespace eval ig {
                 set pinname "${name}_i"
             } else {
                 set pdir {}
+                set pinname "${name}"
             }
 
             set instance_names [lrange $arguments 1 end]
