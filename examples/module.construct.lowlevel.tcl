@@ -1,6 +1,6 @@
 namespace import ::ig::db::*
 
-set_attribute -object [create_module -name tb_bungo_top] -attributes {"language" verilog "parentunit" bungo "mode" testbench}
+set_attribute -object [create_module -name tb_bungo_top] -attributes {"language" verilog "parentunit" bungo "mode" tb}
 set_attribute -object [create_module -name bungo_top]    -attributes {"language" verilog "parentunit" bungo "mode" rtl}
 set_attribute -object [create_module -name bungo_core]   -attributes {"language" verilog "parentunit" bungo "mode" rtl}
 set_attribute -object [create_module -name bungo_mgmt]   -attributes {"language" verilog "parentunit" bungo "mode" rtl}
@@ -27,8 +27,8 @@ connect -from [get_instances -name bungo_mgmt] -to [list [get_instances -name bu
 connect -from [get_instances -name bungo_core] -to [list [get_instances -name bungo_mgmt]] -signal-name status -signal-size 16
 connect -bidir [list [get_instances -name bungo_mgmt] [get_instances -name bungo_core] [get_modules -name tb_bungo_top]] -signal-name bddata -signal-size 16
 
-set cs [add_codesection -parent-module [get_modules -name bungo_mgmt] -code {
-    assign clk! = clk_ref!;
+set cs [add_codesection -parent-module [get_modules -name bungo_mgmt] -code {    assign clk! = clk_ref!;
+
 }]
 
 set_attribute -object $cs -attribute "adapt" -value "selective"
