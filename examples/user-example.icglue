@@ -170,10 +170,14 @@ R submod_regfile "entry_name1_high" -align 8 {
 
 # explicitly assign register addresses with '@ ADDR'
 S "s_ex_a" -w 8 submod_regfile --> submod
+S "s_ex_b" -w 8 submod_regfile --> submod
 R submod_regfile "ex_addressed_reg" @ 0x0030 {
-    "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
-    -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
-    s_ex_a | 7:0         | RW     | 8'h0    | s_ex_a      | 39:32        | "Configure submod part 1"
+    "name"   | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
+    -------- | ----------- | -----  | ------- | --------    | ------------ | ---------
+    s_ex_a   |   7:0       | RW     | 8'h0    | s_ex_a      | 39:32        | "Configure submod part 1"
+    s_ex_b_0 |  11:8       | RS     |    -    | s_ex_b      |   3:0        | "status 0"
+    s_ex_b_1 |    12       | RS     |    -    | s_ex_b      |     4        | "status 1"
+    s_ex_b_2 | 15:13       | R      |    -    | s_ex_b      |   7:5        | "status 2"
 }
 
 
