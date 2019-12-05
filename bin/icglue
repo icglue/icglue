@@ -133,6 +133,13 @@ proc generate {c_file c_outtypelist c_loglevel scriptargs dryrun} {
         if {[ig::db::get_attribute -object $i_module -attribute "dummy" -default "false"]} {
             continue
         }
+
+        if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
+            # process: signal sizes
+            # TODO: if more steps come up: general "process" stage?
+            ig::aux::adapt_signal_sizes $i_module
+        }
+
         ig::checks::check_object $i_module
         if {![ig::db::get_attribute -object $i_module -attribute "resource"]} {
             ig::log -info "generating module $i_module"
