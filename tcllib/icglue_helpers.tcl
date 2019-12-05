@@ -509,32 +509,30 @@ namespace eval ig::aux {
         return [ig::db::get_attribute -object $obj -attribute "name"]
     }
 
-    ## @brief Replacement list for adaption of signal names.
+    ## @brief Replacement map for adaption of signal and parameter names.
     #
     # @param module Module Object-ID for obtaining replacement list.
     #
-    # @return Replacement list.
-    proc adapt_replacement_list {module} {
-        set signal_replace [list]
+    # @return Replacement map as dict.
+    proc adapt_replacement_map {module} {
+        set replace_map [dict create]
 
-        foreach i_port [ig::db::get_ports -of $module -all] {
-            set i_rep [list \
-                [ig::db::get_attribute -object $i_port -attribute "signal" -default ""] \
-                [ig::db::get_attribute -object $i_port -attribute "name"] \
-            ]
-            if {[lindex $i_rep 0] ne ""} {
-                lappend signal_replace $i_rep
+        foreach {k_attr o_list} [list \
+            "signal"    [ig::db::get_ports -of $module -all] \
+            "signal"    [ig::db::get_declarations -of $module -all] \
+            "parameter" [ig::db::get_parameters -of $module -all] \
+        ] {
+            foreach i_elem $o_list {
+                set k [ig::db::get_attribute -object $i_elem -attribute $k_attr -default ""]
+                set v [ig::db::get_attribute -object $i_elem -attribute "name"]
+
+                if {$k ne ""} {
+                    dict set replace_map $k $v
+                }
             }
         }
-        foreach i_decl [ig::db::get_declarations -of $module -all] {
-            set i_rep [list \
-                [ig::db::get_attribute -object $i_decl -attribute "signal"] \
-                [ig::db::get_attribute -object $i_decl -attribute "name"] \
-            ]
-            lappend signal_replace $i_rep
-        }
 
-        return $signal_replace
+        return $replace_map
     }
 
     ## @brief Adapt signalnames in a codesection object if adapt-attribute is set.
@@ -553,17 +551,17 @@ namespace eval ig::aux {
 
         # collect signals of module and replacement-name
         set parent_mod [ig::db::get_attribute -object $codesection -attribute "parent"]
-        set signal_replace [adapt_replacement_list $parent_mod]
+        set replace_map [adapt_replacement_map $parent_mod]
 
         # adapt signal-names
         if {$do_adapt eq "selective"} {
-            set code_out [adapt_codesection_replace $code $signal_replace true $origin]
+            set code_out [adapt_codesection_replace $code $replace_map true $origin]
         } elseif {$do_adapt eq "all"} {
-            set code_out [adapt_codesection_replace $code $signal_replace false $origin]
+            set code_out [adapt_codesection_replace $code $replace_map false $origin]
         } elseif {$do_adapt eq "signalcheck"} {
             # TODO: remove signalcheck part when no longer necessary
-            set code_out1 [adapt_codesection_replace $code $signal_replace true]
-            set code_out2 [adapt_codesection_replace [ig::db::get_attribute -object $codesection -attribute "checkcode"] $signal_replace false]
+            set code_out1 [adapt_codesection_replace $code $replace_map true]
+            set code_out2 [adapt_codesection_replace [ig::db::get_attribute -object $codesection -attribute "checkcode"] $replace_map false]
 
             if {$code_out1 eq $code_out2} {
                 set code_out $code_out1
@@ -583,6 +581,27 @@ namespace eval ig::aux {
         return $code_out
     }
 
+    ## @brief Adapt signal sizes of module when parameters are renamed locally
+    #
+    # @param module Module Object-ID.
+    proc adapt_signal_sizes {module} {
+        set replace_map [adapt_replacement_map $module]
+
+        foreach a_list [list [ig::db::get_ports -of $module -all] [ig::db::get_declarations -of $module -all]] {
+            foreach sig $a_list {
+                set size [ig::db::get_attribute -object $sig -attribute "size" -default ""]
+
+                if {$size eq ""} {continue}
+
+                set size_adapted [adapt_codesection_replace $size $replace_map false]
+
+                if {$size eq $size_adapted} {continue}
+
+                ig::db::set_attribute -object $sig -attribute "size" -value $size_adapted
+            }
+        }
+    }
+
     ## @brief Adapt signalnames in a pin connection if adapt-attribute is set.
     #
     # @param pin Pin Object-ID.
@@ -598,12 +617,12 @@ namespace eval ig::aux {
         set parent_inst [ig::db::get_attribute -object $pin -attribute "parent"]
         set parent_mod  [ig::db::get_attribute -object $parent_inst -attribute "parent"]
 
-        set signal_replace [adapt_replacement_list $parent_mod]
+        set replace_map [adapt_replacement_map $parent_mod]
 
         if {$do_adapt eq "selective"} {
-            set conn_out [adapt_codesection_replace $connection $signal_replace true]
+            set conn_out [adapt_codesection_replace $connection $replace_map true]
         } elseif {$do_adapt eq "all"} {
-            set conn_out [adapt_codesection_replace $connection $signal_replace false]
+            set conn_out [adapt_codesection_replace $connection $replace_map false]
         }
 
         return $conn_out
@@ -612,12 +631,12 @@ namespace eval ig::aux {
     ## @brief Helper for code adaption of @ref adapt_codesection.
     #
     # @param code Raw code input.
-    # @param replace_list List of 2-element litsts with signal-names and replacements.
+    # @param replace_map Dict mapping signal-names to replacements.
     # @param selective If true use selective syntax with "!" after signal names.
     # @param origin Origin of code for log message.
     #
     # @return adapted code.
-    proc adapt_codesection_replace {code replace_list {selective true} {origin {}}} {
+    proc adapt_codesection_replace {code replace_map {selective true} {origin {}}} {
         # adapt signal-names
         if {$selective} {
             set re {^(.*?)(\m[[:alnum:]_]+\M)\!(.*)$}
@@ -630,14 +649,13 @@ namespace eval ig::aux {
             if {[regexp $re $code m_whole m_pre m_var m_post]} {
                 append code_out $m_pre
                 set    code     $m_post
-                set    idx      [lsearch -exact -index 0 $replace_list $m_var]
-                if {$idx < 0} {
+                if {![dict exists $replace_map $m_var]} {
                     append code_out $m_var
                     if {$selective} {
                         ig::log -warn -id "TACAd" "selective adaption in codesection failed: signal \"$m_var\" not found ($origin)"
                     }
                 } else {
-                    append code_out [lindex $replace_list $idx 1]
+                    append code_out [dict get $replace_map $m_var]
                 }
             } else {
                 append code_out $code

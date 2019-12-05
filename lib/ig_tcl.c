@@ -1190,11 +1190,11 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     }
     log_debug ("TCCon", "... finished connection");
 
-    ig_obj_attr_set (IG_OBJECT (gen_net), "size", size, true);
+    ig_obj_attr_set (IG_OBJECT (gen_net), "size", size, false);
     for (GList *li = gen_net->objects->head; li != NULL; li = li->next) {
         struct ig_object *i_obj = PTR_TO_IG_OBJECT (li->data);
 
-        ig_obj_attr_set (i_obj, "size", size, true);
+        ig_obj_attr_set (i_obj, "size", size, false);
     }
 
     Tcl_Obj *retval = Tcl_NewStringObj (IG_OBJECT (gen_net)->id, -1);
@@ -1406,10 +1406,10 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
 
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
     Tcl_ListObjAppendElement (interp, retval, Tcl_NewStringObj (IG_OBJECT (pin)->id, -1));
-    ig_obj_attr_set (IG_OBJECT (pin), "size", size, true);
+    ig_obj_attr_set (IG_OBJECT (pin), "size", size, false);
     if (port != NULL) {
         Tcl_ListObjAppendElement (interp, retval, Tcl_NewStringObj (IG_OBJECT (port)->id, -1));
-        ig_obj_attr_set (IG_OBJECT (port), "size", size, true);
+        ig_obj_attr_set (IG_OBJECT (port), "size", size, false);
     }
     Tcl_SetObjResult (interp, retval);
 
