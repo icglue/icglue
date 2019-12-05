@@ -199,6 +199,15 @@
         upvar reg(type) type
         return [regexp -nocase {W} $type]
     }
+    proc bits_to_suffix {bitrange} {
+        set bitrange [string trim $bitrange]
+
+        if {$bitrange eq ""} {return ""}
+
+        set bitrange [string map {: _ [ {} ] {} { } {}} $bitrange]
+
+        return "_${bitrange}"
+    }
     ###########################################
     ## <regfiles> ##
     foreach_array rf $mod_data(regfiles) {
@@ -357,8 +366,8 @@
     assign ready_sync_delay_done = ready_sync_delay | ready_sync_delay_r;<%="\n"%><% }
 
     foreach_preamble {s r w sb} $sig_syncs {
-    %><[rf_comment_block "common sync's"]><% } { -%>
-    common_sync i_common_sync_<%=$s%><[string trim $w]> (
+    %><%="\n"%><[rf_comment_block "common sync's"]><% } { -%>
+    common_sync i_common_sync_<%=$s%><[bits_to_suffix $sb]><[string trim $w]> (
         .clk_i     (<[clk]>),
         .reset_n_i (<[reset]>),
         .data_i    (<[adapt_signalname $s $obj_id]><[string trim $sb]>),
