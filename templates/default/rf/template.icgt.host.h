@@ -116,6 +116,7 @@ class <[rf_class]> : public regfile_t {
         } <%=$entry(name)%>;
         _entry_t _<%=$entry(name)%>_word;<% } -%>
 
+    <[pop_keep_block_content keep_block_data "keep" "custom-class-decl" ".hpp"]>
 };
 
 <[pop_keep_block_content keep_block_data "keep" "custom-decl" ".h"]>
