@@ -383,8 +383,8 @@
     if {$handshake_list ne ""} {
     %><%=[rf_comment_block "handshake"]%><%="\n"%><%-
     if {$fpga_impl} {-%>
-    initial begin<% foreach handshake $handshake_list { -%>
-        reg_<%=$handshake%> = 1'b0;<% } %>
+    initial begin<%="\n"%><% foreach handshake $handshake_list { -%>
+        reg_<%=$handshake%> = 1'b0;<%="\n"%><% } %>
     end<%="\n"%><% } -%>
     always @(posedge <[clk]><% if {!$fpga_impl} { %> or negedge <[reset]><% } %>) begin
         if (<[reset]> == 1'b0) begin<% foreach handshake $handshake_list { %>
