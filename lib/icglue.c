@@ -45,7 +45,9 @@ int Icglue_Init (Tcl_Interp *interp)
 
     ig_add_tcl_commands (interp);
 
-    Tcl_PkgProvide (interp, "ICGlue", "4.0");
+    // must match regex for version update (./scripts/update_version.sh)
+    #define PACKAGE_VERSION_ICGlue 4.0
+    Tcl_PkgProvide (interp, "ICGlue", STRINGIFY(PACKAGE_VERSION_ICGlue));
 
     return TCL_OK;
 }
