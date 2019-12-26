@@ -11,4 +11,5 @@ Visit the ICGlue home page for more details: \fBhttps://icglue.org\fR
 \fBicsng(1)\fR  - Structural netlist generator provided by ICPRO
 .PP
 HTML documentation of the Tcl-library at \fB%DOCDIRTCL%/html/index.html\fR
+
 \" vim: ft=nroff

@@ -1,5 +1,17 @@
+[name]
+icglue - A tool for the generation of hardware description and related files through a \fBTcl(n)\fR interface
+
 [description]
-Tcl-Library for scripted HDL generation. It generates HDL code from a user-defined Tcl script.
+\fBICGlue\fR is designed as a metaprogramming interface for hardware description languages (\fIHDL\fR) such as verilog.
+It allows the creation of hierarchies, the interconnection of modules and the generation of code (e.g. registerfiles).
+Furthermore additional auxiliary files like documentation or software control functions can be generated.
+
+
+ICGlue reads in a \fIuser-defined construction Tcl-script\fR (for a quickstart jump to the \fBEXAMPLES\fR section) and generates the output, which is determined by the \fItemplate-set\fR.
+
+A \fItemplate-set\fR consists of an \fIinit.tcl\fR scripts, which handles the template selection based on the specified language (verilog, systemc, ...), type (module, regfile, ...), mode (rtl, beh, tb) and other attributes.
+
+The templates are in the specified in the icglue-template-language (\fIicgt\fR) or in the woof-template format (\fIwtf\fR).
 
 [enviroment]
 Environment variables extend options passed to \fBicglue\fR.
@@ -159,7 +171,9 @@ Reports bugs to \fBbugs@icglue.org\fR.
 .br
 Visit the ICGlue home page for more details: \fBhttps://icglue.org\fR
 [see also]
+\fBTcl(n)\fR   - Tool Command Language
 \fBig(10i)\fR - Scripting commands manpage
 .PP
 View the HTML documentation of the Tcl-library at \fB%DOCDIRTCL%/html/index.html\fR
+
 \" vim: ft=nroff
