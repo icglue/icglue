@@ -122,8 +122,7 @@ $(MANDIR):
 	-mkdir -p $(MANDIR)
 
 $(MANDIR)/%.$(MANSEC): ./h2m/%.h2m ./bin/% $(PKGIDX) | $(MANDIR)
-	help2man -N -i ./h2m/$*.h2m ./bin/$* > $@
-	sed -i -e 's/ (INSTALLED-VERSION)//' $@
+	help2man -N -i ./h2m/$*.h2m ./bin/$* | sed -r -e 's/($*\s+[0-9.]+)[a0-9]*\s+\([^)]+\)/\1/I' > $@
 
 man: $(addprefix $(MANDIR)/,$(addsuffix .$(MANSEC),$(H2MBASENAMES)))
 

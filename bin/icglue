@@ -66,24 +66,25 @@ Otherwise the FILE is interpreted as TCL-Script which supports the icglue extens
 proc additionalversion {} {
 
     variable binpath
-    set gitpath [file dirname $binpath]
     set results {}
     # additionalversion_str default is replaced by make install
-    if {[set additionalversion_str "INSTALLED-VERSION"] ne "INSTALLED-VERSION"} {
-        return $additionalversion_str
+    set additionalversion_str "INSTALLED-VERSION"
+    if {$additionalversion_str ne "INSTALLED-VERSION"} {
+        # do not add an additional version string if this is a tagged release
+        if {"ICGlue 5.0a1" eq "ICGlue [string range $additionalversion_str 1 end]"} {
+            return {}
+        }
+        return " ($additionalversion_str)"
     }
 
-    if {![catch {set results [exec -ignorestderr igit -C $gitpath ls-files [file tail $binpath]]}]} {
+    # try to get git hash
+    set gitpath [file dirname $binpath]
+    if {![catch {set results [exec -ignorestderr git -C $gitpath ls-files [file tail $binpath] 2> /dev/null]}]} {
         if {[string trim $results] ne ""} {
-            set gitrev [exec git -C $gitpath rev-parse --short HEAD]
-            set gitdirty ""
-            if {[exec git -C $gitpath diff --shortstat] ne ""} {
-                set gitdirty "-dirty"
-            }
-            set additionalversion_str "git-rev ${gitrev}${gitdirty} \[live\]"
+            return " ([exec git -C $gitpath describe --tags --always --dirty])"
         }
     }
-    return " ($additionalversion_str)"
+    return {}
 }
 
 proc get_version_str {} {

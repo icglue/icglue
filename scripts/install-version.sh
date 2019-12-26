@@ -15,16 +15,18 @@ install -m755 -D -T $src $dest
 version=""
 if [[ $(which git 2> /dev/null) ]] ; then
     if [[ -n "$(git ls-files $src 2> /dev/null)" ]]; then
-        gitrev=$(git rev-parse --short HEAD)
-        gitdirty=""
-        [[ -n "$(git diff --shortstat)" ]] && gitdirty="-dirty"
-        version=" (git-rev ${gitrev}${gitdirty})"
+        version="$(git describe --tags --always --dirty)"
     fi
 fi
 
 replace="$(printf 's/(set additionalversion_str) "INSTALLED-VERSION"/\\1 "%s"/' "${version}")"
-sed -i -re "$replace" $dest \
-    && echo "$(basename ${dest}) install as version ICGlue 5.0a1$version"
+if sed -i -re "$replace" $dest ; then
+    [[ -n "$version" ]] && version=" ($version)"
+    echo "$(basename ${dest}) install as version ICGlue 5.0a1$version"
+else
+    echo "install version failed!"
+    exit 1
+fi
 
 exit 0
 
