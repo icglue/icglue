@@ -274,10 +274,19 @@
                         "first occurence: [dict get $handshake_sig_in_from_out $handshake_sig_out] / redeclared $handshake_sig_in (ignored)"
                 }
             }
+            set write_only_reg true
+            foreach_array_with reg $entry(regs) {[read_reg]} {
+                set write_only_reg false
+            }
+
+            set additional_handshake_cond_req {}
+            if {$write_only_reg} {
+                set additional_handshake_cond_req " && [rf_w_sel]"
+            }
             if {$entry(protected)} {
-                dict lappend handshake_cond_req $handshake_sig_out "(([rf_addr] == [string trim [param]]) && [rf_prot_ok])"
+                dict lappend handshake_cond_req $handshake_sig_out "([rf_addr] == [string trim [param]])$additional_handshake_cond_req && [rf_prot_ok]"
             } else {
-                dict lappend handshake_cond_req $handshake_sig_out "([rf_addr] == [string trim [param]])"
+                dict lappend handshake_cond_req $handshake_sig_out "([rf_addr] == [string trim [param]])$additional_handshake_cond_req"
             }
         }
 
@@ -540,10 +549,18 @@
             }
             if {[foreach_array_contains reg $entry(regs) {[sctrigger_reg] && ![custom_reg]}]} {
                 set trig_l [list]
-                foreach_array_with reg $entry(regs) {[write_reg] && [sctrigger_reg] && ![custom_reg]} {
-                    lappend trig_l [string trim [trig_name]]
+                set trig_strb_l [list]
+                for {set byte 0} {$byte < $rf_bw} {incr byte} {
+                    set trig_l_in_cur_byte false
+                    foreach_array_with reg $entry(regs) {[write_reg] && [sctrigger_reg] && ![custom_reg] && [reg_entrybits_in_bytesel $byte]} {
+                        set trig_l_in_cur_byte true
+                        lappend trig_l [string trim [trig_name]]
+                    }
+                    if {$trig_l_in_cur_byte} {
+                        lappend trig_strb_l "[rf_bytesel]\[$byte\]"
+                    }
                 }%>
-        if (<[rf_addr]> == <[string trim [param]]>) begin
+        if ((<[rf_addr]> == <[string trim [param]]>) && <[rf_write]> && (<[join $trig_strb_l " | "]>)) begin
             <[rf_ready_sig]> = <[join $trig_l " | "]>;
         end<% }
         }
@@ -555,7 +572,7 @@
         end<% } }
 
         foreach handshake $handshake_list { %>
-        if (<[join [dict get $handshake_cond_req $handshake] " || "]>) begin
+        if ((<[join [dict get $handshake_cond_req $handshake] ") || ("]>)) begin
             <[rf_ready_sig]> = <[dict get $handshake_sig_in_from_out_sync $handshake]> & reg_<%=$handshake%>;
         end<% } %>
         <[rf_err_sig]> = 1'b0;
