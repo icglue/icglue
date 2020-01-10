@@ -2,7 +2,7 @@
 
 #
 #   ICGlue is a Tcl-Library for scripted HDL generation
-#   Copyright (C) 2017-2019  Andreas Dixius, Felix Neumärker
+#   Copyright (C) 2017-2020  Andreas Dixius, Felix Neumärker
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ proc additionalversion {} {
 proc get_version_str {} {
     set version_str [format  \
 {ICGlue 4.0%s
-Copyright (C) 2017-2019 Andreas Dixius, Felix Neumaerker
+Copyright (C) 2017-2020 Andreas Dixius, Felix Neumaerker
 
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 This is free software: you are free to change and redistribute it.
