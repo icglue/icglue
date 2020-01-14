@@ -24,4 +24,4 @@
 endmodule
 <%= [expr {$cell_define ? "`endcelldefine\n" : "" }] -%>
 
-<[pop_keep_block_content keep_block_data "keep" "foot" ".v" ""]>
+<[pop_keep_block_content keep_block_data "keep" "foot"]>

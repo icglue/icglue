@@ -66,7 +66,7 @@ foreach_array entry $entry_list {
 
 #include <stdint.h>
 
-<[pop_keep_block_content keep_block_data "keep" "custom-header" ".h"]>
+<[pop_keep_block_content keep_block_data "keep" "custom-header"]>
 
 <% foreach_array entry $entry_list {
     set unused_reg "/* unused */"
@@ -104,7 +104,7 @@ typedef struct {<% foreach_array entry $entry_list {
     %>
 } __attribute__((__packed__,__aligned__(<%=$rf_bw%>))) <[rf_class]>;
 
-<[pop_keep_block_content keep_block_data "keep" "custom-decl" ".h"]>
+<[pop_keep_block_content keep_block_data "keep" "custom-decl"]>
 
 <%-
     ###########################################

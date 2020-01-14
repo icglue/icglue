@@ -30,6 +30,8 @@ namespace eval ig::templates {
 
     ## @brief Callback procs of currently loaded template.
     namespace eval current {
+
+
         variable template_dir ""
 
         variable _result {}
@@ -39,12 +41,22 @@ namespace eval ig::templates {
         # @param type template language/type
         # @param src template source (template file / copy/link source)
         # @param dst template dest file
-        proc add {tag type src dst} {
+        # @param lexcom lexer token for comment as list - e.g {"/* " " */"}
+        proc add {tag type src dst {lexcom fileext}} {
             variable _result
 
-            ig::log -debug -id TRAdd "template action addded: tag \"${tag}\", type \"${type}\", \"${src}\" -> \"${dst}\""
+            if {$lexcom eq "fileext"} {
+                set lexcom [ig::templates::comment_begin_end [file extension $dst]]
+            }
+            if {[llength $lexcom] eq 1 && [string index $lexcom 0] eq "."} {
+                set lexcom [ig::templates::comment_begin_end $lexcom]
+            }
+            if {[llength $lexcom] ne 2 && $lexcom ne {}} {
+                ig::log -error -id TRAdd "Expected a list with start/end token for comment lex expression, but got \"$lexcom\""
+            }
+            ig::log -debug -id TRAdd "template action addded: tag \"${tag}\", type \"${type}\", \"${src}\" -> \"${dst}\", lextokens: \"$lexcom\""
 
-            lappend _result $tag $type $src $dst
+            lappend _result $tag $type $src $dst $lexcom
         }
 
         ## @brief Actual callback to get the template data.
@@ -909,7 +921,7 @@ namespace eval ig::templates {
 
     ## @brief Parse keep blocks of an existing output (file).
     # @param txt Existing generated output as single String.
-    # @param filesuffix Suffix of filetype of file blocks are parsed in
+    # @param lexcom lexer token for comment as list - e.g {"/* " " */"}
     # @return List of parsed blocks as sublists of form {\<maintype\> \<subtype\> \<content\>}.
     #
     # The blocks parsed are of the form @code{.v}
@@ -919,9 +931,9 @@ namespace eval ig::templates {
     #
     # Currently only @c keep is supported as maintype.
     # Subtypes depend on the template used.
-    proc parse_keep_blocks {txt {filesuffix ".v"}} {
+    proc parse_keep_blocks {txt lexcom} {
         set result [list]
-        lassign [comment_begin_end $filesuffix] cbegin cend
+        lassign $lexcom cbegin cend
 
         # compatibility: accept comments with "pragma"
         if {[string first "${cbegin}pragma icglue keep begin " $txt] >= 0} {
@@ -953,15 +965,32 @@ namespace eval ig::templates {
         return $result
     }
 
-    ## @brief Format given content of keep block for specified filetype.
+    ## @brief Format given content of keep block for specified filetype (internal use only!).
     # @param block_entry Block main type.
     # @param block_subentry Block sub type.
     # @param content Content to format inside block.
     # @param filesuffix Suffix of filetype for generated block comments.
     # @return Formatted keep block string for given content/filetype.
     proc format_keep_block_content {block_entry block_subentry content filesuffix} {
+        upvar 2 lexcom lexcom
+
+        if {[llength $filesuffix] eq 0} {
+            lassign $lexcom cbegin cend
+        } elseif {[llength $filesuffix] eq 1} {
+            if {$filesuffix ne ""} {
+                lassign [comment_begin_end $filesuffix] fcbegin fcend
+                if {$fcbegin ne [lindex $lexcom 0] || $fcend ne [lindex $lexcom 1]} {
+                    set origin [uplevel 2 {list ${_filename_var}}]:[uplevel 2 {list ${_linenr_var}}]
+                        ig::log -warn -id "IGBlk" "Keep Block comment lexer tokens are inconsitent!! ($origin)\n-> pop_keep_block_content wants ‘$fcbegin’ and ‘$fcend’ -- comment lexer tokers are ‘[lindex $lexcom 0]’ and ‘[lindex $lexcom 1]’"
+                }
+            }
+            lassign $lexcom cbegin cend
+        } elseif {[llength $filesuffix] eq 2} {
+            lassign $filesuffix cbegin cend
+        } else {
+            ig::log -abort -error -id "IGBlk" "Expected a filesuffix or a list with start/end token for comment lex expression, but got \"$filesuffix\""
+        }
         set result {}
-        lassign [comment_begin_end $filesuffix] cbegin cend
 
         append result "${cbegin}icglue ${block_entry} begin ${block_subentry}${cend}"
         append result $content
@@ -977,9 +1006,9 @@ namespace eval ig::templates {
     # @param filesuffix Suffix of filetype for generated block comments.
     # @param default_content Default block content if nothing has been parsed
     # @return Content of specified block previously parsed or default_content.
-    proc get_keep_block_content {block_data block_entry block_subentry {filesuffix ".v"} {default_content {}}} {
+    proc get_keep_block_content {block_data block_entry block_subentry {filesuffix ""} {default_content {}}} {
+        upvar lexcom lexcom
         set idx [lsearch -index 1 [lsearch -inline -all -index 0 $block_data $block_entry] $block_subentry]
-
         if {$idx >= 0} {
             return [format_keep_block_content $block_entry $block_subentry [lindex $block_data $idx 2] $filesuffix]
         } else {
@@ -996,8 +1025,10 @@ namespace eval ig::templates {
     # @return Content of specified block previously parsed or default_content.
     #
     # The returned block will be removed from the list in block_data_var.
-    proc pop_keep_block_content {block_data_var block_entry block_subentry {filesuffix ".v"} {default_content {}}} {
-        upvar 1 $block_data_var block_data
+    proc pop_keep_block_content {block_data_var block_entry block_subentry {filesuffix ""} {default_content {}}} {
+        upvar $block_data_var block_data lexcom lexcom
+
+        # TODO: allow multi comment mode (calling parse template from here)
         set idx [lsearch -index 1 [lsearch -inline -all -index 0 $block_data $block_entry] $block_subentry]
 
         if {$idx >= 0} {
@@ -1014,7 +1045,7 @@ namespace eval ig::templates {
     # @param filesuffix Suffix of filetype for generated block comments.
     # @param nonempty Only return non-empty keep blocks.
     # @return list of all generated keep block comments.
-    proc remaining_keep_block_contents {block_data {filesuffix ".v"} {nonempty "true"}} {
+    proc remaining_keep_block_contents {block_data {filesuffix ""} {nonempty "true"}} {
         set result [list]
 
         foreach i_block $block_data {
@@ -1069,9 +1100,10 @@ namespace eval ig::templates {
     # @param template_data key/value dict of variable-name and variable value to set before execution of template code.
     # @param lognote note text to print in error log messages for reference.
     # @param dryrun If set to true, no actual files are written.
+    # @param lexcom lexer token for comment as list - e.g {"/* " " */"}
     #
     # The output is written to the file specified by the template callback @ref ig::templates::current::get_template_data_raw.
-    proc generate_template_output {outf_name template_name template_lang template_data lognote dryrun} {
+    proc generate_template_output {outf_name template_name template_lang template_data lognote dryrun lexcom} {
         if {!$dryrun} {
             file mkdir [file dirname $outf_name]
         }
@@ -1100,11 +1132,11 @@ namespace eval ig::templates {
 
         #actual template
         set block_data [list]
-        if {[file exists $outf_name]} {
+        if {[file exists $outf_name] && $lexcom ne {}} {
             set outf [open $outf_name "r"]
             set oldcontent [read $outf]
             close $outf
-            set block_data [parse_keep_blocks $oldcontent [file extension $template_name]]
+            set block_data [parse_keep_blocks $oldcontent $lexcom]
         }
 
         set template_code [get_template_script $template_name $template_lang]
@@ -1124,6 +1156,7 @@ namespace eval ig::templates {
             {    namespace import ::ig::templates::remaining_keep_block_contents} \
             {    namespace import ::ig::log} \
             "    variable keep_block_data [list $block_data]" \
+            "    variable lexcom [list $lexcom]" \
             {    variable _res_var {}} \
             {    variable _linenr_var 0} \
             {    variable _filename_var {}} \
@@ -1234,7 +1267,7 @@ namespace eval ig::templates {
 
         set tt_data [list "obj_id" $obj_id]
 
-        foreach {tag lang ttfile outfile} $tdata {
+        foreach {tag lang ttfile outfile lexcom} $tdata {
             if {([llength $typelist] > 0) && ($tag ni $typelist)} {
                 continue
             }
@@ -1245,7 +1278,7 @@ namespace eval ig::templates {
 
             set tt_note "type ${tag} / object [ig::db::get_attribute -object ${obj_id} -attribute "name"]"
 
-            generate_template_output $outfile $ttfile $lang $tt_data $tt_note $dryrun
+            generate_template_output $outfile $ttfile $lang $tt_data $tt_note $dryrun $lexcom
         }
     }
 

@@ -15,7 +15,7 @@
 
 -%>
 
-<%-= [pop_keep_block_content keep_block_data "keep" "head" ".v" "
+<%-= [pop_keep_block_content keep_block_data "keep" "head" {} "
 /*
  * Module: $mod_data(name)
  * Author:

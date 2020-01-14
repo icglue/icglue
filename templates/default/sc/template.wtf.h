@@ -23,7 +23,7 @@
 #ifndef __[string toupper ${mod_data(name)}]_H__
 #define __[string toupper ${mod_data(name)}]_H__
 
-[pop_keep_block_content keep_block_data "keep" "include" ".h" "
+[pop_keep_block_content keep_block_data "keep" "include" {} "
 #include <systemc.h>
 "]
 
@@ -36,7 +36,7 @@
     set sc_module [join $sc_module "\n"]
 %)
 
-[pop_keep_block_content keep_block_data "keep" "sc_module(${mod_data(name)})" ".h" "
+[pop_keep_block_content keep_block_data "keep" "sc_module(${mod_data(name)})" {} "
 $sc_module
 "]
 
@@ -46,7 +46,7 @@ $sc_module
 % }
 
         // additional declaration
-    [pop_keep_block_content keep_block_data "keep" "class-decl" ".h" "
+    [pop_keep_block_content keep_block_data "keep" "class-decl" {} "
     private:
         //TODO: add your custom declarations here
         //e.g.
@@ -59,7 +59,7 @@ $sc_module
     "]
 };
 
-[pop_keep_block_content keep_block_data "keep" "header-decl" ".h"]
+[pop_keep_block_content keep_block_data "keep" "header-decl"]
 
 %(
     ## orphaned keep-blocks

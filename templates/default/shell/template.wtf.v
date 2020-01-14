@@ -16,7 +16,7 @@
 
 
 %)
-[pop_keep_block_content keep_block_data "keep" "head" ".v" "
+[pop_keep_block_content keep_block_data "keep" "head" {} "
 /*
  * Module: $mod_data(name)
  * Author:
@@ -39,7 +39,7 @@
     }
 %)
 module $mod_data(name) ($portdecl)
-    [pop_keep_block_content keep_block_data "keep" "my_attributes" ".v" "
+    [pop_keep_block_content keep_block_data "keep" "my_attributes" {} "
     "]
     `ifdef XCELIUM
          (* integer foreign = "SystemC"; *) // Cadence verilog shell for xcelium
@@ -66,7 +66,7 @@ module $mod_data(name) ($portdecl)
         initial \$stimc_${mod_data(name)}_init ();
     `endif
 
-    [pop_keep_block_content keep_block_data "keep" "my_verilog_shell" ".v" "
+    [pop_keep_block_content keep_block_data "keep" "my_verilog_shell" {} "
     "]
 
 endmodule

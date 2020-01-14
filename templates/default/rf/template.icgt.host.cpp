@@ -63,7 +63,7 @@ foreach_array entry $entry_list {
 -%>
 /* ICGLUE GENERATED FILE - manual changes out of prepared *icglue keep begin/end* blocks will be overwritten */
 
-<[pop_keep_block_content keep_block_data "keep" "custom-header" ".cpp"]>
+<[pop_keep_block_content keep_block_data "keep" "custom-header"]>
 
 #include <<%=${header_name}%>.h>
 
@@ -71,7 +71,7 @@ foreach_array entry $entry_list {
     <[format "%-${maxlen_entryname}s"  regfile_t]> (dev, base_addr),<% foreach_array_join entry $entry_list { %>
     <[entry_name]> (*this, <%=$entry(address)%>, <[unused_mask]>), _<[entry_name _word]> (*this, <%=$entry(address)%>, <[unused_mask]>)<% } {%>,<%}%>
 {
-    <[pop_keep_block_content keep_block_data "keep" "custom-constr" ".cpp"]>
+    <[pop_keep_block_content keep_block_data "keep" "custom-constr"]>
 }
 
 <% ## Entry Class Constructor ##
@@ -119,7 +119,7 @@ rf_data_t *<[rf_class]>::<[entry_class]>::operator&()
 }
 
 <% } -%>
-<[pop_keep_block_content keep_block_data "keep" "custom-decl" ".cpp"]>
+<[pop_keep_block_content keep_block_data "keep" "custom-decl"]>
 
 <%-
     ###########################################

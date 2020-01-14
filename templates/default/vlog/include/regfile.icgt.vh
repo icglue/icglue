@@ -455,9 +455,9 @@
                     lappend fc_reset_list [format "%12s// TODO: [reg_name] = $reg(reset);" {}]
                 }
             %>
-        <[pop_keep_block_content keep_block_data "keep" "fullcustom_reset_${entry(name)}_fpga" ".v" "\n[join $fc_reset_list "\n"]
+        <[pop_keep_block_content keep_block_data "keep" "fullcustom_reset_${entry(name)}_fpga" {} "\n[join $fc_reset_list "\n"]
             "]><% } elseif {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} { %>
-        <[pop_keep_block_content keep_block_data "keep" "custom_reset_${entry(name)}_fpga" ".v" ""]><%
+        <[pop_keep_block_content keep_block_data "keep" "custom_reset_${entry(name)}_fpga" {} ""]><%
             } %>
     end<%="\n"%><% } -%>
     always @(posedge <[clk]><% if {!$fpga_impl} { %> or negedge <[reset]><% } %>) begin
@@ -471,9 +471,9 @@
                     lappend fc_reset_list [format "%12s// TODO: [reg_name] <= $reg(reset);" {}]
                 }
             %>
-            <[pop_keep_block_content keep_block_data "keep" "fullcustom_reset_${entry(name)}" ".v" "\n[join $fc_reset_list "\n"]
+            <[pop_keep_block_content keep_block_data "keep" "fullcustom_reset_${entry(name)}" {} "\n[join $fc_reset_list "\n"]
             "]><% } elseif {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} { %>
-            <[pop_keep_block_content keep_block_data "keep" "custom_reset_${entry(name)}" ".v" ""]><%
+            <[pop_keep_block_content keep_block_data "keep" "custom_reset_${entry(name)}" {} ""]><%
             } %>
         end else begin<%
             if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
@@ -497,7 +497,7 @@
                         end<% } else {%>
                         <[reg_name]><[reg_range_bytesel $byte]> <= <[rf_w_data]>[<[reg_entrybits_bytesel $byte]>];<% }
                         } else { %>
-                        <[pop_keep_block_content keep_block_data "keep" "custom_assign_$entry(name)_$reg(name)" ".v" "
+                        <[pop_keep_block_content keep_block_data "keep" "custom_assign_$entry(name)_$reg(name)" {} "
                         // TODO: [reg_name][reg_range_bytesel $byte] <= [rf_w_data]\[[reg_entrybits_bytesel $byte]\];
                         "]><% } } { %>
                     end<% } } %>
@@ -529,7 +529,7 @@
         if {![custom_reg]} {%>
     assign <[reg_val]>[<[reg_entrybits]>] = <%=$_reg_val_output%>;<%
         } else { %>
-    <[pop_keep_block_content keep_block_data "keep" "custom_read_output_$entry(name)_$reg(name)" ".v" "
+    <[pop_keep_block_content keep_block_data "keep" "custom_read_output_$entry(name)_$reg(name)" {} "
     // TODO: assign [reg_val]\[[reg_entrybits]\] = ${_reg_val_output};
     "]><% } } %><%="\n"%><% } %><%="\n"
     %><[rf_comment_block "apb ready/error generate"]>
@@ -540,7 +540,7 @@
         }
         foreach_array entry $entry_list {
             if {[foreach_array_contains reg $entry(regs) {[custom_reg]}]} {%>
-        <[pop_keep_block_content keep_block_data "keep" "custom_ready_$entry(name)" ".v" "
+        <[pop_keep_block_content keep_block_data "keep" "custom_ready_$entry(name)" {} "
         // TODO: generate ready for custom entry $entry(name)
         //if ([rf_addr] == [string trim [param]]) begin
         //    [rf_ready_sig] = CONDITION;

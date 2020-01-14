@@ -86,7 +86,7 @@ foreach_array entry $entry_list {
 
 #include <regfile_contrib.h>
 
-<[pop_keep_block_content keep_block_data "keep" "custom-header" ".h"]>
+<[pop_keep_block_content keep_block_data "keep" "custom-header"]>
 
 <% foreach_array entry $entry_list {
     set unused_reg "/* unused */"
@@ -116,10 +116,10 @@ class <[rf_class]> : public regfile_t {
         } <%=$entry(name)%>;
         _entry_t _<%=$entry(name)%>_word;<% } -%>
 
-    <[pop_keep_block_content keep_block_data "keep" "custom-class-decl" ".hpp"]>
+    <[pop_keep_block_content keep_block_data "keep" "custom-class-decl"]>
 };
 
-<[pop_keep_block_content keep_block_data "keep" "custom-decl" ".h"]>
+<[pop_keep_block_content keep_block_data "keep" "custom-decl"]>
 
 <%-
     ###########################################

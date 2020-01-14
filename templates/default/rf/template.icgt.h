@@ -22,7 +22,7 @@ proc write_reg {} {
 extern "C" {
 #endif
 
-<[pop_keep_block_content keep_block_data "keep" "custom" ".h"]>
+<[pop_keep_block_content keep_block_data "keep" "custom"]>
 
 <%-
 # iterate over entries sorted by address
