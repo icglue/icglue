@@ -6,7 +6,7 @@
 %)
 /* ICGLUE GENERATED FILE - manual changes out of prepared *icglue keep begin/end* blocks will be overwritten */
 
-[pop_keep_block_content keep_block_data "keep" "include" ".cpp" "
+[pop_keep_block_content keep_block_data "keep" "include" {} "
 #include <${mod_data(name)}.h>
 "]
 
@@ -28,11 +28,11 @@
             }
         }
     }
-    append initializers "\n[pop_keep_block_content keep_block_data "keep" "$init_keep_block_name" ".cpp"]"
+    append initializers "\n[pop_keep_block_content keep_block_data "keep" "$init_keep_block_name"]"
 %)
 ${mod_data(name)}::${mod_data(name)} (::sc_core::sc_module_name name) :
     $initializers
-[pop_keep_block_content keep_block_data "keep" "sc_module(${mod_data(name)})_construct" ".cpp" "
+[pop_keep_block_content keep_block_data "keep" "sc_module(${mod_data(name)})_construct" {} "
 {
     // TODO: add your constructor code here
     // NOTE: if the sc_module(${mod_data(name)})_initialize is *not* empty a comma to the last element will be added
@@ -49,7 +49,7 @@ ${mod_data(name)}::${mod_data(name)} (::sc_core::sc_module_name name) :
 }
 "]
 
-[pop_keep_block_content keep_block_data "keep" "definition" ".cpp" "
+[pop_keep_block_content keep_block_data "keep" "definition" {} "
 // TODO: add your custom definitions here
 // e.g.
 //void ${mod_data(name)}::testcase_control ()

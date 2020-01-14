@@ -19,14 +19,14 @@ proc write_reg {} {
 -%>
 /* ICGLUE GENERATED FILE - manual changes out of prepared *icglue keep begin/end* blocks will be overwritten */
 
-<[pop_keep_block_content keep_block_data "keep" "include" ".c" "
+<[pop_keep_block_content keep_block_data "keep" "include" {} "
 #ifndef RF_DIRECT_INC
 #include \"rf_base.h\"
 #include \"rf_${rf_name}.h\"
 #endif
 "]>
 
-<[pop_keep_block_content keep_block_data "keep" "custom" ".c"]>
+<[pop_keep_block_content keep_block_data "keep" "custom"]>
 
 <%-
 # iterate over entries sorted by address
