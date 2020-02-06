@@ -17,10 +17,13 @@
   - specify regfile portnames (clk, ...)
 - codesections: make adapt-selectively the default?
 - checks: use "origin" information of constructed parts for logging of warnings
+- support systemverilog structs
 
 ## templates
 - testbench -> regs
+- update systemverilog templates for logic type
 - testbench to outside dummy module (see nowriteout function ?)
+- rewrite regfile template as systemverilog woof with enums for addresse?
 
 ## bin
 - allow multiple construction scripts?
