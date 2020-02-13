@@ -256,6 +256,18 @@ proc main {} {
     set c_scriptargs    {}
     set c_outtypelist   {}
 
+    # environment
+    # ... template path ($ICGLUE_TEMPLATE_PATH)
+    if {[info exists ::env(ICGLUE_TEMPLATE_PATH)]} {
+        foreach i_dir [split $::env(ICGLUE_TEMPLATE_PATH) ":"] {
+            lappend c_template_dirs $i_dir
+        }
+    }
+    # ... template to use ($ICGLUE_TEMPLATE)
+    if {[info exists ::env(ICGLUE_TEMPLATE)]} {
+        set c_template $::env(ICGLUE_TEMPLATE)
+    }
+
     # arguments
     set filename [ig::aux::_parse_opts {} {} [list                   \
         {  {^(-h|--help)$}         "const=true" help            {} } \
@@ -326,18 +338,6 @@ proc main {} {
         }
     }
 
-    # environment
-    # ... template path ($ICGLUE_TEMPLATE_PATH)
-    if {[info exists ::env(ICGLUE_TEMPLATE_PATH)]} {
-        foreach i_dir [split $::env(ICGLUE_TEMPLATE_PATH) ":"] {
-            lappend c_template_dirs $i_dir
-        }
-    }
-    # ... template to use ($ICGLUE_TEMPLATE)
-    if {[info exists ::env(ICGLUE_TEMPLATE)]} {
-        set c_template $::env(ICGLUE_TEMPLATE)
-    }
-
     # templates provided with package
     lappend c_template_dirs [list "[file dirname [file normalize $binpath]]/../share/icglue/templates"]
 
@@ -374,6 +374,7 @@ proc main {} {
         }
     }
 
+    ig::log -info -id Tmpl "Using template set '$c_template'..."
     if {[catch {ig::templates::load_template $c_template}]} {
         ig::log -error "Failed to load template \"${c_template}\""
         exit 1
