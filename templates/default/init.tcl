@@ -28,18 +28,20 @@ proc template_data {userdata tdir} {
             csv  wtf  {}
             html icgt {"<!-- " " -->"}
             tex  icgt {"%"     "\n"}
+            rst  wtf  {}
         } {
             add "rf-${itag}" $itype "${tdir}/rf/template.${itype}.${itag}" "doc/${itag}/${name}.${itag}"
         }
 
         add "rf-c.txt" wtf "${tdir}/rf/template.wtf.c.txt" "software/doc/regfile_access/${name}.txt" {}
 
-        foreach {itag itype iinf iext lexcom} {
-            soc  icgt {}   h   {"/* " " */"}
-            host icgt {}   h   {"/* " " */"}
-            host icgt {}   cpp {"/* " " */"}
-            tcl  wtf  .tcl h   {"/* " " */"}
-            tcl  wtf  .tcl cpp {"/* " " */"}
+        foreach {itag   itype iinf iext lexcom} {
+                 soc    icgt  {}   h   {"/* " " */"}
+                 host   icgt  {}   h   {"/* " " */"}
+                 host   icgt  {}   cpp {"/* " " */"}
+                 tcl    wtf   .tcl h   {"/* " " */"}
+                 tcl    wtf   .tcl cpp {"/* " " */"}
+                 python wtf   {}   py  {"#"    "\n"}
         } {
             add "rf-${itag}.${iext}" $itype "${tdir}/rf/template.${itype}.${itag}.${iext}" "software/${itag}/regfile_access/rf_${name}${iinf}.${iext}" $lexcom
         }
