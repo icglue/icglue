@@ -391,6 +391,7 @@ namespace eval ig::templates {
             lappend result "name"   [ig::db::get_attribute -object $module_id -attribute "name"]
             lappend result "object" $module_id
 
+            set lang [ig::db::get_attribute -object $module_id -attribute "language"]
             # ports
             set port_data {}
             foreach i_port [ig::db::get_ports -of $module_id] {
@@ -435,13 +436,23 @@ namespace eval ig::templates {
                 }
                 set signed [ig::db::get_attribute -object $i_decl -attribute "signed" -default {}]
                 set vsigned [expr {$signed ? "signed" : {}}]
+
+                set name [ig::db::get_attribute -object $i_decl -attribute "name"]
+
+                # TODO: workaround - keep uppercase names as wire --> might be analog or inout
+                if {([string toupper $name] ne $name) && ($lang eq "systemverilog")} {
+                    set vlog_type "logic"
+                } else {
+                    set vlog_type  [ig::vlog::declaration_type $i_decl]
+                }
+
                 lappend decl_data [list \
-                    "name"           [ig::db::get_attribute -object $i_decl -attribute "name"] \
+                    "name"           $name \
                     "object"         $i_decl \
                     "size"           [ig::db::get_attribute -object $i_decl -attribute "size"] \
                     "vlog.bitrange"  [ig::vlog::obj_bitrange $i_decl] \
                     "defaulttype"    [ig::db::get_attribute -object $i_decl -attribute "default_type"] \
-                    "vlog.type"      "[join [list [ig::vlog::declaration_type $i_decl] $vsigned]]" \
+                    "vlog.type"      "[join [list $vlog_type $vsigned]]" \
                     "dimension"      $dimension_bitrange \
                     "signed"         $signed \
                 ]
