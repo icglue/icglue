@@ -23,13 +23,16 @@
  */
 "] -%>
 
+`timescale 1ns/1ps
 module <%=$mod_data(name)%><%
+    if {[ig::db::get_attribute -object $obj_id -attribute "mode" -default "rtl"] ne "tb"} {
     ###########################################
     ## <parameters>
     foreach_array_preamble_epilog_join param $mod_data(parameters) { -%><%=" #(\n"%><% } { -%>
     <[format "%-${param_data_maxlen_type}s %-${param_data_maxlen_name}s = %s" "$param(vlog.type)" "$param(name)" "$param(value)"]><% } { %><%=",\n"%><% } { %><%="\n)"%><% } %><%
     ## </parameters>
     ###########################################
+    }
 -%>
  (
 <%-
@@ -41,6 +44,13 @@ module <%=$mod_data(name)%><%
     ###########################################
 %>);
 
+<%
+    if {[ig::db::get_attribute -object $obj_id -attribute "mode" -default "rtl"] eq "tb"} {
+        foreach_array param $mod_data(parameters) { -%>
+    <[format "%-${param_data_maxlen_type}s %-${param_data_maxlen_name}s = %s;" "localparam" "$param(name)" "$param(value)"]>
+<%      }
+    }
+%>
     <[pop_keep_block_content keep_block_data "keep" "localparams"]>
 <%
     ###########################################
