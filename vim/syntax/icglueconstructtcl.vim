@@ -62,6 +62,8 @@ syn match  igSigwidth "\v-w(idth)?>(\=)?\s*\S+"  contained
 syn match  igSFlags "\v(-v(alue)?>(\=)?|\=)"     contained
 syn match  igSFlags "\v-b(idir(ectional)?)?"     contained
 syn match  igSFlags "\v-p(in)?"                  contained
+syn match  igSFlags "\v-d(imension)?>(\=)?"      contained
+syn match  igSFlags "\v-s(ign(ed))?"             contained
 syn region igSlistblock start="\s{"ms=e end="}"  contained contains=tclVarRef,igPort,tclNumber,igSlistblock
 syn region igSignal start=/^\s*S\>/ms=e end=/$/            contains=igSigcmd,igSigwidth,igCon,igSFlags,igPort,igSlistblock,@igtclExtensions
 
