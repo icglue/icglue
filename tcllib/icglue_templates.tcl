@@ -398,14 +398,17 @@ namespace eval ig::templates {
                 foreach dimension [ig::db::get_attribute -object $i_port -attribute "dimension" -default {}] {
                     append dimension_bitrange [ig::vlog::bitrange $dimension]
                 }
+                set signed [ig::db::get_attribute -object $i_port -attribute "signed" -default {}]
+                set vsigned [expr {$signed ? "signed" : {}}]
                 lappend port_data [list \
                     "name"           [ig::db::get_attribute -object $i_port -attribute "name"] \
                     "object"         $i_port \
                     "size"           [ig::db::get_attribute -object $i_port -attribute "size"] \
                     "vlog.bitrange"  [ig::vlog::obj_bitrange $i_port] \
                     "direction"      [ig::db::get_attribute -object $i_port -attribute "direction"] \
-                    "vlog.direction" [ig::vlog::port_dir $i_port] \
+                    "vlog.direction" [join [list [ig::vlog::port_dir $i_port] $vsigned]] \
                     "dimension"      $dimension_bitrange \
+                    "signed"         $signed \
                 ]
             }
             lappend result "ports" $port_data
@@ -430,14 +433,17 @@ namespace eval ig::templates {
                 foreach dimension [ig::db::get_attribute -object $i_decl -attribute "dimension" -default {}] {
                     append dimension_bitrange [ig::vlog::bitrange $dimension]
                 }
+                set signed [ig::db::get_attribute -object $i_decl -attribute "signed" -default {}]
+                set vsigned [expr {$signed ? "signed" : {}}]
                 lappend decl_data [list \
                     "name"           [ig::db::get_attribute -object $i_decl -attribute "name"] \
                     "object"         $i_decl \
                     "size"           [ig::db::get_attribute -object $i_decl -attribute "size"] \
                     "vlog.bitrange"  [ig::vlog::obj_bitrange $i_decl] \
                     "defaulttype"    [ig::db::get_attribute -object $i_decl -attribute "default_type"] \
-                    "vlog.type"      [ig::vlog::declaration_type $i_decl] \
+                    "vlog.type"      "[join [list [ig::vlog::declaration_type $i_decl] $vsigned]]" \
                     "dimension"      $dimension_bitrange \
+                    "signed"         $signed \
                 ]
             }
             lappend result "declarations" $decl_data
