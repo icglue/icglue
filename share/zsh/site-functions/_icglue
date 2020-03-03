@@ -1,7 +1,76 @@
 #compdef icglue
 
 (( $+functions[_icglue_comp] )) || _icglue_comp() {
-    _gnu_generic
+    _arguments \
+        (- :){-h,--help}'[Show help]' \
+        (- :){--version}'[Show version]' \
+        {-g,--gui}'[Show GUI]' \
+        {-t,--template}'[Set FILE to use as template]:file:_files' \
+        --template-dir'[Add DIR to template path]:dir:_path_files -/' \
+        {-o,--outtypes}'[Comma-separated list of output types to generate (or empty for everything).]:icgtypes:_icglue_types' \
+        {-l,--logger}'[Enable output log of TAG (format: LEVEL,IDENTIFIER)]:icglue tag:_icglue_tags' \
+        {-a,--args}'[Set K to V before running icglue construction script]:icglue args:' \
+        {-n,--dryrun}'[Do not modify/writeout results, just run script and checks]' \
+        {-q,--quiet}'[Show errors only]' \
+        {-v,--verbose}'[Be verbose]' \
+        {-d,--debug}'[Show debug output]' \
+        --nocopyright'[Do not print the ICGlue copyright, version and logo upon start to stderr]' \
+        --nocolor'[Do not use colorcodes in logger]' \
+        '1:icglue files:_icglue_files'
+}
+
+(( $+functions[_icglue_files] )) || _icglue_files() {
+    setopt local_options nullglob
+
+    _files -g '*.icglue'
+
+    if (( ${+ICPRO_DIR} )) ; then
+        local -a icglue_files=($(echo $ICPRO_DIR/units/*/source/gen/*.icglue))
+
+        local expl
+        _description icgfiles expl "project icglue files"
+        for f in ${icglue_files[@]}; do
+            local unitdir=${f#$ICPRO_DIR}
+            compadd "${expl[@]}" -Q -p "\$ICPRO_DIR${unitdir:h}/" ${f:t}
+        done
+    fi
+}
+
+(( $+functions[_icglue_types] )) || _icglue_types() {
+    local types
+    if [[ -z $icglue_types ]] ; then
+        types=(vlog-v svlog-sv rf-{csv,c.txt,txt,hpp,cpp,tex,html,soc.h,host.h,host.cpp} sc-h sc-cpp shell-v)
+    else
+        types=(${icglue_types[@]})
+    fi
+
+    _sequence _describe "icglue types" types
+}
+
+(( $+functions[_icglue_tags] )) || _icglue_tags() {
+    # adapted from ./scripts/logger_identifiers.sh
+    # remove errors from completion
+    local -a tclids=(
+        D,CWstrim D,MTree D,RSCon D,TRAdd
+        I,Gen I,Log I,Tmpl I,TPrs I,WTFPr
+        W,RSCon
+    )
+
+    local -a clogids=(
+        D,CPin D,DINew D,DMNew D,DONew D,DOUrf D,HTree D,HTrPP D,HTrPS D,HTrRd D,LACSc D,LARfE D,LARfR D,LARgf D,LConn D,LGnHi D,LMrHi D,LParm D,LPHTr D,MManC D,TCCon D,TCnPr D,TCPar
+        I,LConn I,LParm I,PLoad
+        W,LConn W,LMrHi W,LParm W,TChkN
+    )
+
+    local expl_tcl
+    _description iclogtclid expl_tcl "TCL Log-Identifier"
+    _multi_parts "${expl_tcl[@]}" , tclids
+
+    local expl_c
+    _description iclogcid expl_c "C Log-Identifier"
+    _multi_parts "${expl_c[@]}" , clogids
+
+
 }
 
 _icglue_comp $@
