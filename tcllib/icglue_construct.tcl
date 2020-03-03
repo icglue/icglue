@@ -620,6 +620,7 @@ namespace eval ig {
         set invert       {}
         set resource_pin "false"
         set dimension    {}
+        set signed       "false"
         set origin       [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
@@ -627,6 +628,7 @@ namespace eval ig {
                 { {^-w(idth)?(=)?}         "string"      width        "set signal width" }                            \
                 { {^(-v(alue)?(=|$)|=)}    "string"      value        "assign value to signal" }                      \
                 { {^-d(imension)?(=)?}     "string"      dimension    "multi-dimensional SV ports" }                  \
+                { {^-s(ign(ed)?)?}         "const=true"  signed       "signed SV ports" }                             \
                 { {^-b(idir(ectional)?)?$} "const=true"  bidir        "bidirectional connection"}                     \
                 { {^<->$}                  "const=true"  bidir        "bidirectional connection"}                     \
                 { {^-(-)?>$}               "const=false" invert       "first element is interpreted as input source"} \
@@ -734,6 +736,10 @@ namespace eval ig {
             ig::db::set_attribute -object $net -attribute "dimension" -value $dimension
             foreach obj [ig::db::get_net_objects -of $net] {
                 ig::db::set_attribute -object $obj -attribute "dimension" -value $dimension
+            }
+            ig::db::set_attribute -object $net -attribute "signed" -value $signed
+            foreach obj [ig::db::get_net_objects -of $net] {
+                ig::db::set_attribute -object $obj -attribute "signed" -value $signed
             }
 
             if {$value ne ""} {
