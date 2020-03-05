@@ -37,15 +37,15 @@ if {1} {
 set crc_fix fix_crc_poly${crc_poly}_${crc_data_width}
 
 M -unit crc -tree {
-    tb_crc .................. (tb)
+    tb_crc .................. (tb,sv)
     |
     +-- apb_stim ............ (res)
     |
-    \-- crc_wrap ............ (rtl)
+    \-- crc_wrap ............ (rtl,sv)
         +-- common_crc ...... (res)
-        +-- $crc_fix ........ (rtl)
+        +-- $crc_fix ........ (rtl,sv)
         |
-        \-- crc_rf .......... (rtl,rf=crc)
+        \-- crc_rf .......... (rtl,rf=crc,sv)
 
 }
 

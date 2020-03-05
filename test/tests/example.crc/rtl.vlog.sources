@@ -1,5 +1,5 @@
 // icglue keep begin sources
-${ICPRO_DIR}/units/crc/source/rtl/verilog/fix_crc_poly1d_8.v
-${ICPRO_DIR}/units/crc/source/rtl/verilog/crc_rf.v
-${ICPRO_DIR}/units/crc/source/rtl/verilog/crc_wrap.v
+${ICPRO_DIR}/units/crc/source/rtl/systemverilog/fix_crc_poly1d_8.sv
+${ICPRO_DIR}/units/crc/source/rtl/systemverilog/crc_rf.sv
+${ICPRO_DIR}/units/crc/source/rtl/systemverilog/crc_wrap.sv
 // icglue keep end
