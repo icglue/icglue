@@ -38,6 +38,11 @@ proc deploy {src trg} {
 
     file mkdir $trg_dir
     puts $deploy::logf "DEPLOY: ${src} --> ${trg}"
+
+    # expand single level links
+    if { [file type $src] == "link" } {
+        set src [file join $deploy::src_dir [file readlink $src ]]
+    }
     file copy $src $trg
 }
 
