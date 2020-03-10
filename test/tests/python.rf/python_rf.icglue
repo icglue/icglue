@@ -1,0 +1,40 @@
+# generate empty module / register file
+
+M -unit python_rf -tree {
+    tb_python_rf (tb)
+    +-- python_rf(rf)
+}
+
+# regfile-ports
+S clk     tb_python_rf --> python_rf:apb_clk!
+S reset_n tb_python_rf --> python_rf:apb_resetn!
+
+S apb_prot_en tb_python_rf --> python_rf = {1'b0}
+
+S gpio_do  -w 8 tb_python_rf <-- python_rf
+S gpio_di  -w 8 tb_python_rf --> python_rf
+S gpio_oe  -w 8 tb_python_rf <-- python_rf
+S gpio_mux -w 4 tb_python_rf <-- python_rf
+
+R python_rf "gpio_ctrl" {
+    {"name"           "entrybits" "type" "reset" "signal"  "signalbits"  "comment"                 }
+    {do               27:20        RW     0       gpio_do   7:0          "GPIO data out"           }
+    {di               19:12        R      0       gpio_di   7:0          "GPIO data in"            }
+    {oe               11:4         RW     0       gpio_oe   7:0          "GPIO direction"          }
+    {gpio_mux          3:0         W      0       gpio_mux  3:0          "GPIO multiplexer select" }
+}
+
+foreach {s w <->} {
+    apb_addr   32 -->
+    apb_sel    1  -->
+    apb_enable 1  -->
+    apb_write  1  -->
+    apb_wdata  32 -->
+    apb_strb   4  -->
+    apb_prot   3  -->
+    apb_rdata  32 <--
+    apb_ready  1  <--
+    apb_slverr 1  <--
+} {
+    S $s -w $w tb_python_rf ${<->} python_rf
+}
