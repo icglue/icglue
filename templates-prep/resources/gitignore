@@ -1,0 +1,7 @@
+# just track config + management script (+ this ignore list)
+
+*
+
+!resources
+!.resources.default.cfg
+!.gitignore
