@@ -58,7 +58,7 @@ namespace eval resources {
         set cfg_path .
         if {[info exists ::env(ICPRO_DIR)]} {
             set ICPRO_DIR $::env(ICPRO_DIR)
-            set cfg_path  [file join $::env(ICPRO_DIR) resources]
+            set cfg_path  [file join $ICPRO_DIR resources]
         } else {
             set cfg_path  [file dirname [info script]]
             set ICPRO_DIR [file join $cfg_path ..]
@@ -326,6 +326,9 @@ namespace eval resources {
 
     proc update_resources {args} {
         variable data
+        variable ICPRO_DIR
+
+        cd [file join $ICPRO_DIR resources]
 
         if {[llength $args] == 0} {
             set args [dict keys $data]
