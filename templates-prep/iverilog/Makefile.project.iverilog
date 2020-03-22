@@ -66,14 +66,15 @@ CPPFLAGS        ?= $(addprefix -I,$(STIMC_DIRS))
 LDFLAGS         ?= -lpcl
 
 ifneq ($(strip $(STIMC_MODULES)),)
-  VPI_CFLAGS    = $(shell iverilog-vpi --cflags | egrep -o -- '-I\s*\S*')
+  VPI_CPPFLAGS  = $(shell iverilog-vpi --cflags | egrep -o -- '-I\s*\S*')
   VPI_LDFLAGS   = $(shell iverilog-vpi --ldflags)
   VPI_MODULE   ?= $(WORK_DIR)/stimc_model.vpi
   VVP_FLAGS    += -M$(WORK_DIR) -m$(notdir $(basename $(VPI_MODULE)))
 endif
 
-ALL_CFLAGS      = $(WARNFLAGS) $(OPTFLAGS) $(ARCHFLAGS) $(VPI_CFLAGS) $(CFLAGS)   $(CPPFLAGS)
-ALL_CXXFLAGS    = $(WARNFLAGS) $(OPTFLAGS) $(ARCHFLAGS) $(VPI_CFLAGS) $(CXXFLAGS) $(CPPFLAGS)
+ALL_CPPFLAGS    = $(VPI_CPPFLAGS) $(CPPFLAGS)
+ALL_CFLAGS      = $(WARNFLAGS) $(OPTFLAGS) $(ARCHFLAGS) $(CFLAGS)   $(ALL_CPPFLAGS)
+ALL_CXXFLAGS    = $(WARNFLAGS) $(OPTFLAGS) $(ARCHFLAGS) $(CXXFLAGS) $(ALL_CPPFLAGS)
 ALL_LDFLAGS     = $(VPI_LDFLAGS) $(LDFLAGS)
 
 VPATH = $(subst $() $(),:,$(STIMC_DIRS))
@@ -154,7 +155,7 @@ else
 endif
 
 $(WORK_DIR)/%.d: %.c | $(WORK_DIR)
-	$q$(CC) -MM -E $(CPPFLAGS) $< | perl -p -e 's#[^:]*:#$(WORK_DIR)/$$&#' > $@
+	$q$(CC) -MM -E $(ALL_CPPFLAGS) $< | perl -p -e 's#[^:]*:#$(WORK_DIR)/$$&#' > $@
 	$q$(LN) $*.d $(WORK_DIR)/$*.dep
 
 $(WORK_DIR)/%.o: %.c $(WORK_DIR)/%.d $(MAKEFILE_LIST) | $(WORK_DIR) info-c
@@ -162,7 +163,7 @@ $(WORK_DIR)/%.o: %.c $(WORK_DIR)/%.d $(MAKEFILE_LIST) | $(WORK_DIR) info-c
 	$q$(CC) $(ALL_CFLAGS) -g -c $< -o $@
 
 $(WORK_DIR)/%.d: %.cpp | $(WORK_DIR)
-	$q$(CXX) -MM -E $(CPPFLAGS) $< | perl -p -e 's#[^:]*:#$(WORK_DIR)/$$&#' > $@
+	$q$(CXX) -MM -E $(ALL_CPPFLAGS) $< | perl -p -e 's#[^:]*:#$(WORK_DIR)/$$&#' > $@
 	$q$(LN) $*.d $(WORK_DIR)/$*.dep
 
 $(WORK_DIR)/%.o: %.cpp $(WORK_DIR)/%.d $(MAKEFILE_LIST) | $(WORK_DIR) info-cxx
