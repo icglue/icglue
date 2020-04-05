@@ -407,7 +407,7 @@ namespace eval ig::templates {
                     "size"           [ig::db::get_attribute -object $i_port -attribute "size"] \
                     "vlog.bitrange"  [ig::vlog::obj_bitrange $i_port] \
                     "direction"      [ig::db::get_attribute -object $i_port -attribute "direction"] \
-                    "vlog.direction" [join [list [ig::vlog::port_dir $i_port] $vsigned]] \
+                    "vlog.direction" "[concat [ig::vlog::port_dir $i_port] $vsigned]" \
                     "dimension"      $dimension_bitrange \
                     "signed"         $signed \
                 ]
@@ -452,7 +452,7 @@ namespace eval ig::templates {
                     "size"           [ig::db::get_attribute -object $i_decl -attribute "size"] \
                     "vlog.bitrange"  [ig::vlog::obj_bitrange $i_decl] \
                     "defaulttype"    [ig::db::get_attribute -object $i_decl -attribute "default_type"] \
-                    "vlog.type"      "[join [list $vlog_type $vsigned]]" \
+                    "vlog.type"      "[concat $vlog_type $vsigned]" \
                     "dimension"      $dimension_bitrange \
                     "signed"         $signed \
                 ]
