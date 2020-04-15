@@ -399,7 +399,7 @@ namespace eval ig::templates {
                 foreach dimension [ig::db::get_attribute -object $i_port -attribute "dimension" -default {}] {
                     append dimension_bitrange [ig::vlog::bitrange $dimension]
                 }
-                set signed [ig::db::get_attribute -object $i_port -attribute "signed" -default {}]
+                set signed [ig::db::get_attribute -object $i_port -attribute "signed" -default false]
                 set vsigned [expr {$signed ? "signed" : {}}]
                 lappend port_data [list \
                     "name"           [ig::db::get_attribute -object $i_port -attribute "name"] \
@@ -434,7 +434,7 @@ namespace eval ig::templates {
                 foreach dimension [ig::db::get_attribute -object $i_decl -attribute "dimension" -default {}] {
                     append dimension_bitrange [ig::vlog::bitrange $dimension]
                 }
-                set signed [ig::db::get_attribute -object $i_decl -attribute "signed" -default {}]
+                set signed [ig::db::get_attribute -object $i_decl -attribute "signed" -default false]
                 set vsigned [expr {$signed ? "signed" : {}}]
 
                 set name [ig::db::get_attribute -object $i_decl -attribute "name"]
