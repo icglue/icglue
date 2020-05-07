@@ -242,6 +242,7 @@ namespace eval ig::checks {
             }
 
             foreach i_reg $regs {
+                set rname [dict get $i_reg "name"]
                 set sig   [dict get $i_reg "signal"]
                 if {$sig eq "-"} {continue}
 
