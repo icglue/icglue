@@ -162,7 +162,7 @@ namespace eval ig::checks {
             }
 
             # check addrsize
-            if {clog2($address+1) >= $addrwidth} {
+            if {clog2($address+1) > $addrwidth} {
                 ig::log -warn -id "ChkRA" "regfile entry \"${name}\" address [format "0x%08x" $address] ([expr {clog2($address+1)}] bits) does not fit into address size ${addrwidth} bits (regfile ${rfname}) (${origin})"
             }
 
