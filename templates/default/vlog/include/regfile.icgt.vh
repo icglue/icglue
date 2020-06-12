@@ -350,7 +350,7 @@
     ## <common-sync>
     if {$has_read_reg_sync} { %>
     // "not a synchronizer" - just for delay measurement
-    si_common_sync i_si_common_sync_delay_ready (
+    common_sync i_common_sync_delay_ready (
         .clk_i     (<[clk]>),
         .reset_n_i (<[reset]>),
         .data_i    (do_ready_sync_delay),
