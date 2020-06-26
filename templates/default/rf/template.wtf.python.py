@@ -4,7 +4,7 @@
 % #      - check field names and register names against Python keywords and issue warning at ICGlue runtime.
 % #        Doing this at Python runtime with keywords.iskeyword() might be too late.
 %
-% # Tempalte helper
+% # Template helper
 %(
     set register_list [regfile_to_arraylist $obj_id]
 
@@ -25,7 +25,7 @@ from rf_base import base_word, base_registerfile
 
 
 ################################################################################
-# representation of register words with multiple fielads
+# representation of register words (collection of fields)
 %(
 foreach_array register $register_list {
     echo "class _word_${register(name)}(base_word):\n"
@@ -36,6 +36,9 @@ foreach_array register $register_list {
         }
     }
 %)
+
+% # special lock flag to flag typos which would create new attributes
+% echo "${indent}__class_attr_locked = False"
 
 
 %   # constructor
@@ -61,6 +64,14 @@ foreach_array register $register_list {
 
         }
 
+        self.__class_attr_locked = True
+
+
+% # overwrite default Python function with check for lock flag
+    def __setattr__(self, key, value):
+        if self.__class_attr_locked and (not hasattr(self, key)):
+            raise TypeError( "%r is not a valid attribute of class %r" % (key, self))
+        object.__setattr__(self, key, value)
 
 %    # read and write methods for each field
 % foreach_array field $register(regs) {
@@ -117,7 +128,7 @@ foreach_array register $register_list {
 
 
 ################################################################################
-# register file representations
+# register file representations (collection of words)
 class rf_${rf_name}(base_registerfile):
 
     def __init__(self, base_addr, read_function, write_function):
