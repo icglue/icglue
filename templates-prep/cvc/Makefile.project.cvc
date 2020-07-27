@@ -1,0 +1,236 @@
+#
+# cvc + stimc(optional) Makefile
+#
+
+# ------------  gtkwavefile & dumpfile  ----------------------------------------
+GTKWAVEFILE     ?= $(SIM_NAME).gtkw
+DUMPFILE        ?= $(WORK_DIR)/$(SIM_NAME).dump
+
+# ------------  configuration parameters ---------------------------------------
+DUMPER          ?= fst
+GTKWAVE_LOG     ?= $(WORK_DIR)/gtkwave.log
+SIM_LOG         ?= $(WORK_DIR)/$(SIM_NAME).log
+BATCH_LOG       ?= $(WORK_DIR)/runbatch.log
+DUMP_MOD        ?= dump.v
+DUMP_MOD_NAME   ?= $(notdir $(basename $(DUMP_MOD)))
+
+#-------------  working directory  ---------------------------------------------
+WORK_DIR        ?= .work
+
+# ------------  name of sim file  ----------------------------------------------
+SIM_EXEC        ?= $(WORK_DIR)/$(SIM_NAME)-simulate
+
+#===============================================================================
+# The following statements usually need not to be changed
+#===============================================================================
+
+USE_TEMP       ?= 1
+TMPDIR         ?= /tmp
+COMPILE_DEPS   ?= $(foreach incdir, $(INCLUDEDIRS), $(wildcard $(incdir)/*.vh))
+
+# ------------  generate the names of the stimc related files  -----------------
+STIMC_BASENAMES = $(notdir $(basename $(STIMC_SOURCES)))
+STIMC_OBJECTS   = $(addprefix $(WORK_DIR)/, $(addsuffix .o, $(STIMC_BASENAMES)))
+STIMC_DEPS      = $(addprefix $(WORK_DIR)/, $(addsuffix .d, $(STIMC_BASENAMES)))
+
+# ------------  build and run tools  -------------------------------------------
+CVC             ?= cvc
+CC              ?= gcc
+CXX             ?= g++
+LD              ?= ld
+LN              ?= ln -sf
+MKTEMP          ?= mktemp -p $(TMPDIR) -t ivl-$(USER)-$(SIM_NAME)-XXXX
+
+# ------------  tool flags for cvc  --------------------------------------------
+CVC_FLAGS       ?= -l $(SIM_LOG) -o $(SIM_EXEC)
+ifneq ($(strip $(VLOG_SRC_FILES)),)
+  VLOG_SRC_FILE_WORK = $(WORK_DIR)/vlog.src
+endif
+  CVC_FLAGS       += +dump2fst
+ifeq ($(strip $(DUMPER)),fst)
+endif
+VLOG_SRC_ARGS   += $(addprefix -f ,$(VLOG_SRC_FILE_WORK))
+VLOG_SOURCES    += $(foreach f,$(VLOG_SRC_FILES), $(shell echo $(shell cat $f | sed -e 'sX^\(\#\|//\).*XX')))
+
+# ------------  tool flags for stimc  ------------------------------------------
+STIMC_LDFLAGS   ?= -lpcl
+
+WARNFLAGS       ?= -Wall -Wextra -Wshadow
+OPTFLAGS        ?= -O2 -fdata-sections -ffunction-sections
+#ARCHFLAGS       ?= -mtune=native -march=native
+CFLAGS          ?= -std=c11 -fpic -Wstrict-prototypes
+CXXFLAGS        ?= -std=c++11 -fpic
+CPPFLAGS        ?= $(addprefix -I,$(STIMC_DIRS))
+LDFLAGS         += -lpcl
+
+ifneq ($(strip $(STIMC_MODULES)),)
+  VPI_CPPFLAGS  = -I /usr/include/oss-cvc
+  VPI_LDFLAGS   = -shared
+  VPI_MODULE   ?= $(WORK_DIR)/stimc_model.vpi
+  CVC_FLAGS    += +acc+2 +loadvpi=$(VPI_MODULE):stimc_vpi_init
+endif
+
+ALL_CPPFLAGS    = $(VPI_CPPFLAGS) $(CPPFLAGS)
+ALL_CFLAGS      = $(WARNFLAGS) $(OPTFLAGS) $(ARCHFLAGS) $(CFLAGS)   $(ALL_CPPFLAGS)
+ALL_CXXFLAGS    = $(WARNFLAGS) $(OPTFLAGS) $(ARCHFLAGS) $(CXXFLAGS) $(ALL_CPPFLAGS)
+ALL_LDFLAGS     = $(VPI_LDFLAGS) $(LDFLAGS)
+
+VPATH = $(subst $() $(),:,$(STIMC_DIRS))
+
+# ------------  output color/verbosity -----------------------------------------
+q?=@
+
+USE_COLOR ?= 1
+define echo
+	if [ -t 1 -a "x${USE_COLOR}" = "x1" ] ; then \
+		c='\e[0m'; \
+		b='\e[1m'; \
+		red='\e[31m'; \
+		green='\e[32m'; \
+		yellow='\e[33m'; \
+		blue='\e[34m'; \
+		purple='\e[35m'; \
+		cyan='\e[36m'; \
+		gray='\e[37m'; \
+	else \
+		c=''; \
+		b=''; \
+		red=''; \
+		green=''; \
+		yellow=''; \
+		blue=''; \
+		purple=''; \
+		cyan=''; \
+		gray=''; \
+	fi; \
+	echo -e $1;
+endef
+
+define shell-fmtflags
+	echo " $(strip $(1))" | sed -r -e 's/\s+-/\\n    -/g' -e 's#${ICPRO_DIR}#$${ICPRO_DIR}#g'
+endef
+
+vlogcolor=$${blue}
+stimccolor=$${yellow}
+runcolor=""
+
+# ------------  info output ----------------------------------------------------
+info-c:
+ifneq (,$(strip $(ALL_CFLAGS)))
+	$q$(call echo, "$${b}$(stimccolor)C-FLAGS$${c}$(shell $(call shell-fmtflags,$(ALL_CFLAGS)))")
+endif
+
+info-cxx:
+ifneq (,$(strip $(ALL_CXXFLAGS)))
+	$q$(call echo, "$${b}$(stimccolor)C++-FLAGS$${c}$(shell $(call shell-fmtflags,$(ALL_CXXFLAGS)))")
+endif
+
+info-ld:
+ifneq (,$(strip $(ALL_LDFLAGS)))
+	$q$(call echo, "$${b}$(stimccolor)LD-FLAGS$${c}$(shell $(call shell-fmtflags,$(ALL_LDFLAGS)))")
+endif
+
+info-vlog:
+ifneq (,$(strip $(VLOG_INCDIRS)))
+	$q$(call echo, "$${b}$(vlogcolor)VLOG-INCDIRS$${c}$(shell $(call shell-fmtflags,$(addprefix -I,$(VLOG_INCDIRS))))")
+endif
+ifneq (,$(strip $(CVC_FLAGS) $(ADDITIONAL_CVC_FLAGS)))
+	$q$(call echo, "$${b}$(vlogcolor)VLOG-FLAGS$${c}$(shell $(call shell-fmtflags,$(CVC_FLAGS) $(ADDITIONAL_CVC_FLAGS)))")
+endif
+
+.PHONY: info-c info-cxx info-ld info-vlog
+
+
+# ------------  rules ----------------------------------------------------------
+
+.DEFAULT_GOAL=rungui
+
+$(WORK_DIR):
+ifeq ($(USE_TEMP),1)
+	$q$(LN) `$(MKTEMP) -d` $(WORK_DIR)
+else
+	$qmkdir -p $(WORK_DIR)
+endif
+
+$(WORK_DIR)/vlog.src: $(VLOG_SRC_FILES) | $(WORK_DIR)
+	$qecho -e $(shell cat $^ | sed -e 'sX^\(\#\|//\).*XX;sX$$X\\\\nX') > $@
+
+$(WORK_DIR)/%.d: %.c | $(WORK_DIR)
+	$q$(CC) -MM -E $(ALL_CPPFLAGS) $< | perl -p -e 's#[^:]*:#$(WORK_DIR)/$$&#' > $@
+	$q$(LN) $*.d $(WORK_DIR)/$*.dep
+
+$(WORK_DIR)/%.o: %.c $(WORK_DIR)/%.d $(MAKEFILE_LIST) | $(WORK_DIR) info-c
+	$q$(call echo, "$${b}$(stimccolor)CC  $${c} $$(basename $<)")
+	$q$(CC) $(ALL_CFLAGS) -g -c $< -o $@
+
+$(WORK_DIR)/%.d: %.cpp | $(WORK_DIR)
+	$q$(CXX) -MM -E $(ALL_CPPFLAGS) $< | perl -p -e 's#[^:]*:#$(WORK_DIR)/$$&#' > $@
+	$q$(LN) $*.d $(WORK_DIR)/$*.dep
+
+$(WORK_DIR)/%.o: %.cpp $(WORK_DIR)/%.d $(MAKEFILE_LIST) | $(WORK_DIR) info-cxx
+	$q$(call echo, "$${b}$(stimccolor)C++ $${c} $$(basename $<)")
+	$q$(CXX) $(ALL_CXXFLAGS) -g -c $< -o $@
+
+-include ${STIMC_DEPS:.d=.dep}
+
+$(WORK_DIR)/%.vpi: $(STIMC_OBJECTS) | info-ld
+	$q$(call echo, "$${b}$(stimccolor)LD  $${c} $@")
+	$q$(CXX) $(WARNFLAGS) $(STIMC_OBJECTS) $(ALL_LDFLAGS) -o $@
+
+
+$(SIM_EXEC): $(VLOG_SOURCES) $(VLOG_SRC_FILE_WORK) $(DUMP_MOD) $(COMPILE_DEPS) $(filter-out %.dep,$(MAKEFILE_LIST)) $(VPI_MODULE) | $(WORK_DIR) info-vlog
+	$q$(call echo, "$${b}$(vlogcolor)VLOG$${c} $$(basename $(SIM_EXEC))")
+	$q$(CVC) $(addprefix +incdir+,$(VLOG_INCDIRS)) $(CVC_FLAGS) $(ADDITIONAL_CVC_FLAGS) $(VLOG_SRC_ARGS) $(DUMP_MOD) -o $@
+
+
+$(DUMPFILE): $(SIM_EXEC) $(VPI_MODULE) $(RUN_DEPS) $(MAKEFILE_LIST)
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $$(basename $(SIM_EXEC))\n")
+	$q$(SIM_EXEC)
+
+vlog: $(SIM_EXEC)
+
+vpi_run: $(VPI_MODULE)
+
+elab: vlog vpi_run
+
+run: $(SIM_EXEC) $(VPI_MODULE) Makefile
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $$(basename $(SIM_EXEC))\n")
+	$q$(SIM_EXEC)
+
+runbatch: $(SIM_EXEC) $(VPI_MODULE) Makefile
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $$(basename $(SIM_EXEC))\n")
+	$q$(SIM_EXEC) 2>&1 | tee $(BATCH_LOG)
+
+rerun: $(DUMPFILE)
+
+rungui: $(DUMPFILE)
+	$q$(MAKE) --no-print-directory gui
+
+gui:
+	$q$(call echo, "$${b}GUI $${c} $$(basename $(GTKWAVEFILE))")
+	$qgtkwave -a $(GTKWAVEFILE) -f $(DUMPFILE) -O $(GTKWAVE_LOG) &
+
+clean:
+	$qrm -f \
+        $(SIM_EXEC) $(DUMPFILE) $(GTKWAVE_LOG) $(SIM_LOG)  \
+        $(VPI_MODULE) $(STIMC_DEPS) ${STIMC_DEPS:.d=.dep} $(STIMC_OBJECTS) \
+        2> /dev/null || true
+	$qrm -f $(WORK_DIR)/$(DUMPFILE).hier
+	$qif [ -L $(WORK_DIR) ]; then  \
+		rm -Irf `readlink -e $(WORK_DIR)` ;\
+		rm $(WORK_DIR) ;\
+	elif [ -e $(WORK_DIR) ]; then \
+		rmdir $(WORK_DIR) 2>&1 > /dev/null || true ;\
+	fi
+
+$(DUMP_MOD):
+	@echo 'module $(DUMP_MOD_NAME) ();'     > $@
+	@echo 'initial begin'                  >> $@
+	@echo '    $$dumpfile("$(DUMPFILE)");' >> $@
+	@echo '    $$dumpvars();'              >> $@
+	@echo 'end'                            >> $@
+	@echo 'endmodule'                      >> $@
+
+.PHONY: elab vlog vpi_run elab run runbatch rungui rerun gui clean
+
+.SECONDARY: $(STIMC_DEPS) $(STIMC_OBJECTS) $(VPI_MODULE)

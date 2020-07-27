@@ -1,0 +1,4 @@
+
+-include Makefile.rtl.sources
+
+include ${ICPRO_DIR}/env/cvc/Makefile.project.cvc
