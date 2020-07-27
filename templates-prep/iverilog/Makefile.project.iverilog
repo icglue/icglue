@@ -59,7 +59,7 @@ STIMC_LDFLAGS   ?= -lpcl
 
 WARNFLAGS       ?= -Wall -Wextra -Wshadow
 OPTFLAGS        ?= -O2 -fdata-sections -ffunction-sections
-ARCHFLAGS       ?= -mtune=native -march=native
+#ARCHFLAGS       ?= -mtune=native -march=native
 CFLAGS          ?= -std=gnu99 -fpic -Wstrict-prototypes
 CXXFLAGS        ?= -std=c++11 -fpic
 CPPFLAGS        ?= $(addprefix -I,$(STIMC_DIRS))
@@ -174,7 +174,7 @@ $(WORK_DIR)/%.o: %.cpp $(WORK_DIR)/%.d $(MAKEFILE_LIST) | $(WORK_DIR) info-cxx
 
 $(WORK_DIR)/%.vpi: $(STIMC_OBJECTS) | info-ld
 	$q$(call echo, "$${b}$(stimccolor)LD  $${c} $@")
-	$q$(CC) $(WARNFLAGS) $(STIMC_OBJECTS) $(ALL_LDFLAGS) -o $@
+	$q$(CXX) $(WARNFLAGS) $(STIMC_OBJECTS) $(ALL_LDFLAGS) -o $@
 
 
 $(VVP_FILE): $(VLOG_SOURCES) $(DUMP_MOD) $(COMPILE_DEPS) $(filter-out %.dep,$(MAKEFILE_LIST)) | $(WORK_DIR) info-vlog
