@@ -1,0 +1,36 @@
+<%-
+
+set content_testbench "SIM_NAME  = tb_${unit}
+TOPLEVEL  = \$(SIM_NAME) \$(DUMP_MOD_NAME)
+"
+
+set content_vsources "VLOG_SRC_FILES += \$(wildcard sources/*)
+"
+
+set content_vinclude "#VLOG_INCDIRS += \\
+#    \${ICPRO_DIR}/global_src/verilog \\
+#    \${ICPRO_DIR}/units/${unit}/source/rtl/verilog \\
+"
+
+set content_stimc "#STIMC_MODULES ?= ${unit}
+#STIMC_DIRS     = \\
+#    \${ICPRO_DIR}/global_src/stimc \\
+#    \${ICPRO_DIR}/units/${unit}/source/behavioral/stimc
+STIMC_SOURCES   = \$(wildcard \$(addsuffix /*.c, \$(STIMC_DIRS)) \$(addsuffix /*.cpp, \$(STIMC_DIRS)))
+"
+
+set content_compdeps "#COMPILE_DEPS += testcase.v
+"
+
+set content_rundeps "#RUN_DEPS += progmem/core.mem
+"
+
+-%>
+<[pop_keep_block_content keep_block_data "keep" "custom_begin" "makefile"]>
+<[pop_keep_block_content keep_block_data "keep" "testbench"    "makefile" "${content_testbench}"]>
+<[pop_keep_block_content keep_block_data "keep" "vsources"     "makefile" "${content_vsources}"]>
+<[pop_keep_block_content keep_block_data "keep" "vinclude"     "makefile" "${content_vinclude}"]>
+<[pop_keep_block_content keep_block_data "keep" "stimc"        "makefile" "${content_stimc}"]>
+<[pop_keep_block_content keep_block_data "keep" "compdeps"     "makefile" "${content_compdeps}"]>
+<[pop_keep_block_content keep_block_data "keep" "rundeps"      "makefile" "${content_rundeps}"]>
+<[pop_keep_block_content keep_block_data "keep" "custom_end"   "makefile"]>
