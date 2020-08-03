@@ -25,7 +25,7 @@ lappend auto_path "[file join $igroot lib]"
 
 set icglue_silent_load "true"
 package require Tcl 8.6
-package require ICGlue 4.0
+package require ICGlue 4.1
 
 proc printhelp {{exitcode 0} {channel stdout} {doexit "true"}} {
     puts $channel [format \
@@ -59,7 +59,7 @@ proc additionalversion {} {
     set additionalversion_str "INSTALLED-VERSION"
     if {$additionalversion_str ne "INSTALLED-VERSION"} {
         # do not add an additional version string if this is a tagged release
-        if {"ICGlue 5.0a1" eq "ICGlue [string range $additionalversion_str 1 end]"} {
+        if {"ICGlue 4.1" eq "ICGlue [string range $additionalversion_str 1 end]"} {
             return {}
         }
         return " ($additionalversion_str)"
@@ -77,7 +77,7 @@ proc additionalversion {} {
 
 proc printversion {} {
     puts [format \
-{icsng2ICGlue 4.0%s
+{icsng2ICGlue 4.1%s
 Copyright (C) 2017-2020 Andreas Dixius, Felix Neumaerker
 
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.

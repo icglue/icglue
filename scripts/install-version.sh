@@ -22,7 +22,7 @@ fi
 replace="$(printf 's/(set additionalversion_str) "INSTALLED-VERSION"/\\1 "%s"/' "${version}")"
 if sed -i -re "$replace" $dest ; then
     [[ -n "$version" ]] && version=" ($version)"
-    echo "$(basename ${dest}) install as version ICGlue 5.0a1$version"
+    echo "$(basename ${dest}) install as version ICGlue 4.1$version"
 else
     echo "install version failed!"
     exit 1

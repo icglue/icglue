@@ -40,13 +40,13 @@ int Icglue_Init (Tcl_Interp *interp)
             (strcmp (icglue_silent_load, "true") != 0) &&
             (strcmp (icglue_silent_load, "yes")  != 0))) {
         ig_print_logo (stderr);
-        log_info ("PLoad", "ICGlue v4.0 loaded");
+        log_info ("PLoad", "ICGlue v4.1 loaded");
     }
 
     ig_add_tcl_commands (interp);
 
     // must match regex for version update (./scripts/update_version.sh)
-    #define PACKAGE_VERSION_ICGlue 4.0
+    #define PACKAGE_VERSION_ICGlue 4.1
     Tcl_PkgProvide (interp, "ICGlue", STRINGIFY(PACKAGE_VERSION_ICGlue));
 
     return TCL_OK;
