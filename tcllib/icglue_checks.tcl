@@ -306,15 +306,124 @@ namespace eval ig::checks {
         }
     }
 
+    # reserved keywords as dictionary
+    # "keyword" -> {{list of languages} "renaming suggestion"}
+    variable _reserved_names_dict {}
+
+    ## @brief Generate or return cached reserved names dictionary
+    # @return dictionary of reserved keywords to list of languages and (optionally) suggestions
+    #
+    # Entries are of form {{lang1 lang2 ...} {alternative1 alternative2 ...}}.
+    # Suggestions may be empty.
+    proc get_reserved_names {} {
+        variable _reserved_names_dict
+
+        if {[dict size ${_reserved_names_dict}] != 0} {
+            return ${_reserved_names_dict}
+        }
+
+        # init
+        set reserved_names {
+            "c/c++" {
+                alignas alignof and and_eq asm auto
+                bitand bitor bool break
+                case catch char char16_t char32_t class compl const constexpr const_cast continue
+                decltype default delete do double dynamic_cast
+                else enum explicit export extern
+                false float for friend
+                goto
+                if inline int
+                long
+                mutable
+                namespace new noexcept not not_eq nullptr
+                operator or or_eq
+                private protected public
+                register reinterpret_cast return
+                short signed sizeof static static_assert static_cast struct switch
+                template this thread_local throw true try typedef typeid typename
+                union unsigned using
+                virtual void volatile
+                wchar_t while
+                xor xor_eq
+            }
+            "python" {
+                and as assert async await
+                break
+                class continue
+                def del
+                elif else except
+                False finally for from
+                global
+                if import in is
+                lambda
+                None nonlocal not
+                or
+                pass
+                raise return
+                True try
+                while with
+                yield
+            }
+        }
+
+        set suggestions {
+            if   {interface}
+            int  {internal irq}
+            pass {passed}
+        }
+
+        foreach l [dict keys $reserved_names] {
+            foreach k [dict get $reserved_names $l] {
+                set s {}
+                if {[dict exists $suggestions $k]} {
+                    set s [dict get $suggestions $k]
+                }
+
+                if {[dict exists ${_reserved_names_dict} $k]} {
+                    lassign [dict get ${_reserved_names_dict} $k] langs os
+                    lappend langs $l
+                } else {
+                    set langs [list $l]
+                }
+
+                dict set _reserved_names_dict $k [list $langs $s]
+            }
+        }
+
+        return ${_reserved_names_dict}
+    }
+
+    ## @brief Run individual regfile naming check.
+    # @param check_name name to check
+    # @param ref_name name for reference in warn message
+    # @param origin origin string for warn message
+    proc check_regfile_name_string {check_name ref_name {origin {}}} {
+        set reserved_names [get_reserved_names]
+
+        if {$origin ne {}} {set origin " ${origin}"}
+
+        # internal names
+        if {[string match {_*} $check_name]} {
+            ig::log -warn -id "ChkRN" "${ref_name} has a name which potentially conflicts with internal types/names${origin}"
+        }
+        # reserved keywords
+        if {[dict exists $reserved_names $check_name]} {
+            lassign [dict get $reserved_names $check_name] langs suggestion
+
+            if {[llength $suggestion] > 0} {
+                set suggestion ", maybe use [join [lmap s $suggestion {set _ "\"$s\""}] " or "] instead"
+            }
+            ig::log -warn -id "ChkRN" "${ref_name} has a name which conflicts with keywords in [join $langs ", "]${suggestion}${origin}"
+        }
+    }
+
     ## @brief Run regfile naming check.
     # @param regfile_data preprocessed data of regfile to check.
     proc check_regfile_names {regfile_data} {
         set rfname  [dict get $regfile_data "name"]
         set entries [dict get $regfile_data "entries"]
 
-        if {[string match {_*} $rfname]} {
-            ig::log -warn -id "ChkRN" "regfile \"${rfname}\" has a name which potentially conflicts with internal types/names"
-        }
+        check_regfile_name_string $rfname "regfile \"${rfname}\""
 
         foreach i_entry $entries {
             set ename [dict get $i_entry "name"]
@@ -325,16 +434,13 @@ namespace eval ig::checks {
                 set origin [ig::db::get_attribute -object $oid -attribute "origin" -default {}]
             }
 
-            if {[string match {_*} $ename]} {
-                ig::log -warn -id "ChkRN" "entry \"${ename}\" has a name which potentially conflicts with internal types/names (regfile ${rfname}) (${origin})"
-            }
+            check_regfile_name_string $ename "entry \"${ename}\"" "(regfile ${rfname}) (${origin})"
 
             foreach i_reg $regs {
                 set rname  [dict get $i_reg "name"]
+                if {$rname eq {-}} continue
 
-                if {[string match {_*} $rname]} {
-                    ig::log -warn -id "ChkRN" "register \"${rname}\" in entry \"${ename}\" has a name which potentially conflicts with internal types/names (regfile ${rfname})"
-                }
+                check_regfile_name_string $rname "register \"${rname}\" in entry \"${ename}\"" "(regfile ${rfname}) (${origin})"
             }
         }
     }
