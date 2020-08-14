@@ -155,6 +155,7 @@ struct ig_port *ig_lib_add_port (struct ig_lib_db *db, struct ig_module *mod, en
     if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod_port)->id)) {
         log_error ("HTrPS", "Already declared port %s", IG_OBJECT (mod_port)->id);
         ig_port_free (mod_port);
+        mod_port = NULL;
     } else {
         g_queue_push_tail (mod->ports, mod_port);
         ig_obj_ref (IG_OBJECT (mod_port));
@@ -487,6 +488,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
         log_info ("LConn", "successfully created signal %s", signame);
     } else {
         log_warn ("LConn", "nothing created for signal %s", signame);
+        result = false;
     }
 
     struct ig_net *net = ig_lib_add_net (db, signame, gen_objs_res);
@@ -965,13 +967,19 @@ static GNode *ig_lib_htree_reduce (GNode *hier_tree)
 struct ig_lib_htree_process_signal_data {
     struct ig_lib_db *db;
     GList            *gen_objs;
+    bool             error;
 };
 
 static GList *ig_lib_htree_process_signal (struct ig_lib_db *db, GNode *hier_tree)
 {
-    struct ig_lib_htree_process_signal_data data = {db, NULL};
+    struct ig_lib_htree_process_signal_data data = {db, NULL, false};
 
     g_node_traverse (hier_tree, G_PRE_ORDER, G_TRAVERSE_ALL, -1, ig_lib_htree_process_signal_tfunc, &data);
+
+    if (data.error) {
+        g_list_free (data.gen_objs);
+        return NULL;
+    }
 
     return data.gen_objs;
 }
@@ -1020,6 +1028,9 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
         if (inst_pin != NULL) {
             pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT (inst_pin));
             log_debug ("CPin", "Created pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, IG_OBJECT (inst)->id, conn_name);
+        } else {
+            pdata->error = true;
+            log_error ("CPin", "Failed to create pin \"%s\" in instance \"%s\" connected to \"%s\"", pin_name, IG_OBJECT (inst)->id, conn_name);
         }
 
         for (GNode *in = g_node_first_child (node); in != NULL; in = g_node_next_sibling (in)) {
@@ -1043,6 +1054,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
             if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod_decl)->id)) {
                 log_error ("HTrPS", "Already declared declaration %s", IG_OBJECT (mod_decl)->id);
                 ig_decl_free (mod_decl);
+                pdata->error = true;
             } else {
                 g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod_decl)->id), IG_OBJECT (mod_decl));
                 ig_obj_ref (IG_OBJECT (mod_decl));
@@ -1055,7 +1067,8 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
             signal_name = parent_name;
             if (signal_name == NULL) {
                 log_error ("HTrPS", "No pin for signal %s in instance of module %s", local_name, obj->id);
-                signal_name = "";
+                signal_name  = "";
+                pdata->error = true;
             }
 
             enum ig_port_dir pdir = IG_PD_IN;
@@ -1069,6 +1082,9 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
             if (mod_port != NULL) {
                 pdata->gen_objs = g_list_prepend (pdata->gen_objs, IG_OBJECT (mod_port));
                 log_debug ("HTrPS", "Created port \"%s\" in module \"%s\"", signal_name, IG_OBJECT (mod)->id);
+            } else {
+                log_error ("HTrPS", "Error creating port \"%s\" in module \"%s\"", signal_name, IG_OBJECT (mod)->id);
+                pdata->error = true;
             }
         }
 
@@ -1078,6 +1094,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
         }
     } else {
         log_errorint ("HTrPS", "invalid object in hierarchy tree");
+        pdata->error = true;
     }
 
     return false;
