@@ -18,8 +18,8 @@ S gpio_mux -w 4 tb_python_rf <-- python_rf
 
 R python_rf "gpio_ctrl" {
     {"name"           "entrybits" "type" "reset" "signal"  "signalbits"  "comment"                 }
-    {do               27:20        RW     0       gpio_do   7:0          "GPIO data out"           }
-    {di               19:12        R      0       gpio_di   7:0          "GPIO data in"            }
+    {dout             27:20        RW     0       gpio_do   7:0          "GPIO data out"           }
+    {din              19:12        R      0       gpio_di   7:0          "GPIO data in"            }
     {oe               11:4         RW     0       gpio_oe   7:0          "GPIO direction"          }
     {gpio_mux          3:0         W      0       gpio_mux  3:0          "GPIO multiplexer select" }
 }

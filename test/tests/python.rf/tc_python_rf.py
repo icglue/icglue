@@ -10,7 +10,7 @@ def write(addr, value):
 regfile = rf_python_rf(0, read, write)
 p  = regfile.gpio_ctrl._word
 regfile.gpio_ctrl._word = 0
-p = regfile.gpio_ctrl.do
-regfile.gpio_ctrl.do = 4
+p = regfile.gpio_ctrl.dout
+regfile.gpio_ctrl.dout = 4
 d = regfile.gpio_ctrl._dict
-regfile.gpio_ctrl._dict = {'do':1, 'oe':2, 'gpio_mux':3}
+regfile.gpio_ctrl._dict = {'dout':1, 'oe':2, 'gpio_mux':3}
