@@ -34,6 +34,7 @@ int Icglue_Init (Tcl_Interp *interp)
         colors_on ();
 
     const char *icglue_silent_load = Tcl_GetVar (interp, "icglue_silent_load", TCL_GLOBAL_ONLY);
+
     // expr compatible treatement
     if ((icglue_silent_load == NULL) || (
             (strcmp (icglue_silent_load, "1")    != 0) &&
@@ -47,7 +48,7 @@ int Icglue_Init (Tcl_Interp *interp)
 
     // must match regex for version update (./scripts/update_version.sh)
     #define PACKAGE_VERSION_ICGlue 5.0a1
-    Tcl_PkgProvide (interp, "ICGlue", STRINGIFY(PACKAGE_VERSION_ICGlue));
+    Tcl_PkgProvide (interp, "ICGlue", STRINGIFY (PACKAGE_VERSION_ICGlue));
 
     return TCL_OK;
 }

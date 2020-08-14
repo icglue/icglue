@@ -86,6 +86,7 @@ void log_particular_level (const gchar *id, const log_level_t level)
     }
 
     gchar *id_local = g_string_chunk_insert_const (ids, id);
+
     g_hash_table_insert (log_property, id_local, GINT_TO_POINTER (level));
 }
 

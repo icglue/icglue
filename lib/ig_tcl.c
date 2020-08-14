@@ -82,6 +82,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     struct ig_lib_db *lib_db = ig_lib_db_new ();
 
     Tcl_Namespace *db_ns = Tcl_CreateNamespace (interp, ICGLUE_LIB_NAMESPACE, NULL, NULL);
+
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_module",       ig_tclc_create_module,      lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "create_instance",     ig_tclc_create_instance,    lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "add_codesection",     ig_tclc_add_codesection,    lib_db, NULL);
@@ -110,6 +111,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_Export (interp, db_ns, "*", true);
 
     Tcl_Namespace *log_ns = Tcl_CreateNamespace (interp, ICGLUE_LOG_NAMESPACE, NULL, NULL);
+
     Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "logger",              ig_tclc_logger,             lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log",                 ig_tclc_log,                lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LOG_NAMESPACE "log_stat",            ig_tclc_log_stat,           lib_db, NULL);
@@ -136,6 +138,7 @@ static int ig_tclc_tcl_string_list_parse (ClientData client_data, Tcl_Obj *obj, 
 
     int len         = 0;
     int temp_result = Tcl_ListObjLength (NULL, in_list, &len);
+
     if (temp_result != TCL_OK) return -1;
 
     for (int i = 0; i < len; i++) {
@@ -197,6 +200,7 @@ static int ig_tclc_create_module (ClientData clientdata, Tcl_Interp *interp, int
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) return result;
 
     if (name == NULL) {
@@ -246,6 +250,7 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) return result;
 
     if (name == NULL) return tcl_error_msg (interp, "No name specified for instance");
@@ -255,8 +260,10 @@ static int ig_tclc_create_instance (ClientData clientdata, Tcl_Interp *interp, i
     if (parent_module == NULL) return tcl_error_msg (interp, " No parent module specified for instance \"%s\"", name);
 
     struct ig_module *of_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_id, of_module)));
+
     if (of_mod == NULL) of_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_name, of_module)));
     struct ig_module *pa_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_id, parent_module)));
+
     if (pa_mod == NULL) pa_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_name, parent_module)));
 
     if (of_module == NULL) return tcl_error_msg (interp, "Unable to find module \"%s\" in database", of_module);
@@ -302,12 +309,14 @@ static int ig_tclc_add_codesection (ClientData clientdata, Tcl_Interp *interp, i
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) return result;
 
     if (code == NULL) return tcl_error_msg (interp, "No code specified for codesection");
     if (parent_module == NULL) return tcl_error_msg (interp,  "No parent module specified for codesection");
 
     struct ig_module *pa_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_id, parent_module)));
+
     if (pa_mod == NULL) pa_mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_name, parent_module)));
 
     if (pa_mod == NULL) return tcl_error_msg (interp, "Unable to find parent module \"%s\" in database", parent_module);
@@ -357,6 +366,7 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) return result;
 
     if (to_id == NULL) return tcl_error_msg (interp, "Error: no -to object specified");
@@ -370,6 +380,7 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
     ig_tclc_check_name_and_warn (reg_name);
 
     struct ig_object *to_obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, to_id));
+
     if ((to_obj == NULL)
         || ((regfile_name != NULL) && ((to_obj->type != IG_OBJ_MODULE) || (IG_MODULE (to_obj)->resource)))
         || ((entry_name != NULL) && (to_obj->type != IG_OBJ_REGFILE))
@@ -378,6 +389,7 @@ static int ig_tclc_add_regfile (ClientData clientdata, Tcl_Interp *interp, int o
     }
 
     const char *result_str = "";
+
     if (regfile_name != NULL) {
         struct ig_rf_regfile *regfile = ig_lib_add_regfile (db, regfile_name, IG_MODULE (to_obj));
         if (regfile == NULL) return tcl_error_msg (interp, "Unable to create regfile \"%s\"", regfile_name);
@@ -432,6 +444,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) return result;
 
     if (obj_name == NULL) {
@@ -449,6 +462,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
     }
 
     struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, obj_name));
+
     if (obj == NULL) {
         g_list_free (attr_list);
         return tcl_error_msg (interp, "Unknown object \"%s\"", obj_name);
@@ -517,6 +531,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) return result;
 
     if (obj_name == NULL) {
@@ -530,6 +545,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
     }
 
     struct ig_object *obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->objects_by_id, obj_name));
+
     if (obj == NULL) {
         g_list_free (attr_list);
         return tcl_error_msg (interp, "Unknown object \"%s\"", obj_name);
@@ -571,6 +587,7 @@ static int ig_tclc_get_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     /* result list */
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
+
     for (GList *li = attr_list; li != NULL; li = li->next) {
         char       *attr = (char *)li->data;
         const char *val  = ig_obj_attr_get (obj, attr);
@@ -618,6 +635,7 @@ static enum ig_tclc_get_objs_of_obj_version ig_tclc_get_objs_of_obj_version_from
         cmdname = cmdchomp + 2;
     }
     enum ig_tclc_get_objs_of_obj_version version = IG_TOOOV_INVALID;
+
     if (strcmp (cmdname, "get_ports") == 0) {
         version = IG_TOOOV_PORTS;
     } else if (strcmp (cmdname, "get_declarations") == 0) {
@@ -690,6 +708,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) return result;
 
     /* sanity checks */
@@ -873,6 +892,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
 
     /* generate result */
     Tcl_Obj *retval = NULL;
+
     if (all) {
         retval = Tcl_NewListObj (0, NULL);
     }
@@ -925,6 +945,7 @@ static enum ig_tclc_get_netgen_objects_version ig_tclc_get_netgen_objects_versio
         cmdname = cmdchomp + 2;
     }
     enum ig_tclc_get_netgen_objects_version version = IG_TNGOV_INVALID;
+
     if (strcmp (cmdname, "get_net_objects") == 0) {
         version = IG_TNGOV_NET;
     } else if (strcmp (cmdname, "get_generic_objects") == 0) {
@@ -966,6 +987,7 @@ static int ig_tclc_get_netgen_objects (ClientData clientdata, Tcl_Interp *interp
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) return result;
 
     /* sanity checks */
@@ -974,6 +996,7 @@ static int ig_tclc_get_netgen_objects (ClientData clientdata, Tcl_Interp *interp
     }
 
     struct ig_object *obj = NULL;
+
     if (version == IG_TNGOV_NET) {
         obj = PTR_TO_IG_OBJECT (g_hash_table_lookup (db->nets_by_id, parent_name));
     } else if (version == IG_TNGOV_GENERIC) {
@@ -985,6 +1008,7 @@ static int ig_tclc_get_netgen_objects (ClientData clientdata, Tcl_Interp *interp
     }
 
     GList *children = NULL;
+
     if (version == IG_TNGOV_NET) {
         children = IG_NET (obj)->objects->head;
     } else if (version == IG_TNGOV_GENERIC) {
@@ -1014,6 +1038,7 @@ static void ig_tclc_connection_parse (const char *input, GString *id, GString *n
     if (adapt == NULL) return;
 
     bool inv = false;
+
     if ((strlen (input) >= 2) && (input[0] == '~')) {
         input++;
         inv = true;
@@ -1022,6 +1047,7 @@ static void ig_tclc_connection_parse (const char *input, GString *id, GString *n
 
     log_debug ("TCnPr", "parsing connection info: %s", input);
     const char *split_net = strstr (input, ":");
+
     g_string_assign (id, input);
     if (split_net == NULL) {
         g_string_assign (net, "");
@@ -1058,6 +1084,7 @@ static void ig_tclc_check_name_and_warn (const char *name)
     if (name == NULL) return;
 
     const char unwanted[] = {'"', '\'', '!', ':', '$', ' ', '{', '}', '[', ']', '<', '>', '(', ')', 0};
+
     for (const char *cp = &(unwanted[0]); *cp != 0; cp++) {
         if (strchr (name, *cp) != NULL) {
             log_warn ("TChkN", "Got identifier \"%s\" containing probably unwanted character \"%c\".", name, *cp);
@@ -1109,6 +1136,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) goto l_ig_tclc_connect_exit;
 
     if (name == NULL) {
@@ -1154,6 +1182,7 @@ static int ig_tclc_connect (ClientData clientdata, Tcl_Interp *interp, int objc,
 
     GList                     *trg_orig_list = to_list;
     enum ig_lib_connection_dir trg_dir       = IG_LCDIR_DEFAULT;
+
     if (trg_orig_list == NULL) {
         trg_orig_list = bd_list;
         trg_dir       = IG_LCDIR_BIDIR;
@@ -1263,6 +1292,7 @@ static int ig_tclc_parameter (ClientData clientdata, Tcl_Interp *interp, int obj
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) goto l_ig_tclc_parameter_exit;
 
     if (name == NULL) result = tcl_error_msg (interp, "No parameter name specified");
@@ -1371,6 +1401,7 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
     };
 
     int result = Tcl_ParseArgsObjv (interp, arg_table, &objc, objv, NULL);
+
     if (result != TCL_OK) {
         return result;
     }
@@ -1386,6 +1417,7 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
     }
 
     struct ig_instance *inst = IG_INSTANCE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->instances_by_name, instname)));
+
     if (inst == NULL) {
         return tcl_error_msg (interp, "Could not find instance \"%s\"\n", instname);
     }
@@ -1396,6 +1428,7 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
     }
 
     struct ig_port *port = NULL;
+
     if (!inst->module->resource) {
         port = ig_lib_add_port (db, inst->module, dir, pinname);
 
@@ -1405,6 +1438,7 @@ static int ig_tclc_create_pin (ClientData clientdata, Tcl_Interp *interp, int ob
     }
 
     Tcl_Obj *retval = Tcl_NewListObj (0, NULL);
+
     Tcl_ListObjAppendElement (interp, retval, Tcl_NewStringObj (IG_OBJECT (pin)->id, -1));
     ig_obj_attr_set (IG_OBJECT (pin), "size", size, false);
     if (port != NULL) {
@@ -1582,6 +1616,7 @@ static int ig_tclc_log (ClientData clientdata, Tcl_Interp *interp, int objc, Tcl
     }
 
     char *msg = "";
+
     if (objc > 0) {
         for (int i = 1; i < objc; i++) {
             msg = Tcl_GetString (remObjv[i]);
@@ -1656,6 +1691,7 @@ static int ig_tclc_log_stat (ClientData clientdata, Tcl_Interp *interp, int objc
     }
 
     Tcl_Obj *retval = NULL;
+
     if (loglevel == NULL) {
         retval = Tcl_NewListObj (0, NULL);
         for (int i = 0; i < LOGLEVEL_COUNT; i++) {
@@ -1714,6 +1750,7 @@ static int tcl_verror_msg (Tcl_Interp *interp, const char *format, va_list args)
     }
     char *user_msg  = g_strdup_vprintf (format, args);
     char *error_msg = g_strdup_printf ("ERROR(%s): %s", scriptFile, user_msg);
+
     Tcl_SetObjResult (interp, Tcl_NewStringObj (error_msg, -1));
     g_free (user_msg);
     g_free (error_msg);

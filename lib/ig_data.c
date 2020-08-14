@@ -299,6 +299,7 @@ struct ig_port *ig_port_new (const char *name, enum ig_port_dir dir, struct ig_m
 
     struct ig_port   *port     = g_slice_new (struct ig_port);
     struct ig_object *plist[2] = {IG_OBJECT (parent), NULL};
+
     ig_obj_init (IG_OBJ_PORT, name, plist, IG_OBJECT (port), storage);
 
     ig_obj_attr_set (IG_OBJECT (port), "direction", ig_port_dir_name (dir), true);
@@ -330,6 +331,7 @@ struct ig_param *ig_param_new (const char *name, const char *value, bool local, 
 
     struct ig_param  *param    = g_slice_new (struct ig_param);
     struct ig_object *plist[2] = {IG_OBJECT (parent), NULL};
+
     ig_obj_init (IG_OBJ_PARAMETER, name, plist, IG_OBJECT (param), storage);
 
     ig_obj_attr_set (IG_OBJECT (param), "value",  value, true);
@@ -363,6 +365,7 @@ struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_
 
     struct ig_decl   *decl     = g_slice_new (struct ig_decl);
     struct ig_object *plist[2] = {IG_OBJECT (parent), NULL};
+
     ig_obj_init (IG_OBJ_DECLARATION, name, plist, IG_OBJECT (decl), storage);
 
     ig_obj_attr_set (IG_OBJECT (decl), "default_type", (default_type ? "true" : "false"), true);
@@ -398,6 +401,7 @@ struct ig_code *ig_code_new (const char *name, const char *codesection, struct i
     }
 
     GString *s_name = g_string_new (NULL);
+
     if (name == NULL) {
         g_string_printf (s_name, "_cs_%d", g_queue_get_length (parent->code));
     } else {
@@ -406,6 +410,7 @@ struct ig_code *ig_code_new (const char *name, const char *codesection, struct i
 
     struct ig_code   *code     = g_slice_new (struct ig_code);
     struct ig_object *plist[2] = {IG_OBJECT (parent), NULL};
+
     ig_obj_init (IG_OBJ_CODESECTION, s_name->str, plist, IG_OBJECT (code), storage);
 
     ig_obj_attr_set (IG_OBJECT (code), "code",   codesection,        true);
@@ -437,6 +442,7 @@ struct ig_rf_reg *ig_rf_reg_new (const char *name, struct ig_rf_entry *parent, G
 
     struct ig_rf_reg *reg      = g_slice_new (struct ig_rf_reg);
     struct ig_object *plist[4] = {IG_OBJECT (parent->parent->parent), IG_OBJECT (parent->parent), IG_OBJECT (parent), NULL};
+
     ig_obj_init (IG_OBJ_REGFILE_REG, name, plist, IG_OBJECT (reg), storage);
 
     reg->parent = parent;
@@ -459,6 +465,7 @@ struct ig_rf_entry *ig_rf_entry_new (const char *name, struct ig_rf_regfile *par
 
     struct ig_rf_entry *entry    = g_slice_new (struct ig_rf_entry);
     struct ig_object   *plist[3] = {IG_OBJECT (parent->parent), IG_OBJECT (parent), NULL};
+
     ig_obj_init (IG_OBJ_REGFILE_ENTRY, name, plist, IG_OBJECT (entry), storage);
 
     entry->parent = parent;
@@ -489,6 +496,7 @@ struct ig_rf_regfile *ig_rf_regfile_new (const char *name, struct ig_module *par
 
     struct ig_rf_regfile *regfile  = g_slice_new (struct ig_rf_regfile);
     struct ig_object     *plist[2] = {IG_OBJECT (parent), NULL};
+
     ig_obj_init (IG_OBJ_REGFILE, name, plist, IG_OBJECT (regfile), storage);
 
     regfile->parent  = parent;
@@ -519,6 +527,7 @@ struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStr
 
     struct ig_module *module   = g_slice_new (struct ig_module);
     struct ig_object *plist[1] = {NULL};
+
     ig_obj_init (IG_OBJ_MODULE, name, plist, IG_OBJECT (module), storage);
 
     ig_obj_attr_set (IG_OBJECT (module), "ilm",      (ilm      ? "true" : "false"), true);
@@ -589,6 +598,7 @@ struct ig_pin *ig_pin_new (const char *name, const char *connection, struct ig_i
 
     struct ig_pin    *pin      = g_slice_new (struct ig_pin);
     struct ig_object *plist[2] = {IG_OBJECT (parent), NULL};
+
     ig_obj_init (IG_OBJ_PIN, name, plist, IG_OBJECT (pin), storage);
 
     ig_obj_attr_set (IG_OBJECT (pin), "connection", connection, true);
@@ -621,6 +631,7 @@ struct ig_adjustment *ig_adjustment_new (const char *name, const char *value, st
 
     struct ig_adjustment *adjustment = g_slice_new (struct ig_adjustment);
     struct ig_object     *plist[2]   = {IG_OBJECT (parent), NULL};
+
     ig_obj_init (IG_OBJ_ADJUSTMENT, name, plist, IG_OBJECT (adjustment), storage);
 
     ig_obj_attr_set (IG_OBJECT (adjustment), "value",  value, true);
@@ -658,6 +669,7 @@ struct ig_instance *ig_instance_new (const char *name, struct ig_module *module,
 
     struct ig_instance *instance = g_slice_new (struct ig_instance);
     struct ig_object   *plist[2] = {(parent == NULL ? NULL : IG_OBJECT (parent)), NULL};
+
     ig_obj_init (IG_OBJ_INSTANCE, name, plist, IG_OBJECT (instance), storage);
 
     ig_obj_attr_set (IG_OBJECT (instance), "module", IG_OBJECT (module)->id, true);
@@ -695,6 +707,7 @@ struct ig_net *ig_net_new (const char *name, GStringChunk *storage)
 
     struct ig_net    *net      = g_slice_new (struct ig_net);
     struct ig_object *plist[1] = {NULL};
+
     ig_obj_init (IG_OBJ_NET, name, plist, IG_OBJECT (net), storage);
 
     net->objects = g_queue_new ();
@@ -745,6 +758,7 @@ struct ig_generic *ig_generic_new (const char *name, GStringChunk *storage)
 
     struct ig_generic *generic  = g_slice_new (struct ig_generic);
     struct ig_object  *plist[1] = {NULL};
+
     ig_obj_init (IG_OBJ_GENERIC, name, plist, IG_OBJECT (generic), storage);
 
     generic->objects = g_queue_new ();

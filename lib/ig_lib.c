@@ -484,6 +484,7 @@ bool ig_lib_connection (struct ig_lib_db *db, const char *signame, struct ig_lib
 
     log_debug ("LConn", "processing hierarchy tree...");
     GList *gen_objs_res = ig_lib_htree_process_signal (db, hier_tree);
+
     if (gen_objs_res != NULL) {
         log_info ("LConn", "successfully created signal %s", signame);
     } else {
@@ -578,6 +579,7 @@ bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *de
 
     log_debug ("LParm", "processing hierarchy tree...");
     GList *gen_objs_res = ig_lib_htree_process_parameter (db, hier_tree, defvalue);
+
     if (gen_objs_res != NULL) {
         log_info ("LParm", "successfully created parameter %s", parname);
     } else {
@@ -625,10 +627,12 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
     struct ig_lib_connection_info *cinfo_first = (struct ig_lib_connection_info *)lhier_first->data;
 
     struct ig_lib_connection_info *cinfo_node = ig_lib_connection_info_copy (db->str_chunks, cinfo_first);
+
     if (cinfo_node == NULL) return NULL;
     log_debug ("LMrHi", "reference node: %s", cinfo_first->obj->id);
 
     GList *successor_list = NULL;
+
     if (lhier_first->next != NULL) {
         successor_list = g_list_prepend (successor_list, lhier_first->next);
     }
@@ -678,6 +682,7 @@ static GNode *ig_lib_merge_hierarchy_list (struct ig_lib_db *db, GList *hier_lis
     log_debug ("LMrHi", "generating subhierarchies (successor_list size is %d)...", g_list_length (successor_list));
 
     const char *local_default_name = cinfo_node->local_name;
+
     if (cinfo_node->force_name) {
         local_default_name = ig_lib_rm_suffix_pinport (db, local_default_name);
     }
@@ -967,7 +972,7 @@ static GNode *ig_lib_htree_reduce (GNode *hier_tree)
 struct ig_lib_htree_process_signal_data {
     struct ig_lib_db *db;
     GList            *gen_objs;
-    bool             error;
+    bool              error;
 };
 
 static GList *ig_lib_htree_process_signal (struct ig_lib_db *db, GNode *hier_tree)
@@ -1239,6 +1244,7 @@ static struct ig_net *ig_lib_add_net (struct ig_lib_db *db, const char *name, GL
     if (name == NULL) return NULL;
 
     struct ig_net *net = ig_net_new (name, db->str_chunks);
+
     if (net == NULL) return NULL;
 
     for (GList *li = objs; li != NULL; li = li->next) {
@@ -1286,6 +1292,7 @@ static struct ig_generic *ig_lib_add_generic (struct ig_lib_db *db, const char *
     if (name == NULL) return NULL;
 
     struct ig_generic *generic = ig_generic_new (name, db->str_chunks);
+
     if (generic == NULL) return NULL;
 
     for (GList *li = objs; li != NULL; li = li->next) {
@@ -1350,6 +1357,7 @@ static char *ig_lib_gen_name_signal (struct ig_lib_db *db, const char *basename)
     }
 
     char *result = g_string_chunk_insert_const (db->str_chunks, tstr->str);
+
     g_string_free (tstr, true);
 
     return result;
@@ -1380,6 +1388,7 @@ static char *ig_lib_gen_name_pinport (struct ig_lib_db *db, const char *basename
     }
 
     char *result = g_string_chunk_insert_const (db->str_chunks, tstr->str);
+
     g_string_free (tstr, true);
 
     return result;
@@ -1413,6 +1422,7 @@ static char *ig_lib_rm_suffix_pinport (struct ig_lib_db *db, const char *pinport
 
     GString *tstr   = g_string_new_len (pinportname, len - 2);
     char    *result = g_string_chunk_insert_const (db->str_chunks, tstr->str);
+
     g_string_free (tstr, true);
 
     return result;
