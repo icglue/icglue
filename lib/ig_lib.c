@@ -584,6 +584,7 @@ bool ig_lib_parameter (struct ig_lib_db *db, const char *parname, const char *de
         log_info ("LParm", "successfully created parameter %s", parname);
     } else {
         log_warn ("LParm", "nothing created for parameter %s", parname);
+        result = false;
     }
 
     struct ig_generic *generic = ig_lib_add_generic (db, parname, gen_objs_res);
@@ -1110,13 +1111,19 @@ struct ig_lib_htree_process_parameter_data {
     GList            *gen_objs;
     const char       *defvalue;
     bool              root_local;
+    bool              error;
 };
 
 static GList *ig_lib_htree_process_parameter (struct ig_lib_db *db, GNode *hier_tree, const char *defvalue)
 {
-    struct ig_lib_htree_process_parameter_data data = {db, NULL, defvalue, false};
+    struct ig_lib_htree_process_parameter_data data = {db, NULL, defvalue, false, false};
 
     g_node_traverse (hier_tree, G_PRE_ORDER, G_TRAVERSE_ALL, -1, ig_lib_htree_process_parameter_tfunc, &data);
+
+    if (data.error) {
+        g_list_free (data.gen_objs);
+        return NULL;
+    }
 
     return data.gen_objs;
 }
@@ -1152,6 +1159,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
         if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (inst_adj)->id)) {
             log_error ("HTrPP", "Already declared parameter adjustment %s", IG_OBJECT (inst_adj)->id);
             ig_adjustment_free (inst_adj);
+            pdata->error = true;
         } else {
             g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (inst_adj)->id), IG_OBJECT (inst_adj));
             ig_obj_ref (IG_OBJECT (inst_adj));
@@ -1177,6 +1185,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
             if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod_param)->id)) {
                 log_error ("HTrPP", "Already declared parameter %s", IG_OBJECT (mod_param)->id);
                 ig_param_free (mod_param);
+                pdata->error = true;
             } else {
                 g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod_param)->id), IG_OBJECT (mod_param));
                 ig_obj_ref (IG_OBJECT (mod_param));
@@ -1201,6 +1210,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
             if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod_param)->id)) {
                 log_error ("HTrPP", "Already declared parameter %s", IG_OBJECT (mod_param)->id);
                 ig_param_free (mod_param);
+                pdata->error = true;
             } else {
                 g_hash_table_insert (db->objects_by_id, g_string_chunk_insert_const (db->str_chunks, IG_OBJECT (mod_param)->id), IG_OBJECT (mod_param));
                 ig_obj_ref (IG_OBJECT (mod_param));
@@ -1217,6 +1227,7 @@ static gboolean ig_lib_htree_process_parameter_tfunc (GNode *node, gpointer data
         }
     } else {
         log_errorint ("HTrPP", "invalid object in hierarchy tree");
+        pdata->error = true;
     }
 
     return false;
