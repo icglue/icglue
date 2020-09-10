@@ -249,6 +249,7 @@ namespace eval ig::templates {
                     set entry_attributes [ig::db::get_attribute -object $i_entry]
                     lappend entry_list [list                                                    \
                         "address" [ig::db::get_attribute -object $i_entry -attribute "address"] \
+                        "comment" [ig::db::get_attribute -object $i_entry -attribute "comment"] \
                         {*}[dict remove $entry_attributes "address"]                            \
                         "regs"    $reg_list                                                     \
                         "object"  $i_entry                                                      \

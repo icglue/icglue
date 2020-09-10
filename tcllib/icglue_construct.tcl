@@ -1006,6 +1006,7 @@ namespace eval ig {
         set do_var_subst   "true"
         set do_subst       "false"
         set origin         [ig::aux::get_origin_here]
+        set comm           ""
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
@@ -1018,6 +1019,7 @@ namespace eval ig {
                 { {^-nos(ubst)?$}           "const=false"        do_var_subst   "do not perform Tcl-variable substition in REGISTERTABLE argument"                  } \
                 { {^-e(val(uate)?)?$}       "const=true"         do_subst       "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
                 { {^-cmdorigin(=|$)}        "string"             origin         "origin of command call for logging"                                                } \
+                { {^-comm(ent)?(=|$)}       "string"             comm           "comment for register"                                                              } \
             ] -context "REGFILE-MODULE ENTRYNAME REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -1125,6 +1127,7 @@ namespace eval ig {
             ig::db::set_attribute -object $entry_id -attribute "address"   -value $address
             ig::db::set_attribute -object $entry_id -attribute "protected" -value $protected
             ig::db::set_attribute -object $entry_id -attribute "origin   " -value $origin
+            ig::db::set_attribute -object $entry_id -attribute "comment"   -value $comm
             # origin
             ig::db::set_attribute -object $entry_id -attribute "origin" -value $origin
             # set handshake
