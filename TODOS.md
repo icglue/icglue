@@ -11,6 +11,7 @@
 - allow partial connections of bus signals (low-prio - would require larger reworks)
 
 ## tcllib
+- signals: add type switch (e.g. struct types)
 - reuse created rtl as ressource (also in testbench)
 - add instance-only command or check in M if already exists: sane values, instances only?
 - regfile:
@@ -20,6 +21,7 @@
 - support systemverilog structs
 
 ## templates
+- signals: add type (see tcllib)
 - testbench -> regs
 - update systemverilog templates for logic type
 - testbench to outside dummy module (see nowriteout function ?)
