@@ -4,8 +4,8 @@ WIDTH           := 200
 HEIGHT          := 200
 ADDITIONAL_OPTS :=
 
-INKSCAPE_VERSION_MAIN = $(shell inkscape --version 2>/dev/null | grep -e 'Inkscape\s*[0-9.]\+' | sed -e 's#^.*Inkscape\s*\([0-9]\+\)\..*$$#\1#')
-ifeq ($(INKSCAPE_VERSION_MAIN),0)
+INKSCAPE_VERSION_0 = $(shell inkscape --version 2>/dev/null | grep 'Inkscape 0\+')
+ifneq ($(INKSCAPE_VERSION_0),)
   INKSCAPE_EXPORT_PNG_OPT = --export-png
 else
   INKSCAPE_EXPORT_PNG_OPT = --export-filename
