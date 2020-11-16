@@ -12,7 +12,7 @@ proc template_data {userdata tdir} {
         set lang   [ig::db::get_attribute -object $object -attribute "language"]
 
         foreach {ilang itag itype idir iext lexcom} {
-                verilog       vlog  icgt verilog       v   {"/* " " */"}
+                verilog       vlog  wtf  verilog       v   {"/* " " */"}
                 systemverilog svlog icgt systemverilog sv  {"/* " " */"}
                 systemc       sc    wtf  systemc       h   {"/* " " */"}
                 systemc       sc    wtf  systemc       cpp {"/* " " */"}
