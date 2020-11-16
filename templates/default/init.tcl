@@ -42,6 +42,7 @@ proc template_data {userdata tdir} {
                  tcl    wtf   .tcl h   {"/* " " */"}
                  tcl    wtf   .tcl cpp {"/* " " */"}
                  python wtf   {}   py  {"#"    "\n"}
+                 py     wtf   {}   py  {"#"    "\n"}
         } {
             add "rf-${itag}.${iext}" $itype "${tdir}/rf/template.${itype}.${itag}.${iext}" "software/${itag}/regfile_access/rf_${name}${iinf}.${iext}" $lexcom
         }
