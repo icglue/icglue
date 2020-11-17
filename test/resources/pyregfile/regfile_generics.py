@@ -1,0 +1,1 @@
+../../../templates/default/rf/static/py/regfile_generics.py

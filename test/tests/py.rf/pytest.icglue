@@ -1,0 +1,78 @@
+# generate empty module / register file
+
+M -unit py_rf -tree {
+    tb ................................ (tb,dummy)
+    \ pytest .......................... (rtl)
+      +-- submod ...................... (res)
+      +- common_sync<submod0..4> ...... (res)
+      \-- submod_regfile .............. (rf)
+}
+
+# regfile-ports
+S "clk"     tb --> submod_regfile:apb_clk!
+S "reset_n" tb --> submod_regfile:apb_resetn!
+
+S "apb_prot_en" tb --> submod_regfile = {1'b0}
+
+foreach {s w <->} {
+    "apb_addr"   32 -->
+    "apb_sel"    1  -->
+    "apb_enable" 1  -->
+    "apb_write"  1  -->
+    "apb_wdata"  32 -->
+    "apb_strb"   4  -->
+    "apb_prot"   3  -->
+    "apb_rdata"  32 <--
+    "apb_ready"  1  <--
+    "apb_slverr" 1  <--
+} {
+    S "$s" -w $w tb ${<->} submod_regfile
+}
+
+S "entry_name0_s_cfg"    -w 5  submod:s_cfg_i     <--  submod_regfile
+S "entry_name0_s_status" -w 16 submod:s_status_o  -->  submod_regfile
+R submod_regfile "entry_name0" -protected {
+	"name"   | "entrybits" | "type" | "reset" | "signal"             | "comment"
+	-----    | ----------- | -----  | ------- | --------             | ---------
+	s_cfg    | 4:0         | RW     | 5'h0    | entry_name0_s_cfg    | "Configure component"
+	s_status | 31:16       | R      | 16'h0   | entry_name0_s_status | "Component status"
+}
+S "s_cfg_large"     -w 40 submod_regfile  -->  submod
+S "s_cfg_trig"            submod_regfile  -->  submod
+S "s_cfg_trig_mode" -w 2  submod_regfile  -->  submod
+R submod_regfile "entry_name1_low" {
+    "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
+    -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
+    s_cfg  | 31:0        | RW     | 32'h0   | s_cfg_large | 31:0         | "Configure submod part 0"
+}
+R submod_regfile "entry_name1_high" -align 8 {
+    "name"             | "entrybits" | "type" | "reset" | "signal"        | "signalbits" | "comment"
+    --------------     | ----------- | -----  | ------- | --------        | ------------ | ---------
+    s_cfg              | 7:0         | RW     | 8'h0    | s_cfg_large     | 39:32        | "Configure submod part 1"
+    s_cfg_trigger      | 8           | RWT    | 1'b0    | s_cfg_trig      | -            | "trigger config update"
+    s_cfg_trigger_mode | 10:9        | RWT    | 2'b0    | s_cfg_trig_mode | -            | "select trigger mode"
+}
+
+# rf_submod_con_list -> connection list with <signalname> <submod-port> <comment>
+set rf_submod_con_list {
+    start            start_i    "start's the module"
+    enable_feature0  feature0_i "enables feature0"
+    enable_feature1  feature1_i "enables feature1"
+    enable_feature2  feature2_i "enables feature2"
+    enable_feature3  feature3_i "enables feature3"
+}
+
+set i 0
+#rf_submod_table as list of lists
+set rf_submod_table {}
+lappend rf_submod_table [list "name"  "width" "type" "reset" "signal" "comment"]
+foreach {name submodport comment} $rf_submod_con_list {
+    # connect to sync's
+    S "submod_${name}"      submod_regfile        -->  common_sync<submod${i}>:data_i
+    S "submod_${name}_sync" submod:${submodport}  <--  common_sync<submod${i}>:data_o
+    lappend rf_submod_table [list "${name}" 1 RW 1'b0 "submod_${name}" "$comment"]
+    incr i
+}
+
+R submod_regfile "entry_sync0"  $rf_submod_table
+
