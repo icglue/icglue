@@ -17,4 +17,4 @@ eval_run_output {
 }
 
 # python test
-run python software/py/test.py
+run python3 software/py/test.py
