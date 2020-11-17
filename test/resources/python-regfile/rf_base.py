@@ -1,1 +1,1 @@
-../../../templates/default/rf/rf_base.py
+../../../templates/default/rf/static/python/rf_base.py

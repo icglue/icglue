@@ -64,7 +64,7 @@ to install to /opt/icglue.
 See [developers](AUTHORS.md).
 
 ## Licensing
-GNU GPLv3 (see [license](LICENSE.md)).
+If not stated otherwise: GNU GPLv3 (see [license](LICENSE.md)).
 
 ## Acknowledgement
 After the initial phase, most of the work for ICGlue was done at the Chair of Highly-Parallel VLSI Systems and Neuro-Microelectronics (HPSN) at TU Dresden
