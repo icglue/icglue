@@ -1,0 +1,13 @@
+M -unit "my_block" -tree {
+   tb_my_block(tb, sv)
+   |
+   +-- (rtl,ilm,attribute={gen_dummy_liberty=>true},attribute={opcondition=>wc_0d45V_m40C}) my_block
+       |
+       +-- another_block
+}
+
+S clk   tb_my_block --> another_block
+S reset tb_my_block --> another_block
+
+S data   -w 8 tb_my_block --> another_block
+S status -w 8 tb_my_block <-- another_block
