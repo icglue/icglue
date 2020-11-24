@@ -38,7 +38,7 @@ proc template_data {userdata tdir} {
             tex  icgt {"%"     "\n"}
             rst  wtf  {}
         } {
-            add "rf-${itag}" $itype "${tdir}/rf/template.${itype}.${itag}" "doc/${itag}/${name}.${itag}"
+            add "rf-${itag}" $itype "${tdir}/rf/template.${itype}.${itag}" "doc/${itag}/${name}.${itag}" $lexcom
         }
 
         add "rf-c.txt" wtf "${tdir}/rf/template.wtf.c.txt" "software/doc/regfile_access/${name}.txt" {}
