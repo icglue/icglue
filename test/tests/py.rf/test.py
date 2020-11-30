@@ -16,10 +16,10 @@ logging.basicConfig(
 )
 
 """
-regfile devices could inherit from regfile_dev (-> implement rfdev_write // rfdev_read)
+regfile devices could inherit from regfile_dev (-> implement rfdev_write and rfdev_read)
     or its highlevel classes (which are simplifing implementation as:
-    - regfile_dev_simple  -> implementation of rfdev_write_simple(self, addr, value) // rfdev_read(self, addr)
-    - regfile_dev_subword -> implementation of rfdev_write_subword(self, addr, value, size) // rfdev_read(self, addr) [keep in mind that addr is unaligned(!) to bytes_per_word]
+    - regfile_dev_simple  -> implementation of rfdev_write_simple(self, addr, value) and rfdev_read(self, addr)
+    - regfile_dev_subword -> implementation of rfdev_write_subword(self, addr, value, size) and rfdev_read(self, addr) [keep in mind that addr is unaligned(!) to bytes_per_word]
 """
 
 rf_dev = regfile_dev_subword_debug()
@@ -96,7 +96,7 @@ Reading Values:
     3. as dictionary
         rf.submod['entry_name0'].get_dict()
     4. raw value
-        rf.submod['entry_name0'].get_value()
+        rf.submod['entry_name0'].get_value() or int(rf.submod['entry_name0'])
     5. as string for debugging purpose, fields + raw value as hex
         -> use in string context or explicit cast
         print(rf.submod['entry_name0'])
@@ -125,6 +125,17 @@ if read_count != rf_dev.read_count:
 else:
     print("PASSED: Regfile-read to variable")
 
+entry_name0['s_cfg'] = 0xC
+rf.submod['entry_name0'] = entry_name0
+
+if not rf.submod['entry_name0'] == 0xC:
+    raise Exception("Entry update or int compare (__eq__) with register_entry class failed.")
+
+if rf.submod['entry_name0'] != 0xC:
+    raise Exception("Entry update or int compare (__ne__) with register_entry class failed.")
+
+
+print(f"Integer print of entry 0x{int(rf.submod['entry_name0']):x}")
 # entry read - active
 entry_name0 = rf.submod['entry_name0']
 read_count = rf_dev.read_count
@@ -133,5 +144,26 @@ if read_count + 2 != rf_dev.read_count:
     raise Exception("Regfile reads count not increment by 2")
 
 print("PASSED: Regfile reads counter test")
+
+# iterations
+if False:
+    # simple iteration
+    for e in rf.submod:  # getting register_entry object
+        print(f"--> {e.regname} (Value 0x{int(e):x})")
+        for f in e:  # getting register_field object (str-conversion)
+            print(f"    \\-> {f} (LSB: {f.lsb:2d} MSB:{f.msb:2d})")
+        print("")
+
+    print("--")
+
+if True:
+    # key value iteration
+    for ename, e in rf.submod.items():  # getting name + regfile_entry object
+        print(f"--> {ename} (Value: 0x{int(e):x})")
+        for fname, f in e.items():  # getting name + register_field object
+            print(f"    \\-> {fname} (LSB: {f.lsb:2d} MSB:{f.msb:2d})")
+        print("")
+
+    print("--")
 
 print("DONE.")

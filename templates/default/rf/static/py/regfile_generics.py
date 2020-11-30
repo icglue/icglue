@@ -283,6 +283,12 @@ class regfile:
     def set_rfdev(self, dev):
         self._dev = dev
 
+    def __iter__(self):
+        return iter(self._entries.values())
+
+    def items(self):
+        return self._entries.items()
+
     def __getitem__(self, key):
         if self.__add_entry_mode:
             return regfile_create_entry(self, key)
@@ -341,11 +347,11 @@ class register_entry_abstract(metaclass=abc.ABCMeta):
 
         self._addr = int(kwargs['addr'])
         self._write_mask = int(kwargs.setdefault('write_mask', -1))
+        self._fields = {}
         for k, v in kwargs.items():
             if k not in ['addr', 'write_mask']:
                 self.__setattr__(k, v)
 
-        self._fields = {}
         self.__add_fields_mode = False
         self._lock = True
 
@@ -377,10 +383,13 @@ class register_entry_abstract(metaclass=abc.ABCMeta):
         return self._write_mask
 
     def __iter__(self):
-        return iter(self._fields)
+        return iter(self._fields.values())
 
     def items(self):
         return self._fields.items()
+
+    def get_field_names(self):
+        return self._fields.keys()
 
     def __getitem__(self, key):
         if self.__add_fields_mode:
@@ -402,7 +411,7 @@ class register_entry_abstract(metaclass=abc.ABCMeta):
 
     def __setitem__(self, key, value):
         if key not in self._fields:
-            raise Exception(f"Field {key} does not exist. Available fields: {list(self._fields.keys())}")
+            raise Exception(f"Field {key} does not exist. Available fields: {list(self.get_field_names())}")
 
         (wval, mask) = self._fields[key].get_int_mask(value)
 
@@ -432,7 +441,7 @@ class register_entry_abstract(metaclass=abc.ABCMeta):
         int_value = self._get_value()
         s = []
         for n, f in self.items():
-            s.append(f"{n}: 0x{f.get_field(int_value):x}")
+            s.append(f"'{n}': 0x{f.get_field(int_value):x}")
         return f"Register {self.regname}: {{{', '.join(s)}}} = 0x{int_value:x}"
 
     def get_value(self):
@@ -441,14 +450,52 @@ class register_entry_abstract(metaclass=abc.ABCMeta):
     def set_value(self, value, mask=None):
         if mask is None:
             mask = self._write_mask
+
         if type(value) is int:
             self._set_value(value, mask)
-        if type(value) is dict:
-            e = register_entry(addr=self._addr, write_mask=self._write_mask)
-            e._fields = self._fields
+        elif isinstance(value, dict):
+            e = register_entry(addr=self._addr, write_mask=self._write_mask, _fields=self._fields)
             for k, v in value.items():
                 e[k] = v
+
             self._set_value(e.get_value(), self._write_mask)
+        elif isinstance(value, register_entry):
+            value = value.get_dict()
+            e = register_entry(addr=self._addr, _fields=self._fields)
+            for k, v in value.items():
+                e[k] = v
+
+            self._set_value(e.get_value(), self._write_mask)
+        else:
+            raise Exception(f"Unable to assign type {type(value)} -- {str(value)}.")
+
+    def __int__(self):
+        return self.get_value()
+
+    def __eq__(self, other):
+        if type(other) is int:
+            return (self.get_value() == other)
+        super().__eq__(other)
+
+    def __lt__(self, other):
+        if type(other) is int:
+            return (self.get_value() < other)
+        super().__lt__(other)
+
+    def __le__(self, other):
+        if type(other) is int:
+            return (self.get_value() <= other)
+        super().__le__(other)
+
+    def __gt__(self, other):
+        if type(other) is int:
+            return (self.get_value() > other)
+        super().__gt__(other)
+
+    def __ge__(self, other):
+        if type(other) is int:
+            return (self.get_value() >= other)
+        super().__ge__(other)
 
 
 class register_entry(register_entry_abstract):
@@ -513,3 +560,6 @@ class register_field:
 
         wval &= self.__mask
         return (wval, self.__mask)
+
+    def __str__(self):
+        return f"{self.name}"
