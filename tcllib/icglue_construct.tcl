@@ -117,7 +117,7 @@ namespace eval ig {
         # @return Stride list of parsed modules/instances of form name parent flags ...
         proc mtree_parse {instance_tree {origin {}}} {
             set instance_tree [regsub -all -lineanchor -linestop {#.*$} $instance_tree {}]
-            set instance_tree [uplevel 2 subst [list $instance_tree]]
+            set instance_tree [uplevel 2 subst -nobackslashes [list $instance_tree]]
             set instance_tree [split $instance_tree "\n"]
 
             set cur_parent {}

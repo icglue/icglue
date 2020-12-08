@@ -4,7 +4,7 @@ M -unit py_rf -tree {
     tb ................................ (tb,dummy)
     \ pytest .......................... (rtl)
       +-- submod ...................... (res)
-      +- common_sync<submod0..4> ...... (res)
+      +-- common_sync<submod0..4> ..... (res)
       \-- submod_regfile .............. (rf)
 }
 
