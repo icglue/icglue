@@ -432,6 +432,104 @@ namespace eval ig {
             }
             namespace delete _construct_run
         }
+
+        ## @brief Convert an ryaml registerfile description to RT compatible table
+        #
+        # @param regfilename Name of the registerfile for sanitycheck
+        # @param ryaml yaml description of register file
+        # @param sigprefix prefix for automatically created signal names
+        # @param origin code origin for logging
+        # @return RT compatible register table
+        #
+        # This command requires the tcllib yaml package for parsing yaml.
+        proc ryaml_to_regtable {regfilename ryaml {sigprefix {}} {origin {}}} {
+            # use yaml parser from tcllib
+            if {[catch {package require yaml}]} {
+                ig::log -error "RT (regfile ${regfilename}): need tcllib/yaml for yaml parsing ($origin)"
+                return {}
+            }
+            if {[catch {set rfdict [::yaml::yaml2dict $ryaml]} msg]} {
+                ig::log -error "RT (regfile ${regfilename}): failed to parse yaml file ($origin):\n${msg}"
+            }
+
+            set result [list {entryname address name entrybits type reset signal signalbits comment}]
+
+            if {$sigprefix ne {}} {
+                set pfx "${sigprefix}_"
+            } else {
+                set pfx ""
+            }
+
+            foreach i_entry [dict keys $rfdict] {
+                if {$i_entry eq "IC_REGFILE"} {
+                    set dictname [dict get $rfdict $i_entry name]
+                    if {$dictname ne $regfilename} {
+                        ig::log -warn "RT (regfile ${regfilename}): yaml regfile name (${dictname}) differs from regfile name ($origin)"
+                    }
+                    continue
+                }
+
+                set entrydict [dict get $rfdict $i_entry]
+
+                set i_entryname $i_entry
+                set i_address   [expr {[dict exists $entrydict offset]   ? [dict get $entrydict offset]   : ""}]
+                set i_entrytype [expr {[dict exists $entrydict reg_type] ? [dict get $entrydict reg_type] : ""}]
+
+                foreach i_reg [dict keys $entrydict] {
+                    # skip special entries
+                    if {$i_reg in {desc offset reg_type}} {continue}
+
+                    set regdict [dict get $entrydict $i_reg]
+
+                    set i_name $i_reg
+                    set i_type $i_entrytype
+                    set i_entrybits [dict get $regdict pos]
+                    set i_type    [expr {[dict exists $regdict type]  ? [dict get $regdict type] : $i_entrytype}]
+                    set i_reset   [expr {[dict exists $regdict rst]   ? [dict get $regdict rst]      : "-"}]
+                    set i_comment [expr {[dict exists $regdict desc]  ? [dict get $regdict desc]     : ""}]
+                    if {[dict exists $regdict enum]} {
+                        set i_enum {}
+                        foreach {k v} [dict get $regdict enum] {
+                            lappend i_enum "$k: $v"
+                        }
+                        append i_comment " ([join $i_enum ", "])"
+                    }
+                    set i_def_signal "${pfx}${i_entryname}_${i_name}"
+                    set i_signal     $i_def_signal
+                    set i_signalbits ""
+                    if {[dict exists $regdict map]} {
+                        set sigstr [dict get $regdict map]
+                        if {[regexp -expanded {
+                            ^
+                            \s*
+                            (\w+?)(_[io])?
+                            \s*
+                            (\((.*)\))?
+                            \s*
+                            $
+                        } $sigstr m_whole m_sig m_sfx m_braces m_bits]} {
+                            set i_signal $m_sig
+                            set i_signalbits [string map {.. :} $m_bits]
+                        } else {
+                            ig::log -warn "RT (regfile ${regfilename}): could not parse signal mapping \"${sigstr}\" ($origin)"
+                        }
+                    }
+
+                    # conversion
+                    switch -exact -- $i_type {
+                        RO {set i_type "R"}
+                        RW {set i_type "RW"}
+                        WT {set i_type "RWT"}
+                        default {ig::log -error "unknown register type $i_type ($origin)"}
+                    }
+                    set i_entrybits [string map {.. :} $i_entrybits]
+
+                    lappend result [list $i_entryname $i_address $i_name $i_entrybits $i_type $i_reset $i_signal $i_signalbits $i_comment]
+                }
+            }
+
+            return $result
+        }
     }
 
 
@@ -1459,6 +1557,9 @@ namespace eval ig {
         set csv         "false"
         set csvfile     {}
         set csvsep      {;}
+        set ryaml       "false"
+        set ryamlfile   {}
+        set ryamlsigpfx "false"
         set nosubst_opt ""
         set eval_opt    ""
         set origin      [ig::aux::get_origin_here]
@@ -1469,6 +1570,9 @@ namespace eval ig {
                 { {^-csv$}                 "const=true"      csv         "specify entries as csv"                                                            } \
                 { {^-csvfile($|=)}         "string"          csvfile     "specify entries as csvfile"                                                        } \
                 { {^-csvsep(arator)?($|=)} "string"          csvsep      "specify separator for csvfiles"                                                    } \
+                { {^-ryaml$}               "const=true"      ryaml       "specify entries as yaml"                                                           } \
+                { {^-ryamlfile($|=)}       "string"          ryamlfile   "specify entries as yamlfile"                                                       } \
+                { {^-ryamlpfx($|=)}        "string"          ryamlsigpfx "signal prefix to use for yaml-regfiles without signal names"                       } \
                 { {^-nosubst$}             "const=-nosubst"  nosubst_opt "do not perform Tcl substition in REGISTERTABLE argument"                           } \
                 { {^-e(val(uate)?)?$}      "const=-evaluate" eval_opt    "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
                 { {^-cmdorigin(=|$)}       "string"          origin      "origin of command call for logging"                                                } \
@@ -1481,7 +1585,7 @@ namespace eval ig {
             set regtable    [lindex $arguments 1]
         }
 
-        if {([llength $arguments] < 1) && ($csvfile eq "")} {
+        if {([llength $arguments] < 1) && ($csvfile eq "") && ($ryamlfile eq "")} {
             log -error -abort "RT : not enough arguments ($origin)"
         } elseif {[llength $arguments] > 2} {
             log -error -abort "RT (regfile ${regfilename}): too many arguments ($origin)"
@@ -1491,9 +1595,15 @@ namespace eval ig {
             log -error -abort "RT (regfile ${regfilename}): no regfile name specified ($origin)"
         }
 
-        if {$csvfile ne ""} {
-            set csv "true"
-            set f [open ${csvfile} "r"]
+        if {($csvfile ne "") || ($ryamlfile ne "")} {
+            if {$csvfile ne ""} {
+                set csv "true"
+                set fname $csvfile
+            } else {
+                set ryaml "true"
+                set fname $ryamlfile
+            }
+            set f [open $fname "r"]
             set regtable [read $f]
             close $f
         }
@@ -1508,6 +1618,8 @@ namespace eval ig {
                 }
                 lappend regtable $line
             }
+        } elseif {$ryaml} {
+            set regtable [construct::ryaml_to_regtable $regfilename $regtable $ryamlsigpfx $origin]
         }
 
         if {[llength $regtable] <= 1} {

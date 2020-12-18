@@ -27,6 +27,12 @@ foreach ns [list ig::] {
     set ::syntax(${ns}aux::max_set) {n x}
 }
 
+if {![catch {package require yaml}]} {
+    namespace eval yaml {
+        namespace export yaml2dict
+    }
+}
+
 unset ns
 
 source "$::env(NAGELFAR_SYNTAXBUILD)"
