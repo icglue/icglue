@@ -1,0 +1,53 @@
+%(
+set rf_name [object_name $obj_id]
+set entry_list [regfile_to_arraylist $obj_id]
+set rf_dw [ig::db::get_attribute -object $obj_id -attribute datawidth]
+set addressUnitBits 8
+
+proc reg_access_type {} {
+    if {[uplevel 1 {regexp -nocase {^[^-W]*$} $reg(type)}]} {
+        return "read-only"
+    } else {
+        return "read-write"
+    }
+}
+%)
+%(echo [pop_keep_block_content keep_block_data "keep" "schema-opening" {} [subst -nobackslash {
+<ipxact:memoryMaps xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014">
+  <ipxact:memoryMap>
+    <ipxact:name>default_apb</ipxact:name>
+    <ipxact:addressBlock>
+      <ipxact:name>$rf_name</ipxact:name>
+      <ipxact:baseAddress>TODO</ipxact:baseAddress>
+}]]
+%)
+
+      <ipxact:range>[llength $entry_list]*$rf_dw/$addressUnitBits</ipxact:range>
+      <ipxact:width>$rf_dw</ipxact:width>
+%     foreach_array entry $entry_list {
+      <ipxact:register>
+        <ipxact:name>$entry(name)</ipxact:name>
+%       if {$entry(comment) ne {}} {
+        <ipxact:descriptiion>$entry(comment)</ipxact:descriptiion>
+%       }
+        <ipxact:addressOffset>[format "0x%x" $entry(address)]</ipxact:addressOffset>
+        <ipxact:size>$rf_dw</ipxact:size>
+%       foreach_array_with reg $entry(regs) {$reg(type) ne "-"} {
+        <ipxact:field>
+          <ipxact:name>$reg(name)</ipxact:name>
+%         if {$reg(comment) ne {}} {
+          <ipxact:description>$reg(comment)</ipxact:description>
+%         }
+          <ipxact:bitOffset>$reg(bit_low)</ipxact:bitOffset>
+          <ipxact:bitWidth>$reg(width)</ipxact:bitWidth>
+          <ipxact:access>[reg_access_type]</ipxact:access>
+        </ipxact:field>
+%       }
+      </ipxact:register>
+%     }
+    </ipxact:addressBlock>
+%(echo [pop_keep_block_content keep_block_data "keep" "schema-closing" {} [subst -nobackslash {
+  </ipxact:memoryMap>
+</ipxact:memoryMaps>
+}]]
+%)
