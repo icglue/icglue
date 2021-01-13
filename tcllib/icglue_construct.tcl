@@ -517,8 +517,10 @@ namespace eval ig {
 
                     # conversion
                     switch -exact -- $i_type {
-                        RO {set i_type "R"}
+                        RO -
+                        R  {set i_type "R"}
                         RW {set i_type "RW"}
+                        RWT -
                         WT {set i_type "RWT"}
                         default {ig::log -error "unknown register type $i_type ($origin)"}
                     }
@@ -1559,7 +1561,7 @@ namespace eval ig {
         set csvsep      {;}
         set ryaml       "false"
         set ryamlfile   {}
-        set ryamlsigpfx "false"
+        set ryamlsigpfx ""
         set nosubst_opt ""
         set eval_opt    ""
         set origin      [ig::aux::get_origin_here]
