@@ -21,7 +21,7 @@
 # try to set package path and load ICGlue package for typical cases
 set binpath $::argv0
 set igroot [file dirname [file dirname [file normalize $binpath]]]
-lappend auto_path "[file join $igroot lib]"
+lappend auto_path "[file join $igroot lib]" "[file join $igroot lib/ICGlue/3rdparty]"
 
 set icglue_silent_load "true"
 package require Tcl 8.6

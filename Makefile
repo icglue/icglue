@@ -35,6 +35,11 @@ DOCDIR                = doc
 PKGIDX                = $(PKGDIR)/pkgIndex.tcl
 PKGGENSCR             = scripts/tcl_pkggen.tcl
 
+PKGDIR_INCTCLLIB      = $(PKGDIR)/3rdparty/tcllib
+TCLLIB_URL            = https://raw.githubusercontent.com/tcltk/tcllib/$(TCLLIB_COMMIT)
+TCLLIB_COMMIT         = tcllib-1-20
+TCLLIBFILES           = license.terms $(addprefix modules/,$(addprefix yaml/,yaml.tcl huddle.tcl huddle_types.tcl) cmdline/cmdline.tcl base64/base64.tcl)
+
 VERSIONSCRINSTALL     = scripts/install-version.sh
 
 DOCDIRTCL             = $(DOCDIR)/$(PKGNAME)
@@ -72,11 +77,17 @@ LOCEXTRA              = $(wildcard scripts/* vim/*/*.vim vim/*/*/*.vim) Makefile
 
 TESTDIR               = test
 
+USE_BUNDLED_TCLLIB    = NO
+ifeq ($(USE_BUNDLED_TCLLIB),YES)
+  ADDITIONAL_BUILD_DEP += bundled_tcllib
+  ADDITIONAL_INSTALL_DEP += install_bundled_tcllib
+endif
+
 #-------------------------------------------------------
 # Tcl Package
-.PHONY: all everything logo prebuild syntaxdb docs man
+.PHONY: all everything logo clib syntaxdb docs man fetch_tcllib bundled_tcllib
 
-all: prebuild logo
+all: clib logo $(ADDITIONAL_BUILD_DEP)
 	+@$(MAKE) --no-print-directory $(PKGIDX)
 
 everything: all syntaxdb docs man
@@ -84,7 +95,7 @@ everything: all syntaxdb docs man
 logo:
 	-+@$(MAKE) -sC logo
 
-prebuild $(CLIBSOURCES):
+clib $(CLIBSOURCES):
 	+@$(MAKE) --no-print-directory -C $(CLIBDIR)
 
 $(PKGIDX): $(TCLSOURCES) $(CLIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
@@ -94,6 +105,16 @@ $(PKGIDX): $(TCLSOURCES) $(CLIBSOURCES) $(PKGGENSCR) | $(PKGDIR)
 		ln -sft $(PKGDIR) ../../$$S; \
 	done
 	$(PKGGENSCR) $(PKGDIR)
+
+$(PKGDIR_INCTCLLIB):
+	mkdir -p $(PKGDIR_INCTCLLIB)
+
+fetch_tcllib: | $(PKGDIR_INCTCLLIB)
+	cd $(PKGDIR_INCTCLLIB) && \
+	curl $(addprefix -O $(TCLLIB_URL)/, $(TCLLIBFILES))
+
+bundled_tcllib: fetch_tcllib
+	$(PKGGENSCR) $(PKGDIR_INCTCLLIB)
 
 #-------------------------------------------------------
 # documentation
@@ -150,11 +171,11 @@ memcheck:
 
 #-------------------------------------------------------
 # install
-.PHONY: install install_core install_templates install_templates_prep install_icons install_doc install_helpers
+.PHONY: install install_core install_templates install_templates_prep install_icons install_doc install_helpers install_bundled_tcllib
 
-install: install_core install_templates install_templates_prep install_icons install_doc install_helpers
+install: install_core install_templates install_templates_prep install_icons install_doc install_helpers $(ADDITIONAL_INSTALL_DEP)
 
-$(INSTDIR)/$(PKGDIR) $(INSTDIR)/bin $(INSTDIR)/share/icglue $(INSTDIR)/share/icprep $(INSTDIR)/share/icglue/icons $(INSTDIR)/$(MANDIR):
+$(addprefix $(INSTDIR)/,$(PKGDIR) $(PKGDIR_INCTCLLIB) bin share/icglue share/icprep share/icglue/icons $(MANDIR)):
 	install -m755 -d $@
 
 $(INSTDIR)/$(PKGDIR)/%.so: $(PKGDIR)/%.so | $(INSTDIR)/$(PKGDIR)
@@ -182,6 +203,9 @@ install_templates_prep: |  $(INSTDIR)/share/icprep
 
 install_icons: | $(INSTDIR)/share/icglue/icons
 	install -m644 -t $(INSTDIR)/share/icglue/icons logo/logo.{png,svg,txt}
+
+install_bundled_tcllib: | $(INSTDIR)/$(PKGDIR_INCTCLLIB)
+	install -m644 -t $(INSTDIR)/$(PKGDIR_INCTCLLIB) $(addprefix $(PKGDIR_INCTCLLIB)/,$(notdir $(TCLLIBFILES) pkgIndex.tcl))
 
 $(INSTDIR)/$(MANDIR)/%.$(MANSEC): | $(INSTDIR)/$(MANDIR)
 	install -m644 $(MANDIR)/$(notdir $@) $@
