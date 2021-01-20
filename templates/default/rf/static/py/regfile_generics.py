@@ -42,9 +42,12 @@ def _regfile_warn_user(msg):
 
 
 class regfile_dev(metaclass=abc.ABCMeta):
-    def __init__(self, bytes_per_word=4):
+    def __init__(self, **kwargs):
         super().__init__()
-        self.n_word_bytes = bytes_per_word
+        kwargs.setdefault('bytes_per_word', 4)
+        kwargs.setdefault('logger', logging.getLogger(__name__))
+        self.n_word_bytes = kwargs['bytes_per_word']
+        self.logger = kwargs['logger']
 
     def readwrite_block(self, addr, value, write, bsel=0b1111):
         if len(addr) != len(value):
@@ -65,7 +68,7 @@ class regfile_dev(metaclass=abc.ABCMeta):
 
     def read(self, addr):
         value = self.rfdev_read(addr)
-        logging.debug("RegfileDevice read from address 0x%x = 0x%x", addr, value)
+        self.logger.debug("RegfileDevice read from address 0x%x = 0x%x", addr, value)
         return value
 
     @abc.abstractmethod
@@ -73,13 +76,13 @@ class regfile_dev(metaclass=abc.ABCMeta):
         pass
 
     def write(self, addr, value, mask, write_mask):
-        logging.debug("RegfileDevice initiate write at address 0x%x -- {value: 0x%x, mask 0x%x, write_mask: 0x%x}", addr, value, mask, write_mask)
+        self.logger.debug("RegfileDevice initiate write at address 0x%x -- {value: 0x%x, mask 0x%x, write_mask: 0x%x}", addr, value, mask, write_mask)
         self.rfdev_write(addr, value, mask, write_mask)
 
 
 class regfile_dev_simple(regfile_dev):
-    def __init__(self, bytes_per_word=4):
-        super().__init__(bytes_per_word)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @abc.abstractmethod
     def rfdev_write_simple(self, addr, value):
@@ -101,8 +104,8 @@ class regfile_dev_simple(regfile_dev):
 
 
 class regfile_dev_simple_debug(regfile_dev_simple):
-    def __init__(self, bytes_per_word=4):
-        super().__init__(bytes_per_word)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.mem = {}
         self.write_count = 0
         self.read_count = 0
@@ -110,24 +113,24 @@ class regfile_dev_simple_debug(regfile_dev_simple):
     def rfdev_read(self, addr):
         if addr not in self.mem:
             value = random.getrandbits(32)
-            logging.info("Generating random regfile value 0x%08x", value)
+            self.logger.info("Generating random regfile value 0x%08x", value)
             self.mem[addr] = value
 
         value = self.mem[addr]
         self.read_count += 1
 
-        logging.info("REGFILE-READING from addr 0x%08x value 0x%08x", addr, value)
+        self.logger.info("REGFILE-READING from addr 0x%08x value 0x%08x", addr, value)
         return value
 
     def rfdev_write_simple(self, addr, value):
-        logging.info("REGFILE-WRITING to addr 0x%08x value 0x%08x", addr, value)
+        self.logger.info("REGFILE-WRITING to addr 0x%08x value 0x%08x", addr, value)
         self.mem[addr] = value
         self.write_count += 1
 
 
 class regfile_dev_subword(regfile_dev):
-    def __init__(self, bytes_per_word=4):
-        super().__init__(bytes_per_word)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @abc.abstractmethod
     def rfdev_write_subword(self, addr, value, size):
@@ -153,8 +156,8 @@ class regfile_dev_subword(regfile_dev):
                     subword_offset = i * n_subword_bytes
 
                     # call virtual method
-                    logging.debug("RegfileDevice: Subwrite address 0x%x -- {value: 0x%x, n_subword_bytes: 0x%x}",
-                                  addr + subword_offset, value, n_subword_bytes)
+                    self.logger.debug("RegfileDevice: Subwrite address 0x%x -- {value: 0x%x, n_subword_bytes: 0x%x}",
+                                      addr + subword_offset, value, n_subword_bytes)
                     self.rfdev_write_subword(addr + subword_offset, value, n_subword_bytes)
                     # we are done here ...
                     return
@@ -175,8 +178,8 @@ class regfile_dev_subword(regfile_dev):
 
 
 class regfile_dev_subword_debug(regfile_dev_subword):
-    def __init__(self, bytes_per_word=4):
-        super().__init__(bytes_per_word)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.mem = {}
         self.write_count = 0
         self.read_count = 0
@@ -186,7 +189,7 @@ class regfile_dev_subword_debug(regfile_dev_subword):
         for i in range(self.n_word_bytes):
             if (addr + i) not in self.mem:
                 v = random.getrandbits(8)
-                logging.info("Generating random regfile value 0x%08x", v)
+                self.logger.info("Generating random regfile value 0x%08x", v)
                 self.mem[addr + i] = v
 
             v = self.mem[addr + i]
@@ -197,11 +200,11 @@ class regfile_dev_subword_debug(regfile_dev_subword):
     def rfdev_read(self, addr):
         value = self.getvalue(addr)
         self.read_count += 1
-        logging.info("REGFILE-READING from addr 0x%08x value 0x%08x", addr, value)
+        self.logger.info("REGFILE-READING from addr 0x%08x value 0x%08x", addr, value)
         return value
 
     def rfdev_write_subword(self, addr, value, size):
-        logging.info("REGFILE-WRITING to addr 0x%08x value 0x%08x size=0x%08x", addr, value, size)
+        self.logger.info("REGFILE-WRITING to addr 0x%08x value 0x%08x size=0x%08x", addr, value, size)
 
         b = value.to_bytes(self.n_word_bytes, 'little')
         for i in range(size):
@@ -218,7 +221,7 @@ class regfile_mem_access:
         return self._dev.read(self.__base_addr + self._dev.n_word_bytes * index)
 
     def __setitem__(self, index, value):
-        self._dev.read(self.__base_addr + self._dev.n_word_bytes * index, value)
+        self._dev.write(self.__base_addr + self._dev.n_word_bytes * index, value, -1, -1)
 
     def get_base_addr(self):
         return self.__base_addr
