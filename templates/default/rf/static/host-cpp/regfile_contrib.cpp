@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2020 Andreas Dixius
+ *  ICGlue regfile-contrib classes.
+ *  Copyright (C) 2017-2020  Andreas Dixius, Felix Neumärker
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -102,10 +103,10 @@ regfile_dev_subword::~regfile_dev_subword()
 
 /* regfile_dev_bitcache */
 regfile_dev_bitcache::regfile_dev_bitcache (regfile_dev &main) :
-    main_dev (main), cache_enabled (false)
-{
-    cache.valid = false;
-}
+    main_dev (main),
+    cache ({0, 0, 0, 0, false}),
+    cache_enabled (false)
+{}
 
 rf_data_t regfile_dev_bitcache::rfdev_read (rf_addr_t addr)
 {
@@ -169,15 +170,15 @@ void regfile_dev_bitcache::cache_flush ()
 
 /* regfile_dev_wordcache */
 regfile_dev_wordcache::regfile_dev_wordcache (regfile_dev &main, unsigned int maxseq) :
-    main_dev (main), seqlen_max (maxseq), cache_enabled (false)
-{
-    seqlen = 0;
-
-    addr_list        = new rf_addr_t[maxseq];
-    value_list       = new rf_data_t[maxseq];
-    mask_list        = new rf_data_t[maxseq];
-    unused_mask_list = new rf_data_t[maxseq];
-}
+    main_dev         (main),
+    addr_list        (new rf_addr_t[maxseq]),
+    value_list       (new rf_data_t[maxseq]),
+    mask_list        (new rf_data_t[maxseq]),
+    unused_mask_list (new rf_data_t[maxseq]),
+    seqlen           (0),
+    seqlen_max       (maxseq),
+    cache_enabled    (false)
+{}
 
 regfile_dev_wordcache::~regfile_dev_wordcache ()
 {
@@ -331,15 +332,15 @@ rf_data_t _reg_t::_reg_t_read ()
 }
 
 _reg_t::_reg_t (_entry_t &entry, unsigned int lsb, unsigned int msb) :
-    _m_entry (entry), _m_lsb (lsb)
-{
+    _m_entry (entry),
+    _m_lsb   (lsb),
     /*
      * (1 << (msb+1)) does not work for msb = 31 and data type uint32_t:
      * result would/might/can be (1 << 32) --> (1 << 0) --> 1
      * workaround: (2 << msb)
      */
-    _m_mask = (2 << msb) - (1 << lsb);
-}
+    _m_mask ((2 << msb) - (1 << lsb))
+{}
 
 /* _reg_ro_t */
 _reg_ro_t::_reg_ro_t (_entry_t &entry, unsigned int lsb, unsigned int msb) :

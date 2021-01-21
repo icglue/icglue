@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2020 Andreas Dixius
+ *  ICGlue regfile-contrib classes.
+ *  Copyright (C) 2017-2020  Andreas Dixius, Felix Neumärker
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -100,6 +101,12 @@ class regfile_dev_wordcache : public regfile_dev {
 
     public:
         regfile_dev_wordcache (regfile_dev &main, unsigned int maxseq);
+
+        regfile_dev_wordcache            (const regfile_dev_wordcache &c) = delete;
+        regfile_dev_wordcache& operator= (const regfile_dev_wordcache &c) = delete;
+        regfile_dev_wordcache            (regfile_dev_wordcache &&c)      = delete;
+        regfile_dev_wordcache& operator= (regfile_dev_wordcache &&c)      = delete;
+
         virtual ~regfile_dev_wordcache ();
 
         virtual rf_data_t rfdev_read  (rf_addr_t addr);
