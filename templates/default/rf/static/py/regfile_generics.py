@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Felix Neumärker
+# Copyright (C) 2020 Andreas Dixius, Felix Neumärker
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -292,6 +292,12 @@ class regfile:
     def items(self):
         return self._entries.items()
 
+    def keys(self):
+        return self._entries.keys()
+
+    def values(self):
+        return self._entries.values()
+
     def __getitem__(self, key):
         if self.__add_entry_mode:
             return regfile_create_entry(self, key)
@@ -391,8 +397,17 @@ class register_entry_abstract(metaclass=abc.ABCMeta):
     def items(self):
         return self._fields.items()
 
-    def get_field_names(self):
+    def keys(self):
         return self._fields.keys()
+
+    def values(self):
+        return self._fields.values()
+
+    def field(self, name):
+        return self._fields[name]
+
+    def get_field_names(self):
+        return self.keys()
 
     def __getitem__(self, key):
         if self.__add_fields_mode:
