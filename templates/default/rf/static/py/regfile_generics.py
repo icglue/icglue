@@ -167,7 +167,7 @@ class regfile_dev_subword(regfile_dev):
             # reduce subword mask - throw away the other half
             subword_mask >>= n_subword_bytes * 8
 
-        # no success?  - full read-modify-write
+        # no success? - full read-modify-write
         rmw_value = self.read(addr)
 
         rmw_value &= ~mask
@@ -469,7 +469,7 @@ class register_entry_abstract(metaclass=abc.ABCMeta):
         if mask is None:
             mask = self._write_mask
 
-        if type(value) is int:
+        if isinstance(value, int):
             self._set_value(value, mask)
         elif isinstance(value, dict):
             e = register_entry(addr=self._addr, write_mask=self._write_mask, _fields=self._fields)
@@ -491,27 +491,27 @@ class register_entry_abstract(metaclass=abc.ABCMeta):
         return self.get_value()
 
     def __eq__(self, other):
-        if type(other) is int:
+        if isinstance(other, int):
             return (self.get_value() == other)
         super().__eq__(other)
 
     def __lt__(self, other):
-        if type(other) is int:
+        if isinstance(other, int):
             return (self.get_value() < other)
         super().__lt__(other)
 
     def __le__(self, other):
-        if type(other) is int:
+        if isinstance(other, int):
             return (self.get_value() <= other)
         super().__le__(other)
 
     def __gt__(self, other):
-        if type(other) is int:
+        if isinstance(other, int):
             return (self.get_value() > other)
         super().__gt__(other)
 
     def __ge__(self, other):
-        if type(other) is int:
+        if isinstance(other, int):
             return (self.get_value() >= other)
         super().__ge__(other)
 
