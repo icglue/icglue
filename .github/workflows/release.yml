@@ -1,0 +1,47 @@
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+name: Upload Release Asset
+
+jobs:
+  build:
+    name: Upload Release Asset
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build project # This would actually build your project, using zip for an example artifact
+        run: |
+          # fetch tcllib
+          make fetch_tcllib
+          # bundled tcllib
+          make bundled_tcllib
+          # fetch logo:
+          #wget -O "logo/logo.png" "https://icglue.org/img/icglue.96.png"
+          sudo apt-get install -y --no-upgrade inkscape
+          make logo
+          tar -cvzf asset.tar.gz --transform "s|^|icglue-${GITHUB_REF#refs/tags/v}/|" lib/ICGlue/3rdparty/tcllib/* logo/logo.png
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./asset.tar.gz
+          asset_name: build-assets.tar.gz
+          asset_content_type: application/x-gzip
