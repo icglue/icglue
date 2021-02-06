@@ -77,10 +77,14 @@ LOCEXTRA              = $(wildcard scripts/* vim/*/*.vim vim/*/*/*.vim) Makefile
 
 TESTDIR               = test
 
-USE_BUNDLED_TCLLIB    = NO
+USE_BUNDLED_TCLLIB    =
 ifeq ($(USE_BUNDLED_TCLLIB),YES)
   ADDITIONAL_BUILD_DEP += bundled_tcllib
   ADDITIONAL_INSTALL_DEP += install_bundled_tcllib
+else ifneq ($(USE_BUNDLED_TCLLIB),NO)
+  ifneq ($(wildcard $(PKGDIR_INCTCLLIB)),)
+    ADDITIONAL_INSTALL_DEP += install_bundled_tcllib
+  endif
 endif
 
 #-------------------------------------------------------
