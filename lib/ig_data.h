@@ -131,11 +131,7 @@ struct ig_param {
 struct ig_decl {
     struct ig_object object;  /**< @brief Inherited @ref ig_object struct. */
 
-    bool default_type;              /**< @brief Set if declaration is of default type (language dependant). */
-
-    const char *default_assignment; /**< @brief Default assignment to declared variable or @c NULL if unassigned. */
-
-    struct ig_module *parent;       /**< @brief Module containing declaration. */
+    struct ig_module *parent; /**< @brief Module containing declaration. */
     struct ig_net    *net;    /**< @brief Net connected to decl or @c NULL. */
 };
 
@@ -455,8 +451,6 @@ void ig_param_free (struct ig_param *param);
 /**
  * @brief Create new declaration data struct.
  * @param name Name of declared variable.
- * @param assign Value assigned to variable or @c NULL.
- * @param default_type Use default variable type.
  * @param parent Module where declaration is to be added.
  * @param storage String storage to use or @c NULL.
  * @return The newly allocated declaration structure or @c NULL in case of an error.
@@ -464,7 +458,7 @@ void ig_param_free (struct ig_param *param);
  * This creates the declaration with the related object and adds the declaration to the specified parent module.
  * Default attributes are set in the related object.
  */
-struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_type, struct ig_module *parent, GStringChunk *storage);
+struct ig_decl *ig_decl_new (const char *name, struct ig_module *parent, GStringChunk *storage);
 
 /**
  * @brief Free declaration data struct.

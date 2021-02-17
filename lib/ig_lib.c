@@ -1056,7 +1056,7 @@ static gboolean ig_lib_htree_process_signal_tfunc (GNode *node, gpointer data)
             }
 
             /* create a declaration */
-            struct ig_decl *mod_decl = ig_decl_new (signal_name, NULL, true, mod, db->str_chunks);
+            struct ig_decl *mod_decl = ig_decl_new (signal_name, mod, db->str_chunks);
             if (g_hash_table_contains (db->objects_by_id, IG_OBJECT (mod_decl)->id)) {
                 log_error ("HTrPS", "Already declared declaration %s", IG_OBJECT (mod_decl)->id);
                 ig_decl_free (mod_decl);

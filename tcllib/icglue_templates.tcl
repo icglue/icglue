@@ -367,7 +367,6 @@ namespace eval ig::templates {
         # @li object = Object-ID of declaration.
         # @li size = Bitsize of declaration.
         # @li %vlog.bitrange = Verilog-Bitrange of declaration.
-        # @li defaulttype = Boolean indicating whether declaration is of default type for declarations.
         # @li vlog.type = Verilog-Type of declarations.
         #
         # The code entry is an array-list of arrays with entries
@@ -452,7 +451,6 @@ namespace eval ig::templates {
                     "object"         $i_decl \
                     "size"           [ig::db::get_attribute -object $i_decl -attribute "size"] \
                     "vlog.bitrange"  [ig::vlog::obj_bitrange $i_decl] \
-                    "defaulttype"    [ig::db::get_attribute -object $i_decl -attribute "default_type"] \
                     "vlog.type"      "[concat $vlog_type $vsigned]" \
                     "dimension"      $dimension_bitrange \
                     "signed"         $signed \

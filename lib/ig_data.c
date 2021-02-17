@@ -358,7 +358,7 @@ void ig_param_free (struct ig_param *param)
  * declaration data
  *******************************************************/
 
-struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_type, struct ig_module *parent, GStringChunk *storage)
+struct ig_decl *ig_decl_new (const char *name, struct ig_module *parent, GStringChunk *storage)
 {
     if (name == NULL) return NULL;
     if (parent == NULL) return NULL;
@@ -368,11 +368,6 @@ struct ig_decl *ig_decl_new (const char *name, const char *assign, bool default_
 
     ig_obj_init (IG_OBJ_DECLARATION, name, plist, IG_OBJECT (decl), storage);
 
-    ig_obj_attr_set (IG_OBJECT (decl), "default_type", (default_type ? "true" : "false"), true);
-    if (assign != NULL) ig_obj_attr_set (IG_OBJECT (decl), "assign", assign, true);
-
-    decl->default_assignment = ig_obj_attr_get (IG_OBJECT (decl), "assign");
-    decl->default_type       = default_type;
     decl->parent             = parent;
     decl->net                = NULL;
 

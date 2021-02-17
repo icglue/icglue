@@ -96,11 +96,8 @@ namespace eval ig::vlog {
     #
     # @return Verilog declaration type.
     proc declaration_type {decl} {
-        if {[ig::db::get_attribute -object $decl -attribute "default_type"]} {
-            return "wire"
-        } else {
-            return "reg"
-        }
+        # TODO: just wire supported
+        return "wire"
     }
 
     ## @brief Try to parse a (simple) verilog value into an integer.
