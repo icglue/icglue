@@ -24,12 +24,10 @@
 - signals: add type (see tcllib)
 - testbench -> regs
 - update systemverilog templates for logic type
-- testbench to outside dummy module (see nowriteout function ?)
 - rewrite regfile template as systemverilog woof with enums for addresse?
 
 ## bin
 - allow multiple construction scripts?
-- add "nowriteout" function or similar? -> allows for construction with intermediate clean
 
 ## test
 - more tests
