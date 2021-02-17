@@ -1,45 +1,19 @@
 # generate empty module / register file
 
+logger -level E -id ChkRS
+logger -level E -id RFTP
+logger -level E -id Tcl
+
 M -unit py_rf -tree {
-    tb ................................ (tb,dummy)
-    \ pytest .......................... (rtl)
-      +-- submod ...................... (res)
-      +-- common_sync<submod0..4> ..... (res)
-      \-- submod_regfile .............. (rf)
+    submod_regfile .............. (rf)
 }
 
-# regfile-ports
-S "clk"     tb --> submod_regfile:apb_clk!
-S "reset_n" tb --> submod_regfile:apb_resetn!
-
-S "apb_prot_en" tb --> submod_regfile = {1'b0}
-
-foreach {s w <->} {
-    "apb_addr"   32 -->
-    "apb_sel"    1  -->
-    "apb_enable" 1  -->
-    "apb_write"  1  -->
-    "apb_wdata"  32 -->
-    "apb_strb"   4  -->
-    "apb_prot"   3  -->
-    "apb_rdata"  32 <--
-    "apb_ready"  1  <--
-    "apb_slverr" 1  <--
-} {
-    S "$s" -w $w tb ${<->} submod_regfile
-}
-
-S "entry_name0_s_cfg"    -w 5  submod:s_cfg_i     <--  submod_regfile
-S "entry_name0_s_status" -w 16 submod:s_status_o  -->  submod_regfile
 R submod_regfile "entry_name0" -protected {
 	"name"   | "entrybits" | "type" | "reset" | "signal"             | "comment"
 	-----    | ----------- | -----  | ------- | --------             | ---------
 	s_cfg    | 4:0         | RW     | 5'h0    | entry_name0_s_cfg    | "Configure component"
 	s_status | 31:16       | R      | 16'h0   | entry_name0_s_status | "Component status"
 }
-S "s_cfg_large"     -w 40 submod_regfile  -->  submod
-S "s_cfg_trig"            submod_regfile  -->  submod
-S "s_cfg_trig_mode" -w 2  submod_regfile  -->  submod
 R submod_regfile "entry_name1_low" {
     "name" | "entrybits" | "type" | "reset" | "signal"    | "signalbits" | "comment"
     -----  | ----------- | -----  | ------- | --------    | ------------ | ---------
@@ -68,8 +42,6 @@ set rf_submod_table {}
 lappend rf_submod_table [list "name"  "width" "type" "reset" "signal" "comment"]
 foreach {name submodport comment} $rf_submod_con_list {
     # connect to sync's
-    S "submod_${name}"      submod_regfile        -->  common_sync<submod${i}>:data_i
-    S "submod_${name}_sync" submod:${submodport}  <--  common_sync<submod${i}>:data_o
     lappend rf_submod_table [list "${name}" 1 RW 1'b0 "submod_${name}" "$comment"]
     incr i
 }
