@@ -446,12 +446,13 @@ namespace eval ig {
         # @return RT compatible register table
         #
         # This command requires the tcllib yaml package for parsing yaml.
-        proc ryaml_to_regtable {regfilename ryaml {sigprefix {}} {origin {}}} {
+        proc ryaml_process {regfilename ryaml {sigprefix {}} {destmod {}} {origin {}}} {
             # use yaml parser from tcllib
             if {[catch {package require yaml}]} {
                 ig::log -error "RT (regfile ${regfilename}): need tcllib/yaml for yaml parsing ($origin)"
                 return {}
             }
+            ##nagelfar syntax ::yaml::yaml2dict x*
             if {[catch {set rfdict [::yaml::yaml2dict $ryaml]} msg]} {
                 ig::log -error "RT (regfile ${regfilename}): failed to parse yaml file ($origin):\n${msg}"
             }
@@ -464,77 +465,237 @@ namespace eval ig {
                 set pfx ""
             }
 
-            foreach i_entry [dict keys $rfdict] {
-                if {$i_entry eq "IC_REGFILE"} {
-                    set dictname [dict get $rfdict $i_entry name]
-                    if {$dictname ne $regfilename} {
-                        ig::log -warn "RT (regfile ${regfilename}): yaml regfile name (${dictname}) differs from regfile name ($origin)"
-                    }
-                    continue
-                }
+            set rf_signals {}
+            set rf_signals_dir {}
+            set rf_signals_port {}
 
-                set entrydict [dict get $rfdict $i_entry]
-
-                set i_entryname $i_entry
-                set i_address   [expr {[dict exists $entrydict offset]   ? [dict get $entrydict offset]   : ""}]
-                set i_entrytype [expr {[dict exists $entrydict reg_type] ? [dict get $entrydict reg_type] : ""}]
-
-                foreach i_reg [dict keys $entrydict] {
-                    # skip special entries
-                    if {$i_reg in {desc offset reg_type}} {continue}
-
-                    set regdict [dict get $entrydict $i_reg]
-
-                    set i_name $i_reg
-                    set i_type $i_entrytype
-                    set i_entrybits [dict get $regdict pos]
-                    set i_type    [expr {[dict exists $regdict type]  ? [dict get $regdict type] : $i_entrytype}]
-                    set i_reset   [expr {[dict exists $regdict rst]   ? [dict get $regdict rst]      : "-"}]
-                    set i_comment [expr {[dict exists $regdict desc]  ? [dict get $regdict desc]     : ""}]
-                    if {[dict exists $regdict enum]} {
-                        set i_enum {}
-                        foreach {k v} [dict get $regdict enum] {
-                            lappend i_enum "$k: $v"
-                        }
-                        append i_comment " ([join $i_enum ", "])"
-                    }
-                    set i_def_signal "${pfx}${i_entryname}_${i_name}"
-                    set i_signal     $i_def_signal
-                    set i_signalbits ""
-                    if {[dict exists $regdict map]} {
-                        set sigstr [dict get $regdict map]
-                        if {[regexp -expanded {
-                            ^
-                            \s*
-                            (\w+?)(_[io])?
-                            \s*
-                            (\((.*)\))?
-                            \s*
-                            $
-                        } $sigstr m_whole m_sig m_sfx m_braces m_bits]} {
-                            set i_signal $m_sig
-                            set i_signalbits [string map {.. :} $m_bits]
-                        } else {
-                            ig::log -warn "RT (regfile ${regfilename}): could not parse signal mapping \"${sigstr}\" ($origin)"
+            if {[lindex $rfdict 0] eq "IC_REGFILE"} {
+                # get regfile
+                set rfid {}
+                if {[catch {
+                    set rfid [ig::db::get_regfiles -name $regfilename]
+                }]} {
+                    if {![catch {
+                        set temp_mod [ig::db::get_modules -name $regfilename]
+                    }]} {
+                        set temp_rfs [ig::db::get_regfiles -of $temp_mod]
+                        if {[llength $temp_rfs] > 0} {
+                            set rfid [lindex $temp_rfs 0]
                         }
                     }
-
-                    # conversion
-                    switch -exact -- $i_type {
-                        RO -
-                        R  {set i_type "R"}
-                        RW {set i_type "RW"}
-                        RWT -
-                        WT {set i_type "RWT"}
-                        default {ig::log -error "unknown register type $i_type ($origin)"}
-                    }
-                    set i_entrybits [string map {.. :} $i_entrybits]
-
-                    lappend result [list $i_entryname $i_address $i_name $i_entrybits $i_type $i_reset $i_signal $i_signalbits $i_comment]
                 }
+
+                if {$rfid eq ""} {
+                    ig::log -error -abort "RT: invalid regfile name specified: ${regfilename} ($origin)"
+                }
+                set ic_regfile [lindex $rfdict 1]
+                foreach {k v} $ic_regfile {
+                    switch -exact $k {
+                        name {
+                            if {$v ne $regfilename} {
+                                ig::log -id "RYChk" -warn "RT (regfile ${regfilename}): yaml regfile name ($v) differs from regfile name ($origin)"
+                            }
+                        }
+                        dw {
+                            set rfdw [ig::db::get_attribute -object $rfid -attribute "datawidth"]
+                            if {$rfdw != $v} {
+                                ig::log -warn "RT (regfile ${regfilename}): yaml regfile datawidth ($v) differs from regfile datawidth ($rfdw) ($origin)"
+                            }
+                        }
+                        offset_type {
+                            set rfalign [ig::db::get_attribute -object $rfid -attribute "addralign"]
+                            if {$v eq "reg" && $rfalign != 1} {
+                                ig::log -id "RYChk" -warn "RT (regfile ${regfilename}): yaml regfile align should be 1 when offset_type \"reg\" is specified ($origin)"
+                            } elseif {$v eq "byte" && $rfalign != ($rfdw / 8)} {
+                                set rfdw [ig::db::get_attribute -object $rfid -attribute "datawidth"]
+                                ig::log -id "RYChk" -warn "RT (regfile ${regfilename}): yaml regfile align should be [expr {$rfdw / 8}] when offset_type \"byte\" is specified ($origin)"
+                            }
+                        }
+                    }
+                }
+                dict unset rfdict "IC_REGFILE"
             }
 
-            return $result
+            set regentry_default {
+                name       ""
+                entrybits  "0"
+                type       ""
+                reset      "-"
+                signal     "-"
+                signalbits "-"
+                comment    ""
+            }
+
+            foreach {k v} $rfdict {
+                if {$k ne "registers"} {
+                    ig::log -id "RYChk" -warn "RT (regfile ${regfilename}): unknown key \"$k\" expected \"registers\"."
+                } else {
+                    foreach entrydict $v {
+                        array set entry {
+                            default_type "RW"
+                            address      ""
+                        }
+
+                        set entry(name) [dict get $entrydict "name"]
+                        foreach {e_ig e_ry} {
+                            address      offset
+                            default_type reg_type
+                            } {
+                            if {[dict exists $entrydict $e_ry]} {
+                                set entry($e_ig) [dict get $entrydict $e_ry]
+                            }
+                        }
+                        set reg_entries [list [dict keys $regentry_default]]
+                        foreach regdict [dict get $entrydict "fields"] {
+                            set reg_entry $regentry_default
+
+                            dict update reg_entry {*}{
+                                name       i_name
+                                entrybits  i_bits
+                                type       i_type
+                                reset      i_reset
+                                signal     i_signal
+                                signalbits i_signalbits
+                                comment    i_comment
+                            } {
+                                set i_name [dict get $regdict "name"]
+                                if {[dict exists $regdict "type"]} {
+                                    set i_type [dict get $regdict "type"]
+                                }
+
+                                if {$i_type eq "C"} {
+                                    set i_signal "-"
+                                } else {
+                                    set i_signal "${pfx}${entry(name)}_${i_name}"
+                                    dict set rf_signals_port $i_signal "${entry(name)}_${i_name}"
+                                }
+                                if {[dict exists $regdict "rst"]} {
+                                    set i_reset [expr {[dict get $regdict "rst"]}]
+                                }
+                                if {$i_reset eq "-"} {
+                                    if {[string first "W" $i_type] > 0} {
+                                        set i_reset 0
+                                    }
+                                }
+
+                                set i_signalbits ""
+                                if {[dict exists $regdict "map"]} {
+                                    set sigstr [dict get $regdict "map"]
+                                    if {[regexp -expanded {
+                                        ^
+                                        \s*
+                                        (\w+?)(_[io])?
+                                        \s*
+                                        (\((.*)\))?
+                                        \s*
+                                        $
+                                    } $sigstr m_whole m_sig m_sfx m_braces m_bits]} {
+                                        set i_signal "${pfx}${m_sig}"
+                                        set i_signalbits [string map {.. :} $m_bits]
+                                        dict set rf_signals_port $i_signal $m_sig$m_sfx
+                                    } else {
+                                        ig::log -warn "RT (regfile ${regfilename}): could not parse signal mapping \"${sigstr}\" ($origin)"
+                                    }
+                                }
+
+                                # conversion
+                                switch -exact -- $i_type {
+                                    C  {set i_type "C"}
+                                    RO -
+                                    R  {set i_type "R"}
+                                    RL {set i_type "RL"}
+                                    RH {set i_type "RH"}
+                                    RW {set i_type "RW"}
+                                    RWT -
+                                    WT {set i_type "RWT"}
+                                    default {ig::log -error "unknown register type $i_type ($origin)"}
+                                }
+                                if {[dict exists $regdict "pos"]} {
+                                    set i_bits [string map {.. :} [dict get $regdict "pos"]]
+                                }
+
+                                if {[dict exists $regdict "desc"]} {
+                                    set i_comment [dict get $regdict "desc"]
+                                }
+
+                                if {[dict exists $regdict "enum"]} {
+                                    set i_enum {}
+                                    foreach {k v} [dict get $regdict "enum"] {
+                                        lappend i_enum "$k: $v"
+                                    }
+                                    append i_comment " ([join $i_enum ", "])"
+                                }
+                            }
+
+                            if {$i_signal ne "-"} {
+                                if {$i_signalbits eq ""} {
+                                    set dest_signalbits 0
+                                    lassign [split $i_bits :]  hbit lbit
+                                    if {$lbit eq ""} {
+                                        set lbit $hbit
+                                    }
+                                    set dest_signalbits "[expr {$hbit - $lbit}]:0"
+                                } else {
+                                    set dest_signalbits $i_signalbits
+                                }
+                                lappend reg_entries [dict values $reg_entry]
+                                if {![dict exists $rf_signals $i_signal]} {
+                                    dict set rf_signals $i_signal "$dest_signalbits"
+                                } else {
+                                    dict set rf_signals $i_signal [concat [dict get $rf_signals $i_signal] $dest_signalbits]
+                                }
+                                if {[string match *W* $i_type]} {
+                                    set dir -->
+                                } else {
+                                    set dir <--
+                                }
+                                if {![dict exists $rf_signals_dir $i_signal]} {
+                                    dict set rf_signals_dir $i_signal $dir
+                                } else {
+                                    if {[dict get $rf_signals_dir $i_signal] ne $dir} {
+                                        ig::log -id RYDr -warn "Wrong direction for signal $i_signal on  ${entry(name)} - $i_name."
+                                    }
+                                }
+                            }
+                        }
+
+                        set regaddr {}
+                        if {$entry(address) ne ""} {
+                            set regaddr "-addr $entry(address)"
+                        }
+                        ig::R $regfilename $entry(name) {*}$regaddr -cmdorigin $origin  $reg_entries
+                    }
+                }
+            }
+            set regfile_id [ig::db::get_regfiles -name $regfilename]
+            set rf_module_name [ig::db::get_attribute -obj [ig::db::get_attribute -obj $regfile_id -attribute "parent"] -attribute "name"]
+            foreach {sig sigbits} $rf_signals {
+                array set vec {}
+                set w 1
+                foreach b $sigbits {
+                    lassign [split $b ":"] hb lb
+                    if {$lb eq ""} {
+                        set  lb $hb
+                    }
+                    for {set i $lb} {$i <= $hb} {incr i} {
+                        set vec($i) 1
+                    }
+                    ig::aux::max_set w [expr {$hb + 1}]
+                }
+                if {$destmod ne ""} {
+                    set port [string range $sig [string length $pfx] end]
+                    set dir [dict get $rf_signals_dir $sig]
+                    ig::S $sig -w $w $rf_module_name:$port! ${dir} $destmod:[dict get $rf_signals_port $sig]
+                }
+                if {$dir eq "-->"} {
+                    for {set i 0} {$i < $w} {incr i} {
+                        if {![info exists vec($i)]} {
+                            ig::log -id RYMi -info "Missing connection of signal $sig\[$i\] - tieing to 1'b0."
+                            ig::C $rf_module_name -as { assign $sig!\[$i\] = 1'b0; }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1579,6 +1740,7 @@ namespace eval ig {
                 { {^-ryaml$}               "const=true"      ryaml       "specify entries as yaml"                                                           } \
                 { {^-ryamlfile($|=)}       "string"          ryamlfile   "specify entries as yamlfile"                                                       } \
                 { {^-ryamlpfx($|=)}        "string"          ryamlsigpfx "signal prefix to use for yaml-regfiles without signal names"                       } \
+                { {^-destmod($|=)}         "string"          destmod     "destination module for implict connections"                                        } \
                 { {^-nosubst$}             "const=-nosubst"  nosubst_opt "do not perform Tcl substition in REGISTERTABLE argument"                           } \
                 { {^-e(val(uate)?)?$}      "const=-evaluate" eval_opt    "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
                 { {^-cmdorigin(=|$)}       "string"          origin      "origin of command call for logging"                                                } \
@@ -1625,7 +1787,7 @@ namespace eval ig {
                 lappend regtable $line
             }
         } elseif {$ryaml} {
-            set regtable [construct::ryaml_to_regtable $regfilename $regtable $ryamlsigpfx $origin]
+            return [construct::ryaml_process $regfilename $regtable $ryamlsigpfx $destmod $origin]
         }
 
         if {[llength $regtable] <= 1} {
