@@ -113,7 +113,7 @@ fetch_tcllib: | $(PKGDIR_INCTCLLIB)
 	cd $(PKGDIR_INCTCLLIB) && \
 	curl $(addprefix -O $(TCLLIB_URL)/, $(TCLLIBFILES))
 
-bundled_tcllib: fetch_tcllib
+bundled_tcllib: $(addprefix $(PKGDIR_INCTCLLIB)/,$(notdir $(TCLLIBFILES)))
 	$(PKGGENSCR) $(PKGDIR_INCTCLLIB)
 
 #-------------------------------------------------------
