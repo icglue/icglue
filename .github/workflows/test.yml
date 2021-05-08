@@ -1,0 +1,26 @@
+name: test
+
+on:
+  push:
+    branches:
+      - test
+      - master
+      - 4.x
+      - 3.x
+    pull_request:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    name: test-ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y --no-upgrade make g++ gcc tcl tcl-dev libglib2.0-0 libglib2.0-dev pkg-config libpcl1 libpcl1-dev iverilog
+      - name: Build library
+        run: |
+          make -j3
+      - name: Run tests
+        run: |
+          make -j3 test
