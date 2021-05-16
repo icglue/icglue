@@ -1,0 +1,45 @@
+[tasks]
+run_prove all
+run_bmc   all
+
+
+[options]
+run_prove: mode prove
+
+run_bmc:   mode bmc
+run_bmc:   depth 100
+
+
+[engines]
+all: smtbmc
+
+
+[script]
+--pycode-begin--
+try:
+    import os
+    fs=open ('.work/sources.txt', 'r')
+    for s in fs.readlines():
+        output ('all: read -formal {}'.format(os.path.basename(s.strip())))
+    fs.close ()
+except:
+    ...
+--pycode-end--
+
+all: prep -top fv_<%=${unit}%>
+
+
+[files]
+--pycode-begin--
+try:
+    fs=open ('.work/sources.txt', 'r')
+    fi=open ('.work/includes.txt', 'r')
+    for f in [fs, fi]:
+        for s in f.readlines():
+            output ('all: {}'.format(s.strip()))
+    fs.close ()
+    fi.close ()
+except:
+    ...
+--pycode-end--
+

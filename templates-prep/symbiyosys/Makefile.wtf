@@ -1,0 +1,13 @@
+%(
+set content_vinclude "#VLOG_INCDIRS += \\
+#    \${ICPRO_DIR}/global_src/verilog \\
+#    \${ICPRO_DIR}/units/${unit}/source/rtl/verilog \\
+"
+%)
+[pop_keep_block_content keep_block_data "keep" "custom_begin" "makefile"]
+[pop_keep_block_content keep_block_data "keep" "vinclude"     "makefile" "${content_vinclude}"]
+
+include \$(ICPRO_DIR)/env/symbiyosys/Makefile.project.symbiyosys
+
+[pop_keep_block_content keep_block_data "keep" "custom_end"   "makefile"]
+%# vim: ft=woof_template

@@ -1,0 +1,86 @@
+#
+# symbiyosys Makefile
+#
+
+# ------------  gtkwavefile  ---------------------------------------------------
+GTKWAVEFILE     ?= $(UNIT_NAME).gtkw
+
+# ------------  configuration parameters ---------------------------------------
+GTKWAVE_LOG     ?= $(WORK_DIR)/gtkwave.log
+
+#-------------  working directory  ---------------------------------------------
+SBY_CONFIG      ?= verify.sby
+
+VLOG_SRC_FILES  ?= $(wildcard sources/*.vlog.sources)
+
+#-------------  working directory  ---------------------------------------------
+WORK_DIR        ?= .work
+WORK_RUNPFX     ?= $(WORK_DIR)/work_
+WORK_SOURCES    ?= $(WORK_DIR)/sources.txt
+WORK_INCFILES   ?= $(WORK_DIR)/includes.txt
+
+#===============================================================================
+# The following statements usually need not to be changed
+#===============================================================================
+
+USE_TEMP       ?= 1
+TMPDIR         ?= /tmp
+VLOG_INCLUDES  ?= $(foreach incdir, $(VLOG_INCDIRS), $(wildcard $(incdir)/*.vh))
+
+# ------------  build and run tools  -------------------------------------------
+SBY             ?= sby
+GTKWAVE         ?= gtkwave
+MKTEMP          ?= mktemp -p $(TMPDIR) -t sby-$(USER)-$(UNIT_NAME)-XXXX
+LN              ?= ln -sf
+
+# ------------  tool flags for sby  --------------------------------------------
+SBY_FLAGS       ?=
+
+# ------------  output color/verbosity -----------------------------------------
+q?=@
+
+# ------------  run targets  ---------------------------------------------------
+SBY_TARGETS = $(shell $(SBY) --dumptasks $(SBY_CONFIG))
+
+# ------------  rules ----------------------------------------------------------
+
+.DEFAULT_GOAL=list-targets
+
+$(WORK_DIR):
+ifeq ($(USE_TEMP),1)
+	$q$(LN) `$(MKTEMP) -d` $(WORK_DIR)
+else
+	$qmkdir -p $(WORK_DIR)
+endif
+
+$(WORK_SOURCES): $(VLOG_SRC_FILES) | $(WORK_DIR)
+	$qrm -f $(WORK_SOURCES)
+	$qcat $(VLOG_SRC_FILES) | sed -e 'sX^\(\#\|//\).*XX' | grep -v '^$$' | envsubst > $(WORK_SOURCES)
+
+$(WORK_INCFILES): | $(WORK_DIR)
+	$qrm -f $(WORK_INCFILES)
+	$qtouch $(WORK_INCFILES)
+	$qfor f in $(VLOG_INCLUDES) ; do \
+		echo $$f >> $(WORK_INCFILES) ; \
+	done
+
+.PHONY: $(SBY_TARGETS) run-all list-targets clean
+
+list-targets:
+	$qecho "Possible targets:"
+	$qecho $(SBY_TARGETS)
+
+$(SBY_TARGETS): $(WORK_SOURCES) $(WORK_INCFILES) | $(WORK_DIR)
+	$q$(SBY) $(SBY_FLAGS) -d $(WORK_RUNPFX)$@ -f $(SBY_CONFIG) $@ || \
+		$(GTKWAVE) -a $(GTKWAVEFILE) -f $(WORK_RUNPFX)$@/engine_0/trace.vcd -O $(GTKWAVE_LOG)
+
+run-all: $(SBY_TARGETS)
+
+clean:
+	$qif [ -L $(WORK_DIR) ]; then  \
+		rm -Irf `readlink -e $(WORK_DIR)` ;\
+		rm $(WORK_DIR) ;\
+	elif [ -e $(WORK_DIR) ]; then \
+		rmdir $(WORK_DIR) 2>&1 > /dev/null || true ;\
+	fi
+
