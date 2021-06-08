@@ -471,7 +471,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     if (attr_name != NULL) {
         if (!ig_obj_attr_set (obj, attr_name, attr_value, false)) {
-            return tcl_error_msg (interp, "Unable to attribute \"%s\"(=\"%s\") for object \"%s\"", attr_name, attr_value, obj_name);
+            return tcl_error_msg (interp, "Unable to set attribute \"%s\"(=\"%s\") for object \"%s\"", attr_name, attr_value, obj_name);
         }
 
         Tcl_SetObjResult (interp, Tcl_NewStringObj (attr_value, -1));
@@ -480,7 +480,7 @@ static int ig_tclc_set_attribute (ClientData clientdata, Tcl_Interp *interp, int
 
     if (!ig_obj_attr_set_from_gslist (obj, attr_list)) {
         g_list_free (attr_list);
-        return tcl_error_msg (interp, "Unable to attribute list for object \"%s\"", attr_list);
+        return tcl_error_msg (interp, "Unable to set attribute list for object \"%s\"", attr_list);
     }
 
     Tcl_SetObjResult (interp, Tcl_NewStringObj ("", -1));

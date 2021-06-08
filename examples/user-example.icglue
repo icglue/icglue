@@ -5,9 +5,9 @@
 
 # Generate hierarchie in unit submodule
 M -unit "component" -tree {
-    tb_component .................. (tb,v)
-    \- component_wrap ............. (rtl)
-       \- component_top ........... (rtl)
+    tb_component .................. (tb,sv)
+    \- component_wrap ............. (rtl,sv)
+       \- component_top ........... (rtl,sv)
           |
           +- anothersubmod_wrap ... (rtl,unit=anothersubmod)
           |  \- anothersubmod ..... (beh,attribute={cell=>true;second_attribute_pair=>5})
