@@ -449,7 +449,7 @@ namespace eval ig {
         # This command requires the tcllib yaml package for parsing yaml.
         proc rfautoconnect {regfilename siginfo {destmod {}}  {origin {}}} {
             set regfile_id [ig::db::get_regfiles -name $regfilename]
-            set rf_module_name [ig::db::get_attribute -obj [ig::db::get_attribute -obj $regfile_id -attribute "parent"] -attribute "name"]
+            set rf_module_name [ig::db::get_attribute -object [ig::db::get_attribute -object $regfile_id -attribute "parent"] -attribute "name"]
 
             set rf_signals [dict create]
             set rf_signals_dir [dict create]
@@ -492,6 +492,7 @@ namespace eval ig {
                 }
                 if {$destmod ne ""} {
                     if {$sig ne "-"} {
+                        ig::log -id Sauto -info "[subst -nocommands -nobackslashes "S \"$sig\" -w $w $rf_module_name:$port! ${dir} $destmod:$port!"]"
                         ig::S $sig -w $w $rf_module_name:$port! ${dir} $destmod:$port!
                     }
                 }
@@ -500,6 +501,7 @@ namespace eval ig {
                     for {set i 0} {$i < $w} {incr i} {
                         if {![info exists vec($i)]} {
                             ig::log -id Rcon -info "Missing connection of signal $sig\[$i\] - tieing to 1'b0."
+                            ig::log -id Sauto -info "[subst -nocommands -nobackslashes "C \"$rf_module_name\" -as { assign $sig!\[$i\] = 1'b0; }"]"
                             ig::C $rf_module_name -as { assign $sig!\[$i\] = 1'b0; }
                         }
                     }
@@ -769,6 +771,7 @@ namespace eval ig {
                                 comment    i_comment
                             } {
                                 set i_name [dict get $regdict "name"]
+                                set i_type "$entry(default_type)"
                                 if {[dict exists $regdict "type"]} {
                                     set i_type [dict get $regdict "type"]
                                 }
@@ -1264,11 +1267,11 @@ namespace eval ig {
             foreach _list [construct::expand_instances $endpoints "true"] {
                 lassign $_list inst_id module_id remainder inverted
 
-                set is_ilm [ig::db::get_attribute -obj $module_id -attribute "ilm" -default false]
-                set is_res [ig::db::get_attribute -obj $module_id -attribute "resource" -default false]
+                set is_ilm [ig::db::get_attribute -object $module_id -attribute "ilm" -default false]
+                set is_res [ig::db::get_attribute -object $module_id -attribute "resource" -default false]
 
                 if { $is_ilm && $is_res } {
-                    set module_name [ig::db::get_attribute -obj $module_id -attribute "name"]
+                    set module_name [ig::db::get_attribute -object $module_id -attribute "name"]
                     log -warn -id "PIlm" "Overwriting parameter '${name}' of ILM and resource '${module_name}'"
                 }
                 lappend ep "${inst_id}${remainder}"
@@ -1429,18 +1432,19 @@ namespace eval ig {
     # <b>REGn</b>: Sublists containing the actual register-data.
     proc R args {
         # defaults
-        set entryname      ""
-        set regfilename    ""
-        set address        {}
-        set register_align 1
-        set regdef         {}
-        set handshake      {}
-        set protected      "false"
-        set do_var_subst   "true"
-        set do_subst       "false"
-        set origin         [ig::aux::get_origin_here]
-        set comm           ""
-        set subst_level    1
+        set entryname          ""
+        set regfilename        ""
+        set address            {}
+        set register_align     1
+        set regdef             {}
+        set handshake          {}
+        set protected          "false"
+        set do_var_subst       "true"
+        set do_subst           "false"
+        set origin             [ig::aux::get_origin_here]
+        set comm               ""
+        set subst_level        1
+        set features            {}
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
@@ -1455,6 +1459,7 @@ namespace eval ig {
                 { {^-cmdorigin(=|$)}        "string"             origin         "origin of command call for logging"                                                } \
                 { {^-comm(ent)?(=|$)}       "string"             comm           "comment for register"                                                              } \
                 { {^-subst_uplevel}         "integer"            subst_level    "uplevel for substition"                                                            } \
+                { {^-features?}              "string"             features       "additional features entry (columns)"                                               } \
             ] -context "REGFILE-MODULE ENTRYNAME REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -1502,6 +1507,8 @@ namespace eval ig {
         }
         # entry map
         set entry_default_map {name width entrybits type reset signal signalbits comment}
+        lappend entry_default_map {*}$features
+
         set entry_map {}
         foreach i_entry [lindex $regdef 0] {
             if {${i_entry} eq "|"} {
@@ -1513,11 +1520,6 @@ namespace eval ig {
                 log -error -abort "R (regfile-entry ${entryname}): invalid register attribute-name: ${i_entry} ($origin)"
             }
             lappend entry_map [lindex $entry_default_map $idx_def]
-        }
-        foreach i_entry $entry_default_map {
-            if {[lsearch $entry_map $i_entry] < 0} {
-                lappend entry_map $i_entry
-            }
         }
         set regdef [lrange $regdef 1 end]
 
@@ -1543,10 +1545,20 @@ namespace eval ig {
                 log -error -abort "R (regfile-entry ${entryname}): invalid regfile name specified: ${regfilename} ($origin)"
             }
 
-            set alignment [ig::db::get_attribute -obj $regfile_id -attribute "addralign"]
+            set old_features [ig::db::get_attribute -object $regfile_id -attribute "features" -default {}]
+            set new_features $old_features
+
+            foreach f $features {
+                if {! ($f in $old_features)} {
+                    lappend new_features $f
+                }
+            }
+            ig::db::set_attribute -object $regfile_id -attribute "features" -value $new_features
+
+            set alignment [ig::db::get_attribute -object $regfile_id -attribute "addralign"]
             # set the "real" regfilename
-            set regfilename [ig::db::get_attribute -obj $regfile_id -attribute "name"]
-            set rf_module_name [ig::db::get_attribute -obj [ig::db::get_attribute -obj $regfile_id -attribute "parent"] -attribute "name"]
+            set regfilename [ig::db::get_attribute -object $regfile_id -attribute "name"]
+            set rf_module_name [ig::db::get_attribute -object [ig::db::get_attribute -object $regfile_id -attribute "parent"] -attribute "name"]
 
             # create entry
             set entry_id [ig::db::add_regfile -entry $entryname -to $regfile_id]
@@ -1606,8 +1618,21 @@ namespace eval ig {
                     continue
                 }
 
-                if {$i_name eq ""} {
-                    log -error -abort "R (regfile-entry ${entryname}): reg defined without name ($origin)"
+                if {$i_name eq "" || $i_name eq "|"} {
+                    if {![info exists reg_id]} {
+                        log -error -abort "R (regfile-entry ${entryname}): reg defined without name ($origin)"
+                    }  else {
+                        set c {}
+                        if {$i_name eq "|"} {
+                            set c "[join [lrange $i_reg [lsearch -not $i_reg "|"] end] " "]"
+                        }  else {
+                            set c $i_reg
+                        }
+                        set old_comment [ig::db::get_attribute -object $reg_id -attribute "rf_comment" -default {}]
+                        set new_comment "$old_comment\n$c"
+                        ig::db::set_attribute -object $reg_id -attribute "rf_comment" -value $new_comment
+                        continue
+                    }
                 }
 
                 set reg_id [ig::db::add_regfile -reg $i_name -to $entry_id]
@@ -1618,7 +1643,12 @@ namespace eval ig {
                 set s_type    {}
                 foreach i_attr [lrange $entry_default_map 1 end] {
                     # attributes except name
-                    set i_val [lindex $i_reg [lsearch $entry_map $i_attr]]
+                    set pos [lsearch $entry_map $i_attr]
+                    if {$pos ne [expr {[llength $entry_map]-1}]} {
+                        set i_val [lindex $i_reg $pos]
+                    } else {
+                        set i_val [join [lrange $i_reg $pos end] " "]
+                    }
                     set sbitsextra {}
 
                     if {$i_val ne ""} {
@@ -1784,11 +1814,11 @@ namespace eval ig {
         set additional_connect_flags {}
 
         foreach i_rf [ig::db::get_regfiles -all] {
-            set i_md [ig::db::get_attribute -obj $i_rf -attribute "parent"]
+            set i_md [ig::db::get_attribute -object $i_rf -attribute "parent"]
             set arg_idx 1
             foreach name [lrange $arguments 1 end] {
                 lassign [split $name ":"] name
-                if {($name eq [ig::db::get_attribute -obj $i_md -attribute "name"])} {
+                if {($name eq [ig::db::get_attribute -object $i_md -attribute "name"])} {
                     if {$resetval eq ""} {
                         set reset "$width'h0"
                     } else {
@@ -1807,7 +1837,7 @@ namespace eval ig {
                         }
                     }
                     set rf $i_rf
-                    set rf_name [ig::db::get_attribute -obj $rf -attribute "name"]
+                    set rf_name [ig::db::get_attribute -object $rf -attribute "name"]
                     set entryname ${signalname}
                     lappend rf_list $rf_name $entryname $reg_type $reset
                     break
