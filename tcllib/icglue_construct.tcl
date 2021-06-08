@@ -437,16 +437,227 @@ namespace eval ig {
             namespace delete _construct_run
         }
 
-        ## @brief Convert an ryaml registerfile description to RT compatible table
+        ## @brief Auto connection for regfiles
         #
-        # @param regfilename Name of the registerfile for sanitycheck
-        # @param ryaml yaml description of register file
+        # Unused outputs will be tied to zero. If destmod is not empty connection to module will be performed
+        #
+        # @param regfilename Name of the registerfile
+        # @param siginfo List with {signalname signalbitwidth regtype port} for derive connection
+        # @param destmod Destination module name
+        # @param origin code origin for logging
+        #
+        # This command requires the tcllib yaml package for parsing yaml.
+        proc rfautoconnect {regfilename siginfo {destmod {}}  {origin {}}} {
+            set regfile_id [ig::db::get_regfiles -name $regfilename]
+            set rf_module_name [ig::db::get_attribute -obj [ig::db::get_attribute -obj $regfile_id -attribute "parent"] -attribute "name"]
+
+            set rf_signals [dict create]
+            set rf_signals_dir [dict create]
+            foreach {sig sigbits type port} $siginfo {
+                if {$sig eq "-"} continue
+
+                dict lappend rf_signals $sig $sigbits $port
+
+                if {[string match *W* $type] || $type eq "C"} {
+                    set dir -->
+                } else {
+                    set dir <--
+                }
+                if {![dict exists $rf_signals_dir $sig]} {
+                    dict set rf_signals_dir $sig $dir
+                } else {
+                    if {[dict get $rf_signals_dir $sig] ne $dir} {
+                        ig::log -id "RYDr" -warn "In-out direction for signal $sig."
+                    }
+                }
+            }
+
+            foreach {sig s_prop} $rf_signals {
+                set dir [dict get $rf_signals_dir $sig]
+
+                array set vec {}
+                set w 1
+
+                foreach {sigbits port} $s_prop {
+                    foreach b $sigbits {
+                        lassign [split $b ":"] hb lb
+                            if {$lb eq ""} {
+                                set  lb $hb
+                            }
+                        for {set i $lb} {$i <= $hb} {incr i} {
+                            set vec($i) 1
+                        }
+                        ig::aux::max_set w [expr {$hb + 1}]
+                    }
+                }
+                if {$destmod ne ""} {
+                    if {$sig ne "-"} {
+                        ig::S $sig -w $w $rf_module_name:$port! ${dir} $destmod:$port!
+                    }
+                }
+
+                if {$dir eq "-->"} {
+                    for {set i 0} {$i < $w} {incr i} {
+                        if {![info exists vec($i)]} {
+                            ig::log -id Rcon -info "Missing connection of signal $sig\[$i\] - tieing to 1'b0."
+                            ig::C $rf_module_name -as { assign $sig!\[$i\] = 1'b0; }
+                        }
+                    }
+                }
+            }
+        }
+
+        ## @brief Process csv registerfile description
+        #
+        # @param regfilename Name of the registerfile
+        # @param rcsv csv description of register file
         # @param sigprefix prefix for automatically created signal names
         # @param origin code origin for logging
         # @return RT compatible register table
         #
         # This command requires the tcllib yaml package for parsing yaml.
-        proc ryaml_process {regfilename ryaml {sigprefix {}} {destmod {}} {origin {}}} {
+        proc rcsv_process {regfilename rcsv addroffset ropts {sigprefix {}} {destmod {}} {origin {}}} {
+            if {[llength $rcsv] <= 1} {
+                log -error -abort "RT (regfile ${regfilename}): no registers specified ($origin)"
+            }
+
+            # get regfile
+            set rfid {}
+            if {[catch {
+                set rfid [ig::db::get_regfiles -name $regfilename]
+            }]} {
+                if {![catch {
+                    set temp_mod [ig::db::get_modules -name $regfilename]
+                }]} {
+                    set temp_rfs [ig::db::get_regfiles -of $temp_mod]
+                    if {[llength $temp_rfs] > 0} {
+                        set rfid [lindex $temp_rfs 0]
+                    }
+                }
+            }
+
+            ig::aux::regfile_next_addr $regfile_id $addroffset
+            #order: {entryname ?address? ?protect? ...}
+            set r_head [lmap e [lindex $rcsv 0] {string trim $e}]
+            set rcsv [lrange $rcsv 1 end]
+
+            set idx_entry     [lsearch $r_head "entryname"]
+            set idx_addr      [lsearch $r_head "address"]
+            set idx_protect   [lsearch $r_head "protect"]
+            set idx_entrybits [lsearch $r_head "entrybits"]
+            set idx_type      [lsearch $r_head "entrybits"]
+            set idx_signal    [lsearch $r_head "signal"]
+
+            set e_head      {}
+            foreach i_h $r_head {
+                if {$i_h eq "entryname"} {continue}
+                if {$i_h eq "address"}   {continue}
+                if {$i_h eq "protect"}   {continue}
+                lappend e_head $i_h
+            }
+
+            set e_dict      {}
+            set e_last_name {}
+            set e_last_addr {}
+            set e_last_prot {}
+            set e_table     {}
+
+            foreach i_row $rcsv {
+                set i_row [lmap e $i_row {string trim $e}]
+                if {[llength $i_row] < [llength $r_head]} {
+                    if {[llength $i_row] > 0} {
+                        log -warn "register table row \"${i_row}\" contains too few columns ($origin)"
+                    }
+                    continue
+                }
+
+                set e_row  {}
+                set e_name {}
+                set e_addr {}
+                set e_prot {}
+
+                for {set i 0} {$i < [llength $i_row]} {incr i} {
+                    if {($i == $idx_entry)} {
+                        set e_name [lindex $i_row $i]
+                    } elseif {($i == $idx_addr)} {
+                        set e_addr [lindex $i_row $i]
+                    } elseif {($i == $idx_protect)} {
+                        set e_prot [lindex $i_row $i]
+                    } elseif {($i == $idx_entrybits)} {
+                        #  strip []
+                        lappend e_row [string map {[ {} ] {}} [lindex $i_row $i]]
+                    } else {
+                        lappend e_row [lindex $i_row $i]
+                    }
+                }
+
+                if {$e_name eq ""} {set e_name $e_last_name}
+                if {$e_name eq ""} {
+                    log -warn "register table row \"${i_row}\" has no entry name ($origin)"
+                }
+                if {$e_name eq $e_last_name} {
+                    if {$e_addr eq ""} {set e_addr $e_last_addr}
+                    if {$e_prot eq ""} {set e_prot $e_last_prot}
+                }
+
+                dict set e_dict $e_name addr $e_addr
+                dict set e_dict $e_name prot $e_prot
+                if {$e_name ne $e_last_name} {
+                    dict set e_dict $e_name table [list $e_head]
+                }
+
+                # TODO: dest_signalbits from width or entrybits
+                #set e_type [lindex $i_row $i]
+                #if {$idx_signal} {
+                #    if {$i_signalbits eq ""} {
+                #        set dest_signalbits 0
+                #        lassign [split $i_bits :]  hbit lbit
+                #        if {$lbit eq ""} {
+                #            set lbit $hbit
+                #        }
+                #        set dest_signalbits "[expr {$hbit - $lbit}]:0"
+                #    } else {
+                #        set dest_signalbits $i_signalbits
+                #    }
+                #}
+                #lappend siginfo $i_signal $dest_signalbits $e_type $port
+
+
+                dict update e_dict $e_name r_dict {
+                    dict lappend r_dict table $e_row
+                }
+
+                set e_last_name $e_name
+                set e_last_addr $e_addr
+            }
+
+            # create
+            dict for {e_name e_data} $e_dict {
+                set e_addr  [dict get $e_data "addr"]
+                set e_prot  [dict get $e_data "prot"]
+                set e_table [dict get $e_data "table"]
+
+                set opts {}
+                if {$e_addr ne ""} {
+                    lappend opts "@[expr {$addroffset + $e_addr}]"
+                }
+                if {($e_prot ne "") && (($e_prot) || ($e_prot in {x X}))} {
+                    lappend opts "-protected"
+                }
+                ig::R -cmdorigin $origin {*}${ropts} {*}${opts} $regfilename $e_name $e_table
+            }
+
+            #rfautoconnect $regfilename $siginfo $destmod $origin
+        }
+        ## @brief Process ryaml registerfile description
+        #
+        # @param regfilename Name of the registerfile
+        # @param ryaml yaml description of register file
+        # @param sigprefix prefix for automatically created signal names
+        # @param origin code origin for logging
+        #
+        # This command requires the tcllib yaml package for parsing yaml.
+        proc ryaml_process {regfilename ryaml addroffset ropts {sigprefix {}} {destmod {}} {origin {}}} {
             # use yaml parser from tcllib
             if {[catch {package require yaml}]} {
                 ig::log -error "RT (regfile ${regfilename}): need tcllib/yaml for yaml parsing ($origin)"
@@ -465,9 +676,7 @@ namespace eval ig {
                 set pfx ""
             }
 
-            set rf_signals {}
-            set rf_signals_dir {}
-            set rf_signals_port {}
+            set siginfo {}
 
             if {[lindex $rfdict 0] eq "IC_REGFILE"} {
                 # get regfile
@@ -485,6 +694,7 @@ namespace eval ig {
                     }
                 }
 
+                ig::aux::regfile_next_addr $rfid $addroffset
                 if {$rfid eq ""} {
                     ig::log -error -abort "RT: invalid regfile name specified: ${regfilename} ($origin)"
                 }
@@ -493,22 +703,22 @@ namespace eval ig {
                     switch -exact $k {
                         name {
                             if {$v ne $regfilename} {
-                                ig::log -id "RYChk" -warn "RT (regfile ${regfilename}): yaml regfile name ($v) differs from regfile name ($origin)"
+                                ig::log -id "ChkRYN" -warn "RT (regfile ${regfilename}): yaml regfile name ($v) differs from regfile name ($origin)"
                             }
                         }
                         dw {
                             set rfdw [ig::db::get_attribute -object $rfid -attribute "datawidth"]
                             if {$rfdw != $v} {
-                                ig::log -warn "RT (regfile ${regfilename}): yaml regfile datawidth ($v) differs from regfile datawidth ($rfdw) ($origin)"
+                                ig::log -id "ChRYD" -warn "RT (regfile ${regfilename}): yaml regfile datawidth ($v) differs from regfile datawidth ($rfdw) ($origin)"
                             }
                         }
                         offset_type {
                             set rfalign [ig::db::get_attribute -object $rfid -attribute "addralign"]
                             if {$v eq "reg" && $rfalign != 1} {
-                                ig::log -id "RYChk" -warn "RT (regfile ${regfilename}): yaml regfile align should be 1 when offset_type \"reg\" is specified ($origin)"
+                                ig::log -id "ChkRYA" -warn "RT (regfile ${regfilename}): yaml regfile align should be 1 when offset_type \"reg\" is specified ($origin)"
                             } elseif {$v eq "byte" && $rfalign != ($rfdw / 8)} {
                                 set rfdw [ig::db::get_attribute -object $rfid -attribute "datawidth"]
-                                ig::log -id "RYChk" -warn "RT (regfile ${regfilename}): yaml regfile align should be [expr {$rfdw / 8}] when offset_type \"byte\" is specified ($origin)"
+                                ig::log -id "ChkRYA" -warn "RT (regfile ${regfilename}): yaml regfile align should be [expr {$rfdw / 8}] when offset_type \"byte\" is specified ($origin)"
                             }
                         }
                     }
@@ -563,11 +773,11 @@ namespace eval ig {
                                     set i_type [dict get $regdict "type"]
                                 }
 
+                                set port "${entry(name)}_${i_name}"
                                 if {$i_type eq "C"} {
                                     set i_signal "-"
                                 } else {
                                     set i_signal "${pfx}${entry(name)}_${i_name}"
-                                    dict set rf_signals_port $i_signal "${entry(name)}_${i_name}"
                                 }
                                 if {[dict exists $regdict "rst"]} {
                                     set i_reset [expr {[dict get $regdict "rst"]}]
@@ -592,7 +802,7 @@ namespace eval ig {
                                     } $sigstr m_whole m_sig m_sfx m_braces m_bits]} {
                                         set i_signal "${pfx}${m_sig}"
                                         set i_signalbits [string map {.. :} $m_bits]
-                                        dict set rf_signals_port $i_signal $m_sig$m_sfx
+                                        set port "${m_sig}"
                                     } else {
                                         ig::log -warn "RT (regfile ${regfilename}): could not parse signal mapping \"${sigstr}\" ($origin)"
                                     }
@@ -638,64 +848,22 @@ namespace eval ig {
                                 } else {
                                     set dest_signalbits $i_signalbits
                                 }
-                                lappend reg_entries [dict values $reg_entry]
-                                if {![dict exists $rf_signals $i_signal]} {
-                                    dict set rf_signals $i_signal "$dest_signalbits"
-                                } else {
-                                    dict set rf_signals $i_signal [concat [dict get $rf_signals $i_signal] $dest_signalbits]
-                                }
-                                if {[string match *W* $i_type]} {
-                                    set dir -->
-                                } else {
-                                    set dir <--
-                                }
-                                if {![dict exists $rf_signals_dir $i_signal]} {
-                                    dict set rf_signals_dir $i_signal $dir
-                                } else {
-                                    if {[dict get $rf_signals_dir $i_signal] ne $dir} {
-                                        ig::log -id RYDr -warn "Wrong direction for signal $i_signal on  ${entry(name)} - $i_name."
-                                    }
-                                }
+                                lappend siginfo $i_signal $dest_signalbits $i_type $port
                             }
+
+                            lappend reg_entries [dict values $reg_entry]
                         }
 
                         set regaddr {}
                         if {$entry(address) ne ""} {
-                            set regaddr "-addr $entry(address)"
+                            set regaddr "@[expr {$addroffset + $entry(address)}]"
                         }
-                        ig::R $regfilename $entry(name) {*}$regaddr -cmdorigin $origin  $reg_entries
+                        ig::R $regfilename {*}$regaddr $entry(name) {*}$ropts  -cmdorigin $origin  $reg_entries
                     }
                 }
             }
-            set regfile_id [ig::db::get_regfiles -name $regfilename]
-            set rf_module_name [ig::db::get_attribute -obj [ig::db::get_attribute -obj $regfile_id -attribute "parent"] -attribute "name"]
-            foreach {sig sigbits} $rf_signals {
-                array set vec {}
-                set w 1
-                foreach b $sigbits {
-                    lassign [split $b ":"] hb lb
-                    if {$lb eq ""} {
-                        set  lb $hb
-                    }
-                    for {set i $lb} {$i <= $hb} {incr i} {
-                        set vec($i) 1
-                    }
-                    ig::aux::max_set w [expr {$hb + 1}]
-                }
-                if {$destmod ne ""} {
-                    set port [string range $sig [string length $pfx] end]
-                    set dir [dict get $rf_signals_dir $sig]
-                    ig::S $sig -w $w $rf_module_name:$port! ${dir} $destmod:[dict get $rf_signals_port $sig]
-                }
-                if {$dir eq "-->"} {
-                    for {set i 0} {$i < $w} {incr i} {
-                        if {![info exists vec($i)]} {
-                            ig::log -id RYMi -info "Missing connection of signal $sig\[$i\] - tieing to 1'b0."
-                            ig::C $rf_module_name -as { assign $sig!\[$i\] = 1'b0; }
-                        }
-                    }
-                }
-            }
+
+            rfautoconnect $regfilename $siginfo $destmod $origin
         }
     }
 
@@ -1272,6 +1440,7 @@ namespace eval ig {
         set do_subst       "false"
         set origin         [ig::aux::get_origin_here]
         set comm           ""
+        set subst_level    1
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
@@ -1285,6 +1454,7 @@ namespace eval ig {
                 { {^-e(val(uate)?)?$}       "const=true"         do_subst       "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
                 { {^-cmdorigin(=|$)}        "string"             origin         "origin of command call for logging"                                                } \
                 { {^-comm(ent)?(=|$)}       "string"             comm           "comment for register"                                                              } \
+                { {^-subst_uplevel}         "integer"            subst_level    "uplevel for substition"                                                            } \
             ] -context "REGFILE-MODULE ENTRYNAME REGISTERTABLE" $args]
 
         if {$regfilename ne ""} {
@@ -1298,9 +1468,9 @@ namespace eval ig {
         }
 
         if {$do_subst} {
-            set regdef [uplevel 1 subst [list $regdef]]
+            set regdef [uplevel $subst_level subst [list $regdef]]
         } elseif {$do_var_subst} {
-            set regdef [uplevel 1 subst -nocommands [list $regdef]]
+            set regdef [uplevel $subst_level subst -nocommands -nobackslashes [list $regdef]]
         }
 
         if {[llength $arguments] < 2} {
@@ -1721,27 +1891,32 @@ namespace eval ig {
         # defaults
         set regfilename ""
         set regtable    {}
-        set csv         "false"
+        set mode        "csv"
         set csvfile     {}
-        set csvsep      {;}
-        set ryaml       "false"
+        set csvsep      {,}
+        set csvdel      \"
+        set destmod     {}
         set ryamlfile   {}
+        set addroffset  0
         set ryamlsigpfx ""
-        set nosubst_opt ""
+        set subst_opt   "-nosubst"
         set eval_opt    ""
         set origin      [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
         set arguments [ig::aux::parse_opts [list \
                 { {^-(rf|regf(ile)?)($|=)} "string"          regfilename "specify the regfile name"                                                          } \
-                { {^-csv$}                 "const=true"      csv         "specify entries as csv"                                                            } \
+                { {^-csv$}                 "const=csv"       mode        "specify entries as csv"                                                            } \
                 { {^-csvfile($|=)}         "string"          csvfile     "specify entries as csvfile"                                                        } \
                 { {^-csvsep(arator)?($|=)} "string"          csvsep      "specify separator for csvfiles"                                                    } \
-                { {^-ryaml$}               "const=true"      ryaml       "specify entries as yaml"                                                           } \
+                { {^-csvdel(imitor)?($|=)} "string"          csvdel      "specify delimiter for csvfiles"                                                    } \
+                { {^-ryaml$}               "const=ryaml"     mode        "specify entries as yaml"                                                           } \
                 { {^-ryamlfile($|=)}       "string"          ryamlfile   "specify entries as yamlfile"                                                       } \
+                { {^-addroffset(=|$)}      "integer"         addroffset  "specify addrset offset"                                                            } \
                 { {^-ryamlpfx($|=)}        "string"          ryamlsigpfx "signal prefix to use for yaml-regfiles without signal names"                       } \
                 { {^-destmod($|=)}         "string"          destmod     "destination module for implict connections"                                        } \
-                { {^-nosubst$}             "const=-nosubst"  nosubst_opt "do not perform Tcl substition in REGISTERTABLE argument"                           } \
+                { {^-s(ubst)?$}            "const=-subst"    subst_opt   "perform Tcl-variable substition of REGISTERTABLE argument (default)"               } \
+                { {^-nos(ubst)?$}          "const=-nosubst"  subst_opt   "do not perform Tcl-variable substition in REGISTERTABLE argument"                  } \
                 { {^-e(val(uate)?)?$}      "const=-evaluate" eval_opt    "perform Tcl-command substition of REGISTERTABLE argument, do not forget to escape" } \
                 { {^-cmdorigin(=|$)}       "string"          origin      "origin of command call for logging"                                                } \
             ] -context "REGFILE-MODULE REGISTERTABLE" $args]
@@ -1765,10 +1940,10 @@ namespace eval ig {
 
         if {($csvfile ne "") || ($ryamlfile ne "")} {
             if {$csvfile ne ""} {
-                set csv "true"
+                set mode "csv"
                 set fname $csvfile
             } else {
-                set ryaml "true"
+                set mode "ryaml"
                 set fname $ryamlfile
             }
             set f [open $fname "r"]
@@ -1776,116 +1951,49 @@ namespace eval ig {
             close $f
         }
 
-        if {$csv} {
+        lappend opts "-subst_uplevel 3"
+        lappend opts $subst_opt
+        if {$eval_opt ne ""} {
+            lappend opts $eval_opt
+        }
+
+        if {$mode eq "csv"} {
             set t $regtable
             set regtable {}
-            foreach l [split $t "\n"] {
+            if {[catch {package require csv}]} {
+                ig::log -warn "RT (regfile ${regfilename}): Couldn't find tcllib/csv for csv parsing ($origin)"
+                foreach l [split $t "\n"] {
+                    set line {}
+                    foreach c [split $l $csvsep] {
+                        lappend line [string trim $c]
+                    }
+                    lappend regtable $line
+                }
+            } else {
+                ##nagelfar syntax ::csv::split x*
                 set line {}
-                foreach c [split $l $csvsep] {
-                    lappend line [string trim $c]
-                }
-                lappend regtable $line
-            }
-        } elseif {$ryaml} {
-            return [construct::ryaml_process $regfilename $regtable $ryamlsigpfx $destmod $origin]
-        }
+                foreach l [split $t "\n"] {
 
-        if {[llength $regtable] <= 1} {
-            log -error -abort "RT (regfile ${regfilename}): no registers specified ($origin)"
-        }
-
-        #order: {entryname ?address? ?protect? ...}
-        set r_head [lindex $regtable 0]
-        set regtable [lrange $regtable 1 end]
-
-        set idx_entry   [lsearch $r_head "entryname"]
-        set idx_addr    [lsearch $r_head "address"]
-        set idx_protect [lsearch $r_head "protect"]
-
-        set e_head      {}
-        foreach i_h $r_head {
-            if {$i_h eq "entryname"} {continue}
-            if {$i_h eq "address"}   {continue}
-            if {$i_h eq "protect"}   {continue}
-            lappend e_head $i_h
-        }
-
-        set e_dict      {}
-        set e_last_name {}
-        set e_last_addr {}
-        set e_last_prot {}
-        set e_table     {}
-
-        foreach i_row $regtable {
-            if {[llength $i_row] < [llength $r_head]} {
-                if {[llength $i_row] > 0} {
-                    log -warn "register table row \"${i_row}\" contains too few columns ($origin)"
-                }
-                continue
-            }
-
-            set e_row  {}
-            set e_name {}
-            set e_addr {}
-            set e_prot {}
-
-            for {set i 0} {$i < [llength $i_row]} {incr i} {
-                if {($i == $idx_entry)} {
-                    set e_name [lindex $i_row $i]
-                } elseif {($i == $idx_addr)} {
-                    set e_addr [lindex $i_row $i]
-                } elseif {($i == $idx_protect)} {
-                    set e_prot [lindex $i_row $i]
-                } else {
-                    lappend e_row [lindex $i_row $i]
+                    append line $l
+                    ##nagelfar syntax ::csv::iscomplete x*
+                    if {[::csv::iscomplete "$line"]} {
+                        set regtablerow [::csv::split $line $csvsep $csvdel]
+                        if {[string trim [concat {*}$regtablerow]] ne ""} {
+                            lappend regtable $regtablerow
+                        }
+                        set line {}
+                    } else {
+                        if  {$line ne {}} {
+                            append line \n
+                        }
+                    }
                 }
             }
-
-            if {$e_name eq ""} {set e_name $e_last_name}
-            if {$e_name eq ""} {
-                log -warn "register table row \"${i_row}\" has no entry name ($origin)"
-            }
-            if {$e_name eq $e_last_name} {
-                if {$e_addr eq ""} {set e_addr $e_last_addr}
-                if {$e_prot eq ""} {set e_prot $e_last_prot}
-            }
-
-            dict set e_dict $e_name addr $e_addr
-            dict set e_dict $e_name prot $e_prot
-            if {$e_name ne $e_last_name} {
-                dict set e_dict $e_name table [list $e_head]
-            }
-
-            dict with e_dict $e_name {
-                lappend table $e_row
-            }
-
-            set e_last_name $e_name
-            set e_last_addr $e_addr
+            construct::rcsv_process $regfilename $regtable $addroffset $opts $destmod $origin
+        } elseif {$mode eq "ryaml"} {
+            construct::ryaml_process $regfilename $regtable $addroffset $opts $ryamlsigpfx $destmod $origin
         }
 
-        # create
-        dict for {e_name e_data} $e_dict {
-            set e_addr  [dict get $e_data "addr"]
-            set e_prot  [dict get $e_data "prot"]
-            set e_table [dict get $e_data "table"]
-
-            set opts {}
-            if {$e_addr ne ""} {
-                lappend opts "@${e_addr}"
-            }
-            if {($e_prot ne "") && (($e_prot) || ($e_prot in {x X}))} {
-                lappend opts "-protected"
-            }
-            if {$nosubst_opt ne ""} {
-                lappend opts $nosubst_opt
-            }
-            if {$eval_opt ne ""} {
-                lappend opts $eval_opt
-            }
-
-            R -cmdorigin $origin {*}${opts} $regfilename $e_name $e_table
-        }
     }
 
     namespace export *
