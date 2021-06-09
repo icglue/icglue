@@ -649,10 +649,13 @@ namespace eval ig {
             ig::db::set_attribute -object $modid -attribute "mode"       -value $mode
             ig::db::set_attribute -object $modid -attribute "parentunit" -value $unit
             ig::db::set_attribute -object $modid -attribute "dummy"      -value $dummy
-            foreach attr $attributes {
-                set attr [ig::aux::remove_brackets $attr]
-                lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                ig::db::set_attribute -object $modid -attribute [string trim $attr_name] -value [string trim $attr_val]
+            foreach attrlist $attributes {
+                set attrlist [ig::aux::remove_brackets $attrlist]
+                foreach pair [split $attrlist ";"] {
+                    set pair [string trim $pair]
+                    lassign [split [regsub -all {=>} $pair {=}] "="] attr_name attr_val
+                    ig::db::set_attribute -object $modid -attribute [string trim $attr_name] -value [string trim $attr_val]
+                }
             }
 
             # instances
