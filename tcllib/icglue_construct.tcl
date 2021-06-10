@@ -109,6 +109,22 @@ namespace eval ig {
             return $result
         }
 
+        ## @brief Common proc to parse and set attributes
+        #
+        # @param modid ID of target module
+        # @param attrstring list of 'attribute=>value' pairs, with semicolon as a pair separator
+        proc set_module_attributes {modid attrstring} {
+            ig::log -debug -id "Mattr" "Setting '${attrstring}' for module ${modid}"
+            foreach attrlist $attrstring {
+                set attrlist [ig::aux::remove_brackets $attrlist]
+                foreach pair [split $attrlist ";"] {
+                    set pair [string trim $pair]
+                    lassign [split [regsub -all {=>} $pair {=}] "="] attr_name attr_val
+                    ig::db::set_attribute -object $modid -attribute [string trim $attr_name] -value [string trim $attr_val]
+                }
+            }
+        }
+
         ## @brief Parse module instance tree
         #
         # @param instance_tree instance tree string to parse
@@ -359,18 +375,10 @@ namespace eval ig {
                         ig::db::set_attribute -object $rfid -attribute "addrwidth" -value $frfaddrbits
                         ig::db::set_attribute -object $rfid -attribute "addralign" -value $frfaddralign
                         ig::db::set_attribute -object $rfid -attribute "datawidth" -value $frfdatabits
-                        foreach attr $frfattributes {
-                            set attr [ig::aux::remove_brackets $attr]
-                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                            ig::db::set_attribute -object $rfid -attribute [string trim $attr_name] -value [string trim $attr_val]
-                        }
+                        set_module_attributes $rfid $frfattributes
                     }
                     if {!$fres} {
-                        foreach attr $fattributes {
-                            set attr [ig::aux::remove_brackets $attr]
-                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                            ig::db::set_attribute -object $modid -attribute [string trim $attr_name] -value [string trim $attr_val]
-                        }
+                        set_module_attributes $modid $fattributes
                     }
                     ig::db::set_attribute -object $modid -attribute "dummy" -value $fdummy
                 }
@@ -391,11 +399,7 @@ namespace eval ig {
                         ig::db::set_attribute -object $instid -attribute "origin" -value $origin
                     }
                     if {$fres} {
-                        foreach attr $fattributes {
-                            set attr [ig::aux::remove_brackets $attr]
-                            lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                            ig::db::set_attribute -object $instid -attribute [string trim $attr_name] -value [string trim $attr_val]
-                        }
+                        set_module_attributes $instid $fattributes
                     }
                 }
             }
@@ -606,6 +610,7 @@ namespace eval ig {
                    { {^-cmdorigin(=|$)}                   "string"              origin        "origin of command call for logging"    }   \
             ] -context "MODULENAME" $args]
 
+
         # argument checks
         if {[llength $name] > 1} {
             log -error -abort "M: too many arguments ($name) ($origin)"
@@ -614,6 +619,7 @@ namespace eval ig {
         if {$rfaddralign eq {}} {
             set rfaddralign [expr {$rfdatabits / 8}]
         }
+
 
         if {$instance_tree ne {}} {
             set module_list [construct::mtree_parse $instance_tree $origin]
@@ -624,9 +630,11 @@ namespace eval ig {
 
             return $modids
         }
+
         if {$unit eq ""} {
             set unit $name
         }
+
         if {$name eq ""} {
             log -error -abort "M: need a module name ($origin)"
         }
@@ -634,7 +642,10 @@ namespace eval ig {
             log -error -abort "M (module ${name}): a resource cannot have instances ($origin)"
         }
 
-        # actual module creation
+        ig::log -debug -id "Mattr" "AAAAAA"
+        ig::log -error -id "EEEE"
+        puts "AUEUAUAU"
+
         if {[catch {
             catch {
                 if {$resource} {
@@ -649,14 +660,8 @@ namespace eval ig {
             ig::db::set_attribute -object $modid -attribute "mode"       -value $mode
             ig::db::set_attribute -object $modid -attribute "parentunit" -value $unit
             ig::db::set_attribute -object $modid -attribute "dummy"      -value $dummy
-            foreach attrlist $attributes {
-                set attrlist [ig::aux::remove_brackets $attrlist]
-                foreach pair [split $attrlist ";"] {
-                    set pair [string trim $pair]
-                    lassign [split [regsub -all {=>} $pair {=}] "="] attr_name attr_val
-                    ig::db::set_attribute -object $modid -attribute [string trim $attr_name] -value [string trim $attr_val]
-                }
-            }
+
+            set_module_attributes $modid $attributes
 
             # instances
             set instances [ig::aux::remove_comma_ws $instances]
@@ -679,11 +684,7 @@ namespace eval ig {
                 ig::db::set_attribute -object $rfid -attribute "addrwidth" -value $rfaddrbits
                 ig::db::set_attribute -object $rfid -attribute "addralign" -value $rfaddralign
                 ig::db::set_attribute -object $rfid -attribute "datawidth" -value $rfdatabits
-                foreach attr $rfattributes {
-                    set attr [ig::aux::remove_brackets $attr]
-                    lassign [split [regsub -all {=>} $attr {=}] "="] attr_name attr_val
-                    ig::db::set_attribute -object $rfid -attribute [string trim $attr_name] -value [string trim $attr_val]
-                }
+                set_module_attributes $rfid $rfattributes
             }
         } emsg]} {
             log -error -abort "M (module ${name}): error while creating module:\n${emsg} ($origin)"
@@ -1727,4 +1728,3 @@ namespace eval ig {
 
     namespace export *
 }
-
