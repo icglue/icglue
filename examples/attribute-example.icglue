@@ -1,0 +1,29 @@
+# custom attributes can be passed with 'attribute={<expr>}'
+# <expr> can be a list of '<attribute>=><value>' pairs
+# pairs must be separate by semicolons
+
+M -unit "component" -tree {
+    tb_component .................. (tb,v)
+    +-- oldstyle ............. (rtl,attribute={cell=>true},attribute={width=>5},attribute={height=>2},attribute={impl=>"ASIC"})
+    +-- newstyle1............. (rtl,attribute={cell=>true;width=>5},attribute={height=>2},attribute={impl=>"ASIC"})
+    +-- newstyle2............. (rtl,attribute={impl=>"ASIC"; cell=>true;width=>5 ;height=>2;})
+}
+
+# check that both styles set the same attributes
+set attributes {cell width height impl}
+set mod_dict [dict create oldstyle {} newstyle1 {} newstyle2 {}]
+foreach mod [dict keys $mod_dict] {
+    set modid [ig::db::get_modules -name $mod]
+    set values [lmap attr $attributes {ig::db::get_attribute -object $modid -attribute $attr}]
+    puts "$mod: $attributes -> $values"
+
+    # compare with previous entries
+    dict for {prev_mod prev_values} $mod_dict {
+        if {$prev_values ne {}} {
+            if {$values ne $prev_values} {
+                ig::log -error "Module ${mod} has attribute values '${values}', but module ${prev_mod} has '${prev_values}'"
+            }
+        }
+    }
+    dict set mod_dict $mod $values
+}

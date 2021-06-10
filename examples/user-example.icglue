@@ -10,7 +10,7 @@ M -unit "component" -tree {
        \- component_top ........... (rtl)
           |
           +- anothersubmod_wrap ... (rtl,unit=anothersubmod)
-          |  \- anothersubmod ..... (beh,attribute={cell=>true})
+          |  \- anothersubmod ..... (beh,attribute={cell=>true;second_attribute_pair=>5})
           |
           \- submod_wrap .......... (inc)
 }
