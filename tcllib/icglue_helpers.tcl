@@ -891,6 +891,17 @@ namespace eval ig::aux {
         return $retval
     }
 
+    proc get_parent_module {childname} {
+        if {[catch {ig::db::get_instances -name $childname}]} {
+            ig::log -error "No instances found for ${childname}. Toplevel ?"
+            exit 1
+        } else {
+            set child_id [ig::db::get_instances -name $childname]
+        }
+        set parent_id [ig::db::get_attribute -object $child_id -attribute "parent"]
+        return [ig::db::get_attribute -object $parent_id -attribute "name"]
+    }
+
     namespace export *
 }
 

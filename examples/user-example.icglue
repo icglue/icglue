@@ -47,7 +47,12 @@ S "syn_reset"            submod_wrap -->
 S "comb_reset_ref_core" -pin = {syn_reset!} <--  common_reset_combiner<ref_core>:syn_reset_n_o
 S "scan_mode"           -pin = 1'b0         -->  common_reset_combiner<ref_core>:testmode_i
 
-
+# use auxiliary proc to determine parent module in a loop
+foreach m {submod_regfile submod nocif submod_wrap} {
+    set parent [ig::aux::get_parent_module $m]
+    puts "${parent} --> ${m}"
+    S constant_from_parent_${m} -w 12 -v 12'h123  $parent --> $m
+}
 # code placed in component_wrap (signal will be adapted, variable substition will be done as well,
 # so don't forget to escape!)
 # - use -noadapt to disable adaption
