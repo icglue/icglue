@@ -499,6 +499,8 @@ struct ig_rf_regfile *ig_rf_regfile_new (const char *name, struct ig_module *par
 
     ig_obj_init (IG_OBJ_REGFILE, name, plist, IG_OBJECT (regfile), storage);
 
+    ig_obj_attr_set (IG_OBJECT (regfile), "module", IG_OBJECT (parent)->id, true);
+
     regfile->parent  = parent;
     regfile->entries = g_queue_new ();
 
