@@ -838,11 +838,11 @@ namespace eval ig::templates {
                 # single codeline / begin of %( ... %)
 
                 # raw text so far
-                set s [string range $txt $pos [expr {$from-2}]]
+                set s [string range $txt $pos [expr {$from-1}]]
 
                 if {$s ne {}} {
                     append code "_linenr $linenr\n"
-                    append code "echo \"\[" [list subst $s] "\]\\n\"\n"
+                    append code "echo \"\[" [list subst $s] "\]\"\n"
                     incr linenr [expr {[ig::aux::string_count_nl $s] + 1}]
                     append code "_linenr $linenr\n"
                 }
@@ -899,7 +899,7 @@ namespace eval ig::templates {
         set s [string range $txt $pos end]
         if {$s ne {}} {
             append code "_linenr $linenr\n"
-            append code "echo \"\[" [list subst $s] "\]\\n\"\n"
+            append code "echo \"\[" [list subst $s] "\]\"\n"
         }
 
         return $code
