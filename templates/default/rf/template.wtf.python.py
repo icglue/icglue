@@ -36,7 +36,7 @@ foreach_array register $register_list {
         }
     }
 %)
-
+%
 % # special lock flag to flag typos which would create new attributes
 % echo "${indent}__class_attr_locked = False"
 
@@ -90,7 +90,7 @@ foreach_array register $register_list {
 
 %        }
 %    }
-
+%
 %   # special methods to access whole word with <REGISTER>._word which should not conflict with read_word / write_word class attributes
     def _read_word(self):
         return self.read_word()

@@ -349,7 +349,7 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
 % # icglue instance code
 %I(vlog/include/inst.wtf.vh)
 % ###########################################
-
+%
 % if {$has_read_reg_sync} {
 
     // "not a synchronizer" - just for delay measurement
@@ -378,7 +378,7 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
     end
     assign ready_sync_delay_done = ready_sync_delay | ready_sync_delay_r;
 % }
-
+%
 % foreach_preamble {s r w sb} $sig_syncs {
 
 [rf_comment_block "common sync's"]
@@ -390,7 +390,7 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
         .data_o    (sync_$r)
     );
 % }
-
+%
 % if {$handshake_list ne ""} {
 [rf_comment_block "handshake"]
 %  if {$fpga_impl} {
@@ -425,7 +425,7 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
 %    foreach handshake $handshake_list {
     assign [adapt_signalname $handshake $obj_id] = reg_$handshake;
 %    }
-
+%
 % }
 
 [rf_comment_block "Regfile - registers (write-logic & read value assignmment)"]

@@ -53,11 +53,11 @@ module $mod_data(name) ($portdecl)
         log -warn "SystemC template does not support parameters!"
     }
 %)
-
+%
 % foreach_array port $mod_data(ports) {
     [format "%-${port_data_maxlen_dir}s %${port_data_maxlen_range}s %s;" $port(vlog.direction) $port(vlog.bitrange) $port(name)]
 % }
-
+%
 % foreach_array decl $mod_data(declarations) {
     [format "%-${decl_data_maxlen_type}s %${decl_data_maxlen_range}s %s;" $decl(vlog.type) $decl(vlog.bitrange)  $decl(name)]
 %}
