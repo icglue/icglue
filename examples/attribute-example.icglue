@@ -2,7 +2,7 @@
 # <expr> can be a list of '<attribute>=><value>' pairs
 # pairs must be separate by semicolons
 
-M -unit "component" -tree {
+M -unit "component2" -tree {
     tb_component .................. (tb,v)
     +-- oldstyle ............. (rtl,attribute={cell=>true},attribute={width=>5},attribute={height=>2},attribute={impl=>"ASIC"})
     +-- newstyle1............. (rtl,attribute={cell=>true;width=>5},attribute={height=>2},attribute={impl=>"ASIC"})
