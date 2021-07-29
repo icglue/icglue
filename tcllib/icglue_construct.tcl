@@ -525,7 +525,7 @@ namespace eval ig {
         # This command requires the tcllib yaml package for parsing yaml.
         proc rcsv_process {regfilename rcsv addroffset ropts {sigprefix {}} {destmod {}} {origin {}}} {
             if {[llength $rcsv] <= 1} {
-                log -error -abort "RT (regfile ${regfilename}): no registers specified ($origin)"
+                ig::log -error -abort "RT (regfile ${regfilename}): no registers specified ($origin)"
             }
 
             # get regfile
@@ -573,7 +573,7 @@ namespace eval ig {
                 set i_row [lmap e $i_row {string trim $e}]
                 if {[llength $i_row] < [llength $r_head]} {
                     if {[llength $i_row] > 0} {
-                        log -warn "register table row \"${i_row}\" contains too few columns ($origin)"
+                        ig::log -warn "register table row \"${i_row}\" contains too few columns ($origin)"
                     }
                     continue
                 }
@@ -600,7 +600,7 @@ namespace eval ig {
 
                 if {$e_name eq ""} {set e_name $e_last_name}
                 if {$e_name eq ""} {
-                    log -warn "register table row \"${i_row}\" has no entry name ($origin)"
+                    ig::log -warn "register table row \"${i_row}\" has no entry name ($origin)"
                 }
                 if {$e_name eq $e_last_name} {
                     if {$e_addr eq ""} {set e_addr $e_last_addr}
