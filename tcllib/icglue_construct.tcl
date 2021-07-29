@@ -111,18 +111,23 @@ namespace eval ig {
 
         ## @brief Common proc to parse and set attributes
         #
-        # @param modid ID of target module
+        # @param object ID of target object
         # @param attrstring list of 'attribute=>value' pairs, with semicolon as a pair separator
-        proc set_module_attributes {modid attrstring} {
-            ig::log -debug -id "Mattr" "Setting '${attrstring}' for module ${modid}"
+        proc set_modcmd_attributes {object attrstring} {
+            ig::log -debug -id "Mattr" "Setting '${attrstring}' for module ${object}"
+            set attributes {}
             foreach attrlist $attrstring {
                 set attrlist [ig::aux::remove_brackets $attrlist]
                 foreach pair [split $attrlist ";"] {
                     set pair [string trim $pair]
-                    lassign [split [regsub -all {=>} $pair {=}] "="] attr_name attr_val
-                    ig::db::set_attribute -object $modid -attribute [string trim $attr_name] -value [string trim $attr_val]
+                    if {$pair ne {}} {
+                        dict set attributes {*}[split [regsub -all {=>} $pair {=}] "="]
+                    }
                 }
             }
+
+            set userdata [dict create "object" $object "attributes" $attributes]
+            ig::templates::current::template_attr $userdata
         }
 
         ## @brief Parse module instance tree
@@ -375,10 +380,10 @@ namespace eval ig {
                         ig::db::set_attribute -object $rfid -attribute "addrwidth" -value $frfaddrbits
                         ig::db::set_attribute -object $rfid -attribute "addralign" -value $frfaddralign
                         ig::db::set_attribute -object $rfid -attribute "datawidth" -value $frfdatabits
-                        set_module_attributes $rfid $frfattributes
+                        set_modcmd_attributes $rfid $frfattributes
                     }
                     if {!$fres} {
-                        set_module_attributes $modid $fattributes
+                        set_modcmd_attributes $modid $fattributes
                     }
                     ig::db::set_attribute -object $modid -attribute "dummy" -value $fdummy
                 }
@@ -399,7 +404,7 @@ namespace eval ig {
                         ig::db::set_attribute -object $instid -attribute "origin" -value $origin
                     }
                     if {$fres} {
-                        set_module_attributes $instid $fattributes
+                        set_modcmd_attributes $instid $fattributes
                     }
                 }
             }
@@ -538,7 +543,7 @@ namespace eval ig {
                 }
             }
 
-            ig::aux::regfile_next_addr $regfile_id $addroffset
+            ig::aux::regfile_next_addr $rfid $addroffset
             #order: {entryname ?address? ?protect? ...}
             set r_head [lmap e [lindex $rcsv 0] {string trim $e}]
             set rcsv [lrange $rcsv 1 end]
@@ -993,7 +998,7 @@ namespace eval ig {
             ig::db::set_attribute -object $modid -attribute "parentunit" -value $unit
             ig::db::set_attribute -object $modid -attribute "dummy"      -value $dummy
 
-            set_module_attributes $modid $attributes
+            construct::set_modcmd_attributes $modid $attributes
 
             # instances
             set instances [ig::aux::remove_comma_ws $instances]
@@ -1016,7 +1021,7 @@ namespace eval ig {
                 ig::db::set_attribute -object $rfid -attribute "addrwidth" -value $rfaddrbits
                 ig::db::set_attribute -object $rfid -attribute "addralign" -value $rfaddralign
                 ig::db::set_attribute -object $rfid -attribute "datawidth" -value $rfdatabits
-                set_module_attributes $rfid $rfattributes
+                construct::set_modcmd_attributes $rfid $rfattributes
             }
         } emsg]} {
             log -error -abort "M (module ${name}): error while creating module:\n${emsg} ($origin)"

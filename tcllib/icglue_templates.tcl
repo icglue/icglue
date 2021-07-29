@@ -23,14 +23,19 @@ package provide ICGlue 5.0a1
 namespace eval ig::templates {
     ## @brief Collect template data
     namespace eval collection {
-        variable template_dir      {}
-        variable template_data_gen {}
-        variable template_args_gen {}
+        variable template_dir       {}
+        variable template_data_gen  {}
+        variable template_args_gen  {}
+        variable template_attr_gen {}
     }
 
     ## @brief Callback procs of currently loaded template.
     namespace eval current {
-
+        # allow plain get_/set_attribute, but omit loading during pkgIndex-creation
+        if {[namespace exists ::ig::db]} {
+            namespace import ::ig::db::get_attribute
+            namespace import ::ig::db::set_attribute
+        }
 
         variable template_dir ""
 
@@ -94,6 +99,15 @@ namespace eval ig::templates {
 
             return ${_result}
         }
+
+        ## @brief Callback to set default/process object attributes
+        # @param userdata (key/value pair-list for user provided data)
+        #   icglue templates expect a key object with the ID of the object to initialize
+        proc template_attr {userdata} {
+            ig::log -error -abort "No template loaded"
+        }
+
+        namespace export template_args template_attr get_template_data
     }
 
     ## @brief Preprocess helpers for template files
@@ -602,6 +616,15 @@ namespace eval ig::templates {
                                 ]
                             }
                         }
+                        template_attributes {
+                            if {$arglist ne {userdata}} {
+                                ig::log -error "template ${template}: invalid template_args definition (arguments must be {})"
+                            } else {
+                                lappend ig::templates::collection::template_attr_gen [list \
+                                    $template $body \
+                                ]
+                            }
+                        }
 
                         output_types  {init::output_types  $template $body}
                         template_file {init::template_file $template $body}
@@ -643,6 +666,7 @@ namespace eval ig::templates {
         set dir_idx   [lsearch -index 0 $collection::template_dir      $template]
         set data_idx  [lsearch -index 0 $collection::template_data_gen $template]
         set args_idx  [lsearch -index 0 $collection::template_args_gen $template]
+        set props_idx [lsearch -index 0 $collection::template_attr_gen $template]
 
         if {($dir_idx < 0) || ($data_idx < 0)} {
             ig::log -error -abort "template $template not (fully) defined"
@@ -657,6 +681,11 @@ namespace eval ig::templates {
             $procdef current::template_args {} [lindex $collection::template_args_gen $args_idx 1]
         }
         $procdef current::get_template_data_raw {userdata tdir} [lindex $collection::template_data_gen $data_idx 1]
+        if {$props_idx < 0} {
+            $procdef current::template_attr {userdata} {}
+        } else {
+            $procdef current::template_attr {userdata} [lindex $collection::template_attr_gen $props_idx 1]
+        }
     }
 
     ## @brief Parse a template.
