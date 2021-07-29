@@ -150,7 +150,7 @@ proc template_data {userdata tdir} {
         add "rf-c.txt" wtf "${tdir}/rf/template.wtf.c.txt" "software/doc/regfile_access/${name}.txt" {}
 
         foreach {itag   itype iinf iext lexcom} {
-                 soc    icgt  {}   h   {"/* " " */"}
+                 soc    wtf   {}   h   {"/* " " */"}
                  host   icgt  {}   h   {"/* " " */"}
                  host   icgt  {}   cpp {"/* " " */"}
                  tcl    wtf   .tcl h   {"/* " " */"}
