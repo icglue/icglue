@@ -1,9 +1,6 @@
 <%-
 set entry_list [regfile_to_arraylist $obj_id]
 set rf_name [object_name $obj_id]
-set userparams [ig::db::get_attribute -object $obj_id -attribute "accesscargs" -default {}]
-
-
 
 set header_name "rf_${rf_name}"
 set base_addr "rf_baseaddr_${rf_name}"
