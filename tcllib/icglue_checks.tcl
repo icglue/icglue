@@ -393,7 +393,7 @@ namespace eval ig::checks {
         return ${_reserved_names_dict}
     }
 
-    ## @brief Run individual regfile naming check.
+    ## @brief Run individual naming conflicts check.
     # @param check_name name to check
     # @param ref_name name for reference in warn message
     # @param origin origin string for warn message
@@ -417,7 +417,7 @@ namespace eval ig::checks {
         }
     }
 
-    ## @brief Run regfile naming check.
+    ## @brief Run regfile naming conflicts check.
     # @param regfile_data preprocessed data of regfile to check.
     proc check_regfile_names {regfile_data} {
         set rfname  [dict get $regfile_data "name"]
