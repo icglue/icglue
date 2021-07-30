@@ -38,7 +38,7 @@ PKGGENSCR             = scripts/tcl_pkggen.tcl
 PKGDIR_INCTCLLIB      = $(PKGDIR)/3rdparty/tcllib
 TCLLIB_URL            = https://raw.githubusercontent.com/tcltk/tcllib/$(TCLLIB_COMMIT)
 TCLLIB_COMMIT         = tcllib-1-20
-TCLLIBFILES           = license.terms $(addprefix modules/,$(addprefix yaml/,yaml.tcl huddle.tcl huddle_types.tcl) cmdline/cmdline.tcl base64/base64.tcl)
+TCLLIBFILES           = license.terms $(addprefix modules/,$(addprefix yaml/,yaml.tcl huddle.tcl huddle_types.tcl) cmdline/cmdline.tcl base64/base64.tcl csv/csv.tcl)
 
 VERSIONSCRINSTALL     = scripts/install-version.sh
 
