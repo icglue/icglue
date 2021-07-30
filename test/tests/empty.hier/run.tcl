@@ -9,6 +9,6 @@ run icglue units/mod/source/gen/mod.icglue
 
 # check for 0 warnings/errors
 eval_run_output {
-    glob {W,*:*} 0
-    glob {E,*:*} 0
+    glob {W,* *} 0
+    glob {E,* *} 0
 }

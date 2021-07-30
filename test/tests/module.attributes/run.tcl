@@ -5,10 +5,10 @@ deploy attributes.icglue           units/attributes/source/gen/
 run icprep project
 
 # generate everything
-run icglue units/attributes/source/gen/attributes.icglue
+run_nocheck icglue units/attributes/source/gen/attributes.icglue
 
-# check for 0 warnings/errors
+# check for 12 warnings/errors
 eval_run_output {
-    glob {W,*:*} 0
-    glob {E,*:*} 0
+    glob {W,* *} 12
+    glob {E,* *} 0
 }
