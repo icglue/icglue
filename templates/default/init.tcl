@@ -99,6 +99,25 @@ proc template_attributes {userdata} {
                 ig::log -warn "unknown regfile attribute $k"
             }
         }
+    } elseif {$type eq "module"} {
+        set known_attrs {
+            keepblocks
+        }
+
+        # default attributes
+        foreach {dattr dvalue} [subst {
+            keepblocks  false
+        }] {
+            if {![dict exists $attrs $dattr]} {
+                dict set attrs $dattr $dvalue
+            }
+        }
+
+        foreach k [dict keys $attrs] {
+            if {$k ni $known_attrs} {
+                ig::log -warn "unknown module attribute $k"
+            }
+        }
     }
 
     if {[llength $attrs] > 0} {
@@ -121,7 +140,7 @@ proc template_data {userdata tdir} {
 
         foreach {ilang itag itype idir iext lexcom} {
                 verilog       vlog  wtf  verilog       v   {"/* " " */"}
-                systemverilog svlog icgt systemverilog sv  {"/* " " */"}
+                systemverilog svlog wtf  systemverilog sv  {"/* " " */"}
                 systemc       sc    wtf  systemc       h   {"/* " " */"}
                 systemc       sc    wtf  systemc       cpp {"/* " " */"}
                 systemc       shell wtf  verilog       v   {"/* " " */"}

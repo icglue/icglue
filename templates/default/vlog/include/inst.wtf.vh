@@ -23,10 +23,9 @@
 
 
 %}
-
-    [pop_keep_block_content keep_block_data "keep" "instances"]
+%necho "    [cond_pop_keep_block_content keep_block_data "keep" "instances"]\n"
 % ### CODE ###
 %foreach_array_preamble cs $mod_data(code) {echo "\n"} {
 % echo $cs(code)
 %}
-    [pop_keep_block_content keep_block_data "keep" "code"]
+%necho "    [cond_pop_keep_block_content keep_block_data "keep" "code"]\n"

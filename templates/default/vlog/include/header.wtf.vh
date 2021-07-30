@@ -9,15 +9,15 @@
 
     set param_data_maxlen_type [max_array_entry_len $mod_data(parameters) vlog.type]
     set param_data_maxlen_name [max_array_entry_len $mod_data(parameters) name]
+    set keepblocks [ig::db::get_attribute -object $obj_id -attribute "keepblocks" -default "false"]
 %)
 [pop_keep_block_content keep_block_data "keep" "head" "" "
 /*
  * Module: $mod_data(name)
  * Author:
- * E-Mail:
  */
 "]
-`timescale 1ns/1ps[expr {$cell_define ? "\n`celldefine" : ""}]
+`timescale 1ns/1ps
 %echo "module $mod_data(name) ("
 %### PORTS ###
 %foreach_array_preamble_epilog_join port $mod_data(ports) {echo "\n"} {

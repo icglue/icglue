@@ -15,7 +15,7 @@
     }
  set cell_define [ig::db::get_attribute -object $obj_id -attribute "cell" -default "false"]
 %)
-%I(vlog/include/header.wtf.vh)
+%I(svlog/include/header.wtf.vh)
 %if {[llength $mod_data(regfiles)] == 0} {
 %I(vlog/include/inst.wtf.vh)
 %} else {
