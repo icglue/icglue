@@ -956,7 +956,8 @@ namespace eval ig::templates {
             .vhdl   {return [list "-- "   "\n"]}
 
             .htm    -
-            .html   {return [list "<!-- " " -->"]}
+            .html   -
+            .xml    {return [list "<!-- " " -->"]}
 
             .tex    {return [list "% "    "\n"]}
 
