@@ -50,10 +50,15 @@
 - [ ] default properties set by template:
   - [ ] e.g. verilog/systemverilog (default language)
   - [ ] regfile properties (e.g. apb)
-  - [ ] init.tcl: add `template_defaults` or similar for default properties initialization
+  - [x] init.tcl: add `template_defaults` or similar for default properties initialization
+- [ ] tags: add default enabled/disabled per tag feature (-> some outputs disabled by default)
+  - [ ] `add` cmd: add default/nondefault option
+  - [ ] `add` cmd: add groups? as extra opt or as tag-suffix?
+  - [ ] binary: +tag, -tag (to add/remove output), +/-group (add/remove output for group)
 
 ## bin
 - [ ] allow multiple construction scripts?
+- [ ] tags: add defaults +/-extra enable/disable (see templates)
 
 ## test
 - [ ] more tests
