@@ -22,7 +22,7 @@ M -unit "submod" -tree {
     +- common_sync<submod0..4> ..................... (res)
     +- common_sync<submod_trigger_sync> ............ (res)
     |
-    +- submod_regfile .............................. (rf,rfattr=pad_to=0x100)
+    +- submod_regfile .............................. (rf,rfattr=pad_to=0x100,rfaddrw=16)
     \- submod_top .................................. (rtl)
        |
        +- submod ................................... (res)
@@ -40,7 +40,7 @@ M -unit "submod" -tree {
 P RF_ADDR_SEL = 4'b0110 tb_component component_wrap
 
 # simple connections
-S "rf_address" -w 32 tb_component  -->  component_wrap
+S "rf_address" -w 16 tb_component  -->  component_wrap
 
 # in- and output ports of resources can be pinned to any string (= is optional, default is {}):
 S "syn_reset"            submod_wrap -->
@@ -60,14 +60,14 @@ foreach m {submod_regfile submod nocif submod_wrap} {
 # - use -verbatim as alias of both (-noadapt -nosubst)
 set rf_addr_range 5
 C component_wrap -as {
-    assign rf_addr![31  : ${rf_addr_range}] = 'h0;
+    assign rf_addr![16  : ${rf_addr_range}] = 'h0;
     assign rf_addr![ 0 +: ${rf_addr_range}] = rf_address![ 0 :+ ${rf_addr_range}];
-    assign rf_sel! = (rf_addr![31:28] == RF_ADDR_SEL) ? 1'b1 : 1'b0;
+    assign rf_sel! = (rf_addr![16:13] == RF_ADDR_SEL) ? 1'b1 : 1'b0;
 
     // debugging:
     always @(posedge apb_clk_i) begin
         if (rf_sel! && rf_enable!) begin
-            \$display ("Regfile access at address 0x%08x(%d)", rf_addr!, \$time);
+            \$display ("Regfile access at address 0x%04x(%d)", rf_addr!, \$time);
         end
     end
 }
@@ -252,7 +252,7 @@ R submod_regfile "entry_sync0"  $rf_submod_table
 ### Connect fixed ports of the apb regfile template                  ###
 ########################################################################
 set rf_apb_ports {
-        rf_addr    --> apb_addr       32 component_wrap
+        rf_addr    --> apb_addr       16 component_wrap
         rf_sel     --> apb_sel        1  component_wrap
         rf_enable  --> apb_enable     1
         rf_write   --> apb_write      1

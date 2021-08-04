@@ -17,8 +17,7 @@
     - [x] init.tcl
     - [ ] output-template
   - [x] default property in template for required signals
-  - [ ] default property in template signal names of required signals (can be overwritten in icglue script)
-  - [ ] add check depending on properties
+  - [x] add check depending on properties
 - [ ] read-signal:
   - per entry?: optional module output signalling register read (-> attribute)
 - [ ] support systemverilog structs / reg

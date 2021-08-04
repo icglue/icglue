@@ -21,7 +21,7 @@ R python_rf "gpio_ctrl" {
     {dout             27:20        RW     0       gpio_do   7:0          "GPIO data out"           }
     {din              19:12        R      0       gpio_di   7:0          "GPIO data in"            }
     {oe               11:4         RW     0       gpio_oe   7:0          "GPIO direction"          }
-    {gpio_mux          3:0         W      0       gpio_mux  3:0          "GPIO multiplexer select" }
+    {gpio_mux          3:0         RW     0       gpio_mux  3:0          "GPIO multiplexer select" }
 }
 
 foreach {s w <->} {

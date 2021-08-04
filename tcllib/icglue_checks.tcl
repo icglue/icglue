@@ -95,6 +95,10 @@ namespace eval ig::checks {
     # @param module_id Object-ID of module to check.
     proc check_module {module_id} {
         check_module_multi_dimensional_port_lang $module_id
+
+        foreach regfile_id [ig::db::get_regfiles -of $module_id] {
+            check_module_regfile_ports $module_id $regfile_id
+        }
     }
 
     # warn if the language does not support multidimensional ports
@@ -129,6 +133,8 @@ namespace eval ig::checks {
             "addralign" [ig::db::get_attribute -object $regfile_id -attribute "addralign"] \
             "datawidth" [ig::db::get_attribute -object $regfile_id -attribute "datawidth"] \
             "entries"   [ig::templates::preprocess::regfile_to_arraylist $regfile_id] \
+            "module"    [ig::db::get_attribute -object $regfile_id -attribute "parent"] \
+            "object"    $regfile_id \
         ]
 
         check_regfile_addresses   $rfdata
@@ -136,6 +142,7 @@ namespace eval ig::checks {
         check_regfile_signalbits  $rfdata
         check_regfile_resetvalues $rfdata
         check_regfile_names       $rfdata
+        check_regfile_regtypes    $rfdata
     }
 
     ## @brief Run regfile entry address check.
@@ -441,6 +448,72 @@ namespace eval ig::checks {
                 if {$rname eq {-}} continue
 
                 check_regfile_name_string $rname "register \"${rname}\" in entry \"${ename}\"" "(regfile ${rfname}) (${origin})"
+            }
+        }
+    }
+
+    ## @brief Run check for allowed register types.
+    # @param regfile_data preprocessed data of regfile to check.
+    proc check_regfile_regtypes {regfile_data} {
+        set rfname   [dict get $regfile_data "name"]
+        set regtypes [ig::db::get_attribute -object [dict get $regfile_data "object"] -attribute "regtypes" -default {}]
+        set entries  [dict get $regfile_data "entries"]
+
+        if {$regtypes eq {}} {
+            ig::log -warn -id "ChkRT" "Regfile $rfname has no allowed register types (regtypes) defined in template init"
+            return
+        }
+
+        foreach i_entry $entries {
+            set ename [dict get $i_entry "name"]
+            set regs  [dict get $i_entry "regs"]
+            set oid   [dict get $i_entry "object"]
+            set origin {}
+            if {$oid ne {}} {
+                set origin [ig::db::get_attribute -object $oid -attribute "origin" -default {}]
+            }
+
+            foreach i_reg $regs {
+                set rname [dict get $i_reg "name"]
+                set rtype [dict get $i_reg "type"]
+                if {$rname eq {-}} continue
+
+                if {$rtype ni $regtypes} {
+                    ig::log -warn -id "ChkRT" "Register \"${rname}\" in entry \"${ename}\" has incompatible type \"${rtype}\" (regfile ${rfname}) (${origin})"
+                }
+            }
+        }
+    }
+
+    ## @brief Run check for regfile port interface.
+    # @param regfile_data preprocessed data of regfile to check.
+    proc check_module_regfile_ports {module_id regfile_id} {
+        set mname     [ig::db::get_attribute -object $module_id -attribute "name"]
+        set rfname    [ig::db::get_attribute -object $regfile_id -attribute "name"]
+        set rfports   [ig::db::get_attribute -object $regfile_id -attribute "ports" -default {}]
+
+        if {$rfports eq {}} {
+            ig::log -warn -id "ChkRP" "Regfile $rfname has no port interface defined (ports) defined in template init"
+            return
+        }
+
+        set mportdata {}
+        foreach p [ig::db::get_ports -of $module_id] {
+            set n [ig::db::get_attribute -object $p -attribute "name"]
+            set s [ig::db::get_attribute -object $p -attribute "size"]
+            dict set mportdata $n $s
+        }
+
+        foreach {tp tdata} $rfports {
+            lassign $tdata tn ts
+
+            if {[dict exists $mportdata $tn]} {
+                set mps [dict get $mportdata $tn]
+                if {[string is integer $ts] && [string is integer $mps] && ($ts != $mps)} {
+                    ig::log -warn -id "ChkRP" "Regfile $rfname expects port $tn of size $ts, port in module $mname has size $mps"
+                }
+            } else {
+                ig::log -warn -id "ChkRP" "Regfile $rfname expects port $tn as $tp in module $mname"
             }
         }
     }

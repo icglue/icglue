@@ -6,6 +6,8 @@ proc template_attributes {userdata} {
 
     set type [get_attribute -object $object -attribute "type"]
 
+    set known_attrs {}
+
     if {$type eq "regfile"} {
         set known_attrs {
             accesscargs
@@ -13,6 +15,7 @@ proc template_attributes {userdata} {
             pad_to
             ports
             port_prefix
+            regtypes
         }
 
         set rf_interfaces {"apb" "rf"}
@@ -52,12 +55,18 @@ proc template_attributes {userdata} {
                 error       {"%s_error_o"   1}
             }
         }
+        set rf_regtypes {
+            R   RS   RW   RWT
+            CR  CRS  CRW  CRWT
+            FCR FCRS FCRW FCRWT
+        }
 
         # default attributes
         foreach {dattr dvalue} [subst {
             interface   $rf_interface
             pad_to      0
             accesscargs {}
+            regtypes    [list $rf_regtypes]
         }] {
             if {![dict exists $attrs $dattr]} {
                 dict set attrs $dattr $dvalue
@@ -93,12 +102,6 @@ proc template_attributes {userdata} {
 
             dict set attrs "ports" $ports
         }
-
-        foreach k [dict keys $attrs] {
-            if {$k ni $known_attrs} {
-                ig::log -warn "unknown regfile attribute $k"
-            }
-        }
     } elseif {$type eq "module"} {
         set known_attrs {
             keepblocks
@@ -112,11 +115,11 @@ proc template_attributes {userdata} {
                 dict set attrs $dattr $dvalue
             }
         }
+    }
 
-        foreach k [dict keys $attrs] {
-            if {$k ni $known_attrs} {
-                ig::log -warn "unknown module attribute $k"
-            }
+    foreach k [dict keys $attrs] {
+        if {$k ni $known_attrs} {
+            ig::log -id TIni -warn "unknown $type attribute $k"
         }
     }
 

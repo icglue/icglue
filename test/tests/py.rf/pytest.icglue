@@ -2,6 +2,7 @@
 
 logger -level E -id ChkRS
 logger -level E -id RFTP
+logger -level E -id ChkRP
 logger -level E -id Tcl
 
 M -unit py_rf -tree {
