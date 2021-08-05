@@ -991,10 +991,6 @@ namespace eval ig {
             log -error -abort "M (module ${name}): a resource cannot have instances ($origin)"
         }
 
-        ig::log -debug -id "Mattr" "AAAAAA"
-        ig::log -error -id "EEEE"
-        puts "AUEUAUAU"
-
         if {[catch {
             catch {
                 if {$resource} {
