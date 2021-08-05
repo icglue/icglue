@@ -105,7 +105,6 @@ proc printversion {} {
     exit 0
 }
 
-
 proc generate {c_file c_outtypelist c_loglevel scriptargs dryrun} {
 
     global g_generate_progress
@@ -120,14 +119,14 @@ proc generate {c_file c_outtypelist c_loglevel scriptargs dryrun} {
     }
 
     # generate output
-    set outtypelist [split $c_outtypelist ","]
+    set outtypelist [ig::templates::process_outtypelist [split $c_outtypelist ","]]
 
     set gen_modules   [ig::db::get_modules -all]
     set num_modules   [llength $gen_modules]
     set gen_regfiles  [ig::db::get_regfiles -all]
     set num_regfiles  [llength $gen_regfiles]
-    set num_items     [expr $num_modules + $num_regfiles]
-    set progress_step [expr 100.0 / $num_items]
+    set num_items     [expr {$num_modules + $num_regfiles}]
+    set progress_step [expr {100.0 / $num_items}]
 
     # generate modules with template
     foreach i_module $gen_modules {
@@ -156,7 +155,7 @@ proc generate {c_file c_outtypelist c_loglevel scriptargs dryrun} {
         ig::log -info "generating regfiledoc $i_regfile"
         ig::templates::write_object_all $i_regfile $outtypelist $dryrun
         # update progress and enter GUI event loop
-        set g_generate_progress [expr $g_generate_progress + $progress_step]
+        set g_generate_progress [expr {$g_generate_progress + $progress_step}]
         update
     }
 

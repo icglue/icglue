@@ -16,4 +16,4 @@ unset wrap_src
 unset wrap_pkgsrcpath
 
 cd $1
-${@:2}
+"${@:2}"

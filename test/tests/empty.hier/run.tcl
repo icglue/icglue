@@ -5,7 +5,7 @@ deploy mod.icglue           units/mod/source/gen/
 run icprep project
 
 # generate everything
-run icglue units/mod/source/gen/mod.icglue
+run icglue -o \* units/mod/source/gen/mod.icglue
 
 # check for 0 warnings/errors
 eval_run_output {

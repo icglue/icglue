@@ -317,6 +317,8 @@ namespace eval ig {
                 set frfaddralign  {}
                 set fregfile      "false"
                 set fregfilename  {}
+                set fotypes       ""
+                set frfotypes     ""
 
                 if {$moduleparent ne ""} {
                     set ppunit [ig::db::get_attribute -object [ig::db::get_modules -name $moduleparent] -attribute "parentunit" -default ""]
@@ -350,6 +352,9 @@ namespace eval ig {
                     { {^rfa(ddr(ess)?)?w(idth)?(=|$)}     "integer"             frfaddrbits   {} }  \
                     { {^rfa(ddr(ess)?)?align(ment)?(=|$)} "integer"             frfaddralign  {} }  \
                     { {^rfd(ata)?w(idth)?(=|$)}           "integer"             frfdatabits   {} }  \
+                                                                                                    \
+                    { {^o(ut)?(typ(es)?|tags)(=|$)}       "string"              fotypes       {} }  \
+                    { {^rfo(ut)?(typ(es)?|tags)(=|$)}     "string"              frfotypes     {} }  \
                     ] [split $moduleflags "\n"]]
 
                 if {[llength $funknown] != 0} {
@@ -380,9 +385,11 @@ namespace eval ig {
                         ig::db::set_attribute -object $rfid -attribute "addrwidth" -value $frfaddrbits
                         ig::db::set_attribute -object $rfid -attribute "addralign" -value $frfaddralign
                         ig::db::set_attribute -object $rfid -attribute "datawidth" -value $frfdatabits
+                        ig::db::set_attribute -object $rfid -attribute "outtypes"  -value $frfotypes
                         set_modcmd_attributes $rfid $frfattributes
                     }
                     if {!$fres} {
+                        ig::db::set_attribute -object $modid -attribute "outtypes" -value $fotypes
                         set_modcmd_attributes $modid $fattributes
                     }
                     ig::db::set_attribute -object $modid -attribute "dummy" -value $fdummy
@@ -915,6 +922,8 @@ namespace eval ig {
         set rfaddrbits    32
         set rfdatabits    32
         set rfaddralign   {}
+        set otypes        ""
+        set rfotypes      ""
         set origin        [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
@@ -943,6 +952,9 @@ namespace eval ig {
                    { {^-rfa(ddr(ess)?)?w(idth)?(=|$)}     "integer"             rfaddrbits    "regfile address size"                  }   \
                    { {^-rfa(ddr(ess)?)?align(ment)?(=|$)} "integer"             rfaddralign   "regfile address alignment"             }   \
                    { {^-rfd(ata)?w(idth)?(=|$)}           "integer"             rfdatabits    "regfile data size"                     }   \
+                                                                                                                                          \
+                   { {^-o(typ(es)?|tags)(=|$)}            "string"              otypes        "default output types"                  }   \
+                   { {^-rfo(typ(es)?|tags)(=|$)}          "string"              rfotypes      "default regfile output types"          }   \
                                                                                                                                           \
                    { {^-cmdorigin(=|$)}                   "string"              origin        "origin of command call for logging"    }   \
             ] -context "MODULENAME" $args]
@@ -996,6 +1008,7 @@ namespace eval ig {
             ig::db::set_attribute -object $modid -attribute "language"   -value $lang
             ig::db::set_attribute -object $modid -attribute "mode"       -value $mode
             ig::db::set_attribute -object $modid -attribute "parentunit" -value $unit
+            ig::db::set_attribute -object $modid -attribute "outtypes"   -value $otypes
             ig::db::set_attribute -object $modid -attribute "dummy"      -value $dummy
 
             construct::set_modcmd_attributes $modid $attributes
@@ -1021,6 +1034,7 @@ namespace eval ig {
                 ig::db::set_attribute -object $rfid -attribute "addrwidth" -value $rfaddrbits
                 ig::db::set_attribute -object $rfid -attribute "addralign" -value $rfaddralign
                 ig::db::set_attribute -object $rfid -attribute "datawidth" -value $rfdatabits
+                ig::db::set_attribute -object $rfid -attribute "outtypes"  -value $rfotypes
                 construct::set_modcmd_attributes $rfid $rfattributes
             }
         } emsg]} {

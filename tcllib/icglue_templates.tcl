@@ -47,6 +47,8 @@ namespace eval ig::templates {
         # @param src template source (template file / copy/link source)
         # @param dst template dest file
         # @param lexcom lexer token for comment as list - e.g {"/* " " */"}
+        #
+        # tag can be prefixed by +/-, +/no prefix = generate by default, - = omit by default.
         proc add {tag type src dst {lexcom fileext}} {
             variable _result
 
@@ -59,9 +61,15 @@ namespace eval ig::templates {
             if {[llength $lexcom] ne 2 && $lexcom ne {}} {
                 ig::log -error -id TRAdd "Expected a list with start/end token for comment lex expression, but got \"$lexcom\""
             }
-            ig::log -debug -id TRAdd "template action addded: tag \"${tag}\", type \"${type}\", \"${src}\" -> \"${dst}\", lextokens: \"$lexcom\""
+            set pfx [string index $tag 0]
+            if {$pfx in {"+" "-"}} {
+                set tag [string range $tag 1 end]
+            } else {
+                set pfx "+"
+            }
+            ig::log -debug -id TRAdd "template action addded: tag \"${pfx}${tag}\", type \"${type}\", \"${src}\" -> \"${dst}\", lextokens: \"$lexcom\""
 
-            lappend _result $tag $type $src $dst $lexcom
+            lappend _result $pfx $tag $type $src $dst $lexcom
         }
 
         ## @brief Actual callback to get the template data.
@@ -1296,9 +1304,69 @@ namespace eval ig::templates {
         ig::log -info -id Gen "${pfx} [format {%-*s} [expr {$logtypelen + 2}] "\[${logtype}\]"] $outfile"
     }
 
+    ## @brief process list of output types to separate tags and prefix
+    # @param typelist list of tag with optional +/- prefix
+    # @return stride list with prefix and tag pairs
+    proc process_outtypelist {typelist} {
+        set warn false
+
+        # types with +(p), -(m), or explicitly added
+        set explicit false
+        set pmlist   {}
+
+        foreach t $typelist {
+            set pfx [string index $t 0]
+            if {$pfx in {"+" "-"}} {
+                if {$explicit} {
+                    set explicit false
+                    set warn     true
+                }
+
+                lappend pmlist $pfx [string range $t 1 end]
+            } else {
+                if {([llength $pmlist] > 0) && !$explicit} {
+                    set warn true
+                } else {
+                    set explicit true
+                }
+
+                lappend pmlist "+" $t
+            }
+        }
+
+        if {$warn} {
+            ig::log -warn -id OTyps "mixing of explicit generate type list and incremental elements, falling back to incremental"
+        }
+
+        if {$explicit} {
+            set pmlist [linsert $pmlist 0 "-" "*"]
+        }
+
+        return $pmlist
+    }
+
+    ## @brief Check whether to generate output for tag.
+    # @param pfx Template prefix of tag (= default if nothing else specified)
+    # @param tag Tag to check
+    # @param typelist Given output type list of format {+/- <pattern> +/- <pattern> ...}
+    # @return true if output for given tag is to be generated
+    #
+    # Patterns are matched with globbing, the last matching pattern is used.
+    proc check_write_type {pfx tag typelist} {
+        set result $pfx
+
+        foreach {ipfx itag} $typelist {
+            if {[string match $itag $tag]} {
+                set result $ipfx
+            }
+        }
+
+        return [expr {$result eq "+"}]
+    }
+
     ## @brief Generate output for given object for all output types provided by template.
     # @param obj_id Object-ID to write output for.
-    # @param typelist List of types to generate, empty list generates everything.
+    # @param typelist List of types to generate, empty list generates defaults.
     # @param dryrun If set to true, no actual files are written.
     #
     # Iterates over all output tags provided by template callback @ref ig::templates::current::get_template_data
@@ -1313,8 +1381,10 @@ namespace eval ig::templates {
 
         set tt_data [list "obj_id" $obj_id]
 
-        foreach {tag lang ttfile outfile lexcom} $tdata {
-            if {([llength $typelist] > 0) && ($tag ni $typelist)} {
+        set obj_outtypes [process_outtypelist [split [ig::db::get_attribute -object $obj_id -attribute "outtypes" -default {}] ,]]
+
+        foreach {pfx tag lang ttfile outfile lexcom} $tdata {
+            if {![check_write_type $pfx $tag [list {*}$obj_outtypes {*}$typelist]]} {
                 continue
             }
 

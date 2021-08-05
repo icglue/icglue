@@ -8,7 +8,7 @@ deploy __init__.py software/py/regfile_access/__init__.py
 deploy_resource pyregfile
 
 # generate everything
-run icglue units/pytest/source/gen/pytest.icglue
+run icglue -o \* units/pytest/source/gen/pytest.icglue
 
 # check for 0 warnings/errors
 eval_run_output {

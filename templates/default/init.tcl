@@ -141,12 +141,12 @@ proc template_data {userdata tdir} {
 
         set gen_dummy_liberty [get_attribute -object $object -attribute "gen_dummy_liberty" -default false]
 
-        foreach {ilang itag itype idir iext lexcom} {
-                verilog       vlog  wtf  verilog       v   {"/* " " */"}
-                systemverilog svlog wtf  systemverilog sv  {"/* " " */"}
-                systemc       sc    wtf  systemc       h   {"/* " " */"}
-                systemc       sc    wtf  systemc       cpp {"/* " " */"}
-                systemc       shell wtf  verilog       v   {"/* " " */"}
+        foreach {ilang         itag  itype idir          iext lexcom} {
+                 verilog       vlog  wtf   verilog       v    {"/* " " */"}
+                 systemverilog svlog wtf   systemverilog sv   {"/* " " */"}
+                 systemc       sc    wtf   systemc       h    {"/* " " */"}
+                 systemc       sc    wtf   systemc       cpp  {"/* " " */"}
+                 systemc       shell wtf   verilog       v    {"/* " " */"}
         } {
             if {$lang eq $ilang} {
                 add "${itag}-${iext}" $itype "${tdir}/${itag}/template.${itype}.${iext}" "units/${parent}/source/${mode}/${idir}/${name}.${iext}" $lexcom
@@ -159,28 +159,28 @@ proc template_data {userdata tdir} {
             add "dummy-liberty" wtf "${tdir}/dummy-liberty/template.wtf.lib" "units/${parent}/source/dummy-liberty/${name}_${opcondition}.lib" {"/* " " */"}
         }
     } elseif {$type eq "regfile"} {
-        foreach {itag itype lexcom} {
-            txt  wtf  {}
-            csv  wtf  {}
-            html icgt {"<!-- " " -->"}
-            tex  icgt {"%"     "\n"}
-            rst  wtf  {}
+        foreach {itpfx itag itype lexcom} {
+                 +     txt  wtf   {}
+                 -     csv  wtf   {}
+                 -     html icgt  {"<!-- " " -->"}
+                 -     tex  icgt  {"%"     "\n"}
+                 +     rst  wtf   {}
         } {
-            add "rf-${itag}" $itype "${tdir}/rf/template.${itype}.${itag}" "doc/${itag}/${name}.${itag}" $lexcom
+            add "${itpfx}rf-${itag}" $itype "${tdir}/rf/template.${itype}.${itag}" "doc/${itag}/${name}.${itag}" $lexcom
         }
 
         add "rf-c.txt" wtf "${tdir}/rf/template.wtf.c.txt" "software/doc/regfile_access/${name}.txt" {}
 
-        foreach {itag   itype iinf iext lexcom} {
-                 soc    wtf   {}   h   {"/* " " */"}
-                 host   icgt  {}   h   {"/* " " */"}
-                 host   icgt  {}   cpp {"/* " " */"}
-                 tcl    wtf   .tcl h   {"/* " " */"}
-                 tcl    wtf   .tcl cpp {"/* " " */"}
-                 python wtf   {}   py  {"#"    "\n"}
-                 py     wtf   {}   py  {"#"    "\n"}
+        foreach {itpfx itag   itype iinf iext lexcom} {
+                 +     soc    wtf   {}   h    {"/* " " */"}
+                 +     host   icgt  {}   h    {"/* " " */"}
+                 +     host   icgt  {}   cpp  {"/* " " */"}
+                 -     tcl    wtf   .tcl h    {"/* " " */"}
+                 -     tcl    wtf   .tcl cpp  {"/* " " */"}
+                 -     python wtf   {}   py   {"#"    "\n"}
+                 -     py     wtf   {}   py   {"#"    "\n"}
         } {
-            add "rf-${itag}.${iext}" $itype "${tdir}/rf/template.${itype}.${itag}.${iext}" "software/${itag}/regfile_access/rf_${name}${iinf}.${iext}" $lexcom
+            add "${itpfx}rf-${itag}.${iext}" $itype "${tdir}/rf/template.${itype}.${itag}.${iext}" "software/${itag}/regfile_access/rf_${name}${iinf}.${iext}" $lexcom
         }
     }
 }

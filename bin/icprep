@@ -52,7 +52,7 @@ proc gen_all {target userdata dryrun} {
     foreach {key value} $userdata {
         lappend template_data [string trimleft $key "-"] $value
     }
-    foreach {tag lang ttfile outfile lexcom} [ig::templates::current::get_template_data $userdata] {
+    foreach {pfx tag lang ttfile outfile lexcom} [ig::templates::current::get_template_data $userdata] {
         lassign [ig::templates::adapt_output_path $outfile] outfile outf_name_var
 
         ig::templates::log_generate $outf_name_var $tag $dryrun

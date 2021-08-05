@@ -6,7 +6,7 @@ deploy python_rf.icglue           units/python_rf/source/gen/
 run icprep project
 
 # generate everything
-run icglue units/python_rf/source/gen/python_rf.icglue
+run icglue -o \* units/python_rf/source/gen/python_rf.icglue
 
 # check for 0 warnings/errors
 eval_run_output {
