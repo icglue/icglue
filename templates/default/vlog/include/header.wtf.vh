@@ -18,6 +18,9 @@
  */
 "]
 `timescale 1ns/1ps
+% if {$cell_define} {
+`celldefine
+% }
 %echo "module $mod_data(name) ("
 %### PORTS ###
 %foreach_array_preamble_epilog_join port $mod_data(ports) {echo "\n"} {
@@ -38,4 +41,4 @@
 %foreach_array_preamble decl $mod_data(declarations) { echo "\n\n" } {
     [format "%-${decl_data_maxlen_type}s %${decl_data_maxlen_range}s %s;" $decl(vlog.type) $decl(vlog.bitrange)  $decl(name)]
 %}
-%echo "    [pop_keep_block_content keep_block_data "keep" "declarations"]"
+    [pop_keep_block_content keep_block_data "keep" "declarations"]
