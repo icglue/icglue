@@ -3,6 +3,10 @@
 ## general
 - [ ] add check (nagelfar shell script)
 
+## documentation
+- [ ] new +/- tag features (bin + templates + construction)
+- [ ] new template default-attributes
+
 ## regfiles
 - [ ] sync. resets:
   - [ ] regfile-attribute: default sync reset signal, default sync. reset feature (= 1/0, default 0)
