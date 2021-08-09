@@ -882,7 +882,7 @@ namespace eval ig::templates {
                 if {$s ne {}} {
                     append code "_linenr $linenr\n"
                     append code "echo \"\[" [list subst {*}$substmode $s] "\]\"\n"
-                    incr linenr [expr {[ig::aux::string_count_nl $s] + 1}]
+                    incr linenr [expr {[ig::aux::string_count_nl $s]}]
                     append code "_linenr $linenr\n"
                 }
 
