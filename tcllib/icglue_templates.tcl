@@ -844,6 +844,8 @@ namespace eval ig::templates {
         set block false
         set linenr 1
 
+        set substmode {}
+
         lappend filestack $filename
 
         append code "_filename [list $filename]\n"
@@ -879,7 +881,7 @@ namespace eval ig::templates {
 
                 if {$s ne {}} {
                     append code "_linenr $linenr\n"
-                    append code "echo \"\[" [list subst $s] "\]\"\n"
+                    append code "echo \"\[" [list subst {*}$substmode $s] "\]\"\n"
                     incr linenr [expr {[ig::aux::string_count_nl $s] + 1}]
                     append code "_linenr $linenr\n"
                 }
@@ -888,17 +890,17 @@ namespace eval ig::templates {
                     # include file
                     set s [string range $txt $from $to]
                     if {![regexp {^%I\([\s]*(.*[^\s])[\s]*\)[\s]*([^\s].*)?$} $s m_whole m_file m_sfx]} {
-                        ig::log -error -abort -id "WTFPr" "template $filename contains invalid include statement"
+                        ig::log -error -abort -id "WTFPr" "template $filename (line $linenr) contains invalid include statement"
                     }
                     if {$m_sfx ne ""} {
-                        ig::log -warn -id "WTFPr" "template $filename contains text after include statement"
+                        ig::log -warn -id "WTFPr" "template $filename (line $linenr) contains text after include statement"
                     }
 
                     set incfname [file join ${current::template_dir} $m_file]
 
                     # loop-check
                     if {[lsearch $filestack $incfname] >= 0} {
-                        error "template file $filename includes itself"
+                        ig::log -error -abort -id "WTFPr" "template file $filename (line $linenr) includes itself"
                     }
 
                     ig::log -info -id WTFPr "...parsing included template $incfname"
@@ -913,6 +915,53 @@ namespace eval ig::templates {
                     append code "_filename [list $filename]\n"
                     append code "_linenr $linenr\n"
 
+                    set pos [expr {$to + 2}]
+                } elseif {[string range $txt $from [expr {$from+2}]] eq "%M("} {
+                    # subst mode
+                    set s [string range $txt $from $to]
+                    if {![regexp {^%M\((.*)\)[\s]*([^\s].*)?$} $s m_whole m_modes m_sfx]} {
+                        ig::log -error -abort -id "WTFPr" "template $filename (line $linenr) contains invalid substitute mode statement"
+                    }
+                    if {$m_sfx ne ""} {
+                        ig::log -warn -id "WTFPr" "template $filename (line $linenr) contains text after substitute mode statement"
+                    }
+
+                    set str_nbs  "-nobackslashes"
+                    set str_ncmd "-nocommands"
+                    set str_nvar "-novariables"
+
+                    set bs  [expr {$str_nbs  ni $substmode}]
+                    set cmd [expr {$str_ncmd ni $substmode}]
+                    set var [expr {$str_nvar ni $substmode}]
+
+                    foreach mode [split $m_modes] {
+                        if {![regexp {^([-+^!~]?)(\$|\[\]|\\)$} $mode m_whole m_pfx m_mode]} {
+                            ig::log -error -abort -id "WTFPr" "template $filename (line $linenr) contains invalid substitute mode statement \"$mode\""
+                        }
+                        if {$m_pfx in {+ {}}} {
+                            set res true
+                        } else {
+                            set res false
+                        }
+                        if {$m_mode eq {$}} {
+                            set var $res
+                        } elseif {$m_mode eq {[]}} {
+                            set cmd $res
+                        } elseif {$m_mode eq "\\"} {
+                            set bs $res
+                        } else {
+                            ig::log -error -abort -id "WTFPr" "template $filename (line $linenr) contains invalid substitute mode statement"
+                        }
+                    }
+
+                    set substmode {}
+                    if {!$bs}  {lappend substmode $str_nbs}
+                    if {!$cmd} {lappend substmode $str_ncmd}
+                    if {!$var} {lappend substmode $str_nvar}
+
+                    puts "new subst switches: $substmode"
+
+                    incr linenr
                     set pos [expr {$to + 2}]
                 } elseif {[string range $txt $from [expr {$from+1}]] eq "%("} {
                     # beginning of block
@@ -936,7 +985,7 @@ namespace eval ig::templates {
         set s [string range $txt $pos end]
         if {$s ne {}} {
             append code "_linenr $linenr\n"
-            append code "echo \"\[" [list subst $s] "\]\"\n"
+            append code "echo \"\[" [list subst {*}$substmode $s] "\]\"\n"
         }
 
         return $code

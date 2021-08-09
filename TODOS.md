@@ -6,6 +6,7 @@
 ## documentation
 - [ ] new +/- tag features (bin + templates + construction)
 - [ ] new template default-attributes
+- [ ] woof templates: %M switch (+/- `$`,`[]`,`\`)
 
 ## regfiles
 - [ ] sync. resets:
