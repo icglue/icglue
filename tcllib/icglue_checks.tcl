@@ -94,6 +94,7 @@ namespace eval ig::checks {
     ## @brief Run sanity/consistency checks for given module.
     # @param module_id Object-ID of module to check.
     proc check_module {module_id} {
+        check_module_port_names                  $module_id
         check_module_multi_dimensional_port_lang $module_id
 
         foreach regfile_id [ig::db::get_regfiles -of $module_id] {
@@ -101,7 +102,41 @@ namespace eval ig::checks {
         }
     }
 
-    # warn if the language does not support multidimensional ports
+    ## @brief warn about suspiciously named ports (_i/_o/...)
+    # @param module_id Object-ID of module to check.
+    proc check_module_port_names {module_id} {
+        set mname [ig::db::get_attribute -object $module_id -attribute "name"]
+
+        foreach i_port [ig::db::get_ports -of $module_id] {
+            set pname [ig::db::get_attribute -object $i_port -attribute "name"]
+            set pdir  [ig::db::get_attribute -object $i_port -attribute "direction"]
+
+            # _i_i, _o_o, ...
+            if {[regexp {_([iobIOB])_\1$} $pname]} {
+                ig::log -warn -id "ChkSP" "Port \"${pname}\" in module \"${mname}\" has a suspiciously looking doubled suffix."
+            }
+
+            # suffix-direction match
+            set sfx [string range $pname end-1 end]
+            switch -exact -- $sfx {
+                "_o"    -
+                "_O"    {set sfx_dir "output"}
+                "_i"    -
+                "_I"    {set sfx_dir "input"}
+                "_b"    -
+                "_B"    {set sfx_dir "bidirectional"}
+                default {continue}
+            }
+
+            if {$sfx_dir ne $pdir} {
+                ig::log -warn -id "ChkSP" "Port \"${pname}\" in module \"${mname}\" has a misleading suffix for port direction $pdir."
+            }
+        }
+    }
+
+    ## @brief warn if the language does not support multidimensional ports
+    # @param module_id Object-ID of module to check.
+    #
     # assume that only SystemVerilog supports it
     proc check_module_multi_dimensional_port_lang {module_id} {
         set mname [ig::db::get_attribute -object $module_id -attribute "name"]
@@ -110,13 +145,15 @@ namespace eval ig::checks {
             foreach i_port [ig::db::get_ports -of $module_id] {
                 set dimension [ig::db::get_attribute -object $i_port -attribute "dimension" -default {}]
                 if {[llength $dimension] ne 0} {
-                    ig::log -warn -id "ChkMD" "Port \"${i_port}\" in module \"${mname}\" has dimension \"${dimension}\". This is not supported in \"${lang}\"."
+                    set pname [ig::db::get_attribute -object $i_port -attribute "name"]
+                    ig::log -warn -id "ChkMD" "Port \"${pname}\" in module \"${mname}\" has dimension \"${dimension}\". This is not supported in \"${lang}\"."
                 }
             }
             foreach i_decl [ig::db::get_declarations -of $module_id] {
                 set dimension [ig::db::get_attribute -object $i_decl -attribute "dimension" -default {}]
                 if {[llength $dimension] ne 0} {
-                    ig::log -warn -id "ChkMD" "Declarations \"${i_decl}\" in module \"${mname}\" has dimension \"${dimension}\". This is not supported in \"${lang}\"."
+                    set dname [ig::db::get_attribute -object $i_decl -attribute "name"]
+                    ig::log -warn -id "ChkMD" "Declarations \"${dname}\" in module \"${mname}\" has dimension \"${dimension}\". This is not supported in \"${lang}\"."
                 }
             }
 
