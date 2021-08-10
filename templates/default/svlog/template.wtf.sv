@@ -1,5 +1,7 @@
 /* ICGLUE GENERATED FILE - manual changes out of prepared *icglue keep begin/end* blocks will be overwritten */
 %(
+    set systemverilog true
+
     proc necho arg {
         if {"[string trim $arg]" ne {}} {
             echo "$arg"
@@ -15,7 +17,7 @@
     }
  set cell_define [ig::db::get_attribute -object $obj_id -attribute "cell" -default "false"]
 %)
-%I(svlog/include/header.wtf.vh)
+%I(vlog/include/header.wtf.vh)
 %if {[llength $mod_data(regfiles)] == 0} {
 %I(vlog/include/inst.wtf.vh)
 %} else {

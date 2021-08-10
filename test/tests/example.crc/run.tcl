@@ -17,9 +17,9 @@ deploy testcase.vh          units/crc/simulation/iverilog/tc_rf_access/
 run icprep project
 eval_run_output {glob {I,Gen*} 4}
 
-run icglue units/crc/source/gen/crc.icglue -o "svlog-sv,rf-host.cpp,rf-host.h"
+run icglue units/crc/source/gen/crc.icglue -o "vlog-sv,rf-host.cpp,rf-host.h"
 eval_run_output {
-    re   {^I,Gen\s+Generating \[svlog-sv\].*$}    4
+    re   {^I,Gen\s+Generating \[vlog-sv\].*$}     4
     re   {^I,Gen\s+Generating \[rf-host.h\].*$}   1
     re   {^I,Gen\s+Generating \[rf-host.cpp\].*$} 1
     glob {I,Gen*}                                 6

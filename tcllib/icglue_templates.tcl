@@ -361,6 +361,7 @@ namespace eval ig::templates {
         #
         # Elements of returned array:
         # @li name = Name of module.
+        # @li language = Hardware description language.
         # @li object = Object-ID of module.
         # @li ports = Array-List of ports of module.
         # @li parameters = Array-List of parameters of module.
@@ -410,8 +411,9 @@ namespace eval ig::templates {
         proc module_to_arraylist {module_id} {
             set result {}
 
-            lappend result "name"   [ig::db::get_attribute -object $module_id -attribute "name"]
-            lappend result "object" $module_id
+            lappend result "name"     [ig::db::get_attribute -object $module_id -attribute "name"]
+            lappend result "language" [ig::db::get_attribute -object $module_id -attribute "language"]
+            lappend result "object"   $module_id
 
             set lang [ig::db::get_attribute -object $module_id -attribute "language"]
             # ports

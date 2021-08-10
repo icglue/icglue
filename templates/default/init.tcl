@@ -141,15 +141,15 @@ proc template_data {userdata tdir} {
 
         set gen_dummy_liberty [get_attribute -object $object -attribute "gen_dummy_liberty" -default false]
 
-        foreach {ilang         itag  itype idir          iext lexcom} {
-                 verilog       vlog  wtf   verilog       v    {"/* " " */"}
-                 systemverilog svlog wtf   systemverilog sv   {"/* " " */"}
-                 systemc       sc    wtf   systemc       h    {"/* " " */"}
-                 systemc       sc    wtf   systemc       cpp  {"/* " " */"}
-                 systemc       shell wtf   verilog       v    {"/* " " */"}
+        foreach {ilang         itag  itype idir          text iext lexcom} {
+                 verilog       vlog  wtf   verilog       v    v    {"/* " " */"}
+                 systemverilog vlog  wtf   systemverilog v    sv   {"/* " " */"}
+                 systemc       sc    wtf   systemc       h    h    {"/* " " */"}
+                 systemc       sc    wtf   systemc       cpp  cpp  {"/* " " */"}
+                 systemc       shell wtf   verilog       v    v    {"/* " " */"}
         } {
             if {$lang eq $ilang} {
-                add "${itag}-${iext}" $itype "${tdir}/${itag}/template.${itype}.${iext}" "units/${parent}/source/${mode}/${idir}/${name}.${iext}" $lexcom
+                add "${itag}-${iext}" $itype "${tdir}/${itag}/template.${itype}.${text}" "units/${parent}/source/${mode}/${idir}/${name}.${iext}" $lexcom
             }
         }
 
