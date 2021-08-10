@@ -13,7 +13,10 @@
     }
   }
 
-  set keepblocks [ig::db::get_attribute -object $obj_id -attribute "keepblocks" -default "false"]
+  set keepblocks [expr {
+    [ig::db::get_attribute -object $obj_id -attribute "keepblocks" -default "false"] ||
+    [ig::db::get_attribute -object $obj_id -attribute "sngsource"  -default "false"]
+    }]
 
   array set mod_data [module_to_arraylist $obj_id]
 

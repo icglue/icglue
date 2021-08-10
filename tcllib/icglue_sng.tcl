@@ -261,6 +261,7 @@ namespace eval ig::sng {
                         set modid [ig::db::create_module -name $modname]
                     }
                     ig::db::set_attribute -object $modid -attribute "language"   -value $lang
+                    ig::db::set_attribute -object $modid -attribute "sngsource"  -value true
                     ig::db::set_attribute -object $modid -attribute "mode"       -value $mode
                     ig::db::set_attribute -object $modid -attribute "parentunit" -value $parent
                 }]} {
