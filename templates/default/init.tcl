@@ -51,13 +51,25 @@ proc template_attributes {userdata} {
             CR  CRS  CRW  CRWT
             FCR FCRS FCRW FCRWT
         }
+        set rf_sync_module "common_sync"
+        set rf_sync_prefix $rf_sync_module
+        set rf_sync_ports {
+            clk   clk_i
+            reset reset_n_i
+            in    data_i
+            out   data_o
+        }
 
         # default attributes
         foreach {dattr dvalue} [subst {
-            interface   $rf_interface
-            pad_to      0
-            accesscargs {}
-            regtypes    [list $rf_regtypes]
+            interface      [list $rf_interface]
+            pad_to         0
+            accesscargs    {}
+            regtypes       [list $rf_regtypes]
+
+            sync_module    [list $rf_sync_module]
+            sync_prefix    [list $rf_sync_prefix]
+            sync_ports     [list $rf_sync_ports]
         }] {
             lappend known_attrs $dattr
             if {![dict exists $attrs $dattr]} {

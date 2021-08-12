@@ -41,6 +41,20 @@ proc rf_next_read_permitted  {} { return {rf_next_read_permitted}  }
 
 proc rf_prot_ok              {} { return {rf_apb_prot_ok}          }
 
+# synchronizers
+set sync_mod   [ig::db::get_attribute -object $rf(object) -attribute "sync_module"]
+set sync_pfx   [ig::db::get_attribute -object $rf(object) -attribute "sync_prefix"]
+set sync_ports [ig::db::get_attribute -object $rf(object) -attribute "sync_ports"]
+set sync_port_mlen 0
+foreach {p d} $sync_ports {
+    lassign $d n s
+    set sync_port_mlen [expr {max ($sync_port_mlen, [string length $n])}]
+}
+proc sync_clk   {} { variable sync_ports ; return [lindex [dict get $sync_ports "clk"]   0] }
+proc sync_reset {} { variable sync_ports ; return [lindex [dict get $sync_ports "reset"] 0] }
+proc sync_in    {} { variable sync_ports ; return [lindex [dict get $sync_ports "in"]    0] }
+proc sync_out   {} { variable sync_ports ; return [lindex [dict get $sync_ports "out"]   0] }
+
 set fpga_impl [ig::db::get_attribute -object $obj_id -attribute "fpga" -default "false"]
 
 proc rf_comment_block {blockname {pre "    "}} {
@@ -318,11 +332,11 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
 % if {$has_read_reg_sync} {
 
     // "not a synchronizer" - just for delay measurement
-    common_sync i_common_sync_delay_ready (
-        .clk_i     ([rf_clk]),
-        .reset_n_i ([rf_reset]),
-        .data_i    (do_ready_sync_delay),
-        .data_o    (ready_sync_delay)
+    $sync_mod i_${sync_pfx}_delay_ready (
+        .[format %-*s $sync_port_mlen [sync_clk]  ] ([rf_clk]),
+        .[format %-*s $sync_port_mlen [sync_reset]] ([rf_reset]),
+        .[format %-*s $sync_port_mlen [sync_in]   ] (do_ready_sync_delay),
+        .[format %-*s $sync_port_mlen [sync_out]  ] (ready_sync_delay)
     );
 %    if {$fpga_impl} {
     initial begin
@@ -346,13 +360,13 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
 %
 % foreach_preamble {s r w sb} $sig_syncs {
 
-[rf_comment_block "common sync's"]
+[rf_comment_block "synchronizers"]
 % } {
-    common_sync i_common_sync_${s}[bits_to_suffix $sb][string trim $w] (
-        .clk_i     ([rf_clk]),
-        .reset_n_i ([rf_reset]),
-        .data_i    ([adapt_signalname $s $obj_id][string trim $sb]),
-        .data_o    (sync_$r)
+    $sync_mod i_${sync_pfx}_${s}[bits_to_suffix $sb][string trim $w] (
+        .[format %-*s $sync_port_mlen [sync_clk]  ] ([rf_clk]),
+        .[format %-*s $sync_port_mlen [sync_reset]] ([rf_reset]),
+        .[format %-*s $sync_port_mlen [sync_in]   ] ([adapt_signalname $s $obj_id][string trim $sb]),
+        .[format %-*s $sync_port_mlen [sync_out]  ] (sync_$r)
     );
 % }
 %
