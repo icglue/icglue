@@ -3,45 +3,29 @@ proc warn_rftp {msg} {
     upvar mod_data(name) rfname
     log -warn -id RFTP "$rfname: $msg"
 }
-proc clk                     {} { return {apb_clk_i}               }
-proc reset                   {} { return {apb_resetn_i}            }
-proc rf_addr                 {} { return {apb_addr_i}              }
-proc rf_sel                  {} { return {apb_sel_i}               }
-proc rf_enable               {} { return {apb_enable_i}            }
-proc rf_write                {} { return {apb_write_i}             }
-proc rf_w_data               {} { return {apb_wdata_i}             }
-proc rf_bytesel              {} { return {apb_strb_i}              }
-proc rf_prot                 {} { return {apb_prot_i[0]}           }
-proc rf_prot_enable          {} { return {apb_prot_en_i}           }
 
-proc rf_r_data               {} { return {apb_rdata_o}             }
-proc rf_ready                {} { return {apb_ready_o}             }
-proc rf_err                  {} { return {apb_slverr_o}            }
+array set rf [lindex $mod_data(regfiles) 0]
 
-# check if template ports existing in the current module
-set template_ports {
-    clk reset
-    rf_addr rf_sel rf_enable rf_write rf_w_data rf_bytesel
-    rf_prot rf_prot_enable
-    rf_r_data rf_ready rf_err
-}
+set rf_interface [ig::db::get_attribute -object $rf(object) -attribute "interface"]
+set rf_prot_sfx {[0]}
+if {$rf_interface ne "apb"} {set rf_prot_sfx {}}
+set rf_ports     [ig::db::get_attribute -object $rf(object) -attribute "ports"]
 
-set tp_names {}
-foreach p $template_ports {
-    set port_name [$p]
-    set port_name [regsub {\[\d+\]} $port_name {}]
-    lappend tp_names $port_name
-}
+proc rf_clk                  {} { variable rf_ports ; return [lindex [dict get $rf_ports "clk"]         0] }
+proc rf_reset                {} { variable rf_ports ; return [lindex [dict get $rf_ports "reset"]       0] }
+proc rf_addr                 {} { variable rf_ports ; return [lindex [dict get $rf_ports "addr"]        0] }
+proc rf_sel                  {} { variable rf_ports ; return [lindex [dict get $rf_ports "sel"]         0] }
+proc rf_enable               {} { variable rf_ports ; return [lindex [dict get $rf_ports "enable"]      0] }
+proc rf_write                {} { variable rf_ports ; return [lindex [dict get $rf_ports "write"]       0] }
+proc rf_wdata                {} { variable rf_ports ; return [lindex [dict get $rf_ports "wdata"]       0] }
+proc rf_bytesel              {} { variable rf_ports ; return [lindex [dict get $rf_ports "bytesel"]     0] }
+proc rf_prot                 {} { variable rf_ports ; variable rf_prot_sfx ; return [lindex [dict get $rf_ports "prot"] 0]$rf_prot_sfx }
+proc rf_prot_enable          {} { variable rf_ports ; return [lindex [dict get $rf_ports "prot_enable"] 0] }
 
-foreach_array port $mod_data(ports) {
-    set idx [lsearch $tp_names "$port(name)"]
-    if {$idx >= 0} {
-        set tp_names [lreplace $tp_names $idx $idx]
-    }
-}
-foreach mis $tp_names {
-    warn_rftp "Missing port $mis"
-}
+proc rf_rdata                {} { variable rf_ports ; return [lindex [dict get $rf_ports "rdata"]       0] }
+proc rf_ready                {} { variable rf_ports ; return [lindex [dict get $rf_ports "ready"]       0] }
+proc rf_err                  {} { variable rf_ports ; return [lindex [dict get $rf_ports "err"]         0] }
+
 
 proc rf_r_data_sig           {} { return {apb_rf_r_data}           }
 
@@ -60,10 +44,11 @@ proc rf_prot_ok              {} { return {rf_apb_prot_ok}          }
 set fpga_impl [ig::db::get_attribute -object $obj_id -attribute "fpga" -default "false"]
 
 proc rf_comment_block {blockname {pre "    "}} {
+    set textw 69
     return [string cat \
-               "$pre/*************************************************************************/\n" \
-               [format "$pre/* %-69s */\n" $blockname]                                             \
-               "$pre/*************************************************************************/" \
+               "$pre/**[string repeat * $textw]**/\n" \
+               [format "$pre/* %-*s */\n" $textw $blockname] \
+               "$pre/**[string repeat * $textw]**/" \
         ]
 }
 proc param     {} {
@@ -208,31 +193,11 @@ proc bits_to_suffix {bitrange} {
 }
 
 # todo iterate ?
-array set rf [lindex $mod_data(regfiles) 0]
 set entry_list $rf(entries)
 
 set rf_aw $rf(addrwidth)
 set rf_dw $rf(datawidth)
 set rf_bw [expr {($rf_dw + 7)/8}]
-
-set w_checks [list \
-    rf_addr    $rf_aw \
-    rf_bytesel $rf_bw \
-    rf_w_data  $rf_dw \
-    rf_r_data  $rf_dw \
-]
-
-foreach {pp w} $w_checks {
-    set p [$pp]
-    foreach mp $mod_data(ports) {
-        if {[dict get $mp name] eq $p} {
-            set pw [dict get $mp size]
-            if {$pw != $w} {
-                warn_rftp "Port $p should be $w bits wide but is $pw bits wide."
-            }
-        }
-    }
-}
 
 set maxlen_name            [max_array_entry_len $entry_list name]
 set maxlen_signame         0
@@ -354,8 +319,8 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
 
     // "not a synchronizer" - just for delay measurement
     common_sync i_common_sync_delay_ready (
-        .clk_i     ([clk]),
-        .reset_n_i ([reset]),
+        .clk_i     ([rf_clk]),
+        .reset_n_i ([rf_reset]),
         .data_i    (do_ready_sync_delay),
         .data_o    (ready_sync_delay)
     );
@@ -364,8 +329,8 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
         ready_sync_delay_r = 1'b0;
     end
 %    }
-    always @(posedge [clk][expr {$fpga_impl ? {} : " or negedge [reset]"}]) begin
-        if ([reset] == 1'b0) begin
+    always @(posedge [rf_clk][expr {$fpga_impl ? {} : " or negedge [rf_reset]"}]) begin
+        if ([rf_reset] == 1'b0) begin
             ready_sync_delay_r <= 1'b0;
         end else begin
             if (ready_sync_delay) begin
@@ -384,8 +349,8 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
 [rf_comment_block "common sync's"]
 % } {
     common_sync i_common_sync_${s}[bits_to_suffix $sb][string trim $w] (
-        .clk_i     ([clk]),
-        .reset_n_i ([reset]),
+        .clk_i     ([rf_clk]),
+        .reset_n_i ([rf_reset]),
         .data_i    ([adapt_signalname $s $obj_id][string trim $sb]),
         .data_o    (sync_$r)
     );
@@ -402,8 +367,8 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
     end
 %   }
 %  }
-    always @(posedge [clk][expr {$fpga_impl ? {} : " or negedge [reset]"}]) begin
-        if ([reset] == 1'b0) begin
+    always @(posedge [rf_clk][expr {$fpga_impl ? {} : " or negedge [rf_reset]"}]) begin
+        if ([rf_reset] == 1'b0) begin
 %    foreach handshake $handshake_list {
             reg_$handshake <= 1'b0;
 %    }
@@ -437,8 +402,8 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
         [rf_read_permitted]  = 1'b0;
     end
 % }
-    always @(posedge [clk][expr {$fpga_impl ? {} : " or negedge [reset]"}]) begin
-        if ([reset] == 1'b0) begin
+    always @(posedge [rf_clk][expr {$fpga_impl ? {} : " or negedge [rf_reset]"}]) begin
+        if ([rf_reset] == 1'b0) begin
             [rf_write_permitted] <= 1'b0;
             [rf_read_permitted]  <= 1'b0;
         end else begin
@@ -472,8 +437,8 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
 %    }
     end
 %  }
-    always @(posedge [clk][expr {$fpga_impl ? {} : " or negedge [reset]"}]) begin
-        if ([reset] == 1'b0) begin
+    always @(posedge [rf_clk][expr {$fpga_impl ? {} : " or negedge [rf_reset]"}]) begin
+        if ([rf_reset] == 1'b0) begin
 %  foreach_array_with reg $entry(regs) {[write_reg] && ![fullcustom_reg]} {
 %   if {[sctrigger_reg] && ![custom_reg]} {
             [trig_name] <= 1'b0;
@@ -511,14 +476,14 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
 %     if {[sctrigger_reg]} {
                         if (![trig_name]) begin
                             [trig_name]        <= 1'b1;
-                            [reg_name][reg_range_bytesel $byte] <= [rf_w_data]\[[reg_entrybits_bytesel $byte]\];
+                            [reg_name][reg_range_bytesel $byte] <= [rf_wdata]\[[reg_entrybits_bytesel $byte]\];
                         end
 %     } else {
-                        [reg_name][reg_range_bytesel $byte] <= [rf_w_data]\[[reg_entrybits_bytesel $byte]\];
+                        [reg_name][reg_range_bytesel $byte] <= [rf_wdata]\[[reg_entrybits_bytesel $byte]\];
 %     }
 %    } else {
                         [pop_keep_block_content keep_block_data "keep" "custom_assign_$entry(name)_$reg(name)" {} "
-                        // TODO: [reg_name][reg_range_bytesel $byte] <= [rf_w_data]\[[reg_entrybits_bytesel $byte]\];
+                        // TODO: [reg_name][reg_range_bytesel $byte] <= [rf_wdata]\[[reg_entrybits_bytesel $byte]\];
                        "]
 %    }
 %   } {
@@ -649,5 +614,6 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
             end
         endcase
     end
-    assign [rf_r_data] = [rf_r_data_sig];
+    assign [rf_rdata] = [rf_r_data_sig];
     [pop_keep_block_content keep_block_data "keep" "regfile-${rf(name)}-outputcode"]
+%# vim: ft=verilog_wooftemplate

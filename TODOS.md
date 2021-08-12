@@ -20,7 +20,7 @@
     - [ ] output-template
   - specify regfile portnames (clk, ...)
     - [x] init.tcl
-    - [ ] output-template
+    - [x] output-template
   - [x] default property in template for required signals
   - [x] add check depending on properties
 - [ ] read-signal:
@@ -53,7 +53,7 @@
 - [ ] rewrite regfile template as systemverilog woof with enums for address?
 - [ ] default properties set by template:
   - [ ] e.g. verilog/systemverilog (default language)
-  - [ ] regfile properties (e.g. apb)
+  - [x] regfile properties (e.g. apb)
   - [x] init.tcl: add `template_defaults` or similar for default properties initialization
 - [x] tags: add default enabled/disabled per tag feature (-> some outputs disabled by default)
   - [x] `add` cmd: add default/nondefault option

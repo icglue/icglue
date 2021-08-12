@@ -9,15 +9,6 @@ proc template_attributes {userdata} {
     set known_attrs {}
 
     if {$type eq "regfile"} {
-        set known_attrs {
-            accesscargs
-            interface
-            pad_to
-            ports
-            port_prefix
-            regtypes
-        }
-
         set rf_interfaces {"apb" "rf"}
         set rf_interface "apb"
         set rf_port_prefix {
@@ -38,7 +29,7 @@ proc template_attributes {userdata} {
                 prot_enable {"%s_prot_en_i" 1}
                 rdata       {"%s_rdata_o"   $datawidth}
                 ready       {"%s_ready_o"   1}
-                error       {"%s_slverr_o"  1}
+                err         {"%s_slverr_o"  1}
             }
             rf {
                 clk         {"clk_%s_i"     1}
@@ -48,11 +39,11 @@ proc template_attributes {userdata} {
                 write       {"%s_write_i"   1}
                 wdata       {"%s_wdata_i"   $datawidth}
                 bytesel     {"%s_strb_i"    {($datawidth+7)/8}}
-                prot        {"%s_prot_i"    3}
+                prot        {"%s_prot_i"    1}
                 prot_enable {"%s_prot_en_i" 1}
                 rdata       {"%s_rdata_o"   $datawidth}
                 ready       {"%s_ready_o"   1}
-                error       {"%s_error_o"   1}
+                err         {"%s_error_o"   1}
             }
         }
         set rf_regtypes {
@@ -68,6 +59,7 @@ proc template_attributes {userdata} {
             accesscargs {}
             regtypes    [list $rf_regtypes]
         }] {
+            lappend known_attrs $dattr
             if {![dict exists $attrs $dattr]} {
                 dict set attrs $dattr $dvalue
             }
@@ -80,10 +72,14 @@ proc template_attributes {userdata} {
         }
 
         # depending attributes
+        lappend known_attrs "port_prefix"
         if {![dict exists $attrs "port_prefix"]} {
             dict set attrs "port_prefix" [dict get $rf_port_prefix $interface]
         }
+
+        lappend known_attrs "ports"
         if {![dict exists $attrs "ports"]} {
+            # regfile ports, depending on selected interface
             set ports_pre [dict get $rf_ports $interface]
             set prefix    [dict get $attrs "port_prefix"]
 
@@ -103,14 +99,11 @@ proc template_attributes {userdata} {
             dict set attrs "ports" $ports
         }
     } elseif {$type eq "module"} {
-        set known_attrs {
-            keepblocks
-        }
-
         # default attributes
         foreach {dattr dvalue} [subst {
             keepblocks  false
         }] {
+            lappend known_attrs $dattr
             if {![dict exists $attrs $dattr]} {
                 dict set attrs $dattr $dvalue
             }
