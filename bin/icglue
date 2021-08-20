@@ -70,8 +70,8 @@ proc additionalversion {} {
     # additionalversion_str default is replaced by make install
     set additionalversion_str "INSTALLED-VERSION"
     if {$additionalversion_str ne "INSTALLED-VERSION"} {
-        # do not add an additional version string if this is a tagged release
-        if {"ICGlue 5.0a1" eq "ICGlue [string range $additionalversion_str 1 end]"} {
+        # do not add an additional version string if this is a tagged or (empty=tarball) release
+        if {"ICGlue 5.0a1" eq "ICGlue [string range $additionalversion_str 1 end]" || $additionalversion_str eq ""} {
             return {}
         }
         return " ($additionalversion_str)"
