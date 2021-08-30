@@ -295,14 +295,30 @@ namespace eval ig::checks {
                     continue
                 }
 
+                set swidth [ig::db::get_attribute -object $sigobj -attribute "size"]
+
                 set sbits [dict get $i_reg "signalbits"]
-                if {$sbits eq "-"} {continue}
+                if {$sbits eq "-"} {
+                    # fallback: full range if integer
+                    if {[string is integer $swidth]} {
+                        set slow  0
+                        set shigh [expr {$swidth - 1}]
+                        set sbits "${shigh}:0"
+                    } else {
+                        continue
+                    }
+                } else {
+                    set slow  [lindex [split $sbits ":"] end]
+                    set shigh [lindex [split $sbits ":"] 0]
+
+                    if {[string is integer $swidth] && ($shigh >= $swidth)} {
+                        ig::log -warn -id "ChkRS" "register \"${rname}\" in entry \"${ename}\" connects to non-existing bits of signal (${shigh}:${slow}, signal size is $swidth, regfile ${rfname}) (${origin})"
+                    }
+                }
 
                 set rname [dict get $i_reg "name"]
                 set blow  [dict get $i_reg "bit_low"]
                 set bhigh [dict get $i_reg "bit_high"]
-                set slow  [lindex [split $sbits ":"] end]
-                set shigh [lindex [split $sbits ":"] 0]
 
                 if {($bhigh - $blow) != ($shigh - $slow)} {
                     ig::log -warn -id "ChkRS" "register \"${rname}\" in entry \"${ename}\" connects to non-matching bits of signal (${bhigh}:${blow} <-> $sbits, regfile ${rfname}) (${origin})"
