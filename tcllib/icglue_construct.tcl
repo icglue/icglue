@@ -109,12 +109,13 @@ namespace eval ig {
             return $result
         }
 
-        ## @brief Common proc to parse and set attributes
+        ## @brief Common proc to parse module/rf attribute string in module tree
         #
-        # @param object ID of target object
-        # @param attrstring list of 'attribute=>value' pairs, with semicolon as a pair separator
-        proc set_modcmd_attributes {object attrstring} {
-            ig::log -debug -id "Mattr" "Setting '${attrstring}' for module ${object}"
+        # @param attrstring list of 'attribute=>value' pairs, with semicolon as a pair separator.
+        #
+        # @return a dictionary containing the attribute key value pairs.
+        proc parse_modcmd_attributes {attrstring} {
+            ig::log -debug -id "Mattr" "Parsing '${attrstring}'"
             set attributes {}
             foreach attrlist $attrstring {
                 set attrlist [ig::aux::remove_brackets $attrlist]
@@ -126,7 +127,17 @@ namespace eval ig {
                 }
             }
 
+            return $attributes
+        }
+
+        ## @brief Common proc to parse and set attributes
+        #
+        # @param object ID of target object
+        # @param attributes dict of attribute key value pairs
+        proc set_modcmd_attributes {object attributes} {
+            ig::log -debug -id "Mattr" "setting attributes '${attributes}' for $object"
             set userdata [dict create "object" $object "attributes" $attributes]
+
             ig::templates::current::template_attr $userdata
         }
 
@@ -386,11 +397,11 @@ namespace eval ig {
                         ig::db::set_attribute -object $rfid -attribute "addralign" -value $frfaddralign
                         ig::db::set_attribute -object $rfid -attribute "datawidth" -value $frfdatabits
                         ig::db::set_attribute -object $rfid -attribute "outtypes"  -value $frfotypes
-                        set_modcmd_attributes $rfid $frfattributes
+                        set_modcmd_attributes $rfid [parse_modcmd_attributes $frfattributes]
                     }
                     if {!$fres} {
                         ig::db::set_attribute -object $modid -attribute "outtypes" -value $fotypes
-                        set_modcmd_attributes $modid $fattributes
+                        set_modcmd_attributes $modid [parse_modcmd_attributes $fattributes]
                     }
                     ig::db::set_attribute -object $modid -attribute "dummy" -value $fdummy
                 }
@@ -411,7 +422,7 @@ namespace eval ig {
                         ig::db::set_attribute -object $instid -attribute "origin" -value $origin
                     }
                     if {$fres} {
-                        set_modcmd_attributes $instid $fattributes
+                        set_modcmd_attributes $instid [parse_modcmd_attributes $fattributes]
                     }
                 }
             }
