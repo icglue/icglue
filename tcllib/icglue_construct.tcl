@@ -777,7 +777,7 @@ namespace eval ig {
                         set entry(name) [dict get $entrydict "name"]
                         foreach {e_ig e_ry} {
                             address      offset
-                            default_type reg_type
+                            default_type type
                             } {
                             if {[dict exists $entrydict $e_ry]} {
                                 set entry($e_ig) [dict get $entrydict $e_ry]
