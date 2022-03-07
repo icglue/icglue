@@ -14,18 +14,19 @@
         if {$string_in eq "-"} {
           return "---"
         }
-        set string_out $string_in
-        set string_out [string map [list "\_" "\\_"]  $string_out]
-        set string_out [string map [list "\&" "\\&"]  $string_out]
-        set string_out [string map [list "\%" "\\%"]  $string_out]
-        set string_out [string map [list "\|" "\\|"]  $string_out]
-        set string_out [string map [list "\{" "\\\{"] $string_out]
-        set string_out [string map [list "\}" "\\\}"] $string_out]
-        set string_out [string map [list "\^" "\\^"]  $string_out]
-        set string_out [string map [list "\#" "\\#"]  $string_out]
-        set string_out [string map [list "\~" "\\~"]  $string_out]
-        set string_out [string map [list ">" "$>$"]   $string_out]
-        set string_out [string map [list "<" "$<$"]   $string_out]
+        set string_out [string map {
+            _   \\_
+            &   \\&
+            %   \\%
+            |   $\\vert$
+            \{  \\\{
+            \}  \\\}
+            ^   \\^
+            #   \\#
+            ~   \\~
+            >   $>$
+            <   $<$
+        } $string_in]
         return $string_out
     }
 
