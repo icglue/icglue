@@ -38,7 +38,7 @@ Mandatory arguments to long options are mandatory for short options too.
 
     -t, --template=FILE      Set FILE to use as template
     --template-dir=DIR       Add DIR to template path
-    -o, --outtypes=LIST      Comma-separated list of output types to generate (or empty for everything).
+    -o, --outtypes=LIST      Comma-separated list of output tags to generate (or empty for default, '*' for everything).
 
     -l, --logger=TAG         Enable output log of TAG (format: LEVEL,IDENTIFIER)
 
