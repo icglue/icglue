@@ -44,6 +44,7 @@
 - [ ] add instance-only command or check in M if already exists: sane values, instances only?
 - [ ] codesections: make adapt-selectively the default?
 - [ ] checks: use "origin" information of constructed parts for logging of warnings
+- [ ] checks: regfile-signal checks: check signalbits overlapping
 - [ ] support systemverilog structs
 
 ## templates
