@@ -106,7 +106,7 @@ class regfile_dev(metaclass=abc.ABCMeta):
         pass
 
     def write(self, addr, value, mask, write_mask):
-        self.logger.debug("%RegfileDevice initiate write at address 0x%x -- {value: 0x%x, mask 0x%x, write_mask: 0x%x}", self._prefix, addr, value, mask, write_mask)
+        self.logger.debug("%sRegfileDevice initiate write at address 0x%x -- {value: 0x%x, mask 0x%x, write_mask: 0x%x}", self._prefix, addr, value, mask, write_mask)
         self.rfdev_write(addr, value, mask, write_mask)
 
 
