@@ -71,7 +71,10 @@ C component_wrap -as {
         end
     end
 }
- 
+
+# overwriting default nettype for signals inside SV
+S "default_to_logic"  -w 2 -v "2'b10" component_wrap --> component_top
+S "overwrite_to_wire" -w 2 -v "2'b11" -type "wire"  component_wrap --> component_top
 
 ########################################################################
 ### tcl proc example for connect by name                             ###
@@ -124,6 +127,8 @@ set clk_resetn_mods(core) {
 
 # call the conneting proc
 create_clocking_and_resets "tb_component"
+
+
 
 
 ########################################################################

@@ -462,12 +462,17 @@ namespace eval ig::templates {
                 set vsigned [expr {$signed ? "signed" : {}}]
 
                 set name [ig::db::get_attribute -object $i_decl -attribute "name"]
+                set type [ig::db::get_attribute -object $i_decl -attribute "nettype"]
 
                 # TODO: workaround - keep uppercase names as wire --> might be analog or inout
-                if {([string toupper $name] ne $name) && ($lang eq "systemverilog")} {
-                    set vlog_type "logic"
+                if {[string toupper $name] eq $name} {
+                    set vlog_type "wire"
                 } else {
-                    set vlog_type  [ig::vlog::declaration_type $i_decl]
+                    if {$lang eq "systemverilog"} {
+                        set vlog_type [expr {$type == "" ? "logic" : $type}]
+                    } else {
+                        set vlog_type [expr {$type == "" ? "wire" : $type}]
+                    }
                 }
 
                 lappend decl_data [list \

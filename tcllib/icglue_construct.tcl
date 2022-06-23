@@ -1086,7 +1086,7 @@ namespace eval ig {
         set resource_pin "false"
         set dimension    {}
         set signed       "false"
-        set type         "wire"
+        set type         ""
         set origin       [ig::aux::get_origin_here]
 
         # parse_opts { <regexp> <argumenttype/check> <varname> <description> }
