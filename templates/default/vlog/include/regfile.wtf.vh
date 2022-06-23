@@ -608,13 +608,13 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
 [rf_comment_block "Regfile registers (read-logic)"]
     always @(*) begin
         [rf_next_write_permitted] = 0;
-        [rf_next_read_permitted] = 1;
+        [rf_next_read_permitted] = 1'b1;
         case ([rf_addr])
 %foreach_array entry $entry_list {
             [string trim [param]]: begin
                 [rf_r_data_sig] = [reg_val];
 %  if {[foreach_array_contains reg $entry(regs) {[write_reg]}]} {
-                [rf_next_write_permitted] = [expr {$entry(protected) ? "[rf_prot_ok]" : "1"}];
+                [rf_next_write_permitted] = [expr {$entry(protected) ? "[rf_prot_ok]" : "1'b1"}];
 %  }
 %  if {$entry(protected)} {
                 [rf_next_read_permitted] = [rf_prot_ok];
@@ -624,7 +624,7 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
             [pop_keep_block_content keep_block_data "keep" "regfile-${rf(name)}-outputmux"]
             default: begin
                 [rf_r_data_sig] = [format "%d'h%0*x" $rf_dw [expr {$rf_bw*2}] 0];
-                [rf_next_read_permitted] = 0;
+                [rf_next_read_permitted] = 1'b0;
             end
         endcase
     end
