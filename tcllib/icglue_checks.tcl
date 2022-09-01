@@ -276,6 +276,23 @@ namespace eval ig::checks {
         set rfname  [dict get $regfile_data "name"]
         set entries [dict get $regfile_data "entries"]
 
+        set module_id [dict get $regfile_data "module"]
+        set mname     [ig::db::get_attribute -object $module_id -attribute "name"]
+
+        # module port data
+        set msigdata {}
+        foreach p [ig::db::get_ports -of $module_id] {
+            set s [ig::db::get_attribute -object $p -attribute "net" -default ""]
+            if {$s eq ""} {continue}
+            set d [ig::db::get_attribute -object $p -attribute "direction"]
+            dict set msigdata $s $d
+        }
+        foreach d [ig::db::get_declarations -of $module_id] {
+            set s [ig::db::get_attribute -object $d -attribute "net" -default ""]
+            if {$s eq ""} {continue}
+            dict set msigdata $s "-"
+        }
+
         foreach i_entry $entries {
             set ename [dict get $i_entry "name"]
             set regs  [dict get $i_entry "regs"]
@@ -288,11 +305,24 @@ namespace eval ig::checks {
             foreach i_reg $regs {
                 set rname [dict get $i_reg "name"]
                 set sig   [dict get $i_reg "signal"]
+                set rtype [dict get $i_reg "type"]
+                set wtype [string match {*[WwTt]*} $rtype]
+
                 if {$sig eq "-"} {continue}
 
                 if {[catch {ig::db::get_nets -name $sig} sigobj]} {
                     ig::log -warn -id "ChkRS" "register \"${rname}\" in entry \"${ename}\" connects to unknown signal ($sig, regfile ${rfname}) (${origin})"
                     continue
+                }
+
+                if {![dict exists $msigdata $sig]} {
+                    ig::log -warn -id "ChkRS" "register \"${rname}\" in entry \"${ename}\" connects to a signal unavailable in its module ($sig, regfile ${rfname}) (${origin})"
+                    continue
+                } else {
+                    set dir [dict get $msigdata $sig]
+                    if {(($dir eq "input") && $wtype) || (($dir eq "output") && (!$wtype))} {
+                        ig::log -warn -id "ChkRS" "register \"${rname}\" in entry \"${ename}\" of type \"${rtype}\" connects to pin of direction \"${dir}\" in its module ($sig, regfile ${rfname}) (${origin})"
+                    }
                 }
 
                 set swidth [ig::db::get_attribute -object $sigobj -attribute "size"]
