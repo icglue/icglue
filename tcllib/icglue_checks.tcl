@@ -568,8 +568,9 @@ namespace eval ig::checks {
         }
     }
 
-    ## @brief Run check for regfile port interface.
-    # @param regfile_data preprocessed data of regfile to check.
+    ## @brief Run check for required regfile port interface.
+    # @param module_id object id for module.
+    # @param regfile_id object id for register file.
     proc check_module_regfile_ports {module_id regfile_id} {
         set mname     [ig::db::get_attribute -object $module_id -attribute "name"]
         set rfname    [ig::db::get_attribute -object $regfile_id -attribute "name"]
