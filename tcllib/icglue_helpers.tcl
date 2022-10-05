@@ -46,7 +46,7 @@ namespace eval ig::aux {
     #     1. regex - matching the optionname
     #     2. type - can be [const=value|TCL-TYPE] (1st form does not accept arguments, 2nd take a argument of type or throws error)
     #     3. varName - variable to be set if specified in $arguments
-    #     4. description - help text for the descrition
+    #     4. description - help text for the description
     #
     #
     # @return Argument without a match
@@ -888,7 +888,41 @@ namespace eval ig::aux {
         if {([string index $retval 0] == "{") && ([string index $retval end] == "}")} {
             set retval [string range $retval 1 end-1]
         }
-        return $retval
+        return "$retval"
+    }
+
+    ## @brief Return a list of module, which contain the module referenced by obj
+    #
+    # @param obj module object identifier
+    # @return List of parent module object
+    proc get_parent_modules {obj} {
+        set  parent_modids {}
+        foreach inst [ig::db::get_instantiation -of $obj] {
+            lappend parent_modids $inst [ig::db::get_attribute -object "$inst" -attribute "parent" -default {}]
+        }
+        return $parent_modids
+    }
+
+
+    ## @brief Return a list of hierarchy paths, where the module object could be found
+    #
+    # @param obj module object identifier
+    # @return list of hierarchy paths
+    proc get_hier_paths {obj} {
+        set parent_modules [get_parent_modules $obj]
+        if {$parent_modules eq {}} {
+            return ""
+        } else {
+            set hier_paths {}
+            foreach {inst parent} $parent_modules {
+                set path [get_hier_paths $parent]
+                if {$path ne {}} {
+                    set path "${path}."
+                }
+                lappend hier_paths "${path}i_[object_name $inst]"
+            }
+        }
+        return $hier_paths
     }
 
     proc get_parent_module {childname} {
@@ -929,4 +963,3 @@ proc ::tcl::mathfunc::clog2 {x} {
 
     return $y
 }
-

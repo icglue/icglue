@@ -91,6 +91,7 @@ void ig_add_tcl_commands (Tcl_Interp *interp)
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_attribute",       ig_tclc_get_attribute,      lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_modules",         ig_tclc_get_objs_of_obj,    lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_instances",       ig_tclc_get_objs_of_obj,    lib_db, NULL);
+    Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_instantiation",   ig_tclc_get_objs_of_obj,    lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_ports",           ig_tclc_get_objs_of_obj,    lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_parameters",      ig_tclc_get_objs_of_obj,    lib_db, NULL);
     Tcl_CreateObjCommand (interp, ICGLUE_LIB_NAMESPACE "get_declarations",    ig_tclc_get_objs_of_obj,    lib_db, NULL);
@@ -620,6 +621,7 @@ enum ig_tclc_get_objs_of_obj_version {
     IG_TOOOV_CODE,
     IG_TOOOV_MODULES,
     IG_TOOOV_INSTANCES,
+    IG_TOOOV_INSTANTIATION,
     IG_TOOOV_REGFILES,
     IG_TOOOV_RF_ENTRIES,
     IG_TOOOV_RF_REGS,
@@ -652,6 +654,8 @@ static enum ig_tclc_get_objs_of_obj_version ig_tclc_get_objs_of_obj_version_from
         version = IG_TOOOV_MODULES;
     } else if (strcmp (cmdname, "get_instances") == 0) {
         version = IG_TOOOV_INSTANCES;
+    } else if (strcmp (cmdname, "get_instantiation") == 0) {
+        version = IG_TOOOV_INSTANTIATION;
     } else if (strcmp (cmdname, "get_regfiles") == 0) {
         version = IG_TOOOV_REGFILES;
     } else if (strcmp (cmdname, "get_regfile_entries") == 0) {
@@ -744,7 +748,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
     GList *child_list      = NULL;
     bool   child_list_free = false;
 
-    if ((version == IG_TOOOV_INSTANCES) && (parent_name == NULL)) {
+    if (((version == IG_TOOOV_INSTANCES) || (version == IG_TOOOV_INSTANTIATION)) && (parent_name == NULL)) {
         if (all) {
             child_list = g_hash_table_get_values (db->instances_by_id);
         } else {
@@ -790,7 +794,7 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
         }
         child_list_free = true;
     } else if ((version == IG_TOOOV_DECLS) || (version == IG_TOOOV_PORTS) || (version == IG_TOOOV_PARAMS)
-               || (version == IG_TOOOV_CODE) || (version == IG_TOOOV_INSTANCES) || (version == IG_TOOOV_REGFILES)) {
+               || (version == IG_TOOOV_CODE) || (version == IG_TOOOV_INSTANCES) || (version == IG_TOOOV_INSTANTIATION) || (version == IG_TOOOV_REGFILES)) {
         struct ig_module *mod = IG_MODULE (PTR_TO_IG_OBJECT (g_hash_table_lookup (db->modules_by_id, parent_name)));
         if (mod == NULL) {
             return tcl_error_msg (interp, "Unable to find \"%s\" in database", parent_name);
@@ -813,6 +817,8 @@ static int ig_tclc_get_objs_of_obj (ClientData clientdata, Tcl_Interp *interp, i
             child_list = mod->code->head;
         } else if (version == IG_TOOOV_INSTANCES) {
             child_list = mod->child_instances->head;
+        } else if (version == IG_TOOOV_INSTANTIATION) {
+            child_list = mod->mod_instances->head;
         } else if (version == IG_TOOOV_REGFILES) {
             child_list = mod->regfiles->head;
         }
@@ -1785,4 +1791,3 @@ static int tcl_dict_get_int (Tcl_Interp *interp, Tcl_Obj *tcl_dict, char *key, i
     Tcl_DecrRefCount (tcl_dict_key);
     return retval;
 }
-

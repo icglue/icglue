@@ -550,7 +550,6 @@ struct ig_module *ig_module_new (const char *name, bool ilm, bool resource, GStr
         module->regfiles         = g_queue_new ();
         module->default_instance = ig_instance_new (name, module, NULL, storage);
 
-        g_queue_push_tail (module->mod_instances, module->default_instance);
         ig_obj_ref (IG_OBJECT (module->default_instance));
     }
 
@@ -793,4 +792,3 @@ void ig_generic_free (struct ig_generic *generic)
 
     g_slice_free (struct ig_generic, generic);
 }
-

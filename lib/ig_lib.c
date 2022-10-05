@@ -251,6 +251,7 @@ struct ig_instance *ig_lib_add_instance (struct ig_lib_db *db, const char *name,
         inst->parent = parent;
         ig_obj_attr_set (IG_OBJECT (inst), "parent", IG_OBJECT (parent)->id, true);
         g_queue_push_tail (parent->child_instances, inst);
+        g_queue_push_tail (type->mod_instances, inst);
         ig_obj_ref (IG_OBJECT (inst));
     } else {
         inst = ig_instance_new (name, type, parent, db->str_chunks);
@@ -1438,4 +1439,3 @@ static char *ig_lib_rm_suffix_pinport (struct ig_lib_db *db, const char *pinport
 
     return result;
 }
-
