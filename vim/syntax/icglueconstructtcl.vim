@@ -145,6 +145,7 @@ syn match   igRFlags       "\v-e(val(ulate)?)?>"    contained
 syn match   igRFlags       "\v-handshake\=?"        contained
 syn match   igRFlags       "\v-prot(ect(ed)?)>"     contained
 syn match   igRFlags       "\v-comm(ent)?\=?"       contained
+syn match   igRFlags       "\v-features?>"          contained
 syn region  igReglistblock start="\s{"ms=e end="}"  contained contains=tclVarRef,tclNumber,tclString,tclEmbeddedStatement
 syn region igReg start=/^\s*R\>/ms=e end=/$/                  contains=igRegcmd,igRFlags,igReglistblock,@igtclExtensions,tclEmbeddedStatement
 

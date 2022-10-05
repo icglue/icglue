@@ -134,5 +134,3 @@ endfun
 fun! Quote_icglue_signals() range
     '<,'>s/^\(\s*\)S \([^" ]\+\)/\1S "\2"/e
 endfun
-
-
