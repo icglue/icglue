@@ -174,6 +174,10 @@ proc template_data {userdata tdir} {
             add "${itpfx}rf-${itag}" $itype "${tdir}/rf/template.${itype}.${itag}" "doc/${itag}/${name}.${itag}" $lexcom
         }
 
+        set modid [ig::db::get_attribute -object $object -attribute "module"]
+        set parent [ig::db::get_attribute -object $modid -attribute "parentunit" -default $name]
+        add "-rf-uvm" wtf "${tdir}/rf/template.wtf.uvm_regmodel_pkg.sv" "units/${parent}/source/tb/regmodel/genout/${name}_uvm_regmodel_pkg.sv" {"/* " " */"}
+
         add "rf-c.txt" wtf "${tdir}/rf/template.wtf.c.txt" "software/doc/regfile_access/${name}.txt" {}
 
         foreach {itpfx itag   itype iinf iext lexcom} {
