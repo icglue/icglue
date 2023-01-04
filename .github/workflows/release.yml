@@ -22,7 +22,7 @@ jobs:
           make bundled_tcllib
           # fetch logo:
           #wget -O "logo/logo.png" "https://icglue.org/img/icglue.96.png"
-          sudo apt-get install -y --no-upgrade inkscape
+          sudo apt-get install -y --no-upgrade librsvg2-bin
           make logo
           tar -cvzf asset.tar.gz --transform "s|^|icglue-${GITHUB_REF#refs/tags/v}/|" lib/ICGlue/3rdparty/tcllib/* logo/logo.png
       - name: Create Release
