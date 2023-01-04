@@ -812,7 +812,7 @@ namespace eval ig {
                                     set i_reset [expr {[dict get $regdict "rst"]}]
                                 }
                                 if {$i_reset eq "-"} {
-                                    if {[string first "W" $i_type] > 0} {
+                                    if {[string first "W" $i_type] >= 0} {
                                         set i_reset 0
                                     }
                                 }
