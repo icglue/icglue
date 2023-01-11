@@ -181,7 +181,7 @@ static int rf_${rf_name} (ClientData client_data, Tcl_Interp *interp, int tcl_ar
             Tcl_SetObjResult (interp, reslist);
         } else if (mode == mode_regwrite) {
             if ((tcl_argc % 2) != 1) {
-                Tcl_SetObjResult (interp, Tcl_NewStringObj ("rf_${rf_name}: expecdet even number of arguments for reg-write/modify.", -1));
+                Tcl_SetObjResult (interp, Tcl_NewStringObj ("rf_${rf_name}: expected even number of arguments for reg-write/modify.", -1));
                 ckfree_if_needed (&tcl_argc, &tcl_argv_rem);
                 return TCL_ERROR;
             }
