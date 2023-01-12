@@ -1,0 +1,115 @@
+
+DUMPER          ?= fst
+
+# ------------  configuration parameters ---------------------------------------
+SIM_LOG         ?= $(WORK_DIR)/$(SIM_NAME).log
+DUMP_MOD        ?= $(WORK_DIR)/dump.v
+DUMP_MOD_NAME   ?= $(notdir $(basename $(DUMP_MOD)))
+
+# ------------  name of sim file  ----------------------------------------------
+SIM_EXEC_DUMP   ?= $(WORK_DIR)/$(SIM_NAME)-simulate-dump
+SIM_EXEC        ?= $(WORK_DIR)/$(SIM_NAME)-simulate
+
+#===============================================================================
+# The following statements usually need not to be changed
+#===============================================================================
+
+# ------------  build and run tools  -------------------------------------------
+CVC             ?= cvc
+
+# ------------  tool flags for cvc  --------------------------------------------
+CVC_FLAGS       ?= -O -l $(SIM_LOG)
+ifneq ($(strip $(VLOG_SRC_FILES)),)
+  VLOG_SRC_FILE_WORK = $(WORK_DIR)/vlog.src
+endif
+CVC_FLAGS_NODUMP += -o $(SIM_EXEC)
+CVC_FLAGS_DUMP   += -o $(SIM_EXEC_DUMP)
+ifeq ($(strip $(DUMPER)),fst)
+  CVC_FLAGS_DUMP   += +dump2fst +fst+parallel=on
+endif
+VLOG_SRC_ARGS   += $(addprefix -f ,$(VLOG_SRC_FILE_WORK))
+VLOG_SOURCES    += $(foreach f,$(VLOG_SRC_FILES), $(shell echo $(shell cat $f | sed -e 'sX^\(\#\|//\).*XX')))
+
+# ------------  tool flags for stimc  ------------------------------------------
+ifneq ($(strip $(STIMC_MODULES)),)
+  VPI_CPPFLAGS += $(shell pkgconf --cflags oss-cvc-vpi)
+  VPI_LDFLAGS  += -shared
+  CVC_FLAGS    += +acc+2 +loadvpi=$(VPI_MODULE):stimc_vpi_init
+endif
+
+# ------------  info output ----------------------------------------------------
+info-vlog:
+ifneq (,$(strip $(VLOG_INCDIRS)))
+	$q$(call echo, "$${b}$(vlogcolor)VLOG-INCDIRS$${c}$(shell $(call shell-fmtflags,$(addprefix -I,$(VLOG_INCDIRS))))")
+endif
+ifneq (,$(strip $(CVC_FLAGS) $(CVC_FLAGS_NODUMP) $(ADDITIONAL_CVC_FLAGS)))
+	$q$(call echo, "$${b}$(vlogcolor)VLOG-FLAGS$${c}$(shell $(call shell-fmtflags,$(CVC_FLAGS) $(CVC_FLAGS_NODUMP) $(ADDITIONAL_CVC_FLAGS)))")
+endif
+
+info-vlog-dump:
+ifneq (,$(strip $(VLOG_INCDIRS)))
+	$q$(call echo, "$${b}$(vlogcolor)VLOG-INCDIRS$${c}$(shell $(call shell-fmtflags,$(addprefix -I,$(VLOG_INCDIRS))))")
+endif
+ifneq (,$(strip $(CVC_FLAGS) $(CVC_FLAGS_DUMP) $(ADDITIONAL_CVC_FLAGS)))
+	$q$(call echo, "$${b}$(vlogcolor)VLOG-FLAGS$${c}$(shell $(call shell-fmtflags,$(CVC_FLAGS) $(CVC_FLAGS_DUMP) $(ADDITIONAL_CVC_FLAGS)))")
+endif
+
+.PHONY: info-vlog info-vlog-dump
+
+# ------------  rules ----------------------------------------------------------
+
+$(WORK_DIR)/vlog.src: $(VLOG_SRC_FILES) | $(WORK_DIR)
+	$qecho -e $(shell cat $^ | sed -e 'sX^\(\#\|//\).*XX;sX$$X\\\\nX') > $@
+
+$(SIM_EXEC): $(VLOG_SOURCES) $(VLOG_SRC_FILE_WORK) $(COMPILE_DEPS) $(filter-out %.dep,$(MAKEFILE_LIST)) $(VPI_MODULE) | $(WORK_DIR) info-vlog
+	$q$(call echo, "$${b}$(vlogcolor)VLOG$${c} $$(basename $(SIM_EXEC))")
+	$q$(CVC) $(addprefix +incdir+,$(VLOG_INCDIRS)) $(CVC_FLAGS) $(ADDITIONAL_CVC_FLAGS) $(VLOG_SRC_ARGS) -o $@
+
+$(SIM_EXEC_DUMP): $(VLOG_SOURCES) $(VLOG_SRC_FILE_WORK) $(DUMP_MOD) $(COMPILE_DEPS) $(filter-out %.dep,$(MAKEFILE_LIST)) $(VPI_MODULE) | $(WORK_DIR) info-vlog
+	$q$(call echo, "$${b}$(vlogcolor)VLOG$${c} $$(basename $(SIM_EXEC_DUMP))")
+	$q$(CVC) $(addprefix +incdir+,$(VLOG_INCDIRS)) $(CVC_FLAGS) $(CVC_FLAGS_DUMP) $(ADDITIONAL_CVC_FLAGS) $(VLOG_SRC_ARGS) $(DUMP_MOD) -o $@
+
+
+$(DUMPFILE): $(SIM_EXEC_DUMP) $(VPI_MODULE) $(RUN_DEPS) $(MAKEFILE_LIST)
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $$(basename $(SIM_EXEC_DUMP))\n")
+	$q$(SIM_EXEC_DUMP)
+
+vlog: $(SIM_EXEC)
+vlog-dump: $(SIM_EXEC)
+
+elab:      vlog      vpi-run
+elab-dump: vlog-dump vpi-run
+
+run: $(SIM_EXEC) $(VPI_MODULE) Makefile
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $$(basename $(SIM_EXEC))\n")
+	$q$(SIM_EXEC)
+
+memcheck: $(SIM_EXEC) $(VPI_MODULE) Makefile
+	$q$(call echo, "\n$${b}$(runcolor)MEMCHECK $${c} $$(basename $(SIM_EXEC))\n")
+	$q$(MEMCHK) $(SIM_EXEC)
+
+
+runbatch: $(SIM_EXEC) $(VPI_MODULE) Makefile
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $$(basename $(SIM_EXEC))\n")
+	$q$(SIM_EXEC) 2>&1 | tee $(BATCH_LOG)
+
+rerun: $(DUMPFILE)
+
+rungui: $(DUMPFILE)
+	$q$(MAKE) --no-print-directory gui
+
+$(DUMP_MOD): | $(WORK_DIR)
+	@echo 'module $(DUMP_MOD_NAME) ();'     > $@
+	@echo 'initial begin'                  >> $@
+	@echo '    $$dumpfile("$(DUMPFILE)");' >> $@
+	@echo '    $$dumpvars();'              >> $@
+	@echo 'end'                            >> $@
+	@echo 'endmodule'                      >> $@
+
+clean-vlog:
+	$qrm -f \
+        $(SIM_EXEC) $(SIM_EXEC_DUMP) $(DUMPFILE) $(SIM_LOG)  \
+        2> /dev/null || true
+	$qrm -f $(WORK_DIR)/$(DUMPFILE).hier
+
+.PHONY: vlog vlog-dump elab elab-dump run runbatch rungui rerun clean-vlog

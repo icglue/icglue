@@ -10,15 +10,15 @@
 #    - prompt shortening
 #
 
-src=${BASH_SOURCE:-$_}
-export ICPRO_DIR=$(dirname $(readlink -e $src))
+src="${BASH_SOURCE:-$_}"
+export ICPRO_DIR="$(dirname "$(readlink -e "$src")")"
 unset src
 
 [[ -n "$(declare -f -F icpro_cd)" ]] || icpro_cd() {
     local flags
     local dir
     if [[ -n "$ICPRO_DIR" ]] ; then
-        dir=$ICPRO_DIR$1
+        dir="$ICPRO_DIR$1"
         shift
         if [[ $1 = "-P" || $1 == "-L" ]] ; then
             flags=$1
@@ -31,14 +31,18 @@ unset src
     fi
 }
 
+if ! echo "${PATH}" | grep "${ICPRO_DIR}/env/bin" >/dev/null 2>&1; then
+    PATH="${ICPRO_DIR}/env/bin:${PATH}"
+fi
+
 [[ -n "$(declare -f -F cdi)" ]] || cdi() {
-    icpro_cd / $@
+    icpro_cd / "$@"
 }
 [[ -n "$(declare -f -F cdu)" ]] || cdu() {
-    icpro_cd /units $@
+    icpro_cd /units "$@"
 }
 [[ -n "$(declare -f -F cds)" ]] || cds () {
-    icpro_cd /software $@
+    icpro_cd /software "$@"
 }
 
 if [[ -n "$BASH_VERSION" ]]; then
@@ -57,9 +61,9 @@ fi
 
 if [[ -n "$ZSH_VERSION" ]]; then
     : ~ICPRO_DIR
-    compctl -W $ICPRO_DIR/          -/ cdi
-    compctl -W $ICPRO_DIR/units/    -/ cdu
-    compctl -W $ICPRO_DIR/software/ -/ cds
+    compctl -W "$ICPRO_DIR/"          -/ cdi
+    compctl -W "$ICPRO_DIR/units/"    -/ cdu
+    compctl -W "$ICPRO_DIR/software/" -/ cds
 fi
 
 icpro_logout() {
@@ -69,5 +73,8 @@ icpro_logout() {
         unset _icpro_prompt_base
         unset PROMPT_COMMAND
     fi
+
+    PATH="$(echo $PATH | sed -e "s#${ICPRO_DIR}/env/bin:##")"
+
     unset ICPRO_DIR
 }

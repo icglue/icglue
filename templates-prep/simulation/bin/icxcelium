@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# module load cds_xcelium/latest
+
+make SIMULATOR=xcelium "$@"

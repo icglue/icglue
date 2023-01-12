@@ -1,0 +1,112 @@
+# Generic simulation makefile
+
+# ------------  default simulator  ---------------------------------------------
+SIMULATOR ?= iverilog
+
+# ------------  dumpfile  ------------------------------------------------------
+DUMPFILE        ?= $(WORK_DIR)/$(SIM_NAME).dump
+
+# ------------  configuration parameters ---------------------------------------
+DUMPER          ?= fst
+BATCH_LOG       ?= $(WORK_DIR)/runbatch.log
+
+#-------------  working directory  ---------------------------------------------
+WORK_DIR        ?= .work.$(strip $(SIMULATOR))
+
+#===============================================================================
+# The following statements usually need not to be changed
+#===============================================================================
+
+USE_TEMP       ?= 1
+TMPDIR         ?= /tmp
+
+COMPILE_DEPS   ?= $(foreach incdir, $(INCLUDEDIRS), $(wildcard $(incdir)/*.vh))
+
+# ------------  build and run tools  -------------------------------------------
+LN              ?= ln -sf
+MKTEMP          ?= mktemp -p $(TMPDIR) -t $(USER)-$(SIMULATOR)-$(SIM_NAME)-XXXX
+
+# ------------  output color/verbosity -----------------------------------------
+q?=@
+
+USE_COLOR ?= 1
+define echo
+	if [ -t 1 -a "x${USE_COLOR}" = "x1" ] ; then \
+		c='\e[0m'; \
+		b='\e[1m'; \
+		red='\e[31m'; \
+		green='\e[32m'; \
+		yellow='\e[33m'; \
+		blue='\e[34m'; \
+		purple='\e[35m'; \
+		cyan='\e[36m'; \
+		gray='\e[37m'; \
+	else \
+		c=''; \
+		b=''; \
+		red=''; \
+		green=''; \
+		yellow=''; \
+		blue=''; \
+		purple=''; \
+		cyan=''; \
+		gray=''; \
+	fi; \
+	echo -e $1;
+endef
+
+define shell-fmtflags
+	echo " $(strip $(1))" | sed -r -e 's/\s+-/\\n    -/g' -e 's#${ICPRO_DIR}#$${ICPRO_DIR}#g'
+endef
+
+vlogcolor=$${blue}
+elabcolor=$${green}
+stimccolor=$${yellow}
+runcolor=""
+
+# ------------  rules ----------------------------------------------------------
+
+.DEFAULT_GOAL=rungui
+
+$(WORK_DIR):
+ifeq ($(USE_TEMP),1)
+	$q$(LN) `$(MKTEMP) -d` $(WORK_DIR)
+else
+	$qmkdir -p $(WORK_DIR)
+endif
+
+clean: clean-vlog clean-vpi clean-gui
+	$qif [ -L $(WORK_DIR) ]; then  \
+		rm -Irf `readlink -e $(WORK_DIR)` ;\
+		rm $(WORK_DIR) ;\
+	elif [ -e $(WORK_DIR) ]; then \
+		rmdir $(WORK_DIR) 2>&1 > /dev/null || true ;\
+	fi
+
+clean-all:
+	$q$(MAKE) SIMULATOR=iverilog --no-print-directory clean
+	$q$(MAKE) SIMULATOR=cvc      --no-print-directory clean
+	$q$(MAKE) SIMULATOR=xcelium  --no-print-directory clean
+	$q$(MAKE) SIMULATOR=ius      --no-print-directory clean
+
+.PHONY: clean
+
+# sub makefiles
+include ${ICPRO_DIR}/env/simulation/Makefile.project.stimc
+
+ifeq ($(SIMULATOR),iverilog)
+include ${ICPRO_DIR}/env/simulation/Makefile.project.gtkwave
+include ${ICPRO_DIR}/env/simulation/Makefile.project.iverilog
+endif
+
+ifeq ($(SIMULATOR),cvc)
+include ${ICPRO_DIR}/env/simulation/Makefile.project.gtkwave
+include ${ICPRO_DIR}/env/simulation/Makefile.project.cvc
+endif
+
+ifeq ($(SIMULATOR),ius)
+include ${ICPRO_DIR}/env/simulation/Makefile.project.cdssim
+endif
+ifeq ($(SIMULATOR),xcelium)
+include ${ICPRO_DIR}/env/simulation/Makefile.project.cdssim
+endif

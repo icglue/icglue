@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# module load cds_ius/latest
+
+make SIMULATOR=ius "$@"

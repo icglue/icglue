@@ -1,0 +1,6 @@
+%(
+set content_sources "\${ICPRO_DIR}/units/${unit}/source/rtl/verilog/${unit}.v
+"
+%)
+[pop_keep_block_content keep_block_data "keep" "sources" ".cmdf" "${content_sources}"]
+%# vim: ft=woof_template

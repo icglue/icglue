@@ -1,0 +1,96 @@
+
+DUMPER          ?= fst
+
+# ------------  configuration parameters ---------------------------------------
+VVP_LOG         ?= $(WORK_DIR)/$(SIM_NAME).log
+DUMP_MOD        ?= $(WORK_DIR)/dump.v
+DUMP_MOD_NAME   ?= $(notdir $(basename $(DUMP_MOD)))
+
+# ------------  name of vvp file  ----------------------------------------------
+VVP_FILE        ?= $(WORK_DIR)/$(SIM_NAME)-simulate
+
+#===============================================================================
+# The following statements usually need not to be changed
+#===============================================================================
+
+# ------------  build and run tools  -------------------------------------------
+IVERILOG        ?= iverilog
+VVP             ?= vvp
+
+# ------------  tool flags for vvp  --------------------------------------------
+VVP_FLAGS       ?= -n -i -l$(VVP_LOG)
+VVP_EXTARGS     ?=
+VVP_EXTARGS_RUN ?= -none
+
+# ------------  tool flags for iverilog  ---------------------------------------
+IVERILOG_FLAGS  ?= -Wall -Wno-timescale -Wno-implicit-dimensions \
+                   -Wno-sensitivity-entire-array -Wno-portbind \
+                   -g2005-sv
+VLOG_SRC_ARGS   += $(addprefix -f ,$(VLOG_SRC_FILES))
+VLOG_SOURCES    += $(foreach f,$(VLOG_SRC_FILES), $(shell echo $(shell cat $f | sed -e 'sX^\(\#\|//\).*XX')))
+
+# ------------  tool flags for stimc  ------------------------------------------
+ifneq ($(strip $(STIMC_MODULES)),)
+  VPI_CPPFLAGS += $(shell iverilog-vpi --cflags | egrep -o -- '-I\s*\S*')
+  VPI_LDFLAGS  += $(shell iverilog-vpi --ldflags)
+  VVP_FLAGS    += -M$(WORK_DIR) -m$(notdir $(basename $(VPI_MODULE)))
+endif
+
+# ------------  info output ----------------------------------------------------
+info-vlog:
+ifneq (,$(strip $(VLOG_INCDIRS)))
+	$q$(call echo, "$${b}$(vlogcolor)VLOG-INCDIRS$${c}$(shell $(call shell-fmtflags,$(addprefix -I,$(VLOG_INCDIRS))))")
+endif
+ifneq (,$(strip $(IVERILOG_FLAGS) $(ADDITIONAL_IVERILOG_FLAGS)))
+	$q$(call echo, "$${b}$(vlogcolor)VLOG-FLAGS$${c}$(shell $(call shell-fmtflags,$(IVERILOG_FLAGS) $(ADDITIONAL_IVERILOG_FLAGS)))")
+endif
+
+.PHONY: info-vlog
+
+# ------------  rules ----------------------------------------------------------
+
+$(VVP_FILE): $(VLOG_SOURCES) $(DUMP_MOD) $(COMPILE_DEPS) $(filter-out %.dep,$(MAKEFILE_LIST)) | $(WORK_DIR) info-vlog
+	$q$(call echo, "$${b}$(vlogcolor)VLOG$${c} $$(basename $(VVP_FILE))")
+	$q$(IVERILOG) $(addprefix -s, $(TOPLEVEL)) $(addprefix -I,$(VLOG_INCDIRS)) $(IVERILOG_FLAGS) $(ADDITIONAL_IVERILOG_FLAGS) $(VLOG_SRC_ARGS) $(DUMP_MOD) -o $@
+
+
+$(DUMPFILE): $(VVP_FILE) $(VPI_MODULE) $(RUN_DEPS) $(MAKEFILE_LIST)
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $$(basename $(VVP_FILE))\n")
+	$qIVERILOG_DUMPER=${DUMPER} $(VVP) $(VVP_FLAGS) $(VVP_FILE) $(DUMPMODE) $(VVP_EXTARGS)
+
+vlog: $(VVP_FILE)
+
+elab: vlog vpi-run
+
+run: $(VVP_FILE) $(VPI_MODULE) Makefile
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $$(basename $(VVP_FILE))\n")
+	$q$(VVP) $(VVP_FLAGS) $(VVP_FILE) $(DUMPMODE) $(VVP_EXTARGS_RUN)
+
+memcheck: $(VVP_FILE) $(VPI_MODULE) Makefile
+	$q$(call echo, "\n$${b}$(runcolor)MEMCHECK $${c} $$(basename $(VVP_FILE))\n")
+	$q$(MEMCHK) $(VVP) $(VVP_FLAGS) $(VVP_FILE) $(DUMPMODE) $(VVP_EXTARGS_RUN)
+
+runbatch: $(VVP_FILE) $(VPI_MODULE) Makefile
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $$(basename $(VVP_FILE))\n")
+	$q$(VVP) $(VVP_FLAGS) $(VVP_FILE) $(DUMPMODE) $(VVP_EXTARGS_RUN) 2>&1 | tee $(BATCH_LOG)
+
+rerun: $(DUMPFILE)
+
+rungui: $(DUMPFILE)
+	$q$(MAKE) --no-print-directory gui
+
+$(DUMP_MOD): | $(WORK_DIR)
+	@echo 'module $(DUMP_MOD_NAME) ();'     > $@
+	@echo 'initial begin'                  >> $@
+	@echo '    $$dumpfile("$(DUMPFILE)");' >> $@
+	@echo '    $$dumpvars();'              >> $@
+	@echo 'end'                            >> $@
+	@echo 'endmodule'                      >> $@
+
+clean-vlog:
+	$qrm -f \
+        $(VVP_FILE) $(DUMPFILE) $(VVP_LOG)  \
+        2> /dev/null || true
+	$qrm -f $(WORK_DIR)/$(DUMPFILE).hier
+
+.PHONY: vlog elab run runbatch rungui rerun memcheck clean-vlog

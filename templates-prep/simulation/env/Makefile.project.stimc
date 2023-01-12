@@ -1,0 +1,102 @@
+
+#===============================================================================
+# The following statements usually need not to be changed
+#===============================================================================
+
+
+# ------------  generate the names of the stimc related files  -----------------
+STIMC_BASEDIR   = ${ICPRO_DIR}/resources/stimc
+STIMC_INCDIRS  += $(STIMC_BASEDIR)/include $(STIMC_BASEDIR)/addons
+STIMC_LIBDIRS  += $(STIMC_BASEDIR)/lib $(STIMC_BASEDIR)/addonslib
+STIMC_BASENAMES = $(notdir $(basename $(STIMC_SOURCES)))
+STIMC_OBJECTS   = $(addprefix $(WORK_DIR)/, $(addsuffix .o, $(STIMC_BASENAMES)))
+STIMC_DEPS      = $(addprefix $(WORK_DIR)/, $(addsuffix .d, $(STIMC_BASENAMES)))
+STIMC_WLRPATH   = -Wl,-rpath,
+STIMC_LDFLAGS   = $(addprefix -L,$(STIMC_LIBDIRS)) -lstimc -llogging-vpi $(addprefix $(STIMC_WLRPATH),$(STIMC_LIBDIRS))
+STIMC_CPPFLAGS  = $(addprefix -I,$(STIMC_INCDIRS))
+
+# ------------  build and run tools  -------------------------------------------
+CC              ?= gcc
+CXX             ?= g++
+LD              ?= ld
+LDEXE           ?= $(CXX)
+MEMCHK          ?= valgrind --leak-check=full --error-exitcode=1 --suppressions=${ICPRO_DIR}/env/simulation/vvp.valgrind.supp -s
+
+# ------------  tool flags for stimc  ------------------------------------------
+WARNFLAGS       ?= -Wall -Wextra -Wshadow -pedantic -Werror
+OPTFLAGS        ?= -O2 -fdata-sections -ffunction-sections
+#ARCHFLAGS       ?= -mtune=native -march=native
+CFLAGS          ?= -std=c11 -Wstrict-prototypes
+CXXFLAGS        ?= -std=c++14 -Weffc++
+CFLAGS          += -fpic
+CXXFLAGS        += -fpic
+DEFINES         ?=
+CPPFLAGS        += $(addprefix -D,$(DEFINES))
+
+VPI_EXTENSION   ?= .vpi
+
+ifneq ($(strip $(STIMC_MODULES)),)
+  VPI_CPPFLAGS += $(STIMC_CPPFLAGS)
+  VPI_LDFLAGS  += $(STIMC_LDFLAGS)
+  VPI_MODULE   ?= $(WORK_DIR)/stimc_model$(VPI_EXTENSION)
+endif
+
+ALL_CPPFLAGS    = $(VPI_CPPFLAGS) $(CPPFLAGS)
+ALL_CFLAGS      = $(WARNFLAGS) $(OPTFLAGS) $(ARCHFLAGS) $(CFLAGS)   $(ALL_CPPFLAGS)
+ALL_CXXFLAGS    = $(WARNFLAGS) $(OPTFLAGS) $(ARCHFLAGS) $(CXXFLAGS) $(ALL_CPPFLAGS)
+ALL_LDFLAGS     = $(VPI_LDFLAGS) $(LDFLAGS)
+
+VPATH = $(subst $() $(),:,$(STIMC_DIRS) $(STIMC_BASEDIR)/addons)
+
+# ------------  info output ----------------------------------------------------
+info-c:
+ifneq (,$(strip $(ALL_CFLAGS)))
+	$q$(call echo, "$${b}$(stimccolor)C-FLAGS$${c}$(shell $(call shell-fmtflags,$(ALL_CFLAGS)))")
+endif
+
+info-cxx:
+ifneq (,$(strip $(ALL_CXXFLAGS)))
+	$q$(call echo, "$${b}$(stimccolor)C++-FLAGS$${c}$(shell $(call shell-fmtflags,$(ALL_CXXFLAGS)))")
+endif
+
+info-ld:
+ifneq (,$(strip $(ALL_LDFLAGS)))
+	$q$(call echo, "$${b}$(stimccolor)LD-FLAGS$${c}$(shell $(call shell-fmtflags,$(ALL_LDFLAGS)))")
+endif
+
+.PHONY: info-c info-cxx info-ld
+
+# ------------  rules ----------------------------------------------------------
+
+$(WORK_DIR)/%.d: %.c | $(WORK_DIR)
+	$q$(CC) -MM -E $(ALL_CPPFLAGS) $< | sed -e 's#[^:]*:#$(WORK_DIR)/&#' > $@
+	$q$(LN) $*.d $(WORK_DIR)/$*.dep
+
+$(WORK_DIR)/%.o: %.c $(WORK_DIR)/%.d $(MAKEFILE_LIST) | $(WORK_DIR) info-c
+	$q$(call echo, "$${b}$(stimccolor)CC  $${c} $$(basename $<)")
+	$q$(CC) $(ALL_CFLAGS) -g -c $< -o $@
+
+$(WORK_DIR)/%.d: %.cpp | $(WORK_DIR)
+	$q$(CXX) -MM -E $(ALL_CPPFLAGS) $< | sed -e 's#[^:]*:#$(WORK_DIR)/&#' > $@
+	$q$(LN) $*.d $(WORK_DIR)/$*.dep
+
+$(WORK_DIR)/%.o: %.cpp $(WORK_DIR)/%.d $(MAKEFILE_LIST) | $(WORK_DIR) info-cxx
+	$q$(call echo, "$${b}$(stimccolor)C++ $${c} $$(basename $<)")
+	$q$(CXX) $(ALL_CXXFLAGS) -g -c $< -o $@
+
+-include ${STIMC_DEPS:.d=.dep}
+
+$(WORK_DIR)/%.so $(WORK_DIR)/%.vpi: $(STIMC_OBJECTS) | info-ld
+	$q$(call echo, "$${b}$(stimccolor)LD  $${c} $@")
+	$q$(LDEXE) $(WARNFLAGS) $(STIMC_OBJECTS) $(ALL_LDFLAGS) -o $@
+
+vpi-run: $(VPI_MODULE)
+
+clean-vpi:
+	$qrm -f \
+        $(VPI_MODULE) $(STIMC_DEPS) ${STIMC_DEPS:.d=.dep} $(STIMC_OBJECTS) \
+        2> /dev/null || true
+
+.PHONY: vpi-run clean-vpi
+
+.SECONDARY: $(STIMC_DEPS) $(STIMC_OBJECTS) $(VPI_MODULE)

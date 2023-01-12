@@ -1,0 +1,163 @@
+# ------------  configuration parameters ---------------------------------------
+CDS_TOOL_SUITE ?= $(SIMULATOR)
+
+VLOG_LOG      ?= $(WORK_DIR)/$(SIM_NAME)_vlog.log
+ELAB_LOG      ?= $(WORK_DIR)/$(SIM_NAME)_elab.log
+SIM_LOG       ?= $(WORK_DIR)/$(SIM_NAME)_sim.log
+WAVE_LOG      ?= $(WORK_DIR)/$(SIM_NAME)_wave.log
+
+DEFAULT_TIMESCALE ?= 1ns/1ps
+
+#===============================================================================
+# The following statements usually need not to be changed
+#===============================================================================
+
+ifeq ($(CDS_TOOL_SUITE),ius)
+  export CDS_PREFIX = nc
+else
+  export CDS_PREFIX = xm
+endif
+
+VLOG          = $(CDS_PREFIX)vlog
+ELAB          = $(CDS_PREFIX)elab
+SIM           = $(CDS_PREFIX)sim
+WAVEBROWSE    = simvision
+
+CDSROOT       = $(shell $(CDS_PREFIX)root)
+CDSGCCBIN     = $(CDSROOT)/tools/cdsgcc/gcc/bin/64bit
+CDS_CC        = $(CDSGCCBIN)/gcc
+CDS_CXX       = $(CDSGCCBIN)/g++
+CDS_LD        = $(CDSGCCBIN)/ld
+
+CC            = $(CDS_CC)
+CXX           = $(CDS_CXX)
+LD            = $(CDS_LD)
+
+CFLAGS       += -Wno-strict-prototypes
+
+VPI_EXTENSION = .so
+
+# ------------  cdslib + directories  ------------------------------------------
+CDSLIB_FILE     = $(WORK_DIR)/cds.lib
+CDS_WORKLIBNAME = worklib
+CDS_WAVENAME    = simlibs
+CDS_COVNAME     = cov_work
+CDS_WORKLIBDIR  = $(WORK_DIR)/$(CDS_WORKLIBNAME)
+CDS_WAVEDIR     = $(WORK_DIR)/$(CDS_WAVENAME)
+CDS_COVDIR      = $(WORK_DIR)/$(CDS_COVNAME)
+CDS_SIMVISDIR   = $(WORK_DIR)/simvision
+HDLVAR_FILE     = $(WORK_DIR)/hdl.var
+
+CDS_WAVEDB_BASE = $(CDS_WAVEDIR)/waves
+CDS_WAVEDB      = $(CDS_WAVEDB_BASE).shm
+RUNSCR_BATCH    = $(WORK_DIR)/sim_ctrl_batch.tcl
+RUNSCR_GUI      = $(WORK_DIR)/sim_ctrl_gui.tcl
+
+# ------------  tool flags for vlog/elab  --------------------------------------
+VLOG_FLAGS       = -64bit -nocopyright -update -logfile $(VLOG_LOG)
+VLOG_FLAGS      += -cdslib $(CDSLIB_FILE) -hdlvar $(HDLVAR_FILE)
+VLOG_SRC_ARGS   += $(addprefix -f ,$(VLOG_SRC_FILES))
+VLOG_SOURCES    += $(foreach f,$(VLOG_SRC_FILES), $(shell echo $(shell cat $f | sed -e 'sX^\(\#\|//\).*XX')))
+
+ELAB_FLAGS       = -64bit -nocopyright -licqueue -update -access +rwc -logfile $(ELAB_LOG) -timescale $(DEFAULT_TIMESCALE)
+ELAB_FLAGS      += -cdslib $(CDSLIB_FILE) -hdlvar $(HDLVAR_FILE)
+SIM_FLAGS        = -64bit -nocopyright -licqueue -logfile $(SIM_LOG) -keyfile $(WORK_DIR)/$(SIM).script.tcl
+SIM_FLAGS       += -cdslib $(CDSLIB_FILE) -hdlvar $(HDLVAR_FILE)
+SIM_FLAGS       += -simvisargs "-title $(SIM_NAME)"
+WAVE_FLAGS       = -64bit -nocopyright -logfile $(WAVE_LOG) -keyfile $(WORK_DIR)/$(WAVEBROWSE).script.tcl
+WAVE_FLAGS      += -cdslib $(CDSLIB_FILE) -title "$(SIM_NAME)"
+
+VLOG_TARGET      = $(VLOG_LOG)
+ELAB_TARGET      = $(ELAB_LOG)
+
+# ------------  tool flags for stimc  ------------------------------------------
+ifneq ($(strip $(STIMC_MODULES)),)
+  VPI_CPPFLAGS += -I $(CDSROOT)/tools/include
+  VPI_LDFLAGS  += -shared
+  ELAB_FLAGS   += -loadvpi $(VPI_MODULE):stimc_vpi_init
+endif
+
+# ------------  info output ----------------------------------------------------
+info-vlog:
+ifneq (,$(strip $(VLOG_INCDIRS)))
+	$q$(call echo, "$${b}$(vlogcolor)VLOG-INCDIRS$${c}$(shell $(call shell-fmtflags,$(addprefix -I,$(VLOG_INCDIRS))))")
+endif
+ifneq (,$(strip $(VLOG_FLAGS) $(ADDITIONAL_VLOG_FLAGS)))
+	$q$(call echo, "$${b}$(vlogcolor)VLOG-FLAGS$${c}$(shell $(call shell-fmtflags,$(VLOG_FLAGS) $(ADDITIONAL_VLOG_FLAGS)))")
+endif
+
+info-elab:
+ifneq (,$(strip $(ELAB_FLAGS) $(ADDITIONAL_ELAB_FLAGS)))
+	$q$(call echo, "$${b}$(elabcolor)ELAB-FLAGS$${c}$(shell $(call shell-fmtflags,$(ELAB_FLAGS) $(ADDITIONAL_ELAB_FLAGS)))")
+endif
+
+.PHONY: info-vlog info-elab
+
+# ------------  rules ----------------------------------------------------------
+
+$(VLOG_TARGET): $(VLOG_SOURCES) $(COMPILE_DEPS) $(filter-out %.dep,$(MAKEFILE_LIST)) $(CDSLIB_FILE) $(HDLVAR_FILE) | $(WORK_DIR) info-vlog
+	$q$(call echo, "$${b}$(vlogcolor)VLOG$${c} $(SIM_NAME)")
+	$q$(VLOG) $(addprefix -incdir ,$(VLOG_INCDIRS)) $(VLOG_FLAGS) $(ADDITIONAL_VLOG_FLAGS) $(VLOG_SRC_ARGS)
+
+$(ELAB_TARGET): $(VLOG_TARGET) $(VPI_MODULE) $(filter-out %.dep,$(MAKEFILE_LIST)) $(CDSLIB_FILE) $(HDLVAR_FILE) | $(WORK_DIR) info-elab
+	$q$(call echo, "$${b}$(elabcolor)ELAB$${c} $(SIM_NAME)")
+	$q$(ELAB) $(TOPLEVEL) $(ELAB_FLAGS) $(ADDITIONAL_ELABFLAGS)
+
+vlog: $(VLOG_TARGET)
+elab: $(ELAB_TARGET)
+
+run: $(ELAB_TARGET) $(CDSLIB_FILE) $(HDLVAR_FILE) $(RUNSCR_BATCH)
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $(SIM_NAME)\n")
+	$q$(SIM) $(SIM_FLAGS) $(TOPLEVEL) -input $(RUNSCR_BATCH)
+
+memcheck: $(ELAB_TARGET) $(CDSLIB_FILE) $(HDLVAR_FILE) $(RUNSCR_BATCH)
+	$q$(call echo, "\n$${b}$(runcolor)MEMCHECK $${c} $(SIM_NAME)\n")
+	$q$(MEMCHK) $(SIM) $(SIM_FLAGS) $(TOPLEVEL) -input $(RUNSCR_BATCH)
+
+runbatch: $(ELAB_TARGET) $(CDSLIB_FILE) $(HDLVAR_FILE) $(RUNSCR_BATCH)
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $(SIM_NAME)\n")
+	$q$(SIM) $(SIM_FLAGS) $(TOPLEVEL) -input $(RUNSCR_BATCH) 2>&1 | tee $(BATCH_LOG)
+
+rungui: $(ELAB_TARGET) $(CDSLIB_FILE) $(HDLVAR_FILE) $(RUNSCR_GUI) | $(CDS_SIMVISDIR)
+	$q$(call echo, "\n$${b}$(runcolor)RUN $${c} $(SIM_NAME)\n")
+	$q$(LN) $(CDS_SIMVISDIR) .simvision
+	$q$(SIM) $(SIM_FLAGS) -gui $(TOPLEVEL) -input $(RUNSCR_GUI) 2>&1 | tee $(BATCH_LOG)
+	$qrm .simvision
+
+gui: $(CDS_WAVEDB) | $(CDS_SIMVISDIR)
+	$q$(LN) $(CDS_SIMVISDIR) .simvision
+	$q$(WAVEBROWSE) $(WAVE_FLAGS) -snapshot $(TOPLEVEL) $(CDS_WAVEDB)
+	$qrm .simvision
+
+$(HDLVAR_FILE): $(CDSLIB_FILE) | $(WORK_DIR)
+	@echo 'DEFINE WORK worklibdir' > $@
+
+$(CDSLIB_FILE): | $(WORK_DIR) $(CDS_WORKLIBDIR) $(CDS_WAVEDIR) $(CDS_COVDIR)
+	@echo 'DEFINE worklibdir $(CDS_WORKLIBNAME)' >  $@
+	@echo 'DEFINE wavedir    $(CDS_WAVENAME)'    >> $@
+	@echo 'DEFINE covdir     $(CDS_COVNAME)'     >> $@
+
+$(RUNSCR_BATCH): | $(WORK_DIR) $(CDS_WAVEDIR)
+	@echo 'database $(CDS_WAVEDB_BASE) -shm -default' >  $@
+	@echo 'run'                                       >> $@
+	@echo 'exit'                                      >> $@
+
+$(RUNSCR_GUI): | $(WORK_DIR) $(CDS_WAVEDIR)
+	@echo 'database $(CDS_WAVEDB_BASE) -shm -default' >  $@
+
+$(CDS_WORKLIBDIR) $(CDS_WAVEDIR) $(CDS_COVDIR) $(CDS_SIMVISDIR): | $(WORK_DIR)
+	$qmkdir -p $@
+
+clean-vlog:
+	$qrm -f \
+        $(WAVE_LOG) $(SIM_LOG) $(VLOG_LOG) $(ELAB_LOG) \
+		$(CDSLIB_FILE) $(HDLVAR_FILE) \
+		$(RUNSCR_BATCH) $(RUNSCR_GUI) \
+        2> /dev/null || true
+	$qrm -rf \
+		$(CDS_WORKLIBDIR) $(CDS_WAVEDIR) $(CDS_COVDIR) $(CDS_SIMVISDIR)
+
+clean-gui:
+	$qrm -rf .simvision 2> /dev/null || true
+
+.PHONY: vlog elab run runbatch rungui gui memcheck clean-vlog clean-gui

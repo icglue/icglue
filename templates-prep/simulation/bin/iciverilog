@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# module load iverilog/latest
+
+make SIMULATOR=iverilog "$@"

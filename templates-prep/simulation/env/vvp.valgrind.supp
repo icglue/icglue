@@ -1,0 +1,20 @@
+{
+   <vvp_parser_memleak>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:*yylex*
+   fun:*yyparse*
+   fun:*compile_design*
+   fun:*main*
+}
+{
+   <vvp_parser_memleak>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:*compile_scope_decl*
+   fun:*yyparse*
+   fun:*compile_design*
+   fun:*main*
+}
