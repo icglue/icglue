@@ -1,9 +1,10 @@
 
 TESTCASES ?=
+SIMULATOR ?= iverilog
 
 # vars
 RUN_DATE     := $(shell date '+%Y.%m.%d_%H.%M.%S')
-SIMTOOL_DIR  := iverilog
+SIMTOOL_DIR  := generic
 OLDAFTERDAYS ?= 10
 
 ## directories
@@ -16,11 +17,13 @@ LOG_DIRS          := $(foreach TC, ${TESTCASES}, ${RESULT_DIR}/${TC})
 SIMRUN_LOG        := runbatch.log
 REGRESSION_LOG    := regression.log
 TBCHECK_LOG       := result.log
+MEMCHECK_DUMMY    := memcheck.run
 SUMMARY_LOG       := summary.log
 RESULT_LOG        := ${RESULT_DIR}/${SUMMARY_LOG}
 LATEST_RESULT_LOG := ${LATEST_RESULT_DIR}/${SUMMARY_LOG}
 
 TBCHECK_LOGS   := $(foreach TC, ${TESTCASES}, ${RESULT_DIR}/${TC}/${TBCHECK_LOG})
+MEMCHECK_DUMMIES  := $(foreach TC, ${TESTCASES}, ${RESULT_DIR}/${TC}/${MEMCHECK_DUMMY})
 
 ## dir rules
 ${LOG_DIRS}: | ${RESULT_DIR}
@@ -31,10 +34,10 @@ ${LOG_DIRS} ${RESULT_DIR}:
 # enter testcase directorie, clean, run
 ${RESULT_DIR}/%/${TBCHECK_LOG}: | ${RESULT_DIR}/%
 	$(eval $@_TCDIR := "$(shell echo $* | sed -e "s|\(.*\)\.\(.*\)|${ICPRO_DIR}/units/\1/simulation/${SIMTOOL_DIR}/\2|")")
-	@echo "running $($@_TCDIR) ..."
-	-@make -C ${$@_TCDIR} clean > ${RESULT_DIR}/$*/${REGRESSION_LOG} 2>&1
-	-@make -C ${$@_TCDIR} runbatch >> ${RESULT_DIR}/$*/${REGRESSION_LOG} 2>&1
-	-@cp ${$@_TCDIR}/.work/*.log ${RESULT_DIR}/$*/
+	@echo "running $* ..."
+	-@make -C ${$@_TCDIR} SIMULATOR=$(SIMULATOR) clean > ${RESULT_DIR}/$*/${REGRESSION_LOG} 2>&1
+	-@make -C ${$@_TCDIR} SIMULATOR=$(SIMULATOR) runbatch >> ${RESULT_DIR}/$*/${REGRESSION_LOG} 2>&1
+	-@cp ${$@_TCDIR}/.work.$(SIMULATOR)/*.log ${RESULT_DIR}/$*/
 	@if [ -e ${RESULT_DIR}/$*/${SIMRUN_LOG} ] ; then \
 		res=$$(grep TBCHECK ${RESULT_DIR}/$*/${SIMRUN_LOG}) ; \
 		resc=$$(grep -c TBCHECK ${RESULT_DIR}/$*/${SIMRUN_LOG}) ; \
@@ -47,10 +50,17 @@ ${RESULT_DIR}/%/${TBCHECK_LOG}: | ${RESULT_DIR}/%
 		echo $*": TBCHECK: SIMFAIL" > ${RESULT_DIR}/$*/${TBCHECK_LOG} ; \
 	fi
 
+${RESULT_DIR}/%/${MEMCHECK_DUMMY}: | ${RESULT_DIR}/%
+	$(eval $@_TCDIR := "$(shell echo $* | sed -e "s|\(.*\)\.\(.*\)|${ICPRO_DIR}/units/\1/simulation/${SIMTOOL_DIR}/\2|")")
+	@echo "memcheck $* ..."
+	-@make -C ${$@_TCDIR} SIMULATOR=$(SIMULATOR) clean > ${RESULT_DIR}/$*/${REGRESSION_LOG} 2>&1
+	@make  -C ${$@_TCDIR} SIMULATOR=$(SIMULATOR) memcheck >> ${RESULT_DIR}/$*/${REGRESSION_LOG} 2>&1
+	@touch ${RESULT_DIR}/$*/${MEMCHECK_DUMMY}
+
 # evaluate
 ${RESULT_LOG}: ${TBCHECK_LOGS} | ${RESULT_DIR}
-	@cat ${TBCHECK_LOGS} > $@
-	@sh -c "echo \"---\"; echo \"PASSED: $$(cat $@ | grep -c 'TBCHECK: PASSED') out of $$(cat $@ | wc -l)\"" >> $@
+	@cat ${TBCHECK_LOGS} | column -t > $@
+	@sh -c "echo \"---\"; echo \"PASSED: $$(cat $@ | grep -ce 'TBCHECK:\s*PASSED') out of $$(cat $@ | wc -l)\"" >> $@
 	@rm -f ${LATEST_RESULT_DIR}
 	@ln -srf ${RESULT_DIR} ${LATEST_RESULT_DIR}
 	@echo ""
@@ -60,6 +70,8 @@ ${RESULT_LOG}: ${TBCHECK_LOGS} | ${RESULT_DIR}
 ${LATEST_RESULT_DIR}: ${RESULT_LOG}
 
 all: ${RESULT_LOG}
+
+memcheck: ${MEMCHECK_DUMMIES} | ${RESULT_DIR}
 
 show:
 	@if [ -e ${LATEST_RESULT_LOG} ] ; then \
@@ -74,7 +86,7 @@ cleanold:
 cleanall:
 	@rm -rf ${WORK_DIR}
 
-.PHONY: all show cleanall
+.PHONY: all show cleanall memcheck
 
 .DEFAULT_GOAL := all
 
