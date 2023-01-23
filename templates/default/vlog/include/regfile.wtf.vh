@@ -607,7 +607,7 @@ foreach_array_with entry $entry_list {[info exists entry(handshake)]} {
 
 [rf_comment_block "Regfile registers (read-logic)"]
     always @(*) begin
-        [rf_next_write_permitted] = 0;
+        [rf_next_write_permitted] = 1'b0;
         [rf_next_read_permitted] = 1'b1;
         case ([rf_addr])
 %foreach_array entry $entry_list {
