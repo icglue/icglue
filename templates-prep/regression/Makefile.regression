@@ -4,7 +4,7 @@ SIMULATOR ?= iverilog
 
 # vars
 RUN_DATE     := $(shell date '+%Y.%m.%d_%H.%M.%S')
-SIMTOOL_DIR  := generic
+SIMTOOL_DIR  := <%= $simdir %>
 OLDAFTERDAYS ?= 10
 
 ## directories

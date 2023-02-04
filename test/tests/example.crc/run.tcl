@@ -28,7 +28,7 @@ eval_run_output {
 run icprep iverilog --unit crc --testcase tc_rf_access
 eval_run_output {glob {I,Gen*} 12}
 
-run icprep regression
+run icprep regression --simdir iverilog
 eval_run_output {glob {I,Gen*} 2}
 
 # run

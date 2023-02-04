@@ -15,7 +15,7 @@ DUMP_MOD        ?= dump.v
 DUMP_MOD_NAME   ?= $(notdir $(basename $(DUMP_MOD)))
 
 #-------------  working directory  ---------------------------------------------
-WORK_DIR        ?= .work
+WORK_DIR        ?= .work.iverilog
 
 # ------------  name of vvp file  ----------------------------------------------
 VVP_FILE        ?= $(WORK_DIR)/$(SIM_NAME)-simulate
