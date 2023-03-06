@@ -36,7 +36,7 @@ Mandatory arguments to long options are mandatory for short options too.
     -h, --help               Show help
     -g, --gui                Show GUI
 
-    -t, --template=FILE      Set FILE to use as template
+    -t, --template=NAME      Set NAME for the template set
     --template-dir=DIR       Add DIR to template path
     -o, --outtypes=LIST      Comma-separated list of output tags to generate (or empty for default, '*' for everything).
 
