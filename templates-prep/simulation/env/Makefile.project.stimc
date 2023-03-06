@@ -6,8 +6,8 @@
 
 # ------------  generate the names of the stimc related files  -----------------
 STIMC_BASEDIR   = ${ICPRO_DIR}/resources/stimc
-STIMC_INCDIRS  += $(STIMC_BASEDIR)/include $(STIMC_BASEDIR)/addons
-STIMC_LIBDIRS  += $(STIMC_BASEDIR)/lib $(STIMC_BASEDIR)/addonslib
+STIMC_INCDIRS  += $(addprefix $(STIMC_BASEDIR)/, include addons)
+STIMC_LIBDIRS  += $(addprefix $(STIMC_BASEDIR)/, lib lib64 addonslib)
 STIMC_BASENAMES = $(notdir $(basename $(STIMC_SOURCES)))
 STIMC_OBJECTS   = $(addprefix $(WORK_DIR)/, $(addsuffix .o, $(STIMC_BASENAMES)))
 STIMC_DEPS      = $(addprefix $(WORK_DIR)/, $(addsuffix .d, $(STIMC_BASENAMES)))
