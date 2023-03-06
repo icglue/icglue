@@ -10,3 +10,5 @@ lib/ICGlue
 /install
 /man
 /md2html/
+__pycache__
+.coverage
