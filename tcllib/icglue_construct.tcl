@@ -1601,12 +1601,12 @@ namespace eval ig {
             if {$address eq ""} {
                 set address [ig::aux::regfile_next_addr $regfile_id]
                 set address [ig::aux::regfile_aligned_addr $address $alignment $register_align]
-                set address [format "0x%04X" $address]
+                set address $address
             }
             if {(![string is entier $address]) || ($address < 0)} {
                 log -error -abort "R (regfile-entry ${entryname}): no/invalid address ($origin)"
             }
-            ig::db::set_attribute -object $entry_id -attribute "address"   -value $address
+            ig::db::set_attribute -object $entry_id -attribute "address"   -value [format "0x%x" $address]
             ig::db::set_attribute -object $entry_id -attribute "protected" -value $protected
             ig::db::set_attribute -object $entry_id -attribute "origin   " -value $origin
             ig::db::set_attribute -object $entry_id -attribute "comment"   -value $comm
