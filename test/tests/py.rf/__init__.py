@@ -1,6 +1,6 @@
-from .rf_submod_regfile import submod_regfile
+from .rf_submod import SubmodRegfile
 
 
-class regfiles:
+class Regfiles:
     def __init__(self, rf_dev):
-        self.submod = submod_regfile(rf_dev, 0xf0000000)
+        self.submod = SubmodRegfile(rf_dev, 0xf0000000)

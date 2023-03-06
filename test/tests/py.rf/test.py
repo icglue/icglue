@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import logging
-from regfile_access import regfiles
+from regfile_access import Regfiles
 
-from regfile_access.regfile_generics import regfile_dev_subword_debug
+from regfile_generics import RegfileDevSubwordDebug
 
 
 logging.basicConfig(
@@ -22,10 +22,10 @@ regfile devices could inherit from regfile_dev (-> implement rfdev_write and rfd
     - regfile_dev_subword -> implementation of rfdev_write_subword(self, addr, value, size) and rfdev_read(self, addr) [keep in mind that addr is unaligned(!) to bytes_per_word]
 """
 
-rf_dev = regfile_dev_subword_debug()
+rf_dev = RegfileDevSubwordDebug()
 
 # create register files - access through rf_dev
-rf = regfiles(rf_dev)
+rf = Regfiles(rf_dev)
 
 """
 Writing Values:
@@ -125,6 +125,18 @@ if read_count != rf_dev.read_count:
 else:
     print("PASSED: Regfile-read to variable")
 
+read_count = rf_dev.read_count
+print(dict(rf.submod['entry_sync0']))
+if read_count + 1 != rf_dev.read_count:
+    raise Exception(f"Regfile read via dict increment readcounter by {rf_dev.read_count - read_count}.")
+else:
+    print("PASSED: Regfile-read to variable")
+
+rf.submod.entry_name1_high_r.s_cfg_f.set(0xff)
+rf.submod.entry_name1_high_r.s_cfg_trigger_f.set(0x1)
+rf.submod.entry_name1_high_r.s_cfg_trigger_mode_f.set(0x3)
+rf.submod.entry_name1_high_r.update()
+
 entry_name0['s_cfg'] = 0xC
 rf.submod['entry_name0'] = entry_name0
 
@@ -146,12 +158,13 @@ if read_count + 2 != rf_dev.read_count:
 print("PASSED: Regfile reads counter test")
 
 # iterations
-if False:
+if True:
     # simple iteration
     for e in rf.submod:  # getting register_entry object
-        print(f"--> {e.regname} (Value 0x{int(e):x})")
-        for f in e:  # getting register_field object (str-conversion)
-            print(f"    \\-> {f} (LSB: {f.lsb:2d} MSB:{f.msb:2d})")
+        v = int(e)
+        print(f"--> {e.name} (Value 0x{v:x})")
+        for f in e.get_field_names():
+            print(f"    \\-> {f} = {e.field(f).get_field(v)} (LSB: {e.field(f).lsb:2d} MSB:{e.field(f).msb:2d})")
         print("")
 
     print("--")
@@ -159,9 +172,10 @@ if False:
 if True:
     # key value iteration
     for ename, e in rf.submod.items():  # getting name + regfile_entry object
-        print(f"--> {ename} (Value: 0x{int(e):x})")
+        v = int(e)
+        print(f"--> {ename} (Value: 0x{v:x})")
         for fname, f in e.items():  # getting name + register_field object
-            print(f"    \\-> {fname} (LSB: {f.lsb:2d} MSB:{f.msb:2d})")
+            print(f"    \\-> {fname}: 0x{f.get_field(v):x} (LSB: {f.lsb:2d} MSB:{f.msb:2d})")
         print("")
 
     print("--")

@@ -46,6 +46,14 @@ proc deploy {src trg} {
     file copy $src $trg
 }
 
+proc deploy-link {linkname target} {
+    set link_fullname [file join $deploy::trg_dir $linkname]
+    set  dir [file dirname $link_fullname]
+    file mkdir $dir
+    puts $deploy::logf "DEPLOY-LINK: ${linkname} -> $target"
+    file link $link_fullname $target
+}
+
 proc deploy_resource {name} {
     set rsc_dir [file join $config::rsc_dir $name]
     set rsc_script [file join $rsc_dir "deploy.tcl"]

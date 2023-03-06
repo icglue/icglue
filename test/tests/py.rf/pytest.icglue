@@ -6,7 +6,7 @@ logger -level E -id ChkRP
 logger -level E -id Tcl
 
 M -unit py_rf -tree {
-    submod_regfile .............. (rf)
+    submod_regfile .............. (rf=submod)
 }
 
 R submod_regfile "entry_name0" -protected {
@@ -48,4 +48,3 @@ foreach {name submodport comment} $rf_submod_con_list {
 }
 
 R submod_regfile "entry_sync0"  $rf_submod_table
-
