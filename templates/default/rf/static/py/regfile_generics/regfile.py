@@ -82,6 +82,12 @@ class RegisterEntryAbstract(metaclass=abc.ABCMeta):
         raise KeyError(f"Field {key} does not exist. "
                        f"Available fields: {list(self._fields.keys())}")  # pragma: nocover
 
+    def __setattr__(self, name, value):
+        if self._lock is True and name not in self.__dict__:
+            raise AttributeError(f"Unable to allocate attribute {name} - Instance is locked.")
+
+        super().__setattr__(name, value)
+
     def __setitem__(self, key, value):
         """Dict-like access to write a value to a field."""
         if key not in self._fields:
@@ -237,11 +243,13 @@ class RegisterEntry(RegisterEntryAbstract):
 
     def __init__(self, **kwargs):
         """Constructor see also RegisterEntryAbstract"""
+        super().__init__(**kwargs)
+        self._lock = False
         self._add_fields_mode = kwargs.pop('_add_fields_mode', False)
         self.desired_value = kwargs.pop('desired_value', 0)
         self.mirrored_value = kwargs.pop('_mirrorvalue', 0)
         self._reset = kwargs.pop('_reset', 0)
-        super().__init__(**kwargs)
+        self._lock = True
 
     def _get_value(self):
         """Get value returns the mirrored value."""
@@ -508,6 +516,12 @@ class Regfile:
                 return SyntasticSugarRepresent(represent)
             raise KeyError(f"Regfile has no entry named '{key}'.")
         return self._entries[key]
+
+    def __setattr__(self, name, value):
+        if self._lock is True and name not in self.__dict__:
+            raise AttributeError(f"Unable to allocate attribute {name} - Instance is locked.")
+
+        super().__setattr__(name, value)
 
     def __getattr__(self, name):
         if name[-2:] == '_r' and name[:-2] in self._entries:
