@@ -247,7 +247,7 @@ class RegisterEntry(RegisterEntryAbstract):
         self._lock = False
         self._add_fields_mode = kwargs.pop('_add_fields_mode', False)
         self.desired_value = kwargs.pop('desired_value', 0)
-        self.mirrored_value = kwargs.pop('_mirrorvalue', 0)
+        self.mirrored_value = kwargs.pop('mirrored_value', 0)
         self._reset = kwargs.pop('_reset', 0)
         self._lock = True
 

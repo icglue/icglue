@@ -45,6 +45,12 @@ def test_uvm_write(sessionsubwordregfile):
     assert regfile['reg_addr40'].get_mirrored_value() == 0b01001
     assert regfile['reg_addr40'].get_reset() == 0b01010
     assert regfile['reg_addr40'].read() == 0b01001
+
+    mirrored_reg = regfile['reg_addr40'].get_mirrored_reg()
+    assert mirrored_reg.get_mirrored_value() == 0b01001
+    assert mirrored_reg.get_reset() == 0b01010
+    assert mirrored_reg.read() == 0b01001
+
     assert read_count + 1 == rfdev.read_count
     assert regfile['reg_addr40'].get_offset() == 0x40
     assert regfile['reg_addr40'].get_address()== 0xF000_0040
