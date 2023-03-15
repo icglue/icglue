@@ -423,9 +423,9 @@ namespace eval ig {
                             -parent-module [ig::db::get_modules -name $moduleparent]]
 
                         ig::db::set_attribute -object $instid -attribute "origin" -value $origin
-                    }
-                    if {$fres} {
-                        set_modcmd_attributes $instid [parse_modcmd_attributes $fattributes]
+                        if {$fres} {
+                            set_modcmd_attributes $instid [parse_modcmd_attributes $fattributes]
+                        }
                     }
                 }
             }
