@@ -458,13 +458,14 @@ def _regfile_warn_user(msg):
 
 
 class Regfile:
-    def __init__(self, rfdev, base_addr=0x0):
+    def __init__(self, rfdev, base_addr=0x0, **kwargs):
         object.__setattr__(self, "_lock", False)
         self._dev = rfdev
         self.__value_mask = (1 << (8 * self._dev.n_word_bytes)) - 1
         self.__base_addr = base_addr
         self._entries = {}
         self.__add_entry_mode = False
+        self.name = kwargs.pop('name', f"{type(self).__name__}@0x{base_addr:x}")
         self._lock = True
 
     def __enter__(self):
