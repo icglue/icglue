@@ -48,6 +48,7 @@
 - [ ] support systemverilog structs
 
 ## templates
+- [ ] add icglue script variable (allow output comment containing source icglue script path)
 - [ ] signals: add type (see tcllib)
 - [ ] testbench -> regs
 - [ ] update systemverilog templates for logic type
