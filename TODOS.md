@@ -61,6 +61,7 @@
   - [x] `add` cmd: add default/nondefault option
   - [x] `add` cmd: add groups? as extra opt or as tag-suffix?
   - [x] binary: +tag, -tag (to add/remove output), +/-group (add/remove output for group)
+- [ ] add --list--templates switch -> available templates (+/-) + PATH/TEMPLATE\_SET
 
 ## bin
 - [ ] allow multiple construction scripts?
