@@ -111,6 +111,12 @@ Parameters have to be provided a default value, signals can be provided with a v
 which will be assigned to them at the signal source point.
 Additionally signals can be specified with a bus width.
 
+### Parameters
+General command structure:
+```
+P <parameter-identifier> [-v <default-value>] <endpoint-list> ...
+```
+
 ### Signals
 General command structure:
 ```
@@ -120,12 +126,6 @@ S <signal-identifier> [-w <bus-width>] [(-v|=) <assigned-value>] <endpoint-list>
 The arrow between the endpoint lists specifies the signal direction.
 For a directed signal (`<--` or `-->`) only one source endpoint is allowed.
 
-### Parameters
-General command structure:
-```
-P <parameter-identifier> [-v <default-value>] <endpoint-list> ...
-```
-
 ### Examples
 ```tcl
 # 32 bit regfile config signal
@@ -133,6 +133,9 @@ S config1 -w 32 regfile --> core:config_i
 
 # 1 bit tied config signal
 S config2 -v {1'b0} mgmt --> core<1..4>:mode! ~accelerator:mode_n!
+
+# Combinational assignment
+S sig_xor mgmt <-- core = {sig1! ^ sig2!}
 
 # parameter
 P GPIO_W -v 8 testbench pads
@@ -407,4 +410,3 @@ the default template will still output the code at the end of the generated outp
 It can then be moved to a new location or deleted if no longer required.
 It is recommended to do this in templates where keep-identifiers are dynamically generated based on
 construction-script input.
-
