@@ -110,7 +110,8 @@ namespace eval ig::templates {
 
         ## @brief Callback to set default/process object attributes
         # @param userdata (key/value pair-list for user provided data)
-        #   icglue templates expect a key object with the ID of the object to initialize
+        #   icglue templates expect a key "object" with the ID of the object to initialize
+        #   and a key "attributes" with an attributes dictionary
         proc template_attr {userdata} {
             ig::log -error -abort "No template loaded"
         }
@@ -697,7 +698,15 @@ namespace eval ig::templates {
         }
         $procdef current::get_template_data_raw {userdata tdir} [lindex $collection::template_data_gen $data_idx 1]
         if {$props_idx < 0} {
-            $procdef current::template_attr {userdata} {}
+            # icglue 4 backwards compatibility: directly forward all attributes
+            $procdef current::template_attr {userdata} {
+                set object [dict get $userdata "object"]
+                set attrs  [dict get $userdata "attributes"]
+
+                if {[llength $attrs] > 0} {
+                    set_attribute -object $object -attributes $attrs
+                }
+            }
         } else {
             $procdef current::template_attr {userdata} [lindex $collection::template_attr_gen $props_idx 1]
         }
