@@ -1956,7 +1956,7 @@ namespace eval ig {
         # defaults
         set regfilename ""
         set regtable    {}
-        set mode        "csv"
+        set mode        ""
         set csvfile     {}
         set csvsep      {,}
         set csvdel      \"
@@ -2057,8 +2057,100 @@ namespace eval ig {
             construct::rcsv_process $regfilename $regtable $addroffset $opts $destmod $origin
         } elseif {$mode eq "ryaml"} {
             construct::ryaml_process $regfilename $regtable $addroffset $opts $ryamlsigpfx $destmod $origin
-        }
+        } else {
+            # order: {entryname ?address? ?protect? ...}
+            set r_head [lindex $regtable 0]
+                set regtable [lrange $regtable 1 end]
 
+                set idx_entry   [lsearch $r_head "entryname"]
+                set idx_addr    [lsearch $r_head "address"]
+                set idx_protect [lsearch $r_head "protect"]
+
+                set e_head      {}
+            foreach i_h $r_head {
+                if {$i_h eq "entryname"} {continue}
+                if {$i_h eq "address"}   {continue}
+                if {$i_h eq "protect"}   {continue}
+                lappend e_head $i_h
+            }
+
+            set e_dict      {}
+            set e_last_name {}
+            set e_last_addr {}
+            set e_last_prot {}
+            set e_table     {}
+
+            foreach i_row $regtable {
+                if {[llength $i_row] < [llength $r_head]} {
+                    if {[llength $i_row] > 0} {
+                        log -warn "register table row \"${i_row}\" contains too few columns ($origin)"
+                    }
+                    continue
+                }
+
+                set e_row  {}
+                set e_name {}
+                set e_addr {}
+                set e_prot {}
+
+                for {set i 0} {$i < [llength $i_row]} {incr i} {
+                    if {($i == $idx_entry)} {
+                        set e_name [lindex $i_row $i]
+                    } elseif {($i == $idx_addr)} {
+                        set e_addr [lindex $i_row $i]
+                    } elseif {($i == $idx_protect)} {
+                        set e_prot [lindex $i_row $i]
+                    } else {
+                        lappend e_row [lindex $i_row $i]
+                    }
+                }
+
+                if {$e_name eq ""} {set e_name $e_last_name}
+                if {$e_name eq ""} {
+                    log -warn "register table row \"${i_row}\" has no entry name ($origin)"
+                }
+                if {$e_name eq $e_last_name} {
+                    if {$e_addr eq ""} {set e_addr $e_last_addr}
+                    if {$e_prot eq ""} {set e_prot $e_last_prot}
+                }
+
+                dict set e_dict $e_name addr $e_addr
+                    dict set e_dict $e_name prot $e_prot
+                    if {$e_name ne $e_last_name} {
+                        dict set e_dict $e_name table [list $e_head]
+                    }
+
+                dict with e_dict $e_name {
+                    lappend table $e_row
+                }
+
+                set e_last_name $e_name
+                    set e_last_addr $e_addr
+            }
+
+            # create
+            dict for {e_name e_data} $e_dict {
+                set e_addr  [dict get $e_data "addr"]
+                    set e_prot  [dict get $e_data "prot"]
+                    set e_table [dict get $e_data "table"]
+
+                    set opts {}
+                if {$e_addr ne ""} {
+                    lappend opts "@${e_addr}"
+                }
+                if {($e_prot ne "") && (($e_prot) || ($e_prot in {x X}))} {
+                    lappend opts "-protected"
+                }
+                if {$subst_opt ne ""} {
+                    lappend opts $subst_opt
+                }
+                if {$eval_opt ne ""} {
+                    lappend opts $eval_opt
+                }
+
+                R -cmdorigin $origin {*}${opts} $regfilename $e_name $e_table
+            }
+        }
     }
 
     namespace export *
